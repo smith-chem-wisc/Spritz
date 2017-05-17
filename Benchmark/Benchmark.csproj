@@ -13,7 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -52,6 +52,10 @@
     <ProjectReference Include="..\GenomicsData\GenomicsData.csproj">
       <Project>{6cf2769a-f91b-4341-9158-b1d9467eea71}</Project>
       <Name>GenomicsData</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Genomics\Genomics.csproj">
+      <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
+      <Name>Genomics</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
