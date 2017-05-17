@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Genomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Genomics;
 
 namespace GenomicsData
 {
@@ -37,6 +36,10 @@ namespace GenomicsData
                 while (true)
                 {
                     string line = reader.ReadLine();
+
+                    if (line == null)
+                        break;
+
                     if (line.StartsWith("##")) //metainfo
                     {
                         if (line.StartsWith("##fileformat"))
@@ -62,7 +65,7 @@ namespace GenomicsData
                     string filter = fields[6];
                     Dictionary<string, string> info = fields[7].Split(';').ToDictionary(x => x.Split('=').First(), x => x.Split('=').Last());
                     string[] format = fields[8].Split(':');
-                    Dictionary<string, string> sample_specs = Enumerable.Range(9, fields.Length - 9).ToDictionary(i => samples[i].name, i => fields[i]);
+                    Dictionary<string, string> sample_specs = Enumerable.Range(9, fields.Length - 9).ToDictionary(i => samples[i - 9].name, i => fields[i]);
 
                     //bool last_phase = false;
                     //LocalHaplotype local_haplotype = null;
