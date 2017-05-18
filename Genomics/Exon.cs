@@ -1,15 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Genomics
+﻿namespace Genomics
 {
     public class Exon : ChromosomeSegment
     {
-       public Exon(string id, Chromosome chrom, string strand, int start, int end, string name, string biotype) 
-            : base(id, chrom, strand, start, end, name, biotype)
-        { }
+
+        #region Public Properties
+
+        Transcript transcript { get; set; }
+        Gene gene { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Constructor
+
+        public Exon(string id, Chromosome chrom, string strand, int start, int end, Transcript transcript, Gene gene)
+             : base(id, chrom, strand, start, end)
+        {
+            this.transcript = transcript;
+            this.gene = gene;
+        }
+
+        #endregion Public Constructor
+
     }
 }

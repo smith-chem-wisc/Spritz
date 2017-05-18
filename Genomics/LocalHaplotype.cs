@@ -22,7 +22,8 @@ namespace Genomics
     {
         public List<SequenceVariant> ploid1 { get; set; }
         public List<SequenceVariant> ploid2 { get; set; }
-        public LocalHaplotype(Chromosome chrom, int start) : base(null, chrom, "+", start, start, null, null)
+        public LocalHaplotype(Chromosome chrom, int start)
+            : base(null, chrom, "+", start, start)
         { }
 
         public void add(SequenceVariant ploid1_seqvar, SequenceVariant ploid2_seqvar)
@@ -33,7 +34,7 @@ namespace Genomics
 
         public void update_end(int end)
         {
-            this.end = end;
+            this.OneBasedEnd = end;
         }
     }
 }

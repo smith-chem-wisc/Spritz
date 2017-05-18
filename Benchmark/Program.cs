@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Genomics;
 using GenomicsData;
+using System;
 
 namespace Benchmark
 {
@@ -12,9 +10,28 @@ namespace Benchmark
     {
         private static void Main(string[] args)
         {
-            VCF vcf = new VCF(@"E:\lelantos\linux_docs\TenCellLines\VCFs\A549.vcf");
-            Console.WriteLine(vcf.samples[0].sequence_variants.Count);
+            Dictionary<string, Chromosome> chroms = read_chroms();
+            //GeneModel gtf = GTF.ReadGenomeFeatures(@"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gtf", chroms);
+            GeneModel gtf = GTF.ReadGenomeFeatures(@"D:\GRCh38.81\sample.gtf", chroms);
+            Console.WriteLine();
+            Console.WriteLine(gtf.genes.Count + " genes");
+            Console.WriteLine(gtf.genes.Sum(g => g.transcripts.Count) + " transcripts");
+            Console.WriteLine(gtf.genes.Sum(g => g.transcripts.Sum(t => t.exons.Count)) + " all exons");
+            Console.WriteLine(gtf.genes.Sum(g => g.exons.Count) + " unique exons");
+            List<Sample> samples = VCF.ReadVCF(@"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\A549_sample.vcf", gtf.chromosomes);
+            Console.WriteLine(samples[0].sequence_variants.Count + " variants");
             Console.ReadKey();
+        }
+
+        private static Dictionary<string, Chromosome> read_chroms()
+        {
+            //Dictionary<string, Chromosome> chroms = GenomeFasta.ReadGenomeFasta(@"D:\GRCh38.81\Homo_sapiens_GRCh38.dna.primary.assembly.canonPlus.fa");
+            Dictionary<string, Chromosome> chroms = GenomeFasta.ReadGenomeFasta(@"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\chr1_sample.fa");
+            foreach (var x in chroms)
+            {
+                Console.WriteLine(x.Key + "\t" + x.Value.Length);
+            }
+            return chroms;
         }
     }
 }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Genomics
 {
@@ -30,14 +28,14 @@ namespace Genomics
 
         public Dictionary<string, string> info { get; set; }
 
-        public new int length { get { return Math.Max(Ref.Length, Alt.Length); } }
+        public new int Length { get { return Math.Max(Ref.Length, Alt.Length); } }
 
         #endregion Public Properties
 
         #region Public Constructor
 
-        public SequenceVariant(Chromosome chrom, int position, string id, string reference, string alternate, double qual, string filter, Dictionary<string, string> info)
-            : base(id, chrom, "+", position, position + Math.Max(reference.Length, alternate.Length) - 1, null, null)
+        public SequenceVariant(Chromosome chrom, int OneBasedPosition, string id, string reference, string alternate, double qual, string filter, Dictionary<string, string> info)
+            : base(id, chrom, "+", OneBasedPosition - 1, OneBasedPosition - 1 + Math.Max(reference.Length, alternate.Length) - 1)
         {
             this.Qual = qual;
             this.Ref = reference;
@@ -51,7 +49,7 @@ namespace Genomics
 
         public override string ToString()
         {
-            return String.Join("\t", new string[] { chrom.name, start.ToString(), id, Ref, Alt, Qual.ToString(), Filter.ToString(), String.Join(";", info.Select(x => x.Key + "=" + x.Value)) });
+            return String.Join("\t", new string[] { Chrom.Name, OneBasedStart.ToString(), ID, Ref, Alt, Qual.ToString(), Filter.ToString(), String.Join(";", info.Select(x => x.Key + "=" + x.Value)) });
         }
 
         #endregion Public Methods

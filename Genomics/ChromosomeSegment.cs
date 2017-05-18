@@ -1,76 +1,105 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace Genomics
 {
     public class ChromosomeSegment
     {
-        public string name { get; set; }
-        public string id { get; set; }
-        public string biotype { get; set; }
-        public Chromosome chrom { get; set; }
-        public string strand { get; set; }
-        public int start { get; set; }
-        public int end { get; set; }
-        public int length { get { return this.end - this.start; } }
+        #region Public Properties
 
-        public ChromosomeSegment(string id, Chromosome chrom, string strand, int start, int end, string name, string biotype)
+        public string ID { get; set; }
+        public Chromosome Chrom { get; set; }
+        public string Strand { get; set; }
+        public int OneBasedStart { get; set; }
+        public int OneBasedEnd { get; set; }
+        public int Length { get { return OneBasedEnd - OneBasedStart; } }
+
+        #endregion Public Properties
+
+        #region Public Constructor
+
+        public ChromosomeSegment(string id, Chromosome chrom, string strand, int ZeroBasedStart, int ZeroBasedEnd)
         {
-            this.name = name;
-            this.id = id;
-            this.biotype = biotype;
-            this.chrom = chrom;
-            this.strand = strand;
-            this.start = start;
-            this.end = end;
+            this.ID = id;
+            this.Chrom = chrom;
+            this.Strand = strand;
+            this.OneBasedStart = ZeroBasedStart;
+            this.OneBasedEnd = ZeroBasedEnd;
         }
+
+        #endregion Public Constructor
+
+        #region Public Comparison Methods
 
         public bool is_before(ChromosomeSegment segment)
         {
-            return this.start < segment.start && this.end < segment.end && this.end < segment.start;
+            return OneBasedStart < segment.OneBasedStart && OneBasedEnd < segment.OneBasedEnd && OneBasedEnd < segment.OneBasedStart;
         }
+
         public bool is_before(int pos)
         {
-            return this.end < pos;
+            return OneBasedEnd < pos;
         }
 
         public bool is_after(ChromosomeSegment segment)
         {
-            return this.start > segment.start && this.end > segment.end && this.start > segment.end;
+            return OneBasedStart > segment.OneBasedStart && OneBasedEnd > segment.OneBasedEnd && OneBasedStart > segment.OneBasedEnd;
         }
+
         public bool is_after(int pos)
         {
-            return this.start > pos;
+            return OneBasedStart > pos;
         }
 
         public bool overlaps(ChromosomeSegment segment)
         {
-            return !this.is_before(segment) && !this.is_after(segment);
+            return !is_before(segment) && !is_after(segment);
         }
+
         public bool overlaps(int pos)
         {
-            return !this.is_before(pos) && !this.is_after(pos);
+            return !is_before(pos) && !is_after(pos);
         }
 
         public bool includes(ChromosomeSegment segment)
         {
-            return this.start <= segment.start && this.end >= segment.end;
+            return OneBasedStart <= segment.OneBasedStart && OneBasedEnd >= segment.OneBasedEnd;
         }
+
         public bool includes(int pos)
         {
-            return Enumerable.Range(this.start, this.end - this.start + 1).Contains(pos);
+            return Enumerable.Range(OneBasedStart, OneBasedEnd - OneBasedStart + 1).Contains(pos);
         }
 
         public bool equals(ChromosomeSegment segment)
         {
-            return this.chrom == segment.chrom && this.start == segment.start && this.end == segment.end;
+            return Chrom == segment.Chrom && OneBasedStart == segment.OneBasedStart && OneBasedEnd == segment.OneBasedEnd;
         }
+
         public bool equals(int pos)
         {
-            return this.start == this.end && this.start == pos;
+            return OneBasedStart == OneBasedEnd && OneBasedStart == pos;
         }
+
+        #endregion Public Comparison Methods
+
+        #region Public Methods
+
+        public override bool Equals(object obj)
+        {
+            ChromosomeSegment seg = obj as ChromosomeSegment;
+            return
+                seg != null &&
+                seg.Chrom.Name == Chrom.Name &&
+                seg.Strand == Strand &&
+                seg.OneBasedStart == OneBasedStart &&
+                seg.OneBasedEnd == OneBasedEnd;
+        }
+
+        public override int GetHashCode()
+        {
+            return Chrom.GetHashCode() ^ Strand.GetHashCode() ^ OneBasedStart ^ OneBasedEnd;
+        }
+
+        #endregion Public Methods
     }
 }
