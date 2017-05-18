@@ -80,6 +80,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GeneModel.cs" />
+    <Compile Include="GenomeFasta.cs" />
     <Compile Include="GTF.cs" />
     <Compile Include="TophatSpliceBED.cs" />
     <Compile Include="VCF.cs" />
