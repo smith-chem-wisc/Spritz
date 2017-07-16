@@ -1,9 +1,6 @@
-﻿using System;
+﻿using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Proteomics;
 
 namespace Proteogenomics
 {
@@ -30,17 +27,15 @@ namespace Proteogenomics
                     new Protein(
                         seq,
                         destination_protein.Accession,
-                        source_protein.GeneNames,
-                        source_protein.OneBasedPossibleLocalizedModifications, 
-                        source_protein.ProteolysisProducts.Select(x => x.OneBasedBeginPosition).ToArray(),
-                        source_protein.ProteolysisProducts.Select(x => x.OneBasedEndPosition).ToArray(),
-                        source_protein.ProteolysisProducts.Select(x => x.Type).ToArray(), 
-                        destination_protein.Name, 
-                        destination_protein.FullName, 
-                        destination_protein.IsDecoy, 
-                        destination_protein.IsContaminant, 
-                        source_protein.DatabaseReferences,
-                        source_protein.SequenceVariations));
+                        gene_names : source_protein.GeneNames.ToList(),
+                        oneBasedModifications : source_protein.OneBasedPossibleLocalizedModifications, 
+                        proteolysisProducts : source_protein.ProteolysisProducts.ToList(),
+                        name : destination_protein.Name, 
+                        full_name : destination_protein.FullName,
+                        isDecoy : destination_protein.IsDecoy,
+                        isContaminant : destination_protein.IsContaminant, 
+                        databaseReferences : source_protein.DatabaseReferences.ToList(),
+                        sequenceVariations : source_protein.SequenceVariations.ToList()));
             }
 
             List<string> destination_only = dict_destination.Keys.Except(dict_source.Keys).ToList();

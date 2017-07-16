@@ -20,6 +20,10 @@ namespace Benchmark
             Console.WriteLine(gtf.genes.Sum(g => g.exons.Count) + " unique exons");
             List<Sample> samples = VCF.ReadVCF(@"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\A549_sample.vcf", gtf.chromosomes);
             Console.WriteLine(samples[0].sequence_variants.Count + " variants");
+            foreach (Transcript t in gtf.genes.SelectMany(g => g.transcripts).Where(x => x.start_codon_start >= 0 && x.stop_codon_start >=0))
+            {
+                Console.WriteLine(t.translate().BaseSequence);
+            }
             Console.ReadKey();
         }
 

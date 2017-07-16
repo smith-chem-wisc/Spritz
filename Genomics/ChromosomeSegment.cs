@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Genomics
 {
@@ -83,6 +84,11 @@ namespace Genomics
         #endregion Public Comparison Methods
 
         #region Public Methods
+
+        //public ChromosomeSegment combine_overlapping_sequences(IEnumerable<ChromosomeSegment> other_seqs, out IEnumerable<ChromosomeSegment> combined_with_this)
+        //{
+
+        //}
 
         public override bool Equals(object obj)
         {
