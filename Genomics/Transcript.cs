@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Proteomics;
+using System.Collections.Generic;
 
 namespace Genomics
 {
@@ -8,10 +8,8 @@ namespace Genomics
 
         #region Public Properties
 
-        public string Name { get; set; }
         public string Biotype { get; set; }
         public Gene Gene { get; set; }
-        public List<SpliceJunction> splices { get; set; } = new List<SpliceJunction>();
         public List<Exon> exons { get; set; } = new List<Exon>();
         public int start_codon_start { get; set; } = -1;
         public int stop_codon_start { get; set; } = -1;
@@ -31,17 +29,21 @@ namespace Genomics
 
         #region Public Methods
 
-        public void add_exon(Exon exon)
+        public Protein translate()
         {
-            exons.Add(exon);
-            if (!Gene.exons.Any(x => exon.@equals(x)))
-                Gene.exons.Add(exon);
-        }
-
-        public bool valid_exons()
-        {
-            //List<Exon> exons_by_start = ;
-            return false;
+            string seq = "";
+            foreach (Exon x in exons)
+            {
+                int start1base = x.OneBasedStart > start_codon_start ? x.OneBasedStart : start_codon_start;
+                int end1base = x.OneBasedEnd < stop_codon_start ? x.OneBasedEnd : stop_codon_start;
+                if (start1base > end1base)
+                {
+                    continue;
+                }
+                seq += x.Chrom.Sequence.get_range(start1base, end1base);
+            }
+            NucleotideSequence nt_seq = new NucleotideSequence(seq);
+            return nt_seq.get_peptide(Chrom.Name.Contains("M") ? NucleotideSequence.mitochon_code : NucleotideSequence.standard_code, ID);
         }
 
         #endregion Public Methods

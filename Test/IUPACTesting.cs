@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Genomics;
 using NUnit.Framework;
-using Genomics;
+using System.Linq;
 
 namespace Test
 {
@@ -14,9 +10,9 @@ namespace Test
         [Test]
         public void ListsContainOnlyCanonicalMonomers()
         {
-            char[] aa_3to1_values = new char[Sample.amino_acids_3to1.Values.Count];
-            Sample.amino_acids_3to1.Values.CopyTo(aa_3to1_values, 0);
-            foreach (char c in Sample.amino_acids)
+            char[] aa_3to1_values = new char[NucleotideSequence.amino_acids_3to1.Values.Count];
+            NucleotideSequence.amino_acids_3to1.Values.CopyTo(aa_3to1_values, 0);
+            foreach (char c in NucleotideSequence.amino_acids)
             {
                 //Assert.IsTrue(Individual.amino_acids_1to3.TryGetValue(c, null));
                 //Assert.IsTrue(aa_3to1_values.)

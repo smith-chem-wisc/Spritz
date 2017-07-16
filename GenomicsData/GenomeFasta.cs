@@ -53,7 +53,7 @@ namespace GenomicsData
                             unique_identifier++;
                         }
                         unique_names.Add(chrom_name);
-                        Chromosome chrom = new Chromosome(chrom_name, sequence);
+                        Chromosome chrom = new Chromosome(chrom_name, sequence.ToCharArray());
                         chromosomes.Add(chrom_name, chrom);
 
                         chrom_name = null;
