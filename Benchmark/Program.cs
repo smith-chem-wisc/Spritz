@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Genomics;
+﻿using Genomics;
 using GenomicsData;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Benchmark
 {
@@ -12,7 +12,7 @@ namespace Benchmark
         {
             Dictionary<string, Chromosome> chroms = read_chroms();
             //GeneModel gtf = GTF.ReadGenomeFeatures(@"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gtf", chroms);
-            GeneModel gtf = GTF.ReadGenomeFeatures(@"D:\GRCh38.81\sample.gtf", chroms);
+            GeneModel gtf = GTF.ReadGenomeFeatures(@"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\sample.gtf", chroms);
             Console.WriteLine();
             Console.WriteLine(gtf.genes.Count + " genes");
             Console.WriteLine(gtf.genes.Sum(g => g.transcripts.Count) + " transcripts");
