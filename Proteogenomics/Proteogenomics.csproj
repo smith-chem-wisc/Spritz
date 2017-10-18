@@ -32,6 +32,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Bio.Core, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Bio.Desktop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Desktop.dll</HintPath>
+    </Reference>
+    <Reference Include="Bio.Platform.Helpers, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Platform.Helpers.dll</HintPath>
+    </Reference>
     <Reference Include="Chemistry, Version=1.0.193.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.193\lib\Chemistry.dll</HintPath>
     </Reference>
