@@ -51,61 +51,26 @@ namespace Genomics
         }
 
         private static Dictionary<Tuple<string, string>, List<Exon>> chromID_strand_binnedCDS = new Dictionary<Tuple<string, string>, List<Exon>>();
-        private Tuple<string, int> previous_forward_index = null;
-        private Tuple<string, int> previous_reverse_index = null;
-        public Protein translate(GeneModel geneModelWithCDS, int min_length, bool includeVariants)
+        public static Dictionary<Tuple<string, string>, List<Exon>> binCDS_by_chromID_strand(GeneModel geneModelWithCDS)
         {
-            // Bin the CDS regions by chromosome and strand to keep track of annotated start codons
-            List<Exon> annotated_starts = new List<Exon>();
-            if (chromID_strand_binnedCDS.Count == 0)
-                chromID_strand_binnedCDS = binCDS_by_chromID_strand(geneModelWithCDS);
-            
-            // Start keeping track of where we are in the chromosome
-            if (Strand == "+" && (previous_forward_index == null || previous_forward_index.Item1 != Gene.ChromID))
-                previous_forward_index = new Tuple<string, int>(Gene.ChromID, 0);
-            if (Strand == "-" && (previous_reverse_index == null || previous_reverse_index.Item1 != Gene.ChromID))
-                previous_reverse_index = new Tuple<string, int>(Gene.ChromID, 0);
-
-            // Start at the last index and move forward along coordinates until past this transcript
-            List<Exon> CDS = chromID_strand_binnedCDS[new Tuple<string, string>(Gene.ChromID, Strand)];
-            int new_index = 0;
-            for (int i = Strand == "+" ? previous_forward_index.Item2 : previous_reverse_index.Item2; i < CDS.Count; i++)
+            Dictionary<Tuple<string, string>, List<Exon>> binnedCDS = new Dictionary<Tuple<string, string>, List<Exon>>();
+            foreach (Exon x in geneModelWithCDS.genes.SelectMany(g => g.transcripts).SelectMany(t => t.CDS))
             {
-                if (CDS[i].OneBasedStart > Exons.Max(x => x.OneBasedEnd))
-                {
-                    new_index = i;
-                    break;
-                }
-
-                if (Exons.Any(xx =>
-                    xx.includes(Strand == "+" ? CDS[i].OneBasedStart : CDS[i].OneBasedEnd) // must include the start of the stop codon
-                    && xx.includes(Strand == "+" ? CDS[i].OneBasedStart + 2 : CDS[i].OneBasedEnd - 2))) // and the end of the stop codon
-                {
-                    annotated_starts.Add(CDS[i]);
-                }
+                Tuple<string, string> key = new Tuple<string, string>(x.ChromID, x.Strand);
+                binnedCDS.TryGetValue(key, out List<Exon> xs);
+                if (xs == null) binnedCDS.Add(key, new List<Exon> { x });
+                else binnedCDS[key].Add(x);
             }
+            return binnedCDS;
+        }
 
-            // Start at one before the last index and move backward along the coordinates adding CDS until past this transcript
-            for (int i = Strand == "+" ? previous_forward_index.Item2 - 1 : previous_reverse_index.Item2 - 1; i > 0; i--)
-            {
-                if (CDS[i].OneBasedEnd < Exons.Min(x => x.OneBasedStart))
-                {
-                    break;
-                }
-
-                if (Exons.Any(xx =>
-                    xx.includes(Strand == "+" ? CDS[i].OneBasedStart : CDS[i].OneBasedEnd) // must include the start of the stop codon
-                    && xx.includes(Strand == "+" ? CDS[i].OneBasedStart + 2 : CDS[i].OneBasedEnd - 2))) // and the end of the stop codon
-                {
-                    annotated_starts.Add(CDS[i]);
-                }
-            }
-
-            if (Strand == "+")
-                previous_forward_index = new Tuple<string, int>(Gene.ChromID, new_index);
-            if (Strand == "-")
-                previous_reverse_index = new Tuple<string, int>(Gene.ChromID, new_index);
-
+        public Protein translate(Dictionary<Tuple<string, string>, List<Exon>> chromID_strand_binnedCDS, int min_length, bool includeVariants)
+        {
+            List<Exon> annotated_starts = chromID_strand_binnedCDS[new Tuple<string,string>(Gene.ChromID, Strand)].Where(x => 
+                Exons.Any(xx => 
+                    xx.includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
+                    && xx.includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2))).ToList(); // and the end of the stop codon
+            char terminating_character = ProteinAlphabet.Instance.GetFriendlyName(Alphabets.Protein.Ter)[0];
             if (annotated_starts.Count > 0)
             {
                 // gets the first annotated start that produces
@@ -165,19 +130,6 @@ namespace Genomics
 
             //return the protein sequence corresponding to the longest ORF
             return new Protein(prot_seq.SelectMany(s => SequenceExtensions.ConvertToString(s).Split('*')).OrderByDescending(s => s.Length).FirstOrDefault(), ProteinID);
-        }
-
-        private Dictionary<Tuple<string, string>, List<Exon>> binCDS_by_chromID_strand(GeneModel geneModelWithCDS)
-        {
-            Dictionary<Tuple<string, string>, List<Exon>> binnedCDS = new Dictionary<Tuple<string, string>, List<Exon>>();
-            foreach (Exon x in geneModelWithCDS.genes.SelectMany(g => g.transcripts).SelectMany(t => t.CDS))
-            {
-                Tuple<string, string> key = new Tuple<string, string>(x.ChromID, x.Strand);
-                binnedCDS.TryGetValue(key, out List<Exon> xs);
-                if (xs == null) binnedCDS.Add(key, new List<Exon> { x });
-                else binnedCDS[key].Add(x);
-            }
-            return binnedCDS;
         }
 
         #endregion Private Methods

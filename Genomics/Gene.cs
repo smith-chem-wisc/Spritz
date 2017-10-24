@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Bio;
+﻿using Bio;
 using Proteomics;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Genomics
 {
@@ -51,10 +51,12 @@ namespace Genomics
 
         public List<Protein> translate(GeneModel genesWithCDS, int min_length, bool includeVariants)
         {
+            Dictionary<Tuple<string, string>, List<Exon>> binnedCDS = Transcript.binCDS_by_chromID_strand(genesWithCDS);
+
             List<Protein> proteins = new List<Protein>();
             Parallel.ForEach(transcripts, t =>
             {
-                Protein p = t.translate(genesWithCDS, min_length, includeVariants);
+                Protein p = t.translate(binnedCDS, min_length, includeVariants);
                 if (p != null)
                     lock (proteins) proteins.Add(p);
             });
