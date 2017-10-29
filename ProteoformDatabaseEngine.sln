@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProteoformDatabaseEngineCommandLine", "ProteoformDatabaseEngineCommandLine\ProteoformDatabaseEngineCommandLine.csproj", "{B2790356-362B-4A5F-959D-0EA33FA168B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProteoformDatabaseEngineGUI", "ProteoformDatabaseEngineGUI\ProteoformDatabaseEngineGUI.csproj", "{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{632CEA0C-C70A-4403-AEBD-56F1986769C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProteoformDatabaseEngine", "ProteoformDatabaseEngine\ProteoformDatabaseEngine.csproj", "{0E316853-B35A-4E67-B667-7DFF12F5EB35}"
@@ -18,6 +16,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bio.VCF", "..\Bio.VCF\Bio.VCF.csproj", "{F7213ADD-1C0C-434F-9A32-7F6C31671A89}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Genomics", "Genomics\Genomics.csproj", "{DEC1FE77-2976-43CA-84FE-4F2B86C5E85F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RNASeqAnalysisWrappers", "RNASeqAnalysisWrappers\RNASeqAnalysisWrappers.csproj", "{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,18 +41,6 @@ Global
 		{B2790356-362B-4A5F-959D-0EA33FA168B6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B2790356-362B-4A5F-959D-0EA33FA168B6}.Release|x64.ActiveCfg = Release|Any CPU
 		{B2790356-362B-4A5F-959D-0EA33FA168B6}.Release|x64.Build.0 = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Debug|x64.Build.0 = Debug|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Mono|Any CPU.ActiveCfg = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Mono|Any CPU.Build.0 = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Mono|x64.ActiveCfg = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Mono|x64.Build.0 = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Release|x64.ActiveCfg = Release|Any CPU
-		{67A9184C-E25A-47AD-B2D0-B2D8AE031AC7}.Release|x64.Build.0 = Release|Any CPU
 		{632CEA0C-C70A-4403-AEBD-56F1986769C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{632CEA0C-C70A-4403-AEBD-56F1986769C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{632CEA0C-C70A-4403-AEBD-56F1986769C3}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -125,6 +113,18 @@ Global
 		{DEC1FE77-2976-43CA-84FE-4F2B86C5E85F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DEC1FE77-2976-43CA-84FE-4F2B86C5E85F}.Release|x64.ActiveCfg = Release|x64
 		{DEC1FE77-2976-43CA-84FE-4F2B86C5E85F}.Release|x64.Build.0 = Release|x64
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Debug|x64.Build.0 = Debug|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Mono|Any CPU.ActiveCfg = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Mono|Any CPU.Build.0 = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Mono|x64.ActiveCfg = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Mono|x64.Build.0 = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Release|x64.ActiveCfg = Release|Any CPU
+		{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
