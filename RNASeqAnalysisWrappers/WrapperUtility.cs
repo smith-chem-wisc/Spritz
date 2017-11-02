@@ -38,7 +38,7 @@ namespace RNASeqAnalysisWrappers
                     writer.Write(cmd + "\n");
                 }
             }
-            return run_basic_command(@"sh", convert_windows_path(script_path));
+            return run_basic_command(@"bash", convert_windows_path(script_path));
         }
 
         public static bool check_bash_setup()
@@ -48,10 +48,15 @@ namespace RNASeqAnalysisWrappers
 
         public static void install(string current_directory)
         {
-            List<string> commands = new List<string>();
+            List<string> commands = new List<string>
+            {
+                "sudo apt-get update",
+                "sudo apt-get upgrade"
+            };
+
             List<string> aptitude_dependencies = new List<string>
             {
-                "gcc", "g++", "make", "python", "samtools"
+                "gcc", "g++", "make", "python", "samtools", "picard-tools"
             };
 
             foreach (string dependency in aptitude_dependencies)
@@ -60,8 +65,19 @@ namespace RNASeqAnalysisWrappers
                     "if commmand -v " + dependency + " > /dev/null 2>&1 ; then\n" +
                     "  echo found\n" +
                     "else\n" +
-                    "  sudo apt-get install " + dependency);
+                    "  sudo apt-get install " + dependency + "\n" +
+                    "fi");
             }
+
+            commands.Add(
+                "version=$(java -version 2>&1 | awk -F '\"' '/version/ {print $2}')\n" +
+                "if [[ \"$version\" > \"1.5\" ]]; then\n" +
+                "  echo found\n" +
+                "else\n" +
+                "  sudo add-apt-repository ppa:webupd8team/java\n" +
+                "  sudo apt-get update\n" +
+                "  sudo apt-get install oracle-java8-installer\n" +
+                "fi");
 
             string script_path = Path.Combine(current_directory, "install_dependencies.sh");
             generate_and_run_script(script_path, commands).WaitForExit();

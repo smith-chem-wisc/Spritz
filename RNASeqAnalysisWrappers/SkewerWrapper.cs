@@ -16,9 +16,10 @@ namespace RNASeqAnalysisWrappers
 
         public void download_and_install(string current_directory)
         {
-            string script_path = Path.Combine(current_directory, "downloadInstallSkewer.sh");
+            string script_path = Path.Combine(current_directory, "downloadInstallSkewer.bash");
             WrapperUtility.generate_and_run_script(script_path, new List<string>
             {
+                "cd " + WrapperUtility.convert_windows_path(current_directory),
                 "git clone https://github.com/BioInfoTools/BBMap.git", // has adapter sequences in the resources file
                 "wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
                 "tar -xvf 0.2.2.tar.gz",

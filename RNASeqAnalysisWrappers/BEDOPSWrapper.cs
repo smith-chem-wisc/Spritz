@@ -15,7 +15,7 @@ namespace RNASeqAnalysisWrappers
             string bed_path = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".bed");
             if (File.Exists(bed_path)) return null;
             string files = "< " + WrapperUtility.convert_windows_path(gtf_path) + " > " + WrapperUtility.convert_windows_path(bed_path);
-            return WrapperUtility.run_basic_command(WrapperUtility.convert_windows_path(Path.Combine(current_path, "bedops", "gff2bed")), files);
+            return WrapperUtility.run_basic_command(WrapperUtility.convert_windows_path(Path.Combine(current_path, "bedops", "gtf2bed")), files);
         }
 
         public static Process gff2bed(string gff_path, string current_WinPath)
@@ -29,9 +29,10 @@ namespace RNASeqAnalysisWrappers
         public static void install(string current_directory)
         {
             if (Directory.Exists(Path.Combine(current_directory, "bedops"))) return;
-            string script_path = Path.Combine(current_directory, "install_bedops.sh");
+            string script_path = Path.Combine(current_directory, "install_bedops.bash");
             WrapperUtility.generate_and_run_script(script_path, new List<string>
             {
+                "cd " + WrapperUtility.convert_windows_path(current_directory),
                 @"wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2",
                 "tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2",
                 "rm bedops_linux_x86_64-v2.4.29.tar.bz2",
