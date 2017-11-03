@@ -183,6 +183,17 @@ namespace Test
                 out string new_vcf);
         }
 
+        [Test]
+        public void variantcall()
+        {
+            GATKWrapper.variant_calling(TestContext.CurrentContext.TestDirectory,
+                8,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "common_all_20170710.ensembl.vcf"),
+                out string new_vcf);
+        }
+
         #endregion GATK tests
 
         #region Bigger STAR tests

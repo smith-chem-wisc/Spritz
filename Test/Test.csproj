@@ -98,12 +98,6 @@
     <Compile Include="WrapperTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="r1.fastq">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="r2.fastq">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="chr1_sample.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

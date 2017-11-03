@@ -28,8 +28,6 @@ namespace RNASeqAnalysisWrappers
         {
             using (StreamWriter writer = new StreamWriter(script_path))
             {
-                //writer.Write("mkdir " + convert_windows_path(Path.GetDirectoryName(script_path)) + "\n");
-                //writer.Write("cd " + convert_windows_path(Path.GetDirectoryName(script_path)) + "\n");
                 foreach (string cmd in commands)
                 {
                     writer.Write(cmd + "\n");
