@@ -156,22 +156,31 @@ namespace Test
             GATKWrapper.download_known_sites(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, true, true, false, out string known_sites_filename);
 
             GATKWrapper.prepare_bam(TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory,
-                "wgEncodeCshlLongRnaSeqMcf7CellPapFastqRd1Rep1.fastq.segment.Aligned.out.bam"),
+                8,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 out string new_bam);
 
             GATKWrapper.realign_indels(TestContext.CurrentContext.TestDirectory,
+                8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 new_bam,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, known_sites_filename),
-                out string realigned_bam);
+                out string realigned_bam,
+                ""); // not including known sites speeds this up substantially
 
-            GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
+            // Takes kind of a long time, and it's not recommended for RNA-Seq yet
+            //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
+            //    realigned_bam,
+            //    out string recal_table_filepath,
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, known_sites_filename));
+
+            GATKWrapper.variant_calling(TestContext.CurrentContext.TestDirectory,
+                8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 realigned_bam,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, known_sites_filename),
-                out string recal_table_filepath);
+                out string new_vcf);
         }
 
         #endregion GATK tests
