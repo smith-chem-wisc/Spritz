@@ -22,7 +22,7 @@ namespace Test
         [Test]
         public void gtfBasics()
         {
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample.gtf"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
             Assert.AreEqual(165, geneModel.genes.SelectMany(g => g.transcripts).Count());
             List<Protein> proteins = geneModel.genes.SelectMany(g => g.translate(true, false)).ToList();
         }
@@ -30,7 +30,7 @@ namespace Test
         [Test]
         public void gffBasics()
         {
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample.gff3"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
             Assert.AreEqual(148, geneModel.genes.SelectMany(g => g.transcripts).Count());
             List<Protein> proteins = geneModel.genes.SelectMany(g => g.translate(true, false)).ToList();
 
@@ -54,7 +54,7 @@ namespace Test
         [Test]
         public void gffAppliedToOther()
         {
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample.gff3"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
             GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_pacbio.gff3"));
 
             List<Protein> proteins = additional.genes.SelectMany(g => g.translate(geneModel, 7, false)).ToList();

@@ -10,10 +10,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Test</RootNamespace>
     <AssemblyName>Test</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -94,19 +95,29 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestProteomicsReadWrite.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
+    <Compile Include="WrapperTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="r1.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="r2.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="chr1_sample.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <None Include="sample.gff3">
+    <None Include="sample_gff.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="sample.gtf">
+    <None Include="sample_gtf.gtf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="sample_pacbio.gff3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="SRR791578_hg19_Chimeric.out.junction">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="test_ensembl.pep.all.fasta">
@@ -121,6 +132,10 @@
     <ProjectReference Include="..\Proteogenomics\Proteogenomics.csproj">
       <Project>{e82b8d25-ed23-49f1-9d7f-05ef0b6d6ae7}</Project>
       <Name>Proteogenomics</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RNASeqAnalysisWrappers\RNASeqAnalysisWrappers.csproj">
+      <Project>{7f0b5697-1bbb-4ff5-9bf2-434f0a9c2c60}</Project>
+      <Name>RNASeqAnalysisWrappers</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
