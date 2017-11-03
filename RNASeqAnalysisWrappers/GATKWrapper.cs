@@ -70,6 +70,7 @@ namespace RNASeqAnalysisWrappers
             string marked_duplicate_metrics = Path.Combine(Path.GetDirectoryName(groupsort_bam), Path.GetFileNameWithoutExtension(groupsort_bam) + ".marked.metrics");
             string dictionary_path = Path.Combine(Path.GetDirectoryName(genome_fasta), Path.GetFileNameWithoutExtension(genome_fasta) + ".dict");
             string split_trim_bam = Path.Combine(Path.GetDirectoryName(marked_duplicates_bam), Path.GetFileNameWithoutExtension(marked_duplicates_bam) + ".split.bam");
+            string mapq_reassigned = Path.Combine(Path.GetDirectoryName(split_trim_bam), Path.GetFileNameWithoutExtension(split_trim_bam) + ".mapqfixed.bam");
             string script_name2 = Path.Combine(bin_directory, "picard.bash");
             WrapperUtility.generate_and_run_script(script_name2, new List<string>
             {
@@ -88,14 +89,22 @@ namespace RNASeqAnalysisWrappers
                 gatk +
                     " -T SplitNCigarReads" +
                     " --num_threads " + threads.ToString() +
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) + 
-                    " -I " + WrapperUtility.convert_windows_path(marked_duplicates_bam) + 
-                    " -o " + WrapperUtility.convert_windows_path(split_trim_bam) + 
+                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
+                    " -I " + WrapperUtility.convert_windows_path(marked_duplicates_bam) +
+                    " -o " + WrapperUtility.convert_windows_path(split_trim_bam) +
                     " -U ALLOW_N_CIGAR_READS -fixMisencodedQuals", // STAR apparently misencodes quality scores; this just subtracts 31 from all quality scores... might not need that flag for tophat
                 "rm " + WrapperUtility.convert_windows_path(marked_duplicates_bam),
                 "rm " + WrapperUtility.convert_windows_path(Path.Combine(Path.GetDirectoryName(marked_duplicates_bam), Path.GetFileNameWithoutExtension(marked_duplicates_bam) + ".bai")),
+                gatk +
+                    " -T PrintReads" +
+                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
+                    " -I " + WrapperUtility.convert_windows_path(split_trim_bam) +
+                    " -o " + WrapperUtility.convert_windows_path(mapq_reassigned) +
+                    " -rf ReassignMappingQuality", // default mapping quality is 60; required for RNA-Seq aligners
+                "samtools index " + WrapperUtility.convert_windows_path(mapq_reassigned),
+                "rm " + WrapperUtility.convert_windows_path(marked_duplicates_bam),
             }).WaitForExit();
-            new_bam = split_trim_bam;
+            new_bam = mapq_reassigned;
 
             // run commands for marking duplicates and trimming reads
             File.Delete(sorted_checkfile);
@@ -186,6 +195,7 @@ namespace RNASeqAnalysisWrappers
         public static void variant_calling(string bin_directory, int threads, string genome_fasta, string bam, string dbsnp, out string new_vcf)
         {
             new_vcf = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".vcf");
+
             string dictionary_path = Path.Combine(Path.GetDirectoryName(genome_fasta), Path.GetFileNameWithoutExtension(genome_fasta) + ".dict");
             string script_name = Path.Combine(bin_directory, "variant_calling.bash");
             WrapperUtility.generate_and_run_script(script_name, new List<string>
@@ -195,13 +205,13 @@ namespace RNASeqAnalysisWrappers
                 !File.Exists(dictionary_path) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.convert_windows_path(genome_fasta) + " O=" + WrapperUtility.convert_windows_path(dictionary_path) : "",
 
                 gatk +
-                    " -T HaplotypeCaller" +
+                    " -T HaplotypeCaller" + 
                     " -nct " + threads.ToString() +
                     " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
                     " -I " + WrapperUtility.convert_windows_path(bam) +
                     " --standard_min_confidence_threshold_for_calling 20" +
                     " --dbsnp " + WrapperUtility.convert_windows_path(dbsnp) +
-                    " -o " + WrapperUtility.convert_windows_path(new_vcf)
+                    " -o " + WrapperUtility.convert_windows_path(new_vcf),
             }).WaitForExit();
         }
 
