@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.IO;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using RNASeqAnalysisWrappers;
+using System.IO;
 
 namespace Test
 {
@@ -56,17 +51,24 @@ namespace Test
         [Test]
         public void test_convert_gff()
         {
-            var p = BEDOPSWrapper.gff2bed(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample.gff3"), TestContext.CurrentContext.TestDirectory);
+            var p = BEDOPSWrapper.gff2bed(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"), TestContext.CurrentContext.TestDirectory);
             if (p != null) p.WaitForExit();
-            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample.gff3") + ".bed")).Length > 0);
+            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gff.gff3") + ".bed")).Length > 0);
         }
 
         [Test]
         public void test_convert_gtf()
         {
-            var p = BEDOPSWrapper.gtf2bed(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample.gtf"), TestContext.CurrentContext.TestDirectory);
+            var p = BEDOPSWrapper.gtf2bed(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"), TestContext.CurrentContext.TestDirectory);
             if (p != null) p.WaitForExit();
-            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample.gtf") + ".bed")).Length > 0);
+            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed")).Length > 0);
+        }
+
+        [Test]
+        public void test_convert_gtf12()
+        {
+            BEDOPSWrapper.gtf2bed12(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"), TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed12")).Length > 0);
         }
 
         [Test]

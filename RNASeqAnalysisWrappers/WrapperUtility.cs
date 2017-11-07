@@ -51,7 +51,7 @@ namespace RNASeqAnalysisWrappers
 
             List<string> aptitude_dependencies = new List<string>
             {
-                "gcc", "g++", "make", "python", "samtools", "picard-tools"
+                "gcc", "g++", "make", "python", "samtools", "picard-tools", "gawk"
             };
 
             foreach (string dependency in aptitude_dependencies)

@@ -1,9 +1,10 @@
-﻿using System.Text.RegularExpressions;
-using System.Linq;
-using System.Collections.Generic;
-using Bio;
+﻿using Bio;
 using Bio.IO.Gff;
 using Bio.VCF;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Genomics
 {
@@ -118,6 +119,7 @@ namespace Genomics
                 else if (has_protein_id)
                 {
                     if (current_transcript.CDS.Count == 0) start_cds.Add(exon);
+                    current_gene.CDS.Add(exon);
                     current_transcript.CDS.Add(exon);
                     current_transcript.ProteinID = protein_id;
                 }
@@ -177,6 +179,7 @@ namespace Genomics
                 }
                 else if (feature.Key == "CDS")
                 {
+                    current_gene.CDS.Add(exon);
                     current_transcript.CDS.Add(exon);
                 }
             }
@@ -184,7 +187,25 @@ namespace Genomics
 
         public void amend_transcripts(List<VariantContext> variants)
         {
+            int bin_size = 100000;
+            Dictionary<Tuple<string, long>, List<VariantContext>> chr_index_variants = new Dictionary<Tuple<string, long>, List<VariantContext>>();
+            foreach(VariantContext variant in variants)
+            {
+                var key = new Tuple<string, long>(variant.Chr, variant.Start / bin_size * bin_size);
+                if (chr_index_variants.TryGetValue(key, out List<VariantContext> vars))
+                    vars.Add(variant);
+                else chr_index_variants[key] = new List<VariantContext> { variant };
+            }
 
+            foreach (Exon x in genes.SelectMany(g => g.exons.Concat(g.CDS)))
+            {
+                for (long i = x.OneBasedStart / bin_size; i < x.OneBasedEnd / bin_size + 1; i++)
+                {
+                    var key = new Tuple<string, long>(x.ChromID, i * bin_size);
+                    if (chr_index_variants.TryGetValue(key, out List<VariantContext> nearby_variants))
+                        x.variants = nearby_variants.Where(v => x.includes(v.Start)).ToList();
+                }
+            }
         }
 
         #endregion Public Method

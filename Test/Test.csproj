@@ -95,6 +95,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestProteomicsReadWrite.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
+    <Compile Include="VariantTests.cs" />
     <Compile Include="WrapperTests.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +120,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Bio.VCF\Bio.VCF.csproj">
+      <Project>{f7213add-1c0c-434f-9a32-7f6c31671a89}</Project>
+      <Name>Bio.VCF</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Genomics\Genomics.csproj">
       <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
       <Name>Genomics</Name>

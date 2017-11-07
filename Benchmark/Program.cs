@@ -27,9 +27,9 @@ namespace Benchmark
             //List<Protein> proteins = geneModel.genes.SelectMany(g => g.translate()).ToList();
             //Console.WriteLine(proteins.Count + " proteins");
 
-            //VCFParser vcf = new VCFParser(@"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\A549_sample.vcf");
-            //List<VariantContext> variants = vcf.Select(x => x).ToList();
-            //Console.WriteLine(variants.Count + " alleles");
+            VCFParser vcf = new VCFParser(@"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\A549_sample.vcf");
+            List<VariantContext> variants = vcf.Select(x => x).ToList();
+            Console.WriteLine(variants.Count + " alleles");
 
             Genome genome = new Genome(@"D:\GRCh37_canon\GRCh37_canon.fa");
             Console.WriteLine(genome.chroms.Count + " chroms");
