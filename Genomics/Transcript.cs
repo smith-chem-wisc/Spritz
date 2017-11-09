@@ -51,17 +51,7 @@ namespace Proteogenomics
         public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
             List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants).Where(t => t.OkayToTranslate()).ToList();
-            ProteinAnnotation.Annotate(transcriptHaplotypes);
-            HashSet<string> proteinSequences = new HashSet<string>(); // TODO: keep the one with the simpler annotation, i.e. explanation
-            foreach (TranscriptPossiblyWithVariants t in transcriptHaplotypes)
-            {
-                Protein p = Translation.OneFrameTranslation(t);
-                if (!proteinSequences.Contains(p.BaseSequence))
-                {
-                    proteinSequences.Add(p.BaseSequence);
-                    yield return p;
-                }
-            }
+            return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes);
         }
 
         public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
@@ -79,7 +69,7 @@ namespace Proteogenomics
             if (annotatedStarts.Count > 0)
             {
                 // gets the first annotated start that produces
-                HashSet<string> proteinSequences = new HashSet<string>();
+                Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
                 foreach (Exon annotatedStart in annotatedStarts)
                 {
                     long startCodonStart = Strand == "+" ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
@@ -101,13 +91,9 @@ namespace Proteogenomics
                             long lengthAfterCodingStart = length - chop;
                             transcript.Sequence = SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, transcript.Sequence).GetSubSequence(0, lengthAfterCodingStart));
                         }
-                        ProteinAnnotation.Annotate(transcript);
-                        Protein p = Translation.OneFrameTranslation(transcript);
-                        if (p.BaseSequence.Length >= minLength && !proteinSequences.Contains(p.BaseSequence)) // this should reduce synonymous variations, but removing synonymous variations directly won't work because we're modifying protein sequences directly
-                        {
-                            proteinSequences.Add(p.BaseSequence);
+                        Protein p = ProteinAnnotation.OneFrameTranslationWithAnnotation(transcript);
+                        if (p.BaseSequence.Length >= minLength && ProteinAnnotation.AddProteinIfLessComplex(proteinDictionary, p))
                             yield return p;
-                        }
                     }
                 }
             }

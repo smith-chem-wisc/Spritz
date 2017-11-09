@@ -134,7 +134,7 @@ namespace Test
         {
             Assert.IsTrue(RSeQCWrapper.check_strand_specificity(
                 TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeCshlLongRnaSeqMcf7CellPapFastqRd1Rep1.fastq.segment.Aligned.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed"),
                 TestContext.CurrentContext.TestDirectory));
         }

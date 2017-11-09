@@ -10,17 +10,25 @@ namespace Proteogenomics
 {
     public static class ProteinAnnotation
     {
-        public static void Annotate(TranscriptPossiblyWithVariants transcript)
+        public static string SynonymousVariantLabel = "variant:synonymous";
+        public static string SingleAminoAcidVariantLabel = "variant:sav";
+        public static string FrameShiftInsertionLabel = "variant:frameShiftInsertion";
+        public static string FrameShiftDeletionLabel = "variant:frameShiftDeletion";
+        public static string InFrameInsertionLabel = "variant:inFrameInsertion";
+        public static string InFrameDeletionLabel = "variant:inFrameDeletion";
+
+        public static Protein OneFrameTranslationWithAnnotation(TranscriptPossiblyWithVariants transcript)
         {
-            Annotate(new List<TranscriptPossiblyWithVariants> { transcript });
+            return OneFrameTranslationWithAnnotation(new List<TranscriptPossiblyWithVariants> { transcript }).FirstOrDefault();
         }
 
         // get the SAV notation X#X
         // or for indels use X#XXX or XXX#X where # is the start
         // get the SNV location 1:100000
         // get the codon change Gcc/Acc
-        public static void Annotate(List<TranscriptPossiblyWithVariants> transcripts)
+        public static List<Protein> OneFrameTranslationWithAnnotation(List<TranscriptPossiblyWithVariants> transcripts)
         {
+            Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
             foreach (TranscriptPossiblyWithVariants t in transcripts)
             {
                 ISequence referenceTranscriptSequence = new Sequence(Alphabets.DNA, String.Join("", t.GetExonsUsedInDerivation().Select(x => SequenceExtensions.ConvertToString(x.Sequence))));
@@ -30,41 +38,46 @@ namespace Proteogenomics
                 variantTranscriptSequence = t.Transcript.Strand == "+" ? variantTranscriptSequence : variantTranscriptSequence.GetReverseComplementedSequence();
                 indices = t.Transcript.Strand == "+" ? indices : indices.Reverse().ToArray();
 
-                for (long i = t.ZeroBasedCodingStart; i + 2 < referenceTranscriptSequence.Count; i += 3)
+                string variantAminoAcidSequence = "";
+                long refIdx = t.ZeroBasedCodingStart - 3;
+                for (long varIdx = 0; varIdx + 2 < variantTranscriptSequence.Count; varIdx += 3)
                 {
+                    refIdx += 3;
+                    Codons.TryLookup(Transcription.GetRnaComplement(referenceTranscriptSequence[refIdx]),
+                            Transcription.GetRnaComplement(referenceTranscriptSequence[refIdx + 1]),
+                            Transcription.GetRnaComplement(referenceTranscriptSequence[refIdx + 2]),
+                            out byte originalAminoAcid);
+                    Codons.TryLookup(Transcription.GetRnaComplement(variantTranscriptSequence[varIdx]),
+                        Transcription.GetRnaComplement(variantTranscriptSequence[varIdx + 1]),
+                        Transcription.GetRnaComplement(variantTranscriptSequence[varIdx + 2]),
+                        out byte newAminoAcid);
+                    variantAminoAcidSequence += char.ToUpperInvariant((char)newAminoAcid);
+
                     long oneBasedTranscriptStart = t.Transcript.Exons.Min(x => x.OneBasedStart);
-                    long[] codonIndices = new long[] { indices[i], indices[i + 1], indices[i + 2] };
-                    Variant v = t.Variants.FirstOrDefault(vv => codonIndices.Contains(vv.OneBasedStart));
+                    long[] referenceCodonIndices = new long[] { indices[refIdx], indices[refIdx + 1], indices[refIdx + 2] };
+                    Variant v = t.Variants.FirstOrDefault(vv => referenceCodonIndices.Contains(vv.OneBasedStart));
                     if (v != null)
                     {
-                        long j = i - t.ZeroBasedCodingStart;
-                        long aminoAcidPosition = i / 3 + 1;
-                        Codons.TryLookup(Transcription.GetRnaComplement(referenceTranscriptSequence[i]), 
-                            Transcription.GetRnaComplement(referenceTranscriptSequence[i + 1]), 
-                            Transcription.GetRnaComplement(referenceTranscriptSequence[i + 2]), 
-                            out byte originalAminoAcid);
-                        Codons.TryLookup(Transcription.GetRnaComplement(variantTranscriptSequence[j]),
-                            Transcription.GetRnaComplement(variantTranscriptSequence[j + 1]),
-                            Transcription.GetRnaComplement(variantTranscriptSequence[j + 2]),
-                            out byte newAminoAcid);
+                        long aminoAcidPosition = refIdx / 3 + 1;
                         if (v.ReferenceAllele.Length == v.AlternateAllele.Length) // single amino acid variation
                         {
                             v.Synonymous = originalAminoAcid == newAminoAcid;
-                            v.Annotation = "pep:sav " +
+                            v.Annotation = (v.Synonymous ? SynonymousVariantLabel : SingleAminoAcidVariantLabel) + " " +
                                 char.ToUpperInvariant((char)originalAminoAcid) + aminoAcidPosition.ToString() + char.ToUpperInvariant((char)newAminoAcid) + " " +
                                 v.Chr + ":" + v.OneBasedStart + " " +
                                 String.Join("",
-                                    char.ToUpperInvariant((char)referenceTranscriptSequence[i]),
-                                    char.ToUpperInvariant((char)referenceTranscriptSequence[i + 1]),
-                                    char.ToUpperInvariant((char)referenceTranscriptSequence[i + 2]))
+                                    char.ToUpperInvariant((char)referenceTranscriptSequence[refIdx]),
+                                    char.ToUpperInvariant((char)referenceTranscriptSequence[refIdx + 1]),
+                                    char.ToUpperInvariant((char)referenceTranscriptSequence[refIdx + 2]))
                                 + "/" +
                                 String.Join("",
-                                    char.ToUpperInvariant((char)variantTranscriptSequence[j]),
-                                    char.ToUpperInvariant((char)variantTranscriptSequence[j + 1]),
-                                    char.ToUpperInvariant((char)variantTranscriptSequence[j + 2]));
+                                    char.ToUpperInvariant((char)variantTranscriptSequence[varIdx]),
+                                    char.ToUpperInvariant((char)variantTranscriptSequence[varIdx + 1]),
+                                    char.ToUpperInvariant((char)variantTranscriptSequence[varIdx + 2]));
                         }
 
-                        // TODO: adjust indices to keep stepping across the right portion of the variant transcript
+                        // TODO: adjust indices to keep stepping across the right portion of the reference transcript
+                        // TODO: take into account when frameshifts make it miss a stop codon, or if a stop loss causes a runon -- could continue to take from the genome and look up variants...
                         else
                         {
                             v.Synonymous = originalAminoAcid == newAminoAcid && char.ToUpperInvariant((char)originalAminoAcid) == '*';
@@ -75,16 +88,16 @@ namespace Proteogenomics
                             bool frameshift = (longerAllele.Length - shorterAllele.Length) % 3 != 0;
                             if (frameshift)
                             {
-                                v.Annotation = "pep:" + (insertion ? "frameShiftInsertion " : "frameShiftDeletion ") +
+                                v.Annotation = (insertion ? FrameShiftInsertionLabel : FrameShiftDeletionLabel) + " " +
                                     originalAminoAcid + aminoAcidPosition.ToString() +
-                                    (insertion ? "frameShiftInsertion " : "frameShiftDeletion ") +
+                                    (insertion ? FrameShiftInsertionLabel : FrameShiftDeletionLabel) + " " +
                                     v.Chr + ":" + v.OneBasedStart;
                             }
                             else
                             { 
                                 string originalSequence = new string(new char[] { char.ToUpperInvariant((char)originalAminoAcid) });
                                 string variantSequence = new string(new char[] { char.ToUpperInvariant((char)newAminoAcid) });
-                                for (long ii = i + 3; ii + 2 < referenceTranscriptSequence.Count && (ii - i) / 3 < ((longerAllele.Length - shorterAllele.Length) / 3) + 1; ii += 3)
+                                for (long ii = refIdx + 3; ii + 2 < referenceTranscriptSequence.Count && (ii - refIdx) / 3 < ((longerAllele.Length - shorterAllele.Length) / 3) + 1; ii += 3)
                                 {
                                     long jj = ii - t.ZeroBasedCodingStart;
                                     if (insertion && Codons.TryLookup(
@@ -99,7 +112,7 @@ namespace Proteogenomics
                                             out byte originalAminoAcid2))
                                         originalSequence += originalAminoAcid2;
                                 }
-                                v.Annotation = "pep:" + (insertion ? "inFrameInsertion " : "inFrameDeletion ") + 
+                                v.Annotation = (insertion ? InFrameInsertionLabel : InFrameDeletionLabel) + " " +
                                     originalSequence + aminoAcidPosition.ToString() + variantSequence + " " +
                                     v.Chr + ":" + v.OneBasedStart;
                             }
@@ -107,6 +120,40 @@ namespace Proteogenomics
                     }
                 }
                 t.ProteinAnnotation = String.Join(" ", t.Variants.Select(v => v.Annotation));
+                Protein newProtein = new Protein(variantAminoAcidSequence.Split('*')[0], t.ProteinID, null, null, null, null, t.ProteinAnnotation);
+                AddProteinIfLessComplex(proteinDictionary, newProtein);
+            }
+            return proteinDictionary.Values.ToList();
+        }
+
+        /// <summary>
+        /// This should reduce synonymous variations by eliminating redundancy in favor of simpler explanations.
+        /// </summary>
+        /// <param name="proteinDictionary"></param>
+        /// <param name="newProtein"></param>
+        /// <returns></returns>
+        public static bool AddProteinIfLessComplex(Dictionary<string, Protein> proteinDictionary, Protein newProtein)
+        {
+            if (proteinDictionary.TryGetValue(newProtein.BaseSequence, out Protein currentProtein))
+            {
+                bool currHasFrameShift = currentProtein.FullName.Contains("frameShift");
+                bool currHasInFrame = currentProtein.FullName.Contains("inFrame");
+                int currSynonymousCount = currentProtein.FullName.Split(new string[] { "variant:synonymous" }, StringSplitOptions.None).Length - 1;
+                int currVarCount = currentProtein.FullName.Split(new string[] { "variant:" }, StringSplitOptions.None).Length - currSynonymousCount - 1;
+
+                bool newHasFrameShift = newProtein.FullName.Contains("frameShift");
+                bool newHasInFrame = newProtein.FullName.Contains("inFrame");
+                int newSynonymousCount = newProtein.FullName.Split(new string[] { "variant:synonymous" }, StringSplitOptions.None).Length - 1;
+                int newVarCount = newProtein.FullName.Split(new string[] { "variant:" }, StringSplitOptions.None).Length - newSynonymousCount - 1;
+
+                bool addNewProteinInstead = currHasFrameShift && !newHasFrameShift || currHasInFrame && !newHasInFrame || newVarCount < currVarCount || newSynonymousCount < currSynonymousCount;
+                proteinDictionary[newProtein.BaseSequence] = addNewProteinInstead ? newProtein : currentProtein;
+                return addNewProteinInstead;
+            }
+            else
+            {
+                proteinDictionary.Add(newProtein.BaseSequence, newProtein);
+                return true;
             }
         }
 

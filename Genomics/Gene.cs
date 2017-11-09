@@ -22,6 +22,8 @@ namespace Proteogenomics
 
         public string ChromID { get; set; }
 
+        public ISequence Chromosome { get; set; }
+
         public List<Transcript> transcripts { get; set; } = new List<Transcript>();
 
         public HashSet<Exon> exons { get; set; } = new HashSet<Exon>();
@@ -32,10 +34,11 @@ namespace Proteogenomics
 
         #region Public Constructors
 
-        public Gene(string ID, string ChromID, MetadataListItem<List<string>> metadata)
+        public Gene(string ID, string ChromID, ISequence chromosome, MetadataListItem<List<string>> metadata)
         {
             this.ID = ID;
             this.ChromID = ChromID;
+            this.Chromosome = chromosome;
             this.metadata = metadata;
         }
 

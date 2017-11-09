@@ -45,7 +45,7 @@ namespace Test
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(2, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
             Assert.IsTrue(proteins[0].FullName != null);
-            Assert.IsTrue(proteins[0].FullName.Contains("pep:sav"));
+            Assert.IsTrue(proteins[0].FullName.Contains(ProteinAnnotation.SingleAminoAcidVariantLabel));
             Assert.IsTrue(proteins[0].FullName.Contains("1:69640"));
         }
 
@@ -66,7 +66,7 @@ namespace Test
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(2, new HashSet<string> { proteins[0].BaseSequence, proteins[1].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
             Assert.IsTrue(proteins.All(p => p.FullName != null));
-            Assert.IsTrue(proteins.Any(p => p.FullName.Contains("pep:sav")));
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SingleAminoAcidVariantLabel)));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69640")));
         }
 
@@ -86,7 +86,7 @@ namespace Test
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(1, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
-            Assert.IsTrue(!proteins.Any(p => p.FullName.Contains("pep:sav")));
+            Assert.IsTrue(!proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SynonymousVariantLabel)));
             Assert.IsTrue(!proteins.Any(p => p.FullName.Contains("1:69666")));
         }
 
@@ -106,8 +106,9 @@ namespace Test
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(1, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
-            Assert.IsTrue(!proteins.Any(p => p.FullName.Contains("pep:sav")));
-            Assert.IsTrue(!proteins.Any(p => p.FullName.Contains("1:69666")));
+            Assert.IsTrue(proteins.All(p => p.FullName != null));
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SynonymousVariantLabel)));
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
         }
     }
 }

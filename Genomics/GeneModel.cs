@@ -96,7 +96,7 @@ namespace Proteogenomics
 
             if (hasGeneId && (currentGene == null || hasGeneId && gene_id != currentGene.ID))
             {
-                currentGene = new Gene(gene_id, chromSeq.ID, feature);
+                currentGene = new Gene(gene_id, chromSeq.ID, chromSeq, feature);
                 Genes.Add(currentGene);
             }
 
