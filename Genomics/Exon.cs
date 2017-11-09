@@ -5,25 +5,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Genomics
+namespace Proteogenomics
 {
     public class Exon
     {
 
         #region Private Properties
 
-        private MetadataListItem<List<string>> metadata { get; set; }
+        private MetadataListItem<List<string>> Metadata { get; set; }
 
         #endregion Private Properties
 
         #region Public Properties
 
         public ISequence Sequence { get; set; }
+
         public string ChromID { get; set; }
+
         public string Strand { get; set; }
+
         public long OneBasedStart { get; set; } = -1;
+
         public long OneBasedEnd { get; set; } = -1;
-        public List<VariantContext> variants { get; set; } = new List<VariantContext>();
+
+        /// <summary>
+        /// Used for both objects straight from VCF and for specific Variants, which extend VariantContext
+        /// </summary>
+        public List<VariantContext> Variants { get; set; } = new List<VariantContext>();
 
         #endregion Public Properties
 
@@ -36,46 +44,86 @@ namespace Genomics
             this.OneBasedEnd = stop;
             this.ChromID = chrom_id;
             this.Strand = metadata.SubItems["strand"][0];
-            this.metadata = metadata;
+            this.Metadata = metadata;
         }
 
         #endregion Public Constructor
 
+        #region Private Constructor
+
+        private Exon(Exon exon)
+        {
+            this.Sequence = exon.Sequence;
+            this.OneBasedStart = exon.OneBasedStart;
+            this.OneBasedEnd = exon.OneBasedEnd;
+            this.ChromID = exon.ChromID;
+            this.Strand = exon.Metadata.SubItems["strand"][0];
+            this.Metadata = exon.Metadata;
+        }
+
+        #endregion Private Constructor
+
         #region Public Methods
 
-        public IEnumerable<string> get_sequences(double homozygous_threshold, bool get_variant_sequences)
+        public IEnumerable<Exon> GetExonSequences(bool getVariantSequences = false, double homozygousThreshold = 1)
         {
             string seq = SequenceExtensions.ConvertToString(this.Sequence);
-            if (variants.Count == 0 || !get_variant_sequences)
-                return new List<string> { seq };
+            if (Variants.Count == 0 || !getVariantSequences)
+                return new List<Exon> { new Exon(this) };
 
-            List<VariantLite> homozygous = new List<VariantLite>();
-            List<VariantLite> heterozygous = new List<VariantLite>();
-            foreach (VariantLite var in variants.SelectMany(v => VariantLite.ParseVariantContext(v)))
+            List<Variant> homozygous = new List<Variant>();
+            List<Variant> heterozygous = new List<Variant>();
+            foreach (Variant var in Variants.SelectMany(v => Variant.ParseVariantContext(v)))
             {
                 // todo: allow depth filter here using "DP" column, especially for indels
-                if (var.AlleleFrequency >= homozygous_threshold) homozygous.Add(var); // homozygous if the allele frequency is about 1
+                if (var.AlleleFrequency >= homozygousThreshold) homozygous.Add(var); // homozygous if the allele frequency is about 1
                 else heterozygous.Add(var);
             }
 
-            List<List<VariantLite>> possible_haplotypes = Enumerable.Range(1, heterozygous.Count).SelectMany(k =>
-                ExtensionMethods.Combinations(heterozygous, k)
-                    .Select(hetero_alleles => new List<VariantLite>(homozygous).Concat(hetero_alleles).ToList()))
-                .ToList();
+            List<List<Variant>> possibleHaplotypes = new List<List<Variant>> { new List<Variant>(homozygous) };
+            possibleHaplotypes.AddRange(
+                Enumerable.Range(1, heterozygous.Count).SelectMany(k =>
+                    ExtensionMethods.Combinations(heterozygous, k)
+                        .Select(heteroAlleles => new List<Variant>(homozygous).Concat(heteroAlleles).ToList()))
+                    .ToList());
 
-            List<string> sequences = new List<string>();
-            foreach (List<VariantLite> haplotype in possible_haplotypes)
+            List<Exon> sequences = new List<Exon>();
+            foreach (List<Variant> haplotype in possibleHaplotypes)
             {
                 long tmpOneBasedStart = OneBasedStart;
                 StringBuilder builder = new StringBuilder();
                 haplotype.OrderBy(v => v.OneBasedStart);
-                foreach (VariantLite var in haplotype)
+
+                int subseqStart;
+                int subseqCount;
+                foreach (Variant var in haplotype)
                 {
-                    builder.Append(seq.Substring((int)(tmpOneBasedStart - OneBasedStart), (int)(var.OneBasedStart - this.OneBasedStart)));
-                    builder.Append(var.AlternateAllele);
+                    if (var.OneBasedStart < tmpOneBasedStart)
+                        continue; // variant collides with previous variant
+
+                    subseqStart = (int)(tmpOneBasedStart - this.OneBasedStart);
+                    subseqCount = (int)(var.OneBasedStart - tmpOneBasedStart);
+                    if (subseqStart + subseqCount - 1 > seq.Length) // allele extends beyond exon, so mind the exon boundary
+                    {
+                        builder.Append(seq.Substring(subseqStart));
+                        builder.Append(var.AlternateAllele.Substring(0, (int)(this.OneBasedEnd - var.OneBasedStart)));
+                    }
+                    else
+                    {
+                        builder.Append(seq.Substring(subseqStart, subseqCount));
+                        builder.Append(var.AlternateAllele);
+                    }
                     tmpOneBasedStart = var.OneBasedStart + var.ReferenceAllele.Length;
                 }
-                sequences.Add(builder.ToString());
+
+                // Append the remaining sequence
+                subseqStart = (int)(tmpOneBasedStart - this.OneBasedStart);
+                subseqCount = (int)(OneBasedEnd - tmpOneBasedStart + 1);
+                builder.Append(seq.Substring(subseqStart, subseqCount));
+                Exon x = new Exon(this);
+                x.Sequence = new Sequence(Alphabets.DNA, builder.ToString());
+                x.Variants = haplotype.OfType<VariantContext>().ToList();
+                sequences.Add(x);
             }
             return sequences;
         }
@@ -85,42 +133,42 @@ namespace Genomics
         //    return metadata.Key ^ metadata.SubItems["features"];
         //}
 
-        public bool is_before(Exon segment)
+        public bool IsBefore(Exon segment)
         {
             return OneBasedStart < segment.OneBasedStart && OneBasedEnd < segment.OneBasedEnd && OneBasedEnd < segment.OneBasedStart;
         }
 
-        public bool is_before(int pos)
+        public bool IsBefore(int pos)
         {
             return OneBasedEnd < pos;
         }
 
-        public bool is_after(Exon segment)
+        public bool IsAfter(Exon segment)
         {
             return OneBasedStart > segment.OneBasedStart && OneBasedEnd > segment.OneBasedEnd && OneBasedStart > segment.OneBasedEnd;
         }
 
-        public bool is_after(int pos)
+        public bool IsAfter(int pos)
         {
             return OneBasedStart > pos;
         }
 
-        public bool overlaps(Exon segment)
+        public bool Overlaps(Exon segment)
         {
-            return !is_before(segment) && !is_after(segment);
+            return !IsBefore(segment) && !IsAfter(segment);
         }
 
-        public bool overlaps(int pos)
+        public bool Overlaps(int pos)
         {
-            return !is_before(pos) && !is_after(pos);
+            return !IsBefore(pos) && !IsAfter(pos);
         }
 
-        public bool includes(Exon segment)
+        public bool Includes(Exon segment)
         {
             return OneBasedStart <= segment.OneBasedStart && OneBasedEnd >= segment.OneBasedEnd;
         }
 
-        public bool includes(long pos)
+        public bool Includes(long pos)
         {
             return OneBasedStart <= pos && OneBasedEnd >= pos;
         }

@@ -1,30 +1,35 @@
 ﻿using Bio;
-using Bio.Algorithms.Translation;
 using Bio.Extensions;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Genomics
+namespace Proteogenomics
 {
     public class Transcript
     {
 
         #region Private Properties
 
-        private MetadataListItem<List<string>> metadata { get; set; }
+        private MetadataListItem<List<string>> Metadata { get; set; }
 
         #endregion
 
         #region Public Properties
 
         public string ID { get; set; }
+
         public string Strand { get; set; }
+
         public Gene Gene { get; set; }
+
         public List<Exon> Exons { get; set; } = new List<Exon>();
-        public List<Exon> CDS { get; set; } = new List<Exon>();
+
+        public List<Exon> CodingDomainSequences { get; set; } = new List<Exon>();
+
         public string ProteinID { get; set; }
+
 
         #endregion Public Properties
 
@@ -35,7 +40,7 @@ namespace Genomics
             this.ID = ID;
             this.ProteinID = ProteinID == null ? ID : ProteinID;
             this.Gene = gene;
-            this.metadata = metadata;
+            this.Metadata = metadata;
             this.Strand = metadata.SubItems["strand"][0];
         }
 
@@ -43,102 +48,98 @@ namespace Genomics
 
         #region Public Methods
 
-        public IEnumerable<Protein> translate(bool translateCDS, bool includeVariants)
+        public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
-            List<Exon> exons = translateCDS ? CDS : Exons;
-            return get_sequences(exons, includeVariants).Select(seq => one_frame_translation(translateCDS, seq));
+            List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants).Where(t => t.OkayToTranslate()).ToList();
+            ProteinAnnotation.Annotate(transcriptHaplotypes);
+            HashSet<string> proteinSequences = new HashSet<string>(); // TODO: keep the one with the simpler annotation, i.e. explanation
+            foreach (TranscriptPossiblyWithVariants t in transcriptHaplotypes)
+            {
+                Protein p = Translation.OneFrameTranslation(t);
+                if (!proteinSequences.Contains(p.BaseSequence))
+                {
+                    proteinSequences.Add(p.BaseSequence);
+                    yield return p;
+                }
+            }
         }
 
-        private List<string> get_sequences(List<Exon> exons, bool includeVariants)
+        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
         {
-            List<List<string>> exon_seqs = exons.Select(x => x.get_sequences(0.9, includeVariants).ToList()).ToList();
-            List<string> sequences = new List<string>();
-            foreach (List<string> nexton in exon_seqs)
+            List<Exon> annotatedStarts = new List<Exon>();
+            for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
             {
-                if (sequences.Count == 0) sequences = nexton;
-                else sequences = (
-                    from curr in sequences
-                    from next in nexton
-                    select curr + next
+                if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromID, Strand, i * indexBinSize), out List<Exon> exons))
+                    annotatedStarts.AddRange(exons.Where(x => 
+                        Exons.Any(xx => xx.Includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
+                            && xx.Includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
+            }
+
+            char terminatingCharacter = ProteinAlphabet.Instance.GetFriendlyName(Alphabets.Protein.Ter)[0];
+            if (annotatedStarts.Count > 0)
+            {
+                // gets the first annotated start that produces
+                HashSet<string> proteinSequences = new HashSet<string>();
+                foreach (Exon annotatedStart in annotatedStarts)
+                {
+                    long startCodonStart = Strand == "+" ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
+                    List<TranscriptPossiblyWithVariants> transcripts = CombineExonSequences(false, includeVariants).Where(t => t.OkayToTranslate()).ToList();
+                    foreach (TranscriptPossiblyWithVariants transcript in transcripts)
+                    {
+                        if (Strand == "+")
+                        {
+                            long exonLengthBeforeCodingStart = Exons.Where(x => x.OneBasedEnd < annotatedStart.OneBasedStart).Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
+                            long exonZeroBasedCodingStart = startCodonStart - Exons.FirstOrDefault(x => x.Includes(annotatedStart.OneBasedStart)).OneBasedStart;
+                            transcript.ZeroBasedCodingStart = exonLengthBeforeCodingStart + exonZeroBasedCodingStart;
+                            long lengthAfterCodingStart = transcript.Sequence.Length - transcript.ZeroBasedCodingStart;
+                            transcript.Sequence = SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, transcript.Sequence).GetSubSequence(transcript.ZeroBasedCodingStart, lengthAfterCodingStart));
+                        }
+                        else
+                        {
+                            long length = Exons.Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
+                            long chop = Exons.Where(x => x.OneBasedEnd >= annotatedStart.OneBasedEnd).Sum(x => annotatedStart.OneBasedEnd < x.OneBasedStart ? x.OneBasedEnd - x.OneBasedStart + 1 : x.OneBasedEnd - annotatedStart.OneBasedEnd);
+                            long lengthAfterCodingStart = length - chop;
+                            transcript.Sequence = SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, transcript.Sequence).GetSubSequence(0, lengthAfterCodingStart));
+                        }
+                        ProteinAnnotation.Annotate(transcript);
+                        Protein p = Translation.OneFrameTranslation(transcript);
+                        if (p.BaseSequence.Length >= minLength && !proteinSequences.Contains(p.BaseSequence)) // this should reduce synonymous variations, but removing synonymous variations directly won't work because we're modifying protein sequences directly
+                        {
+                            proteinSequences.Add(p.BaseSequence);
+                            yield return p;
+                        }
+                    }
+                }
+            }
+            //return Translation.ThreeFrameTranslation(Exons, ProteinID);
+        }
+
+        /// <summary>
+        /// Gets the possible exon haplotypes and combines them in all possible ways.
+        /// </summary>
+        /// <param name="exons"></param>
+        /// <param name="includeVariants"></param>
+        /// <returns></returns>
+        public List<TranscriptPossiblyWithVariants> CombineExonSequences(bool translateCodingDomains, bool includeVariants)
+        {
+            List<Exon> exons = translateCodingDomains ? CodingDomainSequences : Exons;
+            List<List<Exon>> exonSequences = exons.Select(x => x.GetExonSequences(includeVariants, 0.9).ToList()).ToList();
+            List<TranscriptPossiblyWithVariants> sequences = new List<TranscriptPossiblyWithVariants>();
+            foreach (List<Exon> nextExon in exonSequences)
+            {
+                sequences = sequences.Count == 0 
+                    ?
+                    nextExon.Select(x => new TranscriptPossiblyWithVariants(this, translateCodingDomains, SequenceExtensions.ConvertToString(x.Sequence), x.Variants.OfType<Variant>().ToList())).ToList() 
+                    :
+                    (from curr in sequences
+                    from next in nextExon
+                    select new TranscriptPossiblyWithVariants(this, translateCodingDomains, curr.Sequence + SequenceExtensions.ConvertToString(next.Sequence), curr.Variants.Concat(next.Variants.OfType<Variant>()).ToList())
                         ).ToList();
             }
             return sequences;
         }
 
-        public IEnumerable<Protein> translate(Dictionary<Tuple<string, string, long>, List<Exon>> chromID_strand_index_binnedCDS, int bin_size, int min_length, bool includeVariants)
-        {
-            List<Exon> annotated_starts = new List<Exon>();
-            for (long i = Exons.Min(x => x.OneBasedStart) / bin_size; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
-            {
-                annotated_starts.AddRange(chromID_strand_index_binnedCDS[new Tuple<string, string, long>(Gene.ChromID, Strand, i * bin_size)].Where(x =>
-                    Exons.Any(xx =>
-                        xx.includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
-                        && xx.includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
-            }
-
-            char terminating_character = ProteinAlphabet.Instance.GetFriendlyName(Alphabets.Protein.Ter)[0];
-            if (annotated_starts.Count > 0)
-            {
-                // gets the first annotated start that produces
-                foreach (Exon annotated_start in annotated_starts)
-                {
-                    long start_codon_start = Strand == "+" ? annotated_start.OneBasedStart : annotated_start.OneBasedEnd; // CDS on the reverse strand have start and end switched
-                    List<string> seqs = get_sequences(Exons, includeVariants).Where(seq => !seq.Contains('N')).ToList();
-                    foreach (string seq in seqs)
-                    {
-                        if (Strand == "+")
-                        {
-                            long exon_length_before = Exons.Where(x => x.OneBasedEnd < annotated_start.OneBasedStart).Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
-                            long exon_zero_based_start = start_codon_start - Exons.FirstOrDefault(x => x.includes(annotated_start.OneBasedStart)).OneBasedStart;
-                            long ZeroBasedStart = exon_length_before + exon_zero_based_start;
-                            long length_after = seq.Length - ZeroBasedStart;
-                            string subseq = SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, seq).GetSubSequence(ZeroBasedStart, length_after));
-                            Protein p = one_frame_translation(false, subseq);
-                            if (p.BaseSequence.Length >= min_length) yield return p;
-                            else continue;
-                        }
-                        else
-                        {
-                            long length = Exons.Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
-                            long chop = Exons.Where(x => x.OneBasedEnd >= annotated_start.OneBasedEnd).Sum(x => annotated_start.OneBasedEnd < x.OneBasedStart ? x.OneBasedEnd - x.OneBasedStart + 1 : x.OneBasedEnd - annotated_start.OneBasedEnd);
-                            string subseq = SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, seq).GetSubSequence(0, length - chop));
-                            Protein p = one_frame_translation(false, subseq);
-                            if (p.BaseSequence.Length >= min_length) yield return p;
-                            else continue;
-                        }
-                    }
-                }
-            }
-            //return three_frame_translation();
-        }
-
         #endregion Public Methods
-
-        #region Private Methods
-
-        private Protein one_frame_translation(bool translateCDS, string seq)
-        {
-            if (seq.Length == 0 || !translateCDS && Exons.Count == 0 || translateCDS && CDS.Count == 0 || seq.Contains('N'))
-                return null;
-            ISequence dna_seq = new Sequence(Alphabets.DNA, seq);
-            ISequence rna_seq = Transcription.Transcribe((translateCDS ? CDS : Exons)[0].Strand == "+" ? dna_seq : dna_seq.GetReverseComplementedSequence());
-            ISequence prot_seq = ProteinTranslation.Translate(rna_seq);
-            return new Protein(SequenceExtensions.ConvertToString(prot_seq).Split('*')[0], ProteinID);
-        }
-
-        private Protein three_frame_translation()
-        {
-            string seq = String.Join("", Exons.Select(x => SequenceExtensions.ConvertToString(x.Sequence)));
-            if (seq.Contains('N')) return null;
-            ISequence dna_seq = new Sequence(Alphabets.DNA, seq);
-            ISequence rna_seq = Transcription.Transcribe(Exons[0].Strand == "+" ? dna_seq : dna_seq.GetReverseComplementedSequence());
-            ISequence[] prot_seq = Enumerable.Range(0, 3).Select(i => ProteinTranslation.Translate(rna_seq, i)).ToArray();
-
-            //return the protein sequence corresponding to the longest ORF
-            return new Protein(prot_seq.SelectMany(s => SequenceExtensions.ConvertToString(s).Split('*')).OrderByDescending(s => s.Length).FirstOrDefault(), ProteinID);
-        }
-
-        #endregion Private Methods
 
     }
 }

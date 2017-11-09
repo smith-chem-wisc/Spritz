@@ -46,6 +46,7 @@
     <Compile Include="GATKWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RSeQCWrapper.cs" />
+    <Compile Include="ScalpelWrapper.cs" />
     <Compile Include="SkewerWrapper.cs" />
     <Compile Include="SlnckyWrapper.cs" />
     <Compile Include="STARWrapper.cs" />

@@ -44,6 +44,13 @@ namespace Test
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
         }
 
+        [Test]
+        public void test_install_scalpel()
+        {
+            ScalpelWrapper.install(TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
+        }
+
         #endregion Installs
 
         #region Minimal alignment tests
@@ -194,9 +201,27 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "common_all_20170710.ensembl.vcf"),
                 out string new_vcf);
+            Assert.IsTrue(File.Exists(new_vcf));
         }
 
         #endregion GATK tests
+
+        #region Scalpel tests
+
+        [Test]
+        public void scalpel_call()
+        {
+            ScalpelWrapper.call_indels(TestContext.CurrentContext.TestDirectory,
+                8,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel_test_out"),
+                out string new_vcf);
+            Assert.IsTrue(File.Exists(new_vcf));
+        }
+
+        #endregion
 
         #region Bigger STAR tests
 

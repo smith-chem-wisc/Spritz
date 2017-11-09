@@ -99,6 +99,9 @@
     <Compile Include="WrapperTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="chr1_one_transcript.gtf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="chr1_sample.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -124,12 +127,8 @@
       <Project>{f7213add-1c0c-434f-9a32-7f6c31671a89}</Project>
       <Name>Bio.VCF</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Genomics\Genomics.csproj">
+    <ProjectReference Include="..\Genomics\Proteogenomics.csproj">
       <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
-      <Name>Genomics</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Proteogenomics\Proteogenomics.csproj">
-      <Project>{e82b8d25-ed23-49f1-9d7f-05ef0b6d6ae7}</Project>
       <Name>Proteogenomics</Name>
     </ProjectReference>
     <ProjectReference Include="..\RNASeqAnalysisWrappers\RNASeqAnalysisWrappers.csproj">
@@ -138,6 +137,18 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="chr_1_one_heterozygous_missense.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="chr_1_one_heterozygous_synonymous.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="chr_1_one_homozygous_missense.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="chr_1_one_homozygous_synonymous.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="xml2.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

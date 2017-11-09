@@ -3,22 +3,22 @@ using Bio.IO.FastA;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Genomics
+namespace Proteogenomics
 {
     public class Genome
     {
 
         #region Public Properties
 
-        public List<ISequence> chroms { get; set; }
+        public List<ISequence> Chromosomes { get; set; }
 
         #endregion Public Properties
 
         #region Public Constructor
 
-        public Genome(string genome_fasta_location)
+        public Genome(string genomeFastaLocation)
         {
-            chroms = new FastAParser().Parse(genome_fasta_location).ToList();
+            Chromosomes = new FastAParser().Parse(genomeFastaLocation).ToList();
         }
 
         #endregion Public Constructor

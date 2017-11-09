@@ -1,28 +1,29 @@
 ﻿using Bio;
 using Bio.IO.Gff;
 using Bio.VCF;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Genomics
+namespace Proteogenomics
 {
     public class GeneModel
     {
 
         #region Private Fields
 
-        private static Regex attribute_key = new Regex(@"([\w]+)"); // first instance of a word
-        private static Regex attribute_value = new Regex(@"""([\w.]+)"""); // anything inside the quotes
+        private static Regex attributeKey = new Regex(@"([\w]+)"); // first instance of a word
+        private static Regex attributeValue = new Regex(@"""([\w.]+)"""); // anything inside the quotes
 
         #endregion Private Fields
 
         #region Public Properties
 
-        public Genome genome { get; set; }
-        public List<Gene> genes { get; set; } = new List<Gene>();
-        public List<Exon> start_cds { get; set; } = new List<Exon>();
+        public Genome Genome { get; set; }
+        public List<Gene> Genes { get; set; } = new List<Gene>();
+        public List<Exon> StartCDS { get; set; } = new List<Exon>();
 
         #endregion Public Properties
 
@@ -30,7 +31,7 @@ namespace Genomics
 
         public GeneModel(Genome genome, string geneModelFile)
         {
-            this.genome = genome;
+            this.Genome = genome;
             ReadGeneFeatures(geneModelFile);
         }
 
@@ -38,19 +39,19 @@ namespace Genomics
 
         #region Public Method
 
-        private Gene current_gene = null;
-        private Transcript current_transcript = null;
+        private Gene currentGene = null;
+        private Transcript currentTranscript = null;
 
         public void ReadGeneFeatures(string geneModelFile)
         {
-            List<ISequence> gene_features = new GffParser().Parse(geneModelFile).ToList();
+            List<ISequence> geneFeatures = new GffParser().Parse(geneModelFile).ToList();
 
-            foreach (ISequence chrom_features in gene_features)
+            foreach (ISequence chromFeatures in geneFeatures)
             {
-                ISequence chromSeq = genome.chroms.FirstOrDefault(x => x.ID.Split(' ')[0] == chrom_features.ID);
+                ISequence chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.ID.Split(' ')[0] == chromFeatures.ID);
                 if (chromSeq == null) continue;
 
-                chrom_features.Metadata.TryGetValue("features", out object f);
+                chromFeatures.Metadata.TryGetValue("features", out object f);
                 List<MetadataListItem<List<string>>> features = f as List<MetadataListItem<List<string>>>;
                 for (int i = 0; i < features.Count; i++)
                 {
@@ -70,102 +71,102 @@ namespace Genomics
                         }
                         else // GFF1 or GTF
                         {
-                            key = attribute_key.Match(attrib.TrimStart()).Groups[1].Value;
-                            val = attribute_value.Match(attrib.TrimStart()).Groups[1].Value;
+                            key = attributeKey.Match(attrib.TrimStart()).Groups[1].Value;
+                            val = attributeValue.Match(attrib.TrimStart()).Groups[1].Value;
                         }
                         if (!attributes.TryGetValue(key, out string x)) // sometimes there are two tags, so avoid adding twice
                             attributes.Add(key, val);
                     }
 
                     if (feature.FreeText.Contains('='))
-                        process_gff3_feature(feature, start, end, chromSeq, attributes);
+                        ProcessGff3Feature(feature, start, end, chromSeq, attributes);
                     else
-                        process_gtf_feature(feature, start, end, chromSeq, attributes);
+                        ProcessGtfFeature(feature, start, end, chromSeq, attributes);
 
                 }
             }
         }
 
-        public void process_gff3_feature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
+        public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
         {
-            bool has_gene_id = attributes.TryGetValue("gene_id", out string gene_id);
-            bool has_transcript_id = attributes.TryGetValue("transcript_id", out string transcript_id);
-            bool has_exon_id = attributes.TryGetValue("exon_id", out string exon_id);
-            bool has_protein_id = attributes.TryGetValue("protein_id", out string protein_id);
+            bool hasGeneId = attributes.TryGetValue("gene_id", out string gene_id);
+            bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcript_id);
+            bool hasExonId = attributes.TryGetValue("exon_id", out string exon_id);
+            bool hasProteinId = attributes.TryGetValue("protein_id", out string protein_id);
 
-            if (has_gene_id && (current_gene == null || has_gene_id && gene_id != current_gene.ID))
+            if (hasGeneId && (currentGene == null || hasGeneId && gene_id != currentGene.ID))
             {
-                current_gene = new Gene(gene_id, chromSeq.ID, feature);
-                genes.Add(current_gene);
+                currentGene = new Gene(gene_id, chromSeq.ID, feature);
+                Genes.Add(currentGene);
             }
 
-            if (has_transcript_id && (current_transcript == null || has_transcript_id && transcript_id != current_transcript.ID))
+            if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcript_id != currentTranscript.ID))
             {
-                current_transcript = new Transcript(transcript_id, current_gene, feature);
-                current_gene.transcripts.Add(current_transcript);
+                currentTranscript = new Transcript(transcript_id, currentGene, feature);
+                currentGene.transcripts.Add(currentTranscript);
             }
 
-            if (has_exon_id || has_protein_id)
+            if (hasExonId || hasProteinId)
             {
                 ISequence exon_dna = chromSeq.GetSubSequence(OneBasedStart - 1, OneBasedEnd - OneBasedStart + 1);
 
                 Exon exon = new Exon(exon_dna, OneBasedStart, OneBasedEnd, chromSeq.ID, feature);
 
-                if (has_exon_id)
+                if (hasExonId)
                 {
-                    current_gene.exons.Add(exon);
-                    current_transcript.Exons.Add(exon);
+                    currentGene.exons.Add(exon);
+                    currentTranscript.Exons.Add(exon);
                 }
-                else if (has_protein_id)
+                else if (hasProteinId)
                 {
-                    if (current_transcript.CDS.Count == 0) start_cds.Add(exon);
-                    current_gene.CDS.Add(exon);
-                    current_transcript.CDS.Add(exon);
-                    current_transcript.ProteinID = protein_id;
+                    if (currentTranscript.CodingDomainSequences.Count == 0) StartCDS.Add(exon);
+                    currentGene.CodingDomainSequences.Add(exon);
+                    currentTranscript.CodingDomainSequences.Add(exon);
+                    currentTranscript.ProteinID = protein_id;
                 }
             }
         }
 
-        public void process_gtf_feature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
+        public void ProcessGtfFeature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
         {
-            bool has_gene_id = attributes.TryGetValue("gene_id", out string gene_id);
-            bool has_gene_name = attributes.TryGetValue("gene_name", out string gene_name);
-            bool has_gene_version = attributes.TryGetValue("gene_version", out string gene_version);
-            bool has_gene_biotype = attributes.TryGetValue("gene_biotype", out string gene_biotype);
-            bool has_transcript_id = attributes.TryGetValue("transcript_id", out string transcript_id);
-            bool has_transcript_version = attributes.TryGetValue("transcript_version", out string transcript_version);
-            bool has_transcript_biotype = attributes.TryGetValue("transcript_biotype", out string transcript_biotype);
-            bool has_exon_id = attributes.TryGetValue("exon_id", out string exon_id);
-            bool has_exon_version = attributes.TryGetValue("exon_version", out string exon_version);
-            bool has_exon_number = attributes.TryGetValue("exon_number", out string exon_number);
-            bool has_nearest_ref = attributes.TryGetValue("nearest_ref", out string nearest_ref); // Cufflinks
-            bool has_class_code = attributes.TryGetValue("class_code", out string class_code); // Cufflinks
+            bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
+            bool hasGeneName = attributes.TryGetValue("gene_name", out string geneName);
+            bool hasGeneVersion = attributes.TryGetValue("gene_version", out string geneVersion);
+            bool hasGeneBiotype = attributes.TryGetValue("gene_biotype", out string geneBiotype);
+            bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcriptId);
+            bool hasTranscriptVersion = attributes.TryGetValue("transcript_version", out string transcriptVersion);
+            bool hasTranscriptBiotype = attributes.TryGetValue("transcript_biotype", out string transcriptBiotype);
+            bool hasExonId = attributes.TryGetValue("exon_id", out string exonId);
+            bool hasExonVersion = attributes.TryGetValue("exon_version", out string exonVersion);
+            bool hasExonNumber = attributes.TryGetValue("exon_number", out string exonNumber);
+            bool hasNearestRef = attributes.TryGetValue("nearest_ref", out string nearestRef); // Cufflinks
+            bool hasClassCode = attributes.TryGetValue("class_code", out string classCode); // Cufflinks
 
             // Catch the transcript features before they go by if available, i.e. if the file doesn't just have exons
-            if (feature.Key == "transcript" && (current_transcript == null || has_transcript_id && transcript_id != current_transcript.ID))
+            if (feature.Key == "transcript" && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                if (current_gene == null || has_gene_id && gene_id != current_gene.ID)
+                if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    current_gene = new Gene(gene_id, chromSeq.ID, feature);
-                    genes.Add(current_gene);
+                    currentGene = new Gene(geneId, chromSeq.ID, feature);
+                    Genes.Add(currentGene);
                 }
 
-                current_transcript = new Transcript(transcript_id, current_gene, feature);
-                current_gene.transcripts.Add(current_transcript);
+                currentTranscript = new Transcript(transcriptId, currentGene, feature);
+                currentGene.transcripts.Add(currentTranscript);
             }
 
             if (feature.Key == "exon" || feature.Key == "CDS")
             {
-                if (current_gene == null || has_gene_id && gene_id != current_gene.ID)
+                if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    current_gene = new Gene(gene_id, chromSeq.ID, feature);
-                    genes.Add(current_gene);
+                    currentGene = new Gene(geneId, chromSeq.ID, feature);
+                    Genes.Add(currentGene);
                 }
 
-                if (current_transcript == null || has_transcript_id && transcript_id != current_transcript.ID)
+                if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    current_transcript = new Transcript(transcript_id, current_gene, null);
-                    current_gene.transcripts.Add(current_transcript);
+                    currentTranscript = new Transcript(transcriptId, currentGene, null);
+                    currentGene.transcripts.Add(currentTranscript);
                 }
 
                 ISequence exon_dna = chromSeq.GetSubSequence(OneBasedStart - 1, OneBasedEnd - OneBasedStart + 1);
@@ -174,41 +175,54 @@ namespace Genomics
 
                 if (feature.Key == "exon")
                 {
-                    current_gene.exons.Add(exon);
-                    current_transcript.Exons.Add(exon);
+                    currentGene.exons.Add(exon);
+                    currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    current_gene.CDS.Add(exon);
-                    current_transcript.CDS.Add(exon);
+                    currentGene.CodingDomainSequences.Add(exon);
+                    currentTranscript.CodingDomainSequences.Add(exon);
                 }
             }
         }
 
-        public void amend_transcripts(List<VariantContext> variants)
+        public void AmendTranscripts(List<VariantContext> variants)
         {
-            int bin_size = 100000;
-            Dictionary<Tuple<string, long>, List<VariantContext>> chr_index_variants = new Dictionary<Tuple<string, long>, List<VariantContext>>();
+            int binSize = 100000;
+            Dictionary<Tuple<string, long>, List<VariantContext>> chrIndexVariants = new Dictionary<Tuple<string, long>, List<VariantContext>>();
             foreach(VariantContext variant in variants)
             {
-                var key = new Tuple<string, long>(variant.Chr, variant.Start / bin_size * bin_size);
-                if (chr_index_variants.TryGetValue(key, out List<VariantContext> vars))
+                var key = new Tuple<string, long>(variant.Chr, variant.Start / binSize * binSize);
+                if (chrIndexVariants.TryGetValue(key, out List<VariantContext> vars))
                     vars.Add(variant);
-                else chr_index_variants[key] = new List<VariantContext> { variant };
+                else chrIndexVariants[key] = new List<VariantContext> { variant };
             }
 
-            foreach (Exon x in genes.SelectMany(g => g.exons.Concat(g.CDS)))
+            foreach (Exon x in Genes.SelectMany(g => g.exons.Concat(g.CodingDomainSequences)))
             {
-                for (long i = x.OneBasedStart / bin_size; i < x.OneBasedEnd / bin_size + 1; i++)
+                for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
                 {
-                    var key = new Tuple<string, long>(x.ChromID, i * bin_size);
-                    if (chr_index_variants.TryGetValue(key, out List<VariantContext> nearby_variants))
-                        x.variants = nearby_variants.Where(v => x.includes(v.Start)).ToList();
+                    var key = new Tuple<string, long>(x.ChromID, i * binSize);
+                    if (chrIndexVariants.TryGetValue(key, out List<VariantContext> nearby_variants))
+                        x.Variants = nearby_variants.Where(v => x.Includes(v.Start)).ToList();
                 }
             }
         }
 
         #endregion Public Method
 
+        #region Translation Methods
+
+        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants)
+        {
+            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants)).ToList();
+        }
+
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
+        {
+            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, translateWithVariants, minPeptideLength)).ToList();
+        }
+
+        #endregion Translation Methods
     }
 }
