@@ -3,8 +3,9 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
-namespace Genomics
+namespace Proteogenomics
 {
     public class Gene
     {
@@ -18,18 +19,26 @@ namespace Genomics
         #region Public Properties
 
         public string ID { get; set; }
+
         public string ChromID { get; set; }
+
+        public ISequence Chromosome { get; set; }
+
         public List<Transcript> transcripts { get; set; } = new List<Transcript>();
+
         public HashSet<Exon> exons { get; set; } = new HashSet<Exon>();
+
+        public HashSet<Exon> CodingDomainSequences { get; set; } = new HashSet<Exon>();
 
         #endregion
 
         #region Public Constructors
 
-        public Gene(string ID, string ChromID, MetadataListItem<List<string>> metadata)
+        public Gene(string ID, string ChromID, ISequence chromosome, MetadataListItem<List<string>> metadata)
         {
             this.ID = ID;
             this.ChromID = ChromID;
+            this.Chromosome = chromosome;
             this.metadata = metadata;
         }
 
@@ -37,28 +46,36 @@ namespace Genomics
 
         #region Public Methods
 
-        public List<Protein> translate(bool translateCDS, bool includeVariants)
+        public List<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
             List<Protein> proteins = new List<Protein>();
             Parallel.ForEach(transcripts, t =>
             {
-                Protein p = t.translate(translateCDS, includeVariants);
+                IEnumerable<Protein> p = t.Translate(translateCodingDomains, includeVariants);
                 if (p != null)
-                    lock (proteins) proteins.Add(p);
+                    lock (proteins) proteins.AddRange(p);
             });
             return proteins;
         }
 
-        public List<Protein> translate(GeneModel genesWithCDS, int min_length, bool includeVariants)
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool includeVariants, int min_length)
         {
-            Dictionary<Tuple<string, string>, List<Exon>> binnedCDS = Transcript.binCDS_by_chromID_strand(genesWithCDS);
+            int indexBinSize = 100000;
+            Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts = new Dictionary<Tuple<string, string, long>, List<Exon>>();
+            foreach (Exon x in genesWithCodingDomainSequences.Genes.SelectMany(g => g.transcripts).Select(t => t.CodingDomainSequences.FirstOrDefault()).Where(x => x != null))
+            {
+                Tuple<string, string, long> key = new Tuple<string, string, long>(x.ChromID, x.Strand, x.OneBasedStart / indexBinSize * indexBinSize);
+                binnedCodingStarts.TryGetValue(key, out List<Exon> xs);
+                if (xs == null) binnedCodingStarts.Add(key, new List<Exon> { x });
+                else binnedCodingStarts[key].Add(x);
+            }
 
             List<Protein> proteins = new List<Protein>();
             Parallel.ForEach(transcripts, t =>
             {
-                Protein p = t.translate(binnedCDS, min_length, includeVariants);
+                IEnumerable<Protein> p = t.TranslateUsingAnnotatedStartCodons(binnedCodingStarts, indexBinSize, min_length, includeVariants);
                 if (p != null)
-                    lock (proteins) proteins.Add(p);
+                    lock (proteins) proteins.AddRange(p);
             });
             return proteins;
         }

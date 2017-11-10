@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RNASeqAnalysisWrappers
 {
@@ -27,6 +23,7 @@ namespace RNASeqAnalysisWrappers
                 "cd skewer-0.2.2",
                 "make"
             });
+            File.Delete(script_path);
         }
     }
 }

@@ -108,9 +108,9 @@
       <Project>{f7213add-1c0c-434f-9a32-7f6c31671a89}</Project>
       <Name>Bio.VCF</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Genomics\Genomics.csproj">
+    <ProjectReference Include="..\Genomics\Proteogenomics.csproj">
       <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
-      <Name>Genomics</Name>
+      <Name>Proteogenomics</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
