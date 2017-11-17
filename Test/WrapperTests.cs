@@ -1,6 +1,8 @@
 ﻿using NUnit.Framework;
 using RNASeqAnalysisWrappers;
 using System.IO;
+using System.Net;
+using System.Collections.Generic;
 
 namespace Test
 {
@@ -13,34 +15,34 @@ namespace Test
         [Test]
         public void test_install_dependencies()
         {
-            WrapperUtility.install(TestContext.CurrentContext.TestDirectory);
+            WrapperUtility.Install(TestContext.CurrentContext.TestDirectory);
         }
 
         [Test]
         public void test_install_star()
         {
-            STARWrapper.install(TestContext.CurrentContext.TestDirectory, true, false);
+            STARWrapper.Install(TestContext.CurrentContext.TestDirectory, true, false);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
         }
 
         [Test]
         public void test_install_bedops()
         {
-            BEDOPSWrapper.install(TestContext.CurrentContext.TestDirectory);
+            BEDOPSWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
         }
 
         [Test]
         public void test_install_rseqc()
         {
-            RSeQCWrapper.install(TestContext.CurrentContext.TestDirectory);
+            RSeQCWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
         }
 
         [Test]
         public void test_install_gatk()
         {
-            GATKWrapper.install(TestContext.CurrentContext.TestDirectory);
+            GATKWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
         }
 
@@ -54,7 +56,7 @@ namespace Test
         [Test]
         public void test_install_skewer()
         {
-            SkewerWrapper.install(TestContext.CurrentContext.TestDirectory);
+            SkewerWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
         }
@@ -66,30 +68,30 @@ namespace Test
         [Test]
         public void test_convert_gff()
         {
-            var p = BEDOPSWrapper.gff2bed(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"), TestContext.CurrentContext.TestDirectory);
-            if (p != null) p.WaitForExit();
-            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gff.gff3") + ".bed")).Length > 0);
+            string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
+            Assert.IsTrue(new FileInfo(bedPath).Length > 0);
+            File.Delete(bedPath);
         }
 
         [Test]
         public void test_convert_gtf()
         {
-            var p = BEDOPSWrapper.gtf2bed(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"), TestContext.CurrentContext.TestDirectory);
-            if (p != null) p.WaitForExit();
-            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed")).Length > 0);
+            string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
+            Assert.IsTrue(new FileInfo(bedPath).Length > 0);
+            File.Delete(bedPath);
         }
 
         [Test]
         public void test_convert_gtf12()
         {
-            BEDOPSWrapper.gtf2bed12(Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"), TestContext.CurrentContext.TestDirectory);
+            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed12")).Length > 0);
         }
 
         [Test]
         public void test_genome_generate()
         {
-            STARWrapper.generate_genome_index(TestContext.CurrentContext.TestDirectory,
+            STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
                 1,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "sampleGenomeDir"),
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa") },
@@ -100,7 +102,7 @@ namespace Test
         [Test]
         public void test_align()
         {
-            STARWrapper.basic_align_reads
+            STARWrapper.BasicAlignReads
             (
                 TestContext.CurrentContext.TestDirectory,
                 1,
@@ -120,7 +122,7 @@ namespace Test
         {
             string[] new_files = new string[0];
 
-            STARWrapper.subset_fastqs(
+            STARWrapper.SubsetFastqs(
                 new string[]
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "r1.fastq"),
@@ -140,11 +142,10 @@ namespace Test
         [Test]
         public void test_strand_specificity_bam()
         {
-            Assert.IsTrue(RSeQCWrapper.check_strand_specificity(
+            Assert.IsTrue(RSeQCWrapper.CheckStrandSpecificity(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed"),
-                TestContext.CurrentContext.TestDirectory));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed")));
         }
 
         #endregion Minimal alignment tests
@@ -154,7 +155,9 @@ namespace Test
         [Test]
         public void skewer_single()
         {
-            SkewerWrapper.trim(TestContext.CurrentContext.TestDirectory, 19,
+            SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory, 
+                19,
+                1,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "read1.fastq") },
                 out string[] readTrimmedPaths,
                 out string log);
@@ -167,7 +170,9 @@ namespace Test
         [Test]
         public void skewer_paired()
         {
-            SkewerWrapper.trim(TestContext.CurrentContext.TestDirectory, 19,
+            SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory, 
+                19,
+                1,
                 new string[] 
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "read1.fastq"),
@@ -191,7 +196,7 @@ namespace Test
         public void test_star_fusion()
         {
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "fusion_out"));
-            STARWrapper.star_fusion(TestContext.CurrentContext.TestDirectory, 
+            STARWrapper.RunStarFusion(TestContext.CurrentContext.TestDirectory, 
                 true, false, 
                 8, 
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR791578_hg19_Chimeric.out.junction"), 
@@ -206,15 +211,15 @@ namespace Test
         [Test]
         public void GATK_workflow()
         {
-            GATKWrapper.download_known_sites(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, true, true, false, out string known_sites_filename);
+            GATKWrapper.DownloadKnownSites(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, true, true, false, out string known_sites_filename);
 
-            GATKWrapper.prepare_bam(TestContext.CurrentContext.TestDirectory,
+            GATKWrapper.PrepareBam(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 out string new_bam);
 
-            GATKWrapper.realign_indels(TestContext.CurrentContext.TestDirectory,
+            GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 new_bam,
@@ -228,7 +233,7 @@ namespace Test
             //    out string recal_table_filepath,
             //    Path.Combine(TestContext.CurrentContext.TestDirectory, known_sites_filename));
 
-            GATKWrapper.variant_calling(TestContext.CurrentContext.TestDirectory,
+            GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 realigned_bam,
@@ -239,7 +244,7 @@ namespace Test
         [Test]
         public void variantcall()
         {
-            GATKWrapper.variant_calling(TestContext.CurrentContext.TestDirectory,
+            GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
@@ -300,5 +305,34 @@ namespace Test
 
         #endregion Bigger STAR tests
 
+        #region Runner Tests
+
+        [Test]
+        public void full_protein_run()
+        {
+            string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "setup.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(TestContext.CurrentContext.TestDirectory),
+                "if [ ! -f 22.fa ]; then\n  wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz \nfi",
+                "if [ ! -f Homo_sapiens.GRCh37.75.gtf ]; then\n  wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz \nfi",
+                "if [ ! -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa ]; then\n  gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz \nfi",
+                "if [ ! -f Homo_sapiens.GRCh37.75.gtf.gz ]; then\n  gunzip Homo_sapiens.GRCh37.75.gtf.gz \nfi",
+                "if [ ! -f 22.fa ]; then\n  mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa 22.fa \nfi",
+                "if [ ! -f 22.gtf ]; then\n  grep ^22 Homo_sapiens.GRCh37.75.gtf > 22.gtf \nfi"
+            }).WaitForExit();
+
+            Fastq2ProteinsRunner.Run(TestContext.CurrentContext.TestDirectory, true, false, 8, 
+                new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper.fastq") },
+                false, true,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "22"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.gtf"),
+                out string proteinDatabase);
+            Assert.IsTrue(new FileInfo(proteinDatabase).Length > 0);
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmed.fastq"));
+        }
+
+        #endregion Runner Tests
     }
 }

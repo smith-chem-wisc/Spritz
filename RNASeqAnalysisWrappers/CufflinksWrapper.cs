@@ -16,7 +16,7 @@ namespace RNASeqAnalysisWrappers
 
         public void install()
         {
-            WrapperUtility.run_basic_command("sudo", "apt-get install cufflinks");
+            WrapperUtility.RunBashCommand("sudo", "apt-get install cufflinks");
         }
     }
 }

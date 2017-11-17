@@ -8,208 +8,206 @@ namespace RNASeqAnalysisWrappers
 {
     public class GATKWrapper
     {
-        public static string gatk = "java -Xmx20G -jar GenomeAnalysisTK.jar";
+        public static string GATK = "java -Xmx20G -jar GenomeAnalysisTK.jar";
 
-        public static void subset_bam(string bin_directory, int threads, string bam, string genome_fasta, string genome_region, string output_bam)
+        public static void SubsetBam(string binDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
         {
-            string script_name = Path.Combine(bin_directory, "subset_bam.bash");
-            WrapperUtility.generate_and_run_script(script_name, new List<string>
+            string script_name = Path.Combine(binDirectory, "subset_bam.bash");
+            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(bin_directory),
-                gatk +
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                GATK +
                     " --num_threads " + threads.ToString() +
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(bam) +
-                    " -o " + WrapperUtility.convert_windows_path(output_bam) +
-                    " -L " + genome_region,
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    " -o " + WrapperUtility.ConvertWindowsPath(outputBam) +
+                    " -L " + genomeRegion,
             }).WaitForExit();
         }
 
         /// <summary>
         /// Groups and sorts reads, and marks duplicates using Picard Tools. Then, splits and trims reads with SplitNCigarReads.
         /// </summary>
-        /// <param name="bin_directory"></param>
+        /// <param name="binDirectory"></param>
         /// <param name="bam"></param>
-        /// <param name="new_bam"></param>
-        public static void prepare_bam(string bin_directory, int threads, string bam, string genome_fasta, out string new_bam)
+        /// <param name="newBam"></param>
+        public static void PrepareBam(string binDirectory, int threads, string bam, string genomeFasta, out string newBam)
         {
-            new_bam = bam;
+            newBam = bam;
 
             // check if sorted and grouped
-            string sorted_checkfile = "header_sorted.txt";
-            string readgrouped_checkfile = "header_readgrouped.txt";
-            string script_name = Path.Combine(bin_directory, "check_sorted.bash");
-            WrapperUtility.generate_and_run_script(script_name, new List<string>
+            string sortedCheckfile = "header_sorted.txt";
+            string readGroupedCheckfile = "header_readgrouped.txt";
+            string scriptPath = Path.Combine(binDirectory, "check_sorted.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(bin_directory),
-                "samtools view -H " + WrapperUtility.convert_windows_path(bam) + " | grep SO:coordinate > " + sorted_checkfile,
-                "samtools view -H " + WrapperUtility.convert_windows_path(bam) + " | grep '^@RG' > " + readgrouped_checkfile,
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + sortedCheckfile,
+                "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + readGroupedCheckfile,
             }).WaitForExit();
 
-            bool sorted = new FileInfo(Path.Combine(bin_directory, sorted_checkfile)).Length > 0;
-            bool grouped = new FileInfo(Path.Combine(bin_directory, readgrouped_checkfile)).Length > 0;
+            bool sorted = new FileInfo(Path.Combine(binDirectory, sortedCheckfile)).Length > 0;
+            bool grouped = new FileInfo(Path.Combine(binDirectory, readGroupedCheckfile)).Length > 0;
 
             // run commands for grouping or sorting
-            string picard_command;
-            string groupsort_bam = new_bam;
+            string picardCommand;
+            string groupSortBam = newBam;
             if (grouped && sorted) return;
             else if (!grouped)
             {
-                groupsort_bam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + (!sorted ? ".sorted.grouped.bam" : ".grouped.bam"));
-                picard_command = "picard-tools AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library I=" + WrapperUtility.convert_windows_path(bam) + " O=" + WrapperUtility.convert_windows_path(groupsort_bam) + (!sorted ? " SO=coordinate" : "");
+                groupSortBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + (!sorted ? ".sorted.grouped.bam" : ".grouped.bam"));
+                picardCommand = "picard-tools AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library I=" + WrapperUtility.ConvertWindowsPath(bam) + " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam) + (!sorted ? " SO=coordinate" : "");
             }
             else // grouped, but not sorted
             {
-                groupsort_bam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".sorted.bam") ;
-                picard_command = "picard-tools SortSam SO=coordinate I=" + WrapperUtility.convert_windows_path(bam) + " O=" + WrapperUtility.convert_windows_path(groupsort_bam);
+                groupSortBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".sorted.bam") ;
+                picardCommand = "picard-tools SortSam SO=coordinate I=" + WrapperUtility.ConvertWindowsPath(bam) + " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam);
             }
 
-            string marked_duplicates_bam = Path.Combine(Path.GetDirectoryName(groupsort_bam), Path.GetFileNameWithoutExtension(groupsort_bam) + ".marked.bam");
-            string marked_duplicate_metrics = Path.Combine(Path.GetDirectoryName(groupsort_bam), Path.GetFileNameWithoutExtension(groupsort_bam) + ".marked.metrics");
-            string dictionary_path = Path.Combine(Path.GetDirectoryName(genome_fasta), Path.GetFileNameWithoutExtension(genome_fasta) + ".dict");
-            string split_trim_bam = Path.Combine(Path.GetDirectoryName(marked_duplicates_bam), Path.GetFileNameWithoutExtension(marked_duplicates_bam) + ".split.bam");
-            string mapq_reassigned = Path.Combine(Path.GetDirectoryName(split_trim_bam), Path.GetFileNameWithoutExtension(split_trim_bam) + ".mapqfixed.bam");
-            string script_name2 = Path.Combine(bin_directory, "picard.bash");
-            WrapperUtility.generate_and_run_script(script_name2, new List<string>
+            string markedDuplicatesBam = Path.Combine(Path.GetDirectoryName(groupSortBam), Path.GetFileNameWithoutExtension(groupSortBam) + ".marked.bam");
+            string markedDuplicateMetrics = Path.Combine(Path.GetDirectoryName(groupSortBam), Path.GetFileNameWithoutExtension(groupSortBam) + ".marked.metrics");
+            string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
+            string splitTrimBam = Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".split.bam");
+            string mapQReassigned = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".mapqfixed.bam");
+            string scriptName2 = Path.Combine(binDirectory, "picard.bash");
+            WrapperUtility.GenerateAndRunScript(scriptName2, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(bin_directory),
-                picard_command,
-                "picard-tools MarkDuplicates I=" + WrapperUtility.convert_windows_path(groupsort_bam) +
-                    " O=" + WrapperUtility.convert_windows_path(marked_duplicates_bam) +
-                    " M=" + WrapperUtility.convert_windows_path(marked_duplicate_metrics) +
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                picardCommand,
+                "picard-tools MarkDuplicates I=" + WrapperUtility.ConvertWindowsPath(groupSortBam) +
+                    " O=" + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
+                    " M=" + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
                     " AS=true", // assume sorted
-                "rm " + WrapperUtility.convert_windows_path(groupsort_bam), // conserve space
+                "rm " + WrapperUtility.ConvertWindowsPath(groupSortBam), // conserve space
 
-                !File.Exists(genome_fasta + ".fai") ? "samtools faidx " + WrapperUtility.convert_windows_path(genome_fasta) : "",
-                !File.Exists(dictionary_path) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.convert_windows_path(genome_fasta) + " O=" + WrapperUtility.convert_windows_path(dictionary_path) : "",
+                !File.Exists(genomeFasta + ".fai") ? "samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFasta) : "",
+                !File.Exists(dictionaryPath) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFasta) + " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) : "",
 
-                "samtools index " + WrapperUtility.convert_windows_path(marked_duplicates_bam),
-                gatk +
+                "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
+                GATK +
                     " -T SplitNCigarReads" +
-                    " --num_threads " + threads.ToString() +
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(marked_duplicates_bam) +
-                    " -o " + WrapperUtility.convert_windows_path(split_trim_bam) +
+                    //" --num_threads " + threads.ToString() + // not supported
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
+                    " -o " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " -U ALLOW_N_CIGAR_READS -fixMisencodedQuals", // STAR apparently misencodes quality scores; this just subtracts 31 from all quality scores... might not need that flag for tophat
-                "rm " + WrapperUtility.convert_windows_path(marked_duplicates_bam),
-                "rm " + WrapperUtility.convert_windows_path(Path.Combine(Path.GetDirectoryName(marked_duplicates_bam), Path.GetFileNameWithoutExtension(marked_duplicates_bam) + ".bai")),
-                gatk +
+                "rm " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
+                "rm " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".bai")),
+                GATK +
                     " -T PrintReads" +
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(split_trim_bam) +
-                    " -o " + WrapperUtility.convert_windows_path(mapq_reassigned) +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
+                    " -o " + WrapperUtility.ConvertWindowsPath(mapQReassigned) +
                     " -rf ReassignMappingQuality", // default mapping quality is 60; required for RNA-Seq aligners
-                "samtools index " + WrapperUtility.convert_windows_path(mapq_reassigned),
-                "rm " + WrapperUtility.convert_windows_path(marked_duplicates_bam),
+                "samtools index " + WrapperUtility.ConvertWindowsPath(mapQReassigned),
+                "rm " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
             }).WaitForExit();
-            new_bam = mapq_reassigned;
+            newBam = mapQReassigned;
 
             // run commands for marking duplicates and trimming reads
-            File.Delete(sorted_checkfile);
-            File.Delete(readgrouped_checkfile);
-            File.Delete(script_name);
-            File.Delete(script_name2);
-            File.Delete(script_name2);
+            File.Delete(sortedCheckfile);
+            File.Delete(readGroupedCheckfile);
+            //File.Delete(scriptName);
+            //File.Delete(scriptName2);
         }
 
         /// <summary>
         /// Realigns indels for a given BAM file
         /// </summary>
-        /// <param name="bin_directory"></param>
-        /// <param name="genome_fasta"></param>
+        /// <param name="binDirectory"></param>
+        /// <param name="genomeFasta"></param>
         /// <param name="bam"></param>
-        /// <param name="known_sites_vcf"></param>
-        /// <param name="new_bam"></param>
-        public static void realign_indels(string bin_directory, int threads, string genome_fasta, string bam, out string new_bam, string known_sites_vcf = "")
+        /// <param name="knownSitesVcf"></param>
+        /// <param name="newBam"></param>
+        public static void RealignIndels(string binDirectory, int threads, string genomeFasta, string bam, out string newBam, string knownSitesVcf = "")
         {
-            string dictionary_path = Path.Combine(Path.GetDirectoryName(genome_fasta), Path.GetFileNameWithoutExtension(genome_fasta) + ".dict");
-            string realigner_table = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".forIndelRealigner.intervals");
-            new_bam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".realigned.bam");
-            string script_name = Path.Combine(bin_directory, "realign_indels.bash");
-            WrapperUtility.generate_and_run_script(script_name, new List<string>
+            string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
+            string realignerTable = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".forIndelRealigner.intervals");
+            newBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".realigned.bam");
+            string script_name = Path.Combine(binDirectory, "realign_indels.bash");
+            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(bin_directory),
-                !File.Exists(genome_fasta + ".fai") ? "samtools faidx " + WrapperUtility.convert_windows_path(genome_fasta) : "",
-                !File.Exists(dictionary_path) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.convert_windows_path(genome_fasta) + " O=" + WrapperUtility.convert_windows_path(dictionary_path) : "",
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                !File.Exists(genomeFasta + ".fai") ? "samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFasta) : "",
+                !File.Exists(dictionaryPath) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFasta) + " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) : "",
 
-                gatk + 
+                GATK + 
                     " -T RealignerTargetCreator" +
                     " --num_threads " + threads.ToString() +  
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(bam) +
-                    (known_sites_vcf != "" ? " -known " + WrapperUtility.convert_windows_path(known_sites_vcf) : "") +
-                    " -o " +  WrapperUtility.convert_windows_path(realigner_table),
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
+                    " -o " +  WrapperUtility.ConvertWindowsPath(realignerTable),
 
-                gatk + 
+                GATK + 
                     " -T IndelRealigner" +
                     //" --num_threads " + threads.ToString() + // this tool can't do threaded analysis
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(bam) +
-                    (known_sites_vcf != "" ? " -known " + WrapperUtility.convert_windows_path(known_sites_vcf) : "") +
-                    " -targetIntervals " +  WrapperUtility.convert_windows_path(realigner_table) +
-                    " -o " + WrapperUtility.convert_windows_path(new_bam),
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
+                    " -targetIntervals " +  WrapperUtility.ConvertWindowsPath(realignerTable) +
+                    " -o " + WrapperUtility.ConvertWindowsPath(newBam),
             }).WaitForExit();
         }
 
         /// <summary>
         /// Creates recalibration table for base calls. 
         /// </summary>
-        /// <param name="bin_directory"></param>
-        /// <param name="genome_fasta"></param>
+        /// <param name="binDirectory"></param>
+        /// <param name="genomeFasta"></param>
         /// <param name="bam"></param>
-        /// <param name="recal_table_filepath"></param>
-        /// <param name="known_sites_vcf"></param>
-        public static void base_recalibration(string bin_directory, string genome_fasta, string bam, out string recal_table_filepath, string known_sites_vcf) 
+        /// <param name="recalibrationTablePath"></param>
+        /// <param name="knownSitesVcf"></param>
+        public static void BaseRecalibration(string binDirectory, string genomeFasta, string bam, out string recalibrationTablePath, string knownSitesVcf) 
         {
-            recal_table_filepath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
+            recalibrationTablePath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
 
-            string dictionary_path = Path.Combine(Path.GetDirectoryName(genome_fasta), Path.GetFileNameWithoutExtension(genome_fasta) + ".dict");
-            string script_name = Path.Combine(bin_directory, "base_recalibration.bash");
-            WrapperUtility.generate_and_run_script(script_name, new List<string>
+            string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
+            string scriptPath = Path.Combine(binDirectory, "base_recalibration.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(bin_directory),
-                !File.Exists(genome_fasta + ".fai") ? "samtools faidx " + WrapperUtility.convert_windows_path(genome_fasta) : "",
-                !File.Exists(dictionary_path) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.convert_windows_path(genome_fasta) + " O=" + WrapperUtility.convert_windows_path(dictionary_path) : "",
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                !File.Exists(genomeFasta + ".fai") ? "samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFasta) : "",
+                !File.Exists(dictionaryPath) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFasta) + " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) : "",
 
-                gatk + 
+                GATK + 
                     " -T BaseRecalibrator" +
                     //" --num_threads " + threads.ToString() + // doesn't support threaded runs
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(bam) +
-                    (known_sites_vcf != "" ? " -knownSites " + WrapperUtility.convert_windows_path(known_sites_vcf) : "") +
-                    " -o " + WrapperUtility.convert_windows_path(recal_table_filepath),
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    (knownSitesVcf != "" ? " -knownSites " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
+                    " -o " + WrapperUtility.ConvertWindowsPath(recalibrationTablePath),
             }).WaitForExit();
-            File.Delete(script_name);
         }
 
         /// <summary>
         /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually
         /// </summary>
-        /// <param name="bin_directory"></param>
+        /// <param name="binDirectory"></param>
         /// <param name="threads"></param>
-        /// <param name="genome_fasta"></param>
+        /// <param name="genomeFasta"></param>
         /// <param name="bam"></param>
         /// <param name=""></param>
-        public static void variant_calling(string bin_directory, int threads, string genome_fasta, string bam, string dbsnp, out string new_vcf)
+        public static void VariantCalling(string binDirectory, int threads, string genomeFasta, string bam, string dbsnp, out string newVcf)
         {
-            new_vcf = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".vcf");
+            newVcf = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".vcf");
 
-            string dictionary_path = Path.Combine(Path.GetDirectoryName(genome_fasta), Path.GetFileNameWithoutExtension(genome_fasta) + ".dict");
-            string script_name = Path.Combine(bin_directory, "variant_calling.bash");
-            WrapperUtility.generate_and_run_script(script_name, new List<string>
+            string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
+            string scriptName = Path.Combine(binDirectory, "variant_calling.bash");
+            WrapperUtility.GenerateAndRunScript(scriptName, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(bin_directory),
-                !File.Exists(genome_fasta + ".fai") ? "samtools faidx " + WrapperUtility.convert_windows_path(genome_fasta) : "",
-                !File.Exists(dictionary_path) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.convert_windows_path(genome_fasta) + " O=" + WrapperUtility.convert_windows_path(dictionary_path) : "",
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                !File.Exists(genomeFasta + ".fai") ? "samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFasta) : "",
+                !File.Exists(dictionaryPath) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFasta) + " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) : "",
 
-                gatk +
+                GATK +
                     " -T HaplotypeCaller" + 
                     " -nct " + threads.ToString() +
-                    " -R " + WrapperUtility.convert_windows_path(genome_fasta) +
-                    " -I " + WrapperUtility.convert_windows_path(bam) +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
                     " --standard_min_confidence_threshold_for_calling 20" +
-                    " --dbsnp " + WrapperUtility.convert_windows_path(dbsnp) +
-                    " -o " + WrapperUtility.convert_windows_path(new_vcf),
+                    " --dbsnp " + WrapperUtility.ConvertWindowsPath(dbsnp) +
+                    " -o " + WrapperUtility.ConvertWindowsPath(newVcf),
             }).WaitForExit();
         }
 
@@ -225,67 +223,67 @@ namespace RNASeqAnalysisWrappers
             return null;
         }
 
-        private static string all_grch37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
-        private static string common_grch37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
-        private static string all_grch38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
-        private static string common_grch38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
+        private static string allGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
+        private static string commonGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
+        private static string allGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
+        private static string commonGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
 
-        public static void download_known_sites(string bin_directory, string target_directory, bool common_only, bool GRCh37, bool GRCh38, out string known_sites_filename)
+        public static void DownloadKnownSites(string binDirectory, string targetDirectory, bool commonOnly, bool GRCh37, bool GRCh38, out string knownSitesFilename)
         {
-            known_sites_filename = "";
+            knownSitesFilename = "";
 
             if (!GRCh37 && !GRCh38) return;
 
-            string target_file = common_only ?
-                GRCh37 ? common_grch37 : common_grch38 :
-                GRCh37 ? all_grch37 : all_grch38;
+            string targetFile = commonOnly ?
+                GRCh37 ? commonGRCh37 : commonGRCh38 :
+                GRCh37 ? allGRCh37 : allGRCh38;
 
-            known_sites_filename = target_file.Split('/').Last();
-            known_sites_filename = known_sites_filename.Substring(0, known_sites_filename.Length - 3);
-            string new_known_sites = Path.GetFileNameWithoutExtension(known_sites_filename) + ".ensembl.vcf";
+            knownSitesFilename = targetFile.Split('/').Last();
+            knownSitesFilename = knownSitesFilename.Substring(0, knownSitesFilename.Length - 3);
+            string newKnownSites = Path.GetFileNameWithoutExtension(knownSitesFilename) + ".ensembl.vcf";
 
-            if (File.Exists(Path.Combine(target_directory, new_known_sites)))
+            if (File.Exists(Path.Combine(targetDirectory, newKnownSites)))
             {
-                known_sites_filename = new_known_sites;
+                knownSitesFilename = newKnownSites;
                 return;
             }
 
-            string script_path = Path.Combine(bin_directory, "download_known_variants.bash");
-            WrapperUtility.generate_and_run_script(script_path, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "download_known_variants.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(target_directory),
-                "wget " + target_file,
-                "tar -xvf " + target_file,
-                "rm " + target_file
+                "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
+                "wget " + targetFile,
+                "tar -xvf " + targetFile,
+                "rm " + targetFile
             }).WaitForExit();
-            File.Delete(script_path);
+            File.Delete(scriptPath);
 
-            Dictionary<string, string> chrom_mappings = File.ReadAllLines(GRCh37 ? Path.Combine(bin_directory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") : Path.Combine(bin_directory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
+            Dictionary<string, string> chromMappings = File.ReadAllLines(GRCh37 ? Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") : Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
                 .ToDictionary(line => line.Split('\t')[0], line => line.Split('\t')[1]);
 
-            using (StreamReader reader = new StreamReader(Path.Combine(target_directory, known_sites_filename)))
-            using (StreamWriter writer = new StreamWriter(Path.Combine(target_directory, new_known_sites)))
+            using (StreamReader reader = new StreamReader(Path.Combine(targetDirectory, knownSitesFilename)))
+            using (StreamWriter writer = new StreamWriter(Path.Combine(targetDirectory, newKnownSites)))
             {
                 while (true)
                 {
                     string a = reader.ReadLine();
                     if (a == null) break;
                     string[] line = a.Split('\t');
-                    if (chrom_mappings.TryGetValue(line[0], out string chr)) line[0] = chr;
+                    if (chromMappings.TryGetValue(line[0], out string chr)) line[0] = chr;
                     writer.Write(String.Join("\t", line) + '\n');
                 }
             }
-            known_sites_filename = new_known_sites;
+            knownSitesFilename = newKnownSites;
             //File.Delete(Path.Combine(target_directory, known_sites_filename));
         }
 
-        public static void install(string current_directory)
+        public static void Install(string currentDirectory)
         {
-            if (Directory.Exists(Path.Combine(current_directory, "GenomeAnalysisTK.jar"))) return;
-            string script_path = Path.Combine(current_directory, "install_gatk.bash");
-            WrapperUtility.generate_and_run_script(script_path, new List<string>
+            if (Directory.Exists(Path.Combine(currentDirectory, "GenomeAnalysisTK.jar"))) return;
+            string scriptPath = Path.Combine(currentDirectory, "install_gatk.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(current_directory),
+                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
                 @"wget https://software.broadinstitute.org/gatk/download/auth?package=GATK",
                 "tar -jxvf GenomeAnalysisTK-3.8-0.tar.bz2",
                 "rm GenomeAnalysisTK-3.8-0.tar.bz2",
@@ -293,7 +291,7 @@ namespace RNASeqAnalysisWrappers
                 @"rm -r GenomeAnalysisTK-*",
                 "git clone https://github.com/dpryan79/ChromosomeMappings.git",
             }).WaitForExit();
-            File.Delete(script_path);
+            File.Delete(scriptPath);
         }
     }
 }

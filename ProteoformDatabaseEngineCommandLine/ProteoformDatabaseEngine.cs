@@ -3,28 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ManyConsole;
+using RNASeqAnalysisWrappers;
+using CommandLine;
 
-namespace ProteoformDatabaseEngine
+namespace ProteoformDatabaseEngineCommandLine
 {
     class ProteoformDatabaseEngine
     {
         public static void Main(string[] args)
         {
-            var commands = GetCommands();
-            if (args.Length > 0)
+            if (args.Contains("setup"))
             {
-                ConsoleCommandDispatcher.DispatchCommand(commands, args, Console.Out);
+                WrapperUtility.Install(Environment.CurrentDirectory);
+                return;
             }
-            else
-            {
-                ConsoleCommandDispatcher.DispatchCommand(commands, new string[] { "user_interface" }, Console.Out);
-            }
-        }
 
-        public static IEnumerable<ConsoleCommand> GetCommands()
-        {
-            return ConsoleCommandDispatcher.FindCommandsInSameAssemblyAs(typeof(ProteoformDatabaseEngine));
+            Options options = new Options();
+            var isValid = Parser.Default.ParseArgumentsStrict(args, options);
+            Fastq2ProteinsRunner.Run(options.Bin, options.GRCh37, options.GRCh38, options.Threads, new string[] { options.Fastq1, options.Fastq2 }, options.StrandSpecific, options.InferStrandSpecificity, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff, out string proteinDb);
+            Console.WriteLine("ouptput database to " + proteinDb);
         }
     }
 }

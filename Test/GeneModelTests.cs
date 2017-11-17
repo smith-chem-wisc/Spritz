@@ -22,7 +22,7 @@ namespace Test
         public void gtfBasics()
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
-            Assert.AreEqual(165, geneModel.Genes.SelectMany(g => g.transcripts).Count());
+            Assert.AreEqual(165, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
             List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
         }
 
@@ -30,7 +30,7 @@ namespace Test
         public void gffBasics()
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
-            Assert.AreEqual(148, geneModel.Genes.SelectMany(g => g.transcripts).Count());
+            Assert.AreEqual(148, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
             List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
 
             //Forward strand, single coding region

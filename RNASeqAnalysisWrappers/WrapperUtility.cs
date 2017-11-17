@@ -8,16 +8,17 @@ namespace RNASeqAnalysisWrappers
 {
     public static class WrapperUtility
     {
-        private static Regex drive_name = new Regex(@"([A-Z]:)");
-        private static Regex forward_slashes = new Regex(@"(\\)");
-        public static string convert_windows_path(string path)
+        private static Regex driveName = new Regex(@"([A-Z]:)");
+        private static Regex forwardSlashes = new Regex(@"(\\)");
+        public static string ConvertWindowsPath(string path)
         {
             if (path == null) return null;
             if (path == "") return "";
-            return "/mnt/" + Char.ToLowerInvariant(path[0]) + drive_name.Replace(forward_slashes.Replace(path, "/"), "");
+            if (path.StartsWith("/mnt/")) return path;
+            return "/mnt/" + Char.ToLowerInvariant(path[0]) + driveName.Replace(forwardSlashes.Replace(path, "/"), "");
         }
 
-        public static Process run_basic_command(string command, string arguments)
+        public static Process RunBashCommand(string command, string arguments)
         {
             Process proc = new Process();
             proc.StartInfo.FileName = @"C:\Windows\System32\bash.exe";
@@ -26,7 +27,7 @@ namespace RNASeqAnalysisWrappers
             return proc;
         }
 
-        public static Process generate_and_run_script(string script_path, List<string> commands)
+        public static Process GenerateAndRunScript(string script_path, List<string> commands)
         {
             using (StreamWriter writer = new StreamWriter(script_path))
             {
@@ -36,15 +37,15 @@ namespace RNASeqAnalysisWrappers
                     writer.Write(cmd + "\n");
                 }
             }
-            return run_basic_command(@"bash", convert_windows_path(script_path));
+            return RunBashCommand(@"bash", ConvertWindowsPath(script_path));
         }
 
-        public static bool check_bash_setup()
+        public static bool CheckBashSetup()
         {
             return File.Exists(@"C:\Windows\System32\bash.exe");
         }
 
-        public static void install(string current_directory)
+        public static void Install(string currentDirectory)
         {
             List<string> commands = new List<string>
             {
@@ -53,12 +54,12 @@ namespace RNASeqAnalysisWrappers
                 "sudo apt-get upgrade"
             };
 
-            List<string> aptitude_dependencies = new List<string>
+            List<string> aptitudeDependencies = new List<string>
             {
                 "gcc", "g++", "make", "python", "samtools", "picard-tools", "gawk", "cmake"
             };
 
-            foreach (string dependency in aptitude_dependencies)
+            foreach (string dependency in aptitudeDependencies)
             {
                 commands.Add(
                     "if commmand -v " + dependency + " > /dev/null 2>&1 ; then\n" +
@@ -78,9 +79,14 @@ namespace RNASeqAnalysisWrappers
                 "  sudo apt-get install oracle-java8-installer\n" +
                 "fi");
 
-            string script_path = Path.Combine(current_directory, "install_dependencies.bash");
-            generate_and_run_script(script_path, commands).WaitForExit();
+            string scriptPath = Path.Combine(currentDirectory, "install_dependencies.bash");
+            GenerateAndRunScript(scriptPath, commands).WaitForExit();
             //File.Delete(script_path);
+        }
+
+        public static void Decompress(string file)
+        {
+            RunBashCommand("gunzip", file);
         }
 
         public static string AsciiArt()
