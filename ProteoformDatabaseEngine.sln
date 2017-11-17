@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark", "Benchmark\Benc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bio.VCF", "..\Bio.VCF\Bio.VCF.csproj", "{F7213ADD-1C0C-434F-9A32-7F6C31671A89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proteogenomics", "Genomics\Proteogenomics.csproj", "{DEC1FE77-2976-43CA-84FE-4F2B86C5E85F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proteogenomics", "Proteogenomics\Proteogenomics.csproj", "{DEC1FE77-2976-43CA-84FE-4F2B86C5E85F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RNASeqAnalysisWrappers", "RNASeqAnalysisWrappers\RNASeqAnalysisWrappers.csproj", "{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}"
 EndProject

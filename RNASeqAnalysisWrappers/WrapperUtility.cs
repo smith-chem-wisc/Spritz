@@ -12,6 +12,8 @@ namespace RNASeqAnalysisWrappers
         private static Regex forward_slashes = new Regex(@"(\\)");
         public static string convert_windows_path(string path)
         {
+            if (path == null) return null;
+            if (path == "") return "";
             return "/mnt/" + Char.ToLowerInvariant(path[0]) + drive_name.Replace(forward_slashes.Replace(path, "/"), "");
         }
 

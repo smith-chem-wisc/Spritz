@@ -51,6 +51,14 @@ namespace Test
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
         }
 
+        [Test]
+        public void test_install_skewer()
+        {
+            SkewerWrapper.install(TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
+        }
+
         #endregion Installs
 
         #region Minimal alignment tests
@@ -140,6 +148,42 @@ namespace Test
         }
 
         #endregion Minimal alignment tests
+
+        #region Skewer tests
+
+        [Test]
+        public void skewer_single()
+        {
+            SkewerWrapper.trim(TestContext.CurrentContext.TestDirectory, 19,
+                new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "read1.fastq") },
+                out string[] readTrimmedPaths,
+                out string log);
+            Assert.True(File.Exists(readTrimmedPaths[0]));
+            Assert.True(File.Exists(log));
+            File.Delete(readTrimmedPaths[0]);
+            File.Delete(log);
+        }
+
+        [Test]
+        public void skewer_paired()
+        {
+            SkewerWrapper.trim(TestContext.CurrentContext.TestDirectory, 19,
+                new string[] 
+                {
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "read1.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "read2.fastq")
+                },
+                out string[] readTrimmedPaths,
+                out string log);
+            Assert.True(File.Exists(readTrimmedPaths[0]));
+            Assert.True(File.Exists(readTrimmedPaths[1]));
+            Assert.True(File.Exists(log));
+            File.Delete(readTrimmedPaths[0]);
+            File.Delete(readTrimmedPaths[1]);
+            File.Delete(log);
+        }
+
+        #endregion Skewer tests
 
         #region STAR-Fusion test
 

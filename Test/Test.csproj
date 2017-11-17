@@ -106,6 +106,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="read1.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="read2.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="sample_gff.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -127,7 +133,7 @@
       <Project>{f7213add-1c0c-434f-9a32-7f6c31671a89}</Project>
       <Name>Bio.VCF</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Genomics\Proteogenomics.csproj">
+    <ProjectReference Include="..\Proteogenomics\Proteogenomics.csproj">
       <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
       <Name>Proteogenomics</Name>
     </ProjectReference>

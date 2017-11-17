@@ -34,10 +34,10 @@ namespace Proteogenomics
 
         #region Public Constructors
 
-        public Gene(string ID, string ChromID, ISequence chromosome, MetadataListItem<List<string>> metadata)
+        public Gene(string ID, ISequence chromosome, MetadataListItem<List<string>> metadata)
         {
             this.ID = ID;
-            this.ChromID = ChromID;
+            this.ChromID = chromosome.ID;
             this.Chromosome = chromosome;
             this.metadata = metadata;
         }

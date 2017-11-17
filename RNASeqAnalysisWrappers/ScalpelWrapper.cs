@@ -9,6 +9,7 @@ namespace RNASeqAnalysisWrappers
         // There's an attribute "ZYG" for zygosity, either "het" or "homo" for heterozygous or homozygous
         public static void call_indels(string bin_directory, int threads, string genome_fasta, string bed, string bam, string outdir, out string new_vcf)
         {
+            new_vcf = Path.Combine(outdir, "variants.indel.vcf");
             string script_path = Path.Combine(bin_directory, "run_scalpel.bash");
             WrapperUtility.generate_and_run_script(script_path, new List<string>
             {
@@ -21,7 +22,6 @@ namespace RNASeqAnalysisWrappers
                     " --dir " + WrapperUtility.convert_windows_path(outdir),
             }).WaitForExit();
             File.Delete(script_path);
-            new_vcf = Path.Combine(outdir, "variants.indel.vcf");
         }
 
         // Requires cmake, installed in WrapperUtility install

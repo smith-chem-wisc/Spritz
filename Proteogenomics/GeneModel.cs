@@ -37,7 +37,7 @@ namespace Proteogenomics
 
         #endregion Public Constructor
 
-        #region Public Method
+        #region Public Methods
 
         private Gene currentGene = null;
         private Transcript currentTranscript = null;
@@ -96,7 +96,7 @@ namespace Proteogenomics
 
             if (hasGeneId && (currentGene == null || hasGeneId && gene_id != currentGene.ID))
             {
-                currentGene = new Gene(gene_id, chromSeq.ID, chromSeq, feature);
+                currentGene = new Gene(gene_id, chromSeq, feature);
                 Genes.Add(currentGene);
             }
 
@@ -147,7 +147,7 @@ namespace Proteogenomics
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq.ID, feature);
+                    currentGene = new Gene(geneId, chromSeq, feature);
                     Genes.Add(currentGene);
                 }
 
@@ -159,7 +159,7 @@ namespace Proteogenomics
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq.ID, feature);
+                    currentGene = new Gene(geneId, chromSeq, feature);
                     Genes.Add(currentGene);
                 }
 
@@ -209,7 +209,7 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Public Method
+        #endregion Public Methods
 
         #region Translation Methods
 

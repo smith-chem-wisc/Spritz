@@ -99,6 +99,7 @@
     <Compile Include="ProteoformDatabaseEngine.cs" />
     <Compile Include="GenerateCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="GenerateDatabase.cs" />
     <Compile Include="UserInterfaceCommand.cs" />
   </ItemGroup>
   <ItemGroup>

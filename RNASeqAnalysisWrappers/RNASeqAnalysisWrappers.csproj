@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BEDOPSWrapper.cs" />
+    <Compile Include="Fastq2ProteinsRunner.cs" />
     <Compile Include="CufflinksWrapper.cs" />
     <Compile Include="GATKWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
