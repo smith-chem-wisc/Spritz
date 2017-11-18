@@ -12,7 +12,7 @@ namespace RNASeqAnalysisWrappers
             string bedPath = Path.Combine(Path.GetDirectoryName(gtfOrGffPath), Path.GetFileNameWithoutExtension(gtfOrGffPath) + ".bed");
             if (!File.Exists(bedPath))
             {
-                string scriptPath = Path.Combine(bin, "bed6conversion.bash");
+                string scriptPath = Path.Combine(bin, "scripts", "bed6conversion.bash");
                 WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
                 {
                     "cd " + WrapperUtility.ConvertWindowsPath(bin),
@@ -29,8 +29,7 @@ namespace RNASeqAnalysisWrappers
         {
             string tmpPath = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".tmp");
             string bedPath = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".bed12");
-            //if (File.Exists(bed_path)) return;
-            string scriptPath = Path.Combine(bin, "bed12conversion.bash");
+            string scriptPath = Path.Combine(bin, "scripts", "bed12conversion.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(bin, "bedops")),
@@ -38,14 +37,13 @@ namespace RNASeqAnalysisWrappers
                 "awk '{print $2\"\t\"$4\"\t\"$5\"\t\"$1\"\t0\t\"$3\"\t\"$6\"\t\"$7\"\t0\t\"$8\"\t\"$9\"\t\"$10}' " + WrapperUtility.ConvertWindowsPath(tmpPath) + " > " + WrapperUtility.ConvertWindowsPath(bedPath),
                 "rm " + WrapperUtility.ConvertWindowsPath(tmpPath)
             }).WaitForExit();
-            File.Delete(scriptPath);
             return bedPath;
         }
 
         public static void Install(string currentDirectory)
         {
             if (Directory.Exists(Path.Combine(currentDirectory, "bedops"))) return;
-            string scriptPath = Path.Combine(currentDirectory, "install_bedops.bash");
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "install_bedops.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
@@ -58,7 +56,6 @@ namespace RNASeqAnalysisWrappers
                 "cd ..",
                 "cp bedops/* /usr/local/bin"
             }).WaitForExit();
-            File.Delete(scriptPath);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace RNASeqAnalysisWrappers
 
         public static void SubsetBam(string binDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
         {
-            string script_name = Path.Combine(binDirectory, "subset_bam.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "subset_bam.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -38,7 +38,7 @@ namespace RNASeqAnalysisWrappers
             // check if sorted and grouped
             string sortedCheckfile = "header_sorted.txt";
             string readGroupedCheckfile = "header_readgrouped.txt";
-            string scriptPath = Path.Combine(binDirectory, "check_sorted.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "check_sorted.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -69,7 +69,7 @@ namespace RNASeqAnalysisWrappers
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
             string splitTrimBam = Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".split.bam");
             string mapQReassigned = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".mapqfixed.bam");
-            string scriptName2 = Path.Combine(binDirectory, "picard.bash");
+            string scriptName2 = Path.Combine(binDirectory, "scripts", "picard.bash");
             WrapperUtility.GenerateAndRunScript(scriptName2, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -124,7 +124,7 @@ namespace RNASeqAnalysisWrappers
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
             string realignerTable = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".forIndelRealigner.intervals");
             newBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".realigned.bam");
-            string script_name = Path.Combine(binDirectory, "realign_indels.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "realign_indels.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -163,7 +163,7 @@ namespace RNASeqAnalysisWrappers
             recalibrationTablePath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
 
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
-            string scriptPath = Path.Combine(binDirectory, "base_recalibration.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "base_recalibration.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -193,7 +193,7 @@ namespace RNASeqAnalysisWrappers
             newVcf = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".vcf");
 
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
-            string scriptName = Path.Combine(binDirectory, "variant_calling.bash");
+            string scriptName = Path.Combine(binDirectory, "scripts", "variant_calling.bash");
             WrapperUtility.GenerateAndRunScript(scriptName, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -239,7 +239,7 @@ namespace RNASeqAnalysisWrappers
                 GRCh37 ? allGRCh37 : allGRCh38;
 
             knownSitesFilename = targetFile.Split('/').Last();
-            knownSitesFilename = knownSitesFilename.Substring(0, knownSitesFilename.Length - 3);
+            knownSitesFilename = Path.GetFileNameWithoutExtension(knownSitesFilename);
             string newKnownSites = Path.GetFileNameWithoutExtension(knownSitesFilename) + ".ensembl.vcf";
 
             if (File.Exists(Path.Combine(targetDirectory, newKnownSites)))
@@ -248,13 +248,13 @@ namespace RNASeqAnalysisWrappers
                 return;
             }
 
-            string scriptPath = Path.Combine(binDirectory, "download_known_variants.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "download_known_variants.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
                 "wget " + targetFile,
-                "tar -xvf " + targetFile,
-                "rm " + targetFile
+                "gunzip " + knownSitesFilename + ".gz",
+                "rm " + knownSitesFilename + ".gz"
             }).WaitForExit();
             File.Delete(scriptPath);
 
@@ -280,18 +280,22 @@ namespace RNASeqAnalysisWrappers
         public static void Install(string currentDirectory)
         {
             if (Directory.Exists(Path.Combine(currentDirectory, "GenomeAnalysisTK.jar"))) return;
-            string scriptPath = Path.Combine(currentDirectory, "install_gatk.bash");
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "install_gatk.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
-                @"wget https://software.broadinstitute.org/gatk/download/auth?package=GATK",
-                "tar -jxvf GenomeAnalysisTK-3.8-0.tar.bz2",
-                "rm GenomeAnalysisTK-3.8-0.tar.bz2",
-                @"mv GenomeAnalysisTK-*/GenomeAnalysisTK.jar .",
-                @"rm -r GenomeAnalysisTK-*",
+                "while [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(currentDirectory, "GenomeAnalysisTK-*")) + " ]",
+                "do",
+                "  echo \"Genome Analysis Toolkit (GATK) not found.\nPlease download GATK from their website https://software.broadinstitute.org/gatk/download/ \nThen, place the file (.tar.bz2) in the folder " + 
+                    currentDirectory + "\n\"",
+                "  read -n 1 -s -r -p \"Press any key to continue\n\"",
+                "done",
+                "tar -jxvf GenomeAnalysisTK-*.tar.bz2",
+                "rm GenomeAnalysisTK-*.tar.bz2",
+                "mv GenomeAnalysisTK-*/GenomeAnalysisTK.jar .",
+                "rm -r GenomeAnalysisTK-*",
                 "git clone https://github.com/dpryan79/ChromosomeMappings.git",
             }).WaitForExit();
-            File.Delete(scriptPath);
         }
     }
 }

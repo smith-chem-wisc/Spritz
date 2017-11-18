@@ -8,17 +8,17 @@ namespace RNASeqAnalysisWrappers
 {
     public class TopHatWrapper
     {
-        public void generate_index()
+        public static void generate_index()
         {
 
         }
 
-        public void align()
+        public static void align()
         {
 
         }
 
-        public void install()
+        public static void install()
         {
             WrapperUtility.RunBashCommand("sudo", "apt-get install tophat");
         }

@@ -23,38 +23,35 @@ namespace RNASeqAnalysisWrappers
                 (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff") ? " --sjdbGTFtagExonParentTranscript Parent" : "") +
                 " --sjdbOverhang " + junctionOverhang.ToString();
 
-            string script_name = Path.Combine(bin_directory, "generate_genome.bash");
+            string script_name = Path.Combine(bin_directory, "scripts", "generate_genome.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
                 "STAR/source/STAR" + arguments
             }).WaitForExit();
-            //File.Delete(script_name);
         }
 
         public static void LoadGenome(string bin_directory, string genomeDir)
         {
             string arguments = " --genomeLoad LoadAndExit" +
                 " --genomeDir '" + WrapperUtility.ConvertWindowsPath(genomeDir) + "'";
-            string script_name = Path.Combine(bin_directory, "load_genome.bash");
+            string script_name = Path.Combine(bin_directory, "scripts", "load_genome.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
                 "STAR/source/STAR" + arguments
             }).WaitForExit();
-            File.Delete(script_name);
         }
 
 
         public static void RemoveGenome(string bin_directory)
         {
-            string script_name = Path.Combine(bin_directory, "remove_genome.bash");
+            string script_name = Path.Combine(bin_directory, "scripts", "remove_genome.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
                 "STAR/source/STAR --genomeLoad Remove"
             }).WaitForExit();
-            File.Delete(script_name);
         }
 
         // fastqs must have \n line endings, not \r\n
@@ -78,13 +75,12 @@ namespace RNASeqAnalysisWrappers
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
 
-            string script_name = Path.Combine(bin_directory, "align_reads.bash");
+            string script_name = Path.Combine(bin_directory, "scripts", "align_reads.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
                 "STAR/source/STAR" + arguments
             }).WaitForExit();
-            File.Delete(script_name); 
         }
 
         public void SuccessiveAlignReads(string bin_directory, int threads, string genomeDir, List<string[]> fastq_files, string outprefix, bool strand_specific = true)
@@ -149,13 +145,12 @@ namespace RNASeqAnalysisWrappers
                         WrapperUtility.ConvertWindowsPath(Path.Combine(bin_directory, "STAR-Fusion_v1.1.0", "GRCh38_gencode_v26_CTAT_lib_July192017.plug-n-play"))) +
                 " --chimeric_junction " + WrapperUtility.ConvertWindowsPath(chemericOutJunction);
 
-            string script_name = Path.Combine(bin_directory, "star_fusion.bash");
+            string script_name = Path.Combine(bin_directory, "scripts", "star_fusion.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
                 "STAR/source/STAR-Fusion" + arguments
             }).WaitForExit();
-            File.Delete(script_name);
         }
 
         public static void Install(string current_directory, bool GRCh37, bool GRCh38)

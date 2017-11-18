@@ -22,7 +22,7 @@ namespace RNASeqAnalysisWrappers
         public static void Install(string currentDirectory)
         {
             if (Directory.Exists(Path.Combine(currentDirectory, "RSeQC-2.6.4"))) return;
-            string script_path = Path.Combine(currentDirectory, "install_rseqc.bash");
+            string script_path = Path.Combine(currentDirectory, "scripts", "install_rseqc.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
@@ -43,13 +43,12 @@ namespace RNASeqAnalysisWrappers
         {
             if (Path.GetExtension(geneModel) != ".bed")
                 geneModel = BEDOPSWrapper.GtfOrGff2Bed6(binDirectory, geneModel);
-            string script_path = Path.Combine(binDirectory, "infer_expt.bash");
+            string script_path = Path.Combine(binDirectory, "scripts", "infer_expt.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "python RSeQC-2.6.4/scripts/infer_experiment.py -r " + WrapperUtility.ConvertWindowsPath(geneModel) + " -i " + WrapperUtility.ConvertWindowsPath(bamFile) + " > " + WrapperUtility.ConvertWindowsPath(outFile),
             }).WaitForExit();
-            File.Delete(script_path);
         }
 
         #endregion Private Methods

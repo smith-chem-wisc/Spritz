@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CommandLine;
+﻿using CommandLine;
+using System;
 
 namespace ProteoformDatabaseEngineCommandLine
 {
@@ -12,8 +8,8 @@ namespace ProteoformDatabaseEngineCommandLine
         [Option('c', "command", Required = true, HelpText = "command: (1) setup or (2) run")]
         public string Command { get; set; }
 
-        [Option('b', "binDirectory", Required =true, HelpText ="bin directory for PDE")]
-        public string Bin { get; set; }
+        [Option('b', "binDirectory", Required = false, HelpText = "bin directory for PDE")]
+        public string Bin { get; set; } = Environment.CurrentDirectory;
 
         [Option('7', "GRCh37", Required = false, HelpText = "use GRCH37 references", DefaultValue = false)]
         public bool GRCh37 { get; set; }
@@ -30,19 +26,19 @@ namespace ProteoformDatabaseEngineCommandLine
         [Option('2', "fq2", Required = false, HelpText = "fastq pair2")]
         public string Fastq2 { get; set; }
 
-        [Option('s', "strandSpecific", Required = false, HelpText = "strandedness of the protocol", DefaultValue =false)]
+        [Option('s', "strandSpecific", Required = false, HelpText = "strandedness of the protocol", DefaultValue = false)]
         public bool StrandSpecific { get; set; }
 
-        [Option('i', "inferStrandedness", Required = true, HelpText = "infer the strandedness with a sample of the fastq files", DefaultValue =true)]
+        [Option('i', "inferStrandedness", Required = false, HelpText = "infer the strandedness with a sample of the fastq files", DefaultValue = true)]
         public bool InferStrandSpecificity { get; set; }
 
-        [Option("genomeDir", Required = true, HelpText = "STAR genome directory", DefaultValue = true)]
+        [Option('d', "genomeDir", Required = true, HelpText = "STAR genome directory")]
         public string GenomeStarIndexDirectory { get; set; }
 
-        [Option("genomeFasta", Required = true, HelpText = "genomeFasta", DefaultValue = true)]
+        [Option('f', "genomeFasta", Required = true, HelpText = "genomeFasta")]
         public string GenomeFasta { get; set; }
 
-        [Option("geneModelGtfOrGff", Required = true, HelpText = "geneModelGtfOrGff", DefaultValue = true)]
+        [Option('g', "geneModelGtfOrGff", Required = true, HelpText = "geneModelGtfOrGff")]
         public string GeneModelGtfOrGff { get; set; }
     }
 }

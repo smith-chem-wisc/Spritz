@@ -29,6 +29,7 @@ namespace RNASeqAnalysisWrappers
 
         public static Process GenerateAndRunScript(string script_path, List<string> commands)
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(script_path));
             using (StreamWriter writer = new StreamWriter(script_path))
             {
                 writer.Write(AsciiArt() + "\n");
@@ -56,7 +57,7 @@ namespace RNASeqAnalysisWrappers
 
             List<string> aptitudeDependencies = new List<string>
             {
-                "gcc", "g++", "make", "python", "samtools", "picard-tools", "gawk", "cmake"
+                "gcc", "g++", "make", "python", "samtools", "picard-tools", "gawk", "cmake", "git"
             };
 
             foreach (string dependency in aptitudeDependencies)
@@ -79,14 +80,8 @@ namespace RNASeqAnalysisWrappers
                 "  sudo apt-get install oracle-java8-installer\n" +
                 "fi");
 
-            string scriptPath = Path.Combine(currentDirectory, "install_dependencies.bash");
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "install_dependencies.bash");
             GenerateAndRunScript(scriptPath, commands).WaitForExit();
-            //File.Delete(script_path);
-        }
-
-        public static void Decompress(string file)
-        {
-            RunBashCommand("gunzip", file);
         }
 
         public static string AsciiArt()

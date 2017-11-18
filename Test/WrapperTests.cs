@@ -2,6 +2,7 @@
 using RNASeqAnalysisWrappers;
 using System.IO;
 using System.Net;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Test
@@ -13,55 +14,75 @@ namespace Test
         #region Installs
 
         [Test]
-        public void test_install_dependencies()
+        public void TestInstallDependencies()
         {
             WrapperUtility.Install(TestContext.CurrentContext.TestDirectory);
         }
 
         [Test]
-        public void test_install_star()
+        public void TestInstallSTAR()
         {
             STARWrapper.Install(TestContext.CurrentContext.TestDirectory, true, false);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
         }
 
         [Test]
-        public void test_install_bedops()
+        public void TestInstallBEDOPS()
         {
             BEDOPSWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
         }
 
         [Test]
-        public void test_install_rseqc()
+        public void TestInstallRSeQC()
         {
             RSeQCWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
         }
 
         [Test]
-        public void test_install_gatk()
+        public void TestInstallGATK()
         {
             GATKWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
         }
 
         [Test]
-        public void test_install_scalpel()
+        public void TestInstallScalpel()
         {
             ScalpelWrapper.install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
         }
 
         [Test]
-        public void test_install_skewer()
+        public void TestInstallSkewer()
         {
             SkewerWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
         }
 
+        [Test]
+        public void TestInstallSRAToolkit()
+        {
+            SRAToolkitWrapper.Install(TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sratoolkit")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sratoolkit", "bin", "fastq-dump")));
+        }
+
         #endregion Installs
+
+        #region SRA download test
+
+        [Test]
+        public void TestDownloadSRA()
+        {
+            SRAToolkitWrapper.Fetch(TestContext.CurrentContext.TestDirectory, "SRR6304532", TestContext.CurrentContext.TestDirectory, out string[] fastqs, out string log);
+            Assert.IsTrue(fastqs.All(f => File.Exists(f)));
+            Assert.IsTrue(File.Exists(log));
+        }
+
+        #endregion SRA download test
 
         #region Minimal alignment tests
 

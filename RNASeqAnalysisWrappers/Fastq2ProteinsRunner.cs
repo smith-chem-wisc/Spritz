@@ -44,7 +44,7 @@ namespace RNASeqAnalysisWrappers
             GATKWrapper.VariantCalling(bin, Environment.ProcessorCount, genomeFasta, realignedBam, Path.Combine(bin, knownSitesFilename), out string vcfPath);
 
             VCFParser vcf = new VCFParser(vcfPath);
-            List<VariantContext> variants = vcf.Select(x => x).ToList();
+            List<VariantContext> variants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length)).ToList();
             Genome genome = new Genome(genomeFasta);
             GeneModel geneModel = new GeneModel(genome, geneModelGtfOrGff);
             geneModel.AmendTranscripts(variants);

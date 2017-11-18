@@ -10,7 +10,7 @@ namespace RNASeqAnalysisWrappers
         public static void call_indels(string bin_directory, int threads, string genome_fasta, string bed, string bam, string outdir, out string new_vcf)
         {
             new_vcf = Path.Combine(outdir, "variants.indel.vcf");
-            string script_path = Path.Combine(bin_directory, "run_scalpel.bash");
+            string script_path = Path.Combine(bin_directory, "scripts", "run_scalpel.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
@@ -28,7 +28,7 @@ namespace RNASeqAnalysisWrappers
         public static void install(string current_directory)
         {
             if (Directory.Exists(Path.Combine(current_directory, "scalpel-0.5.3"))) return;
-            string script_path = Path.Combine(current_directory, "install_scalpel.bash");
+            string script_path = Path.Combine(current_directory, "scripts", "install_scalpel.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(current_directory),

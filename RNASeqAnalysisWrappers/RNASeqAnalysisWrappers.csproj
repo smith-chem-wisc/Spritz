@@ -91,6 +91,7 @@
     <Compile Include="ScalpelWrapper.cs" />
     <Compile Include="SkewerWrapper.cs" />
     <Compile Include="SlnckyWrapper.cs" />
+    <Compile Include="SRAToolkitWrapper.cs" />
     <Compile Include="STARWrapper.cs" />
     <Compile Include="TopHatWrapper.cs" />
     <Compile Include="WrapperUtility.cs" />
