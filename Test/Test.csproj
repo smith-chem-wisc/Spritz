@@ -96,7 +96,7 @@
     <Compile Include="TestProteomicsReadWrite.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
     <Compile Include="VariantTests.cs" />
-    <Compile Include="WrapperTests.cs" />
+    <Compile Include="WrapperIntegrationTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="chr1_one_transcript.gtf">

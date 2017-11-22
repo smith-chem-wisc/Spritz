@@ -92,6 +92,8 @@
     <Compile Include="SkewerWrapper.cs" />
     <Compile Include="SlnckyWrapper.cs" />
     <Compile Include="SRAToolkitWrapper.cs" />
+    <Compile Include="STARFusionWrapper.cs" />
+    <Compile Include="STARGenomeLoadOption.cs" />
     <Compile Include="STARWrapper.cs" />
     <Compile Include="TopHatWrapper.cs" />
     <Compile Include="WrapperUtility.cs" />
