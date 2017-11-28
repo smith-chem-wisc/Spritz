@@ -105,7 +105,9 @@
     <None Include="chr1_sample.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="mapper.fastq" />
+    <None Include="mapper.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="read1.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

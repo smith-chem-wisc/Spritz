@@ -24,20 +24,21 @@ namespace RNASeqAnalysisWrappers
             return bedPath;
         }
 
-        // see https://github.com/Czh3/NGSTools/blob/master/script/gtf2bed12.sh
+        // see https://gist.github.com/gireeshkbogu/f478ad8495dca56545746cd391615b93
         public static string Gtf2Bed12(string bin, string gtf_path)
         {
-            string tmpPath = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".tmp");
-            string bedPath = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".bed12");
+            string genePredPath = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".genePred");
+            string bed12Path = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".bed12");
+            string sortedBed12Path = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".sorted.bed12");
             string scriptPath = Path.Combine(bin, "scripts", "bed12conversion.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(bin, "bedops")),
-                "./gtfToGenePred -genePredExt -geneNameAsName2 " + WrapperUtility.ConvertWindowsPath(gtf_path) + " " + WrapperUtility.ConvertWindowsPath(tmpPath),
-                "awk '{print $2\"\t\"$4\"\t\"$5\"\t\"$1\"\t0\t\"$3\"\t\"$6\"\t\"$7\"\t0\t\"$8\"\t\"$9\"\t\"$10}' " + WrapperUtility.ConvertWindowsPath(tmpPath) + " > " + WrapperUtility.ConvertWindowsPath(bedPath),
-                "rm " + WrapperUtility.ConvertWindowsPath(tmpPath)
+                "./gtfToGenePred " + WrapperUtility.ConvertWindowsPath(gtf_path) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
+                "./genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
+                "sort -k1,1 -k2,2n " + WrapperUtility.ConvertWindowsPath(bed12Path) + " > " + WrapperUtility.ConvertWindowsPath(sortedBed12Path),
             }).WaitForExit();
-            return bedPath;
+            return sortedBed12Path;
         }
 
         public static void Install(string currentDirectory)
@@ -53,6 +54,7 @@ namespace RNASeqAnalysisWrappers
                 "mv bin bedops",
                 "cd bedops",
                 "wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred",
+                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed",
                 "cd ..",
                 "cp bedops/* /usr/local/bin"
             }).WaitForExit();

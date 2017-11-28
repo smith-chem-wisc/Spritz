@@ -1,29 +1,57 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace RNASeqAnalysisWrappers
 {
     public class RSeQCWrapper
     {
+        #region Public Properties
+
+        public static string InnerDistanceRPlotSuffix { get; } = ".inner_distance_plot.r";
+
+        public static string InnerDistanceFrequencyTableSuffix { get; } = ".inner_distance_freq.txt";
+
+        public static string InnerDistanceDistanceTableSuffix { get; } = ".inner_distance.txt";
+
+        #endregion Public Properties
+
         #region Public Methods
 
-        public static int InferInnerDistance(string binDirectory, string bamPath, string geneModelPath)
+        public static int InferInnerDistance(string binDirectory, string bamPath, string geneModelPath, out string[] outputFiles)
         {
             if (Path.GetExtension(geneModelPath) != ".bed")
             {
-                geneModelPath = BEDOPSWrapper.GtfOrGff2Bed6(binDirectory, geneModelPath);
+                geneModelPath = BEDOPSWrapper.Gtf2Bed12(binDirectory, geneModelPath);
             }
             string script_path = Path.Combine(binDirectory, "scripts", "inferInnerDistance.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "python RSeQC-2.6.4/scripts/inner_distance.py" + 
-                    " -i " + WrapperUtility.ConvertWindowsPath(bamPath) +
-                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath))) + 
-                    " -r " + WrapperUtility.ConvertWindowsPath(geneModelPath)
+                    " -i " + WrapperUtility.ConvertWindowsPath(bamPath) + // input
+                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath))) + // out prefix
+                    " -r " + WrapperUtility.ConvertWindowsPath(geneModelPath) // gene model in BED format
             }).WaitForExit();
 
-            return 1;
+            outputFiles = new string[]
+            {
+                Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceRPlotSuffix,
+                Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceFrequencyTableSuffix,
+                Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceDistanceTableSuffix
+            };
+
+            string[] distance_lines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceDistanceTableSuffix);
+            List<int> distances = new List<int>();
+            foreach (string dline in distance_lines)
+            {
+                if (int.TryParse(dline.Split('\t')[1], out int distance) 
+                    && distance < 250 && distance > -250) // default settings for infer_distance
+                    distances.Add(distance);
+            }
+            int averageDistance = (int)Math.Round(distances.Average(), 0);
+            return averageDistance;
         }
 
         public static bool CheckStrandSpecificity(string binDirectory, string bamPath, string geneModelPath)

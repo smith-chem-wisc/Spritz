@@ -47,10 +47,10 @@ namespace RNASeqAnalysisWrappers
                 {
                     STARWrapper.SubsetFastqs(trimmedFastqs, (int)10e6, bin, out string[] subsetFastqs);
                     string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                    STARWrapper.BasicAlignReads(bin, Environment.ProcessorCount, genomeStarIndexDirectory, trimmedFastqs, subsetOutPrefix, false, "LoadAndKeep");
+                    STARWrapper.BasicAlignReads(bin, Environment.ProcessorCount, genomeStarIndexDirectory, trimmedFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep);
                     strandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff);
                 }
-                STARWrapper.BasicAlignReads(bin, Environment.ProcessorCount, genomeStarIndexDirectory, trimmedFastqs, outPrefix, strandSpecific, "LoadAndRemove");
+                STARWrapper.BasicAlignReads(bin, Environment.ProcessorCount, genomeStarIndexDirectory, trimmedFastqs, outPrefix, strandSpecific, STARGenomeLoadOption.LoadAndRemove);
             }
 
             GATKWrapper.DownloadKnownSites(bin, bin, true, true, false, genomeFasta, out string knownSitesFilename);

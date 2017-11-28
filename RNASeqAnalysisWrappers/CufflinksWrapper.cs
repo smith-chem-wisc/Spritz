@@ -39,7 +39,7 @@ namespace RNASeqAnalysisWrappers
             }
 
             outputDirectory = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksOutput");
-            string script_name = Path.Combine(binDirectory, "scripts", "cufflink.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "cufflinksRun.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),

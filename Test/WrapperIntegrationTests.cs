@@ -12,55 +12,55 @@ namespace Test
 
         #region Installs
 
-        [Test, Order(1)]
+        [Test, Order(0)]
         public void TestInstallDependencies()
         {
             WrapperUtility.Install(TestContext.CurrentContext.TestDirectory);
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallSTAR()
         {
             STARWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallSTARFusion()
         {
             STARFusionWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallBEDOPS()
         {
             BEDOPSWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallRSeQC()
         {
             RSeQCWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallGATK()
         {
             GATKWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallScalpel()
         {
             ScalpelWrapper.install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallSkewer()
         {
             SkewerWrapper.Install(TestContext.CurrentContext.TestDirectory);
@@ -68,7 +68,7 @@ namespace Test
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestInstallSRAToolkit()
         {
             SRAToolkitWrapper.Install(TestContext.CurrentContext.TestDirectory);
@@ -80,7 +80,7 @@ namespace Test
 
         #region SRA download test
 
-        [Test, Order(3)]
+        [Test, Order(2)]
         public void TestDownloadSRA()
         {
             SRAToolkitWrapper.Fetch(TestContext.CurrentContext.TestDirectory, "SRR6304532", TestContext.CurrentContext.TestDirectory, out string[] fastqs, out string log);
@@ -90,33 +90,37 @@ namespace Test
 
         #endregion SRA download test
 
-        #region Minimal alignment tests
+        #region BED conversion tests
 
-        [Test, Order(3)]
-        public void test_convert_gff()
+        [Test, Order(2)]
+        public void TestConvertGff()
         {
             string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
             Assert.IsTrue(new FileInfo(bedPath).Length > 0);
             File.Delete(bedPath);
         }
 
-        [Test, Order(3)]
-        public void test_convert_gtf()
+        [Test, Order(2)]
+        public void TestConvertGtf()
         {
             string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(bedPath).Length > 0);
             File.Delete(bedPath);
         }
 
-        [Test, Order(3)]
-        public void test_convert_gtf12()
+        [Test, Order(2)]
+        public void TestConvertGtf12()
         {
             BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed12")).Length > 0);
         }
 
-        [Test, Order(3)]
-        public void subset_reads_check()
+        #endregion BED conversion tests
+
+        #region Minimal STAR alignment tests
+
+        [Test, Order(2)]
+        public void SubsetReadsCheck()
         {
             string[] new_files = new string[0];
 
@@ -137,8 +141,8 @@ namespace Test
             }
         }
 
-        [Test, Order(3)]
-        public void test_genome_generate()
+        [Test, Order(2)]
+        public void TestGenomeGenerate()
         {
             STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
                 1,
@@ -149,7 +153,7 @@ namespace Test
         }
 
         [Test, Order(4)]
-        public void test_align()
+        public void TestAlign()
         {
             STARWrapper.BasicAlignReads
             (
@@ -166,11 +170,43 @@ namespace Test
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "r.Aligned.out.bam")));
         }
 
-        #endregion Minimal alignment tests
+        #endregion Minimal STAR alignment tests
+
+        #region Tophat alignment tests
+
+        [Test, Order(1)]
+        public void TophatAlign()
+        {
+            TopHatWrapper.GenerateBowtieIndex(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa"),
+                out string bowtieIndexPrefix);
+            Assert.IsTrue(TopHatWrapper.BowtieIndexExists(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa")));
+
+            TopHatWrapper.Align(
+                TestContext.CurrentContext.TestDirectory,
+                bowtieIndexPrefix,
+                8,
+                new string[]
+                {
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper.fastq"),
+                },
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_one_transcript.gtf"),
+                true,
+                out string tophatOutDirectory
+                );
+            Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatAcceptedHitsFilename)));
+            Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatAlignmentSummaryFilename)));
+            Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatDeletionsBEDFilename)));
+            Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatInsertionsBEDFilename)));
+            Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatJunctionsBEDFilename)));
+        }
+
+        #endregion Tophat alignment tests
 
         #region Infer Experiment tests
 
-        [Test, Order(3)]
+        [Test, Order(2)]
         public void StrandSpecificityTest()
         {
             Assert.IsTrue(RSeQCWrapper.CheckStrandSpecificity(
@@ -179,13 +215,14 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed")));
         }
 
-        [Test, Order(3)]
+        [Test, Order(2)]
         public void InnerDistanceTest()
         {
-            Assert.AreEqual(1, RSeQCWrapper.InferInnerDistance(
+            Assert.AreEqual(125, RSeQCWrapper.InferInnerDistance(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed")));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.gtf"),
+                out string[] outputFiles));
         }
 
         #endregion Infer Experiment tests
@@ -233,7 +270,7 @@ namespace Test
         #region GATK tests
 
         [Test]
-        public void GATK_workflow()
+        public void GatkWorflow()
         {
             GATKWrapper.DownloadKnownSites(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, true, true, false, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"), out string known_sites_filename);
 
@@ -266,7 +303,7 @@ namespace Test
         }
 
         [Test]
-        public void variantcall()
+        public void VariantCall()
         {
             GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
@@ -305,7 +342,7 @@ namespace Test
         #region Scalpel tests
 
         [Test]
-        public void scalpel_call()
+        public void ScalpelCall()
         {
             ScalpelWrapper.call_indels(TestContext.CurrentContext.TestDirectory,
                 8,

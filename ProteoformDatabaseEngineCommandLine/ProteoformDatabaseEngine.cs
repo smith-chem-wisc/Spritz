@@ -29,25 +29,25 @@ namespace ProteoformDatabaseEngineCommandLine
             #region STAR Fusion Testing
 
             // TODO make a star fusion 2 protein runner instead of this mess...
-            bool validStarFusionTest = options.AnalysisDirectory != null
-                && options.BinDirectory != null
-                && (options.Fastq1 != null || options.st)
-            if (options.Command == "starFusionTest" && !starFusionRequirements.Any(x => x == null))
-            {
-                Directory.CreateDirectory(Path.Combine(options.AnalysisDirectory, "fusion_out"));
-                STARFusionWrapper.Install(options.BinDirectory);
-                STARFusionWrapper.RunStarFusion(options.BinDirectory,
-                    "grch37",
-                    8,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR791578_hg19_Chimeric.out.junction"),
-                    new string[0],
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "fusion_out"));
-                return;
-            }
-            else if (options.Command == "starFusionTest")
-            {
-                return;
-            }
+            //bool validStarFusionTest = options.AnalysisDirectory != null
+            //    && options.BinDirectory != null
+            //    && (options.Fastq1 != null || options.st)
+            //if (options.Command == "starFusionTest" && !starFusionRequirements.Any(x => x == null))
+            //{
+            //    Directory.CreateDirectory(Path.Combine(options.AnalysisDirectory, "fusion_out"));
+            //    STARFusionWrapper.Install(options.BinDirectory);
+            //    STARFusionWrapper.RunStarFusion(options.BinDirectory,
+            //        "grch37",
+            //        8,
+            //        Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR791578_hg19_Chimeric.out.junction"),
+            //        new string[0],
+            //        Path.Combine(TestContext.CurrentContext.TestDirectory, "fusion_out"));
+            //    return;
+            //}
+            //else if (options.Command == "starFusionTest")
+            //{
+            //    return;
+            //}
 
             #endregion STAR Fusion Testing
 
