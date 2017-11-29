@@ -83,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BEDOPSWrapper.cs" />
+    <Compile Include="EnsemblDownloads.cs" />
     <Compile Include="Fastq2ProteinsRunner.cs" />
     <Compile Include="CufflinksWrapper.cs" />
     <Compile Include="GATKWrapper.cs" />

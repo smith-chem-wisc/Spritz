@@ -5,6 +5,8 @@ namespace RNASeqAnalysisWrappers
 {
     public class BEDOPSWrapper
     {
+        // Installation takes place in WrapperUtility because it requires sudo access
+
         // see https://www.biostars.org/p/206342/ for awk fix
         public static string GtfOrGff2Bed6(string bin, string gtfOrGffPath)
         {
@@ -33,31 +35,11 @@ namespace RNASeqAnalysisWrappers
             string scriptPath = Path.Combine(bin, "scripts", "bed12conversion.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(bin, "bedops")),
-                "./gtfToGenePred " + WrapperUtility.ConvertWindowsPath(gtf_path) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
-                "./genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
+                "gtfToGenePred " + WrapperUtility.ConvertWindowsPath(gtf_path) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
+                "genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
                 "sort -k1,1 -k2,2n " + WrapperUtility.ConvertWindowsPath(bed12Path) + " > " + WrapperUtility.ConvertWindowsPath(sortedBed12Path),
             }).WaitForExit();
             return sortedBed12Path;
-        }
-
-        public static void Install(string currentDirectory)
-        {
-            if (Directory.Exists(Path.Combine(currentDirectory, "bedops"))) return;
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "install_bedops.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
-                @"wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2",
-                "tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2",
-                "rm bedops_linux_x86_64-v2.4.29.tar.bz2",
-                "mv bin bedops",
-                "cd bedops",
-                "wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred",
-                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed",
-                "cd ..",
-                "cp bedops/* /usr/local/bin"
-            }).WaitForExit();
         }
     }
 }

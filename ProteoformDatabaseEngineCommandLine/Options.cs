@@ -31,22 +31,22 @@ namespace ProteoformDatabaseEngineCommandLine
         [Option("fq2", Required = false, HelpText = "FASTQ file pair2")]
         public string Fastq2 { get; set; }
 
-        [Option('v', "overwriteStarAlignments", Required = false, HelpText = "overwrite STAR alignments if they already exist)")]
+        [Option('v', "overwriteStarAlignments", Required = false, HelpText = "overwrite STAR alignments if they already exist")]
         public bool OverwriteStarAlignments { get; set; }
 
-        [Option('s', "strandSpecific", Required = false, HelpText = "strandedness of the protocol", DefaultValue = false)]
+        [Option("strandSpecific", Required = false, HelpText = "stranded library preparation protocol (true/false)", DefaultValue = false)]
         public bool StrandSpecific { get; set; }
 
-        [Option('i', "inferStrandedness", Required = false, HelpText = "infer the strandedness with a sample of the fastq files", DefaultValue = true)]
+        [Option("inferStrandedness", Required = false, HelpText = "infer the strandedness with a sample of the fastq files", DefaultValue = true)]
         public bool InferStrandSpecificity { get; set; }
 
-        [Option('d', "genomeDir", Required = true, HelpText = "STAR genome directory")]
+        [Option('d', "genomeDir", Required = false, HelpText = "STAR genome directory (default = genomeFastq without extension)")]
         public string GenomeStarIndexDirectory { get; set; }
 
-        [Option('f', "genomeFasta", Required = true, HelpText = "genomeFasta")]
+        [Option('f', "genomeFasta", Required = false, HelpText = "genomeFasta (default = downloaded from Ensembl based on reference)")]
         public string GenomeFasta { get; set; }
 
-        [Option('g', "geneModelGtfOrGff", Required = true, HelpText = "geneModelGtfOrGff")]
+        [Option('g', "geneModelGtfOrGff", Required = false, HelpText = "geneModelGtfOrGff (default = downloaded from Ensembl based on reference)")]
         public string GeneModelGtfOrGff { get; set; }
     }
 }

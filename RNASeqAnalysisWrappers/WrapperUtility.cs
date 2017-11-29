@@ -55,13 +55,13 @@ namespace RNASeqAnalysisWrappers
             return RunBashCommand(@"bash", ConvertWindowsPath(script_path));
         }
 
-        public static void Install(string currentDirectory)
+        public static void Install(string binDirectory)
         {
             List<string> commands = new List<string>
             {
                 "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
-                "sudo apt-get -y upgrade"
+                "sudo apt-get -y upgrade",
             };
 
             List<string> aptitudeDependencies = new List<string>
@@ -81,6 +81,7 @@ namespace RNASeqAnalysisWrappers
                 "picard-tools",
                 "tophat",
                 "cufflinks",
+                "bedtools",
 
                 // commandline tools
                 "gawk",
@@ -118,7 +119,37 @@ namespace RNASeqAnalysisWrappers
                 "  sudo apt-get -y install oracle-java8-installer\n" +
                 "fi");
 
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "install_dependencies.bash");
+            // bedops setup
+            commands.AddRange(new List<string>
+            {
+                "cd " + ConvertWindowsPath(binDirectory),
+                "wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2",
+                "tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2",
+                "rm bedops_linux_x86_64-v2.4.29.tar.bz2",
+                "mv bin bedops",
+                "cd bedops",
+                "wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred",
+                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed",
+                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver",
+                "cd ..",
+                "sudo cp bedops/* /usr/local/bin"
+            });
+
+            // lastz and liftOver setup
+            commands.AddRange(new List<string>
+            {
+                "cd " + ConvertWindowsPath(binDirectory),
+                "wget https://github.com/lastz/lastz/archive/1.04.00.tar.gz",
+                "tar -xvf 1.04.00.tar.gz",
+                "rm 1.04.00.tar.gz",
+                "cd lastz-1.04.00",
+                "make",
+                "chmod +X src/lastz",
+                "sudo cp src/lastz /usr/local/bin",
+                "cd ..",
+            });
+
+            string scriptPath = Path.Combine(binDirectory, "scripts", "install_dependencies.bash");
             GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 

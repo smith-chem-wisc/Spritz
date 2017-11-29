@@ -53,12 +53,28 @@ namespace ProteoformDatabaseEngineCommandLine
 
             #region Proteoform Database Engine
 
+            EnsemblDownloadsWrapper.DownloadReferences(
+                options.BinDirectory, 
+                options.AnalysisDirectory, 
+                options.Reference, 
+                out string genomeFastaPath,
+                out string gtfGeneModelPath,
+                out string gff3GeneModelPath);
+
+            if (options.GenomeStarIndexDirectory == null)
+                options.GenomeStarIndexDirectory = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
+            if (options.GenomeFasta == null)
+                options.GenomeFasta = genomeFastaPath;
+            if (options.GeneModelGtfOrGff == null)
+                options.GeneModelGtfOrGff = gff3GeneModelPath;
+
+
             string proteinDb;
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
                 Fastq2ProteinsRunner.RunFromSra(
                     options.BinDirectory,
-                    options.BinDirectory,
+                    options.AnalysisDirectory,
                     options.Reference,
                     options.Threads,
                     options.SraAccession,
@@ -74,7 +90,7 @@ namespace ProteoformDatabaseEngineCommandLine
             {
                 Fastq2ProteinsRunner.RunFromFastqs(
                     options.BinDirectory,
-                    options.BinDirectory,
+                    options.AnalysisDirectory,
                     options.Reference,
                     options.Threads,
                     options.Fastq2 == null ? new string[] { options.Fastq1 } : new string[] { options.Fastq1, options.Fastq2 },

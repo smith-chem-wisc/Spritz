@@ -8,8 +8,27 @@ namespace RNASeqAnalysisWrappers
 {
     public class GATKWrapper
     {
+
+        #region Private Fields
+
+        private static string allGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
+
+        private static string commonGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
+
+        private static string allGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
+
+        private static string commonGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
+
+        #endregion Private Fields
+
+        #region Public Fields
+
         public static string GATK = "java -Xmx20G -jar GenomeAnalysisTK.jar";
         public static string PICARD = "java -Xmx20G -jar picard.jar";
+
+        #endregion Public Fields
+
+        #region Public Methods
 
         public static void SubsetBam(string binDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
         {
@@ -59,16 +78,16 @@ namespace RNASeqAnalysisWrappers
             else if (!grouped)
             {
                 groupSortBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + (!sorted ? ".sorted.grouped.bam" : ".grouped.bam"));
-                groupAndMaybeSortCommand = "picard-tools AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library" + 
-                    " I=" + WrapperUtility.ConvertWindowsPath(bam) + 
-                    " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam) + 
+                groupAndMaybeSortCommand = "picard-tools AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library" +
+                    " I=" + WrapperUtility.ConvertWindowsPath(bam) +
+                    " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam) +
                     (!sorted ? " SO=coordinate" : "");
             }
             else // grouped, but not sorted
             {
-                groupSortBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".sorted.bam") ;
-                groupAndMaybeSortCommand = "picard-tools SortSam SO=coordinate" + 
-                    " I=" + WrapperUtility.ConvertWindowsPath(bam) + 
+                groupSortBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".sorted.bam");
+                groupAndMaybeSortCommand = "picard-tools SortSam SO=coordinate" +
+                    " I=" + WrapperUtility.ConvertWindowsPath(bam) +
                     " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam);
             }
 
@@ -91,7 +110,7 @@ namespace RNASeqAnalysisWrappers
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 groupAndMaybeSortCommand,
-                "picard-tools MarkDuplicates" + 
+                "picard-tools MarkDuplicates" +
                     " I=" + WrapperUtility.ConvertWindowsPath(groupSortBam) +
                     " O=" + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
                     " M=" + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
@@ -102,11 +121,11 @@ namespace RNASeqAnalysisWrappers
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
                 splitNCigarReadsCmd + " -fixMisencodedQuals", // some datasets are probably going to have misencoded quality scores; this just subtracts 31 from all quality scores if possible...
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ]; then " +  // if it didn't run, it probably just found a correctly encoded read, so ditch the fixMisencodedQuals option
-                    splitNCigarReadsCmd + 
+                    splitNCigarReadsCmd +
                 "; fi",
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ]; then rm -f " + 
-                    WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " " +  
-                    WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".bai")) + 
+                "if [ -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ]; then rm -f " +
+                    WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " " +
+                    WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".bai")) +
                 "; fi",
 
                 GATK +
@@ -144,15 +163,15 @@ namespace RNASeqAnalysisWrappers
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
-                GATK + 
+                GATK +
                     " -T RealignerTargetCreator" +
-                    " --num_threads " + threads.ToString() +  
+                    " --num_threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
                     (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
                     " -o " +  WrapperUtility.ConvertWindowsPath(realignerTable),
 
-                GATK + 
+                GATK +
                     " -T IndelRealigner" +
                     //" --num_threads " + threads.ToString() + // this tool can't do threaded analysis
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -171,7 +190,7 @@ namespace RNASeqAnalysisWrappers
         /// <param name="bam"></param>
         /// <param name="recalibrationTablePath"></param>
         /// <param name="knownSitesVcf"></param>
-        public static void BaseRecalibration(string binDirectory, string genomeFasta, string bam, out string recalibrationTablePath, string knownSitesVcf) 
+        public static void BaseRecalibration(string binDirectory, string genomeFasta, string bam, out string recalibrationTablePath, string knownSitesVcf)
         {
             recalibrationTablePath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
             string scriptPath = Path.Combine(binDirectory, "scripts", "base_recalibration.bash");
@@ -180,7 +199,7 @@ namespace RNASeqAnalysisWrappers
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
-                GATK + 
+                GATK +
                     " -T BaseRecalibrator" +
                     //" --num_threads " + threads.ToString() + // doesn't support threaded runs
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -208,7 +227,7 @@ namespace RNASeqAnalysisWrappers
                 GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
                 GATK +
-                    " -T HaplotypeCaller" + 
+                    " -T HaplotypeCaller" +
                     " -nct " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
@@ -230,73 +249,92 @@ namespace RNASeqAnalysisWrappers
             return null;
         }
 
-        private static string allGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
-        private static string commonGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
-        private static string allGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
-        private static string commonGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
-
-        public static void DownloadKnownSites(string binDirectory, string targetDirectory, bool commonOnly, bool GRCh37, bool GRCh38, string genomeFasta, out string knownSitesFilename)
+        public static void DownloadAndSortKnownVariantSitesForEnsembl(string binDirectory, string targetDirectory, bool commonOnly, string reference, string genomeFastaPath, out string sortedKnownSitesFilename)
         {
-            knownSitesFilename = "";
+            sortedKnownSitesFilename = "";
 
-            if (!GRCh37 && !GRCh38) return;
+            bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+
+            if (!downloadGrch37 && !downloadGrch38) return;
 
             string targetFileLocation = commonOnly ?
-                GRCh37 ? commonGRCh37 : commonGRCh38 :
-                GRCh37 ? allGRCh37 : allGRCh38;
+                downloadGrch37 ? commonGRCh37 : commonGRCh38 :
+                downloadGrch37 ? allGRCh37 : allGRCh38;
 
-            knownSitesFilename = targetFileLocation.Split('/').Last();
-            knownSitesFilename = Path.GetFileNameWithoutExtension(knownSitesFilename);
-            string newKnownSites = Path.GetFileNameWithoutExtension(knownSitesFilename) + ".ensembl.vcf";
+            string ucscSitesFilename = targetFileLocation.Split('/').Last();
+            ucscSitesFilename = Path.GetFileNameWithoutExtension(ucscSitesFilename);
+            string ensemblKnownSitesilename = Path.GetFileNameWithoutExtension(ucscSitesFilename) + ".ensembl.vcf";
 
-            if (File.Exists(Path.Combine(targetDirectory, newKnownSites)))
+            if (!File.Exists(Path.Combine(targetDirectory, ucscSitesFilename)))
             {
-                knownSitesFilename = newKnownSites;
-                return;
-            }
-
-            string scriptPath = Path.Combine(binDirectory, "scripts", "download_known_variants.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
-                "wget " + targetFileLocation,
-                "gunzip " + knownSitesFilename + ".gz",
-                "rm " + knownSitesFilename + ".gz"
-            }).WaitForExit();
-
-            Dictionary<string, string> chromMappings = File.ReadAllLines(GRCh37 ? Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") : Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
-                .ToDictionary(line => line.Split('\t')[0], line => line.Split('\t')[1]);
-
-            using (StreamReader reader = new StreamReader(Path.Combine(targetDirectory, knownSitesFilename)))
-            using (StreamWriter writer = new StreamWriter(Path.Combine(targetDirectory, newKnownSites)))
-            {
-                while (true)
+                string scriptPath = Path.Combine(binDirectory, "scripts", "downloadUcscVariants.bash");
+                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
                 {
-                    string a = reader.ReadLine();
-                    if (a == null) break;
-                    string[] line = a.Split('\t');
-                    if (chromMappings.TryGetValue(line[0], out string chr)) line[0] = chr;
-                    writer.Write(String.Join("\t", line) + '\n');
-                }
+                    "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
+                    "wget " + targetFileLocation,
+                    "gunzip " + ucscSitesFilename + ".gz",
+                    "rm " + ucscSitesFilename + ".gz"
+                }).WaitForExit();
             }
-            knownSitesFilename = newKnownSites;
 
-            string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".dict");
+            if (!File.Exists(Path.Combine(targetDirectory, ensemblKnownSitesilename)))
+            {
+                Dictionary<string, string> chromMappings = File.ReadAllLines(downloadGrch37 ?
+                    Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
+                    Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
+                    .Select(line => line.Split('\t'))
+                    .Where(x => x.Length > 1)
+                    .ToDictionary(line => line[0], line => line[1]);
+
+                using (StreamReader reader = new StreamReader(Path.Combine(targetDirectory, ucscSitesFilename)))
+                using (StreamWriter writer = new StreamWriter(Path.Combine(targetDirectory, ensemblKnownSitesilename)))
+                {
+                    while (true)
+                    {
+                        string a = reader.ReadLine();
+                        if (a == null) break;
+                        string[] line = a.Split('\t');
+                        if (chromMappings.TryGetValue(line[0], out string chr)) line[0] = chr;
+                        writer.Write(String.Join("\t", line) + '\n');
+                    }
+                }
+                ucscSitesFilename = ensemblKnownSitesilename;
+            }
+
+            sortedKnownSitesFilename = Path.GetFileNameWithoutExtension(ensemblKnownSitesilename) + ".sorted.vcf";
+
+            // sorting genome-wide variants requires the full genome reference
+            if (Path.GetFileName(genomeFastaPath) != EnsemblDownloadsWrapper.GRCh37PrimaryAssemblyFilename && Path.GetFileName(genomeFastaPath) != EnsemblDownloadsWrapper.GRCh38PrimaryAssemblyFilename)
+            {
+                EnsemblDownloadsWrapper.DownloadReferences(binDirectory, targetDirectory, reference, out genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath);
+            }
+
+            if (!File.Exists(Path.Combine(targetDirectory, sortedKnownSitesFilename)))
+            {
+                SortVCF(
+                    binDirectory,
+                    Path.Combine(targetDirectory, ensemblKnownSitesilename),
+                    genomeFastaPath,
+                    Path.Combine(targetDirectory, sortedKnownSitesFilename)
+                );
+            }
+        }
+
+        public static void SortVCF(string binDirectory, string vcfPath, string genomeFastaPath, string sortedVcfPath)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "sortVcf.bash");
+            string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                GenomeDictionaryIndexCommand(genomeFasta),
-                PICARD + " SortVcf I=" + WrapperUtility.ConvertWindowsPath(newKnownSites) + 
-                    " O=" + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(newKnownSites), Path.GetFileNameWithoutExtension(newKnownSites) + ".sorted.vcf" + 
-                    " SEQUENCE_DICTIONARY=" + WrapperUtility.ConvertWindowsPath(genomeFasta)))
+                GenomeDictionaryIndexCommand(genomeFastaPath),
+                PICARD + " SortVcf I=" + WrapperUtility.ConvertWindowsPath(vcfPath) +
+                    " O=" + WrapperUtility.ConvertWindowsPath(sortedVcfPath) +
+                    " SEQUENCE_DICTIONARY=" + WrapperUtility.ConvertWindowsPath(dictionaryPath)
             }).WaitForExit();
-
-
-            if (File.Exists(Path.Combine(targetDirectory, newKnownSites)) && new FileInfo(Path.Combine(targetDirectory, newKnownSites)).Length > 0)
-                File.Delete(Path.Combine(targetDirectory, knownSitesFilename));
         }
 
-        public static string picardLocation = "";
         public static void Install(string currentDirectory)
         {
             string scriptPath = Path.Combine(currentDirectory, "scripts", "install_gatk.bash");
@@ -305,7 +343,7 @@ namespace RNASeqAnalysisWrappers
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
                 "while [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(currentDirectory, "GenomeAnalysisTK*")) + " ]",
                 "do",
-                "  echo \"Genome Analysis Toolkit (GATK) not found.\nPlease download GATK from their website https://software.broadinstitute.org/gatk/download/ \nThen, place the file (.tar.bz2) in the folder " + 
+                "  echo \"Genome Analysis Toolkit (GATK) not found.\nPlease download GATK from their website https://software.broadinstitute.org/gatk/download/ \nThen, place the file (.tar.bz2) in the folder " +
                     currentDirectory + "\n\"",
                 "  read -n 1 -s -r -p \"Press any key to continue\n\"",
                 "done",
@@ -318,15 +356,22 @@ namespace RNASeqAnalysisWrappers
             }).WaitForExit();
         }
 
+        #endregion Public Methods
+
+        #region Private Methods
+
         private static string GenomeFastaIndexCommand(string genomeFastaPath)
         {
-            return !File.Exists(genomeFastaPath + ".fai") ? "samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) : "";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
         }
 
         private static string GenomeDictionaryIndexCommand(string genomeFastaPath)
         {
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
-            return !File.Exists(dictionaryPath) ? "picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + " O=" + WrapperUtility.ConvertWindowsPath(genomeFastaPath) : "";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + " ]; then picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) + "; fi";
         }
+
+        #endregion Private Methods
+
     }
 }

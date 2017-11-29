@@ -77,7 +77,6 @@ namespace RNASeqAnalysisWrappers
                 "tar -xvf RSeQC-2.6.4.tar.gz", // infer_experiment.py is in the scripts folder
                 "rm RSeQC-2.6.4.tar.gz",
             }).WaitForExit();
-            BEDOPSWrapper.Install(binDirectory);
             File.Delete(script_path);
         }
 

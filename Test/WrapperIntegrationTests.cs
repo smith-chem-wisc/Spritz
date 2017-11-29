@@ -10,12 +10,59 @@ namespace Test
     public class WrapperIntegrationTests
     {
 
+        #region Setup
+
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            DownloadReferences();
+        }
+
+        #endregion Setup
+
         #region Installs
 
-        [Test, Order(0)]
+        [Test, Order(-1)]
         public void TestInstallDependencies()
         {
             WrapperUtility.Install(TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
+        }
+
+        [Test, Order(0)]
+        public void DownloadReferences()
+        {
+            EnsemblDownloadsWrapper.DownloadReferences(
+                TestContext.CurrentContext.TestDirectory,
+                TestContext.CurrentContext.TestDirectory,
+                "grch37",
+                out string genomeFastaPath,
+                out string gtfGeneModelPath,
+                out string gff3GeneModelPath);
+
+            Assert.IsTrue(File.Exists(genomeFastaPath));
+            Assert.IsTrue(File.Exists(gtfGeneModelPath));
+            Assert.IsTrue(File.Exists(gff3GeneModelPath));
+
+            // Additional setup for small integration tests
+            string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "setup.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(TestContext.CurrentContext.TestDirectory),
+
+                "if [ ! -f 22.fa ]; then wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz ]; then gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa 22.fa; fi",
+
+                "if [ ! -f chr1.fa ]; then wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz ]; then gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa chr1.fa; fi",
+
+                "if [ ! -f Homo_sapiens.GRCh37.75.gtf ]; then wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.gtf.gz ]; then gunzip Homo_sapiens.GRCh37.75.gtf.gz; fi",
+                "if [ ! -f chr1.gtf ]; then grep ^1 Homo_sapiens.GRCh37.75.gtf > chr1.gtf; fi",
+                "if [ ! -f 22.gtf ]; then grep ^22 Homo_sapiens.GRCh37.75.gtf > 22.gtf; fi",
+            }).WaitForExit();
         }
 
         [Test, Order(1)]
@@ -30,13 +77,6 @@ namespace Test
         {
             STARFusionWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallBEDOPS()
-        {
-            BEDOPSWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
         }
 
         [Test, Order(1)]
@@ -74,6 +114,14 @@ namespace Test
             SRAToolkitWrapper.Install(TestContext.CurrentContext.TestDirectory);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sratoolkit")));
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sratoolkit", "bin", "fastq-dump")));
+        }
+
+        [Test, Order(1)]
+        public void TestInstallSlncky()
+        {
+            SlnckyWrapper.Install(TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
         }
 
         #endregion Installs
@@ -127,8 +175,8 @@ namespace Test
             STARWrapper.SubsetFastqs(
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "r1.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "r2.fastq")
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "read1.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "read2.fastq")
                 },
                 100,
                 TestContext.CurrentContext.TestDirectory,
@@ -162,8 +210,8 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "sampleGenomeDir"),
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "r1.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "r2.fastq")
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "read1.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "read2.fastq")
                 },
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "r.")
             );
@@ -229,8 +277,8 @@ namespace Test
 
         #region Skewer tests
 
-        [Test]
-        public void skewer_single()
+        [Test, Order(2)]
+        public void SkewerSingle()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory, 
                 19,
@@ -244,8 +292,8 @@ namespace Test
             File.Delete(log);
         }
 
-        [Test]
-        public void skewer_paired()
+        [Test, Order(2)]
+        public void SkewerPaired()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory, 
                 19,
@@ -269,11 +317,24 @@ namespace Test
 
         #region GATK tests
 
-        [Test]
+        private string sortedKnownSitesFilename = "";
+
+        [Test, Order(2)]
+        public void DownloadKnownSites()
+        {
+            GATKWrapper.DownloadAndSortKnownVariantSitesForEnsembl(
+                TestContext.CurrentContext.TestDirectory,
+                TestContext.CurrentContext.TestDirectory,
+                true,
+                "grch37",
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa"), // requires the full assembly to sort all of the variants
+                out sortedKnownSitesFilename);
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, sortedKnownSitesFilename)));
+        }
+
+        [Test, Order(4)]
         public void GatkWorflow()
         {
-            GATKWrapper.DownloadKnownSites(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, true, true, false, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"), out string known_sites_filename);
-
             GATKWrapper.PrepareBam(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.bam"),
@@ -285,7 +346,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 new_bam,
                 out string realigned_bam,
-                ""); // not including known sites speeds this up substantially
+                ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
 
             // Takes kind of a long time, and it's not recommended for RNA-Seq yet
             //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
@@ -298,17 +359,17 @@ namespace Test
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
                 realigned_bam,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, known_sites_filename),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, sortedKnownSitesFilename),
                 out string new_vcf);
         }
 
-        [Test]
+        [Test, Order(3)]
         public void VariantCall()
         {
             GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.sorted.grouped.marked.split.mapqfixed.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "common_all_20170710.ensembl.vcf"),
                 out string new_vcf);
             Assert.IsTrue(File.Exists(new_vcf));
@@ -318,7 +379,7 @@ namespace Test
 
         #region Cufflinks tests
 
-        [Test]
+        [Test, Order(3)]
         public void CufflinksRun()
         {
             string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.sorted.grouped.marked.split.mapqfixed.bam");
@@ -391,21 +452,9 @@ namespace Test
 
         #region Runner Tests
 
-        [Test]
+        [Test, Order(2)]
         public void FullProteinRunFromFastqs()
         {
-            string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "setup.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(TestContext.CurrentContext.TestDirectory),
-                "if [ ! -f 22.fa ]; then\n  wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz \nfi",
-                "if [ ! -f Homo_sapiens.GRCh37.75.gtf ]; then\n  wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz \nfi",
-                "if [ ! -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa ]; then\n  gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz \nfi",
-                "if [ ! -f Homo_sapiens.GRCh37.75.gtf.gz ]; then\n  gunzip Homo_sapiens.GRCh37.75.gtf.gz \nfi",
-                "if [ ! -f 22.fa ]; then\n  mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa 22.fa \nfi",
-                "if [ ! -f 22.gtf ]; then\n  grep ^22 Homo_sapiens.GRCh37.75.gtf > 22.gtf \nfi"
-            }).WaitForExit();
-
             Fastq2ProteinsRunner.RunFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
@@ -423,21 +472,9 @@ namespace Test
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmed.fastq"));
         }
 
-        [Test]
+        [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "setup.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(TestContext.CurrentContext.TestDirectory),
-                "if [ ! -f 22.fa ]; then\n  wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz \nfi",
-                "if [ ! -f Homo_sapiens.GRCh37.75.gtf ]; then\n  wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz \nfi",
-                "if [ ! -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa ]; then\n  gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz \nfi",
-                "if [ ! -f Homo_sapiens.GRCh37.75.gtf.gz ]; then\n  gunzip Homo_sapiens.GRCh37.75.gtf.gz \nfi",
-                "if [ ! -f 22.fa ]; then\n  mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa 22.fa \nfi",
-                "if [ ! -f 22.gtf ]; then\n  grep ^22 Homo_sapiens.GRCh37.75.gtf > 22.gtf \nfi"
-            }).WaitForExit();
-
             Fastq2ProteinsRunner.RunFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,

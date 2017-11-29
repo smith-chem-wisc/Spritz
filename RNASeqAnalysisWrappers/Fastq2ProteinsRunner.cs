@@ -53,10 +53,10 @@ namespace RNASeqAnalysisWrappers
                 STARWrapper.BasicAlignReads(bin, Environment.ProcessorCount, genomeStarIndexDirectory, trimmedFastqs, outPrefix, strandSpecific, STARGenomeLoadOption.LoadAndRemove);
             }
 
-            GATKWrapper.DownloadKnownSites(bin, bin, true, true, false, genomeFasta, out string knownSitesFilename);
+            GATKWrapper.DownloadAndSortKnownVariantSitesForEnsembl(bin, bin, true, reference, genomeFasta, out string sortedKnownSitesFilename);
             GATKWrapper.PrepareBam(bin, Environment.ProcessorCount, outPrefix + STARWrapper.BamFileSuffix, genomeFasta, out string newBam);
             GATKWrapper.RealignIndels(bin, Environment.ProcessorCount, genomeFasta, newBam, out string realignedBam); 
-            GATKWrapper.VariantCalling(bin, Environment.ProcessorCount, genomeFasta, realignedBam, Path.Combine(bin, knownSitesFilename), out string vcfPath);
+            GATKWrapper.VariantCalling(bin, Environment.ProcessorCount, genomeFasta, realignedBam, Path.Combine(bin, sortedKnownSitesFilename), out string vcfPath);
 
             VCFParser vcf = new VCFParser(vcfPath);
             List<VariantContext> variants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length)).ToList();
