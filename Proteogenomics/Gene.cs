@@ -12,7 +12,7 @@ namespace Proteogenomics
 
         #region Private Properties
 
-        private MetadataListItem<List<string>> metadata { get; set; }
+        private MetadataListItem<List<string>> Metadata { get; set; }
 
         #endregion
 
@@ -24,9 +24,9 @@ namespace Proteogenomics
 
         public ISequence Chromosome { get; set; }
 
-        public List<Transcript> transcripts { get; set; } = new List<Transcript>();
+        public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
 
-        public HashSet<Exon> exons { get; set; } = new HashSet<Exon>();
+        public HashSet<Exon> Exons { get; set; } = new HashSet<Exon>();
 
         public HashSet<Exon> CodingDomainSequences { get; set; } = new HashSet<Exon>();
 
@@ -34,12 +34,12 @@ namespace Proteogenomics
 
         #region Public Constructors
 
-        public Gene(string ID, string ChromID, ISequence chromosome, MetadataListItem<List<string>> metadata)
+        public Gene(string ID, ISequence chromosome, MetadataListItem<List<string>> metadata)
         {
             this.ID = ID;
-            this.ChromID = ChromID;
+            this.ChromID = chromosome.ID;
             this.Chromosome = chromosome;
-            this.metadata = metadata;
+            this.Metadata = metadata;
         }
 
         #endregion Public Constructors
@@ -49,7 +49,7 @@ namespace Proteogenomics
         public List<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
             List<Protein> proteins = new List<Protein>();
-            Parallel.ForEach(transcripts, t =>
+            Parallel.ForEach(Transcripts, t =>
             {
                 IEnumerable<Protein> p = t.Translate(translateCodingDomains, includeVariants);
                 if (p != null)
@@ -62,7 +62,7 @@ namespace Proteogenomics
         {
             int indexBinSize = 100000;
             Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts = new Dictionary<Tuple<string, string, long>, List<Exon>>();
-            foreach (Exon x in genesWithCodingDomainSequences.Genes.SelectMany(g => g.transcripts).Select(t => t.CodingDomainSequences.FirstOrDefault()).Where(x => x != null))
+            foreach (Exon x in genesWithCodingDomainSequences.Genes.SelectMany(g => g.Transcripts).Select(t => t.CodingDomainSequences.FirstOrDefault()).Where(x => x != null))
             {
                 Tuple<string, string, long> key = new Tuple<string, string, long>(x.ChromID, x.Strand, x.OneBasedStart / indexBinSize * indexBinSize);
                 binnedCodingStarts.TryGetValue(key, out List<Exon> xs);
@@ -71,7 +71,7 @@ namespace Proteogenomics
             }
 
             List<Protein> proteins = new List<Protein>();
-            Parallel.ForEach(transcripts, t =>
+            Parallel.ForEach(Transcripts, t =>
             {
                 IEnumerable<Protein> p = t.TranslateUsingAnnotatedStartCodons(binnedCodingStarts, indexBinSize, min_length, includeVariants);
                 if (p != null)

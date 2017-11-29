@@ -5,25 +5,52 @@ namespace RNASeqAnalysisWrappers
 {
     public class SkewerWrapper
     {
-        public void trim(string adapter_sequences_file, int quality_filter, string reads1, string reads2 = "")
+        public static void Trim(string binDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
         {
-            WrapperUtility.run_basic_command(@"skewer", @"-q " + quality_filter + @" -x " + adapter_sequences_file + " " + reads1 + " " + reads2);
+            log = "";
+            readTrimmedPaths = new string[readPaths.Length];
+            if (readPaths.Length <= 0) return;
+            
+            // Only create paired entry if paired input, and ignore inputs after second index
+            for (int i = 0; i < readPaths.Length; i++)
+            {
+                if (i == 0) readTrimmedPaths[0] = Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]) + "-trimmed" + (readPaths.Length > 1 ? "-pair1" : "") + ".fastq");
+                if (i == 1) readTrimmedPaths[1] = Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]) + "-trimmed-pair2.fastq");
+            }
+            log = Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]) + "-trimmed.log");
+
+            bool alreadyTrimmed = File.Exists(readTrimmedPaths[0]) && (readPaths.Length == 1 || File.Exists(readTrimmedPaths[1]));
+            if (alreadyTrimmed) return;
+
+            string script_path = Path.Combine(binDirectory, "scripts", "skewered.bash");
+            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "skewer-0.2.2", "skewer")) +
+                    " -q " + qualityFilter +
+                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]))) +
+                    " -t " + threads.ToString() +
+                    " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "BBMap", "resources", "adapters.fa")) +
+                    " " + WrapperUtility.ConvertWindowsPath(readPaths[0]) +
+                    (readPaths.Length > 1 ? " " + WrapperUtility.ConvertWindowsPath(readPaths[1]) : ""),
+            }).WaitForExit();
         }
 
-        public void download_and_install(string current_directory)
+        public static void Install(string currentDirectory)
         {
-            string script_path = Path.Combine(current_directory, "downloadInstallSkewer.bash");
-            WrapperUtility.generate_and_run_script(script_path, new List<string>
+            if (Directory.Exists(Path.Combine(currentDirectory, "BBMap")) && Directory.Exists(Path.Combine(currentDirectory, "skewer-0.2.2")))
+                return;
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "downloadInstallSkewer.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.convert_windows_path(current_directory),
+                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
                 "git clone https://github.com/BioInfoTools/BBMap.git", // has adapter sequences in the resources file
                 "wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
                 "tar -xvf 0.2.2.tar.gz",
                 "rm 0.2.2.tar.gz",
                 "cd skewer-0.2.2",
                 "make"
-            });
-            File.Delete(script_path);
+            }).WaitForExit();
         }
     }
 }

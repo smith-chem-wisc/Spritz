@@ -8,24 +8,42 @@ namespace RNASeqAnalysisWrappers
 {
     public static class WrapperUtility
     {
-        private static Regex drive_name = new Regex(@"([A-Z]:)");
-        private static Regex forward_slashes = new Regex(@"(\\)");
-        public static string convert_windows_path(string path)
+        
+        #region Private Fields
+
+        private static Regex driveName = new Regex(@"([A-Z]:)");
+
+        private static Regex forwardSlashes = new Regex(@"(\\)");
+
+        #endregion Private Fields
+
+        #region Public Methdos
+
+        public static bool CheckBashSetup()
         {
-            return "/mnt/" + Char.ToLowerInvariant(path[0]) + drive_name.Replace(forward_slashes.Replace(path, "/"), "");
+            return File.Exists(@"C:\Windows\System32\bash.exe");
         }
 
-        public static Process run_basic_command(string command, string arguments)
+        public static string ConvertWindowsPath(string path)
+        {
+            if (path == null) return null;
+            if (path == "") return "";
+            if (path.StartsWith("/mnt/")) return path;
+            return "/mnt/" + Char.ToLowerInvariant(path[0]) + driveName.Replace(forwardSlashes.Replace(path, "/"), "");
+        }
+
+        public static Process RunBashCommand(string command, string arguments)
         {
             Process proc = new Process();
             proc.StartInfo.FileName = @"C:\Windows\System32\bash.exe";
-            proc.StartInfo.Arguments = "-c \"" + command + " " + arguments +"\"";
+            proc.StartInfo.Arguments = "-c \"" + command + " " + arguments + "\"";
             proc.Start();
             return proc;
         }
 
-        public static Process generate_and_run_script(string script_path, List<string> commands)
+        public static Process GenerateAndRunScript(string script_path, List<string> commands)
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(script_path));
             using (StreamWriter writer = new StreamWriter(script_path))
             {
                 writer.Write(AsciiArt() + "\n");
@@ -34,54 +52,112 @@ namespace RNASeqAnalysisWrappers
                     writer.Write(cmd + "\n");
                 }
             }
-            return run_basic_command(@"bash", convert_windows_path(script_path));
+            return RunBashCommand(@"bash", ConvertWindowsPath(script_path));
         }
 
-        public static bool check_bash_setup()
-        {
-            return File.Exists(@"C:\Windows\System32\bash.exe");
-        }
-
-        public static void install(string current_directory)
+        public static void Install(string binDirectory)
         {
             List<string> commands = new List<string>
             {
                 "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
-                "sudo apt-get update",
-                "sudo apt-get upgrade"
+                "sudo apt-get -y update",
+                "sudo apt-get -y upgrade",
             };
 
-            List<string> aptitude_dependencies = new List<string>
+            List<string> aptitudeDependencies = new List<string>
             {
-                "gcc", "g++", "make", "python", "samtools", "picard-tools", "gawk", "cmake"
+                // installers
+                "gcc",
+                "g++",
+                "make",
+                "cmake",
+                "build-essential",
+
+                // file compression
+                "zlib1g-dev",
+
+                // bioinformatics
+                "samtools",
+                "picard-tools",
+                "tophat",
+                "cufflinks",
+                "bedtools",
+
+                // commandline tools
+                "gawk",
+                "git",
+                "python",
+                "python-dev",
+                "python-setuptools",
+                "libpython2.7-dev",
             };
 
-            foreach (string dependency in aptitude_dependencies)
+            foreach (string dependency in aptitudeDependencies)
             {
                 commands.Add(
                     "if commmand -v " + dependency + " > /dev/null 2>&1 ; then\n" +
                     "  echo found\n" +
                     "else\n" +
-                    "  sudo apt-get install " + dependency + "\n" +
+                    "  sudo apt-get -y install " + dependency + "\n" +
                     "fi");
             }
 
+            // python setup
+            commands.Add("sudo easy_install pip");
+            commands.Add("sudo pip install --upgrade virtualenv");
+            commands.Add("pip install --upgrade pip");
+            commands.Add("sudo pip install --upgrade qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
+
+            // java8 setup
             commands.Add(
                 "version=$(java -version 2>&1 | awk -F '\"' '/version/ {print $2}')\n" +
                 "if [[ \"$version\" > \"1.5\" ]]; then\n" +
                 "  echo found\n" +
                 "else\n" +
                 "  sudo add-apt-repository ppa:webupd8team/java\n" +
-                "  sudo apt-get update\n" +
-                "  sudo apt-get install oracle-java8-installer\n" +
+                "  sudo apt-get -y update\n" +
+                "  sudo apt-get -y install oracle-java8-installer\n" +
                 "fi");
 
-            string script_path = Path.Combine(current_directory, "install_dependencies.bash");
-            generate_and_run_script(script_path, commands).WaitForExit();
-            //File.Delete(script_path);
+            // bedops setup
+            commands.AddRange(new List<string>
+            {
+                "cd " + ConvertWindowsPath(binDirectory),
+                "wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2",
+                "tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2",
+                "rm bedops_linux_x86_64-v2.4.29.tar.bz2",
+                "mv bin bedops",
+                "cd bedops",
+                "wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred",
+                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed",
+                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver",
+                "cd ..",
+                "sudo cp bedops/* /usr/local/bin"
+            });
+
+            // lastz and liftOver setup
+            commands.AddRange(new List<string>
+            {
+                "cd " + ConvertWindowsPath(binDirectory),
+                "wget https://github.com/lastz/lastz/archive/1.04.00.tar.gz",
+                "tar -xvf 1.04.00.tar.gz",
+                "rm 1.04.00.tar.gz",
+                "cd lastz-1.04.00",
+                "make",
+                "chmod +X src/lastz",
+                "sudo cp src/lastz /usr/local/bin",
+                "cd ..",
+            });
+
+            string scriptPath = Path.Combine(binDirectory, "scripts", "install_dependencies.bash");
+            GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 
-        public static string AsciiArt()
+        #endregion Public Methdos
+
+        #region Private Method
+
+        private static string AsciiArt()
         {
             return
                 "echo \"" + @"__________                __                _____                    " + "\"\n" +
@@ -103,5 +179,7 @@ namespace RNASeqAnalysisWrappers
                 "echo \"" + @"/_______  /___|  /\___  /|__|___|  /\___  >                          " + "\"\n" +
                 "echo \"" + @"        \/     \//_____/         \/     \/                            " + "\"\n";
         }
+
+        #endregion Private Method
     }
 }

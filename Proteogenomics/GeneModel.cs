@@ -37,7 +37,7 @@ namespace Proteogenomics
 
         #endregion Public Constructor
 
-        #region Public Method
+        #region Public Methods
 
         private Gene currentGene = null;
         private Transcript currentTranscript = null;
@@ -96,14 +96,14 @@ namespace Proteogenomics
 
             if (hasGeneId && (currentGene == null || hasGeneId && gene_id != currentGene.ID))
             {
-                currentGene = new Gene(gene_id, chromSeq.ID, chromSeq, feature);
+                currentGene = new Gene(gene_id, chromSeq, feature);
                 Genes.Add(currentGene);
             }
 
             if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcript_id != currentTranscript.ID))
             {
                 currentTranscript = new Transcript(transcript_id, currentGene, feature);
-                currentGene.transcripts.Add(currentTranscript);
+                currentGene.Transcripts.Add(currentTranscript);
             }
 
             if (hasExonId || hasProteinId)
@@ -114,7 +114,7 @@ namespace Proteogenomics
 
                 if (hasExonId)
                 {
-                    currentGene.exons.Add(exon);
+                    currentGene.Exons.Add(exon);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (hasProteinId)
@@ -147,26 +147,26 @@ namespace Proteogenomics
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq.ID, feature);
+                    currentGene = new Gene(geneId, chromSeq, feature);
                     Genes.Add(currentGene);
                 }
 
                 currentTranscript = new Transcript(transcriptId, currentGene, feature);
-                currentGene.transcripts.Add(currentTranscript);
+                currentGene.Transcripts.Add(currentTranscript);
             }
 
             if (feature.Key == "exon" || feature.Key == "CDS")
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq.ID, feature);
+                    currentGene = new Gene(geneId, chromSeq, feature);
                     Genes.Add(currentGene);
                 }
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
                     currentTranscript = new Transcript(transcriptId, currentGene, null);
-                    currentGene.transcripts.Add(currentTranscript);
+                    currentGene.Transcripts.Add(currentTranscript);
                 }
 
                 ISequence exon_dna = chromSeq.GetSubSequence(OneBasedStart - 1, OneBasedEnd - OneBasedStart + 1);
@@ -175,7 +175,7 @@ namespace Proteogenomics
 
                 if (feature.Key == "exon")
                 {
-                    currentGene.exons.Add(exon);
+                    currentGene.Exons.Add(exon);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
@@ -198,7 +198,7 @@ namespace Proteogenomics
                 else chrIndexVariants[key] = new List<VariantContext> { variant };
             }
 
-            foreach (Exon x in Genes.SelectMany(g => g.exons.Concat(g.CodingDomainSequences)))
+            foreach (Exon x in Genes.SelectMany(g => g.Exons.Concat(g.CodingDomainSequences)))
             {
                 for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
                 {
@@ -209,7 +209,7 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Public Method
+        #endregion Public Methods
 
         #region Translation Methods
 
