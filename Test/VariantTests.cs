@@ -29,7 +29,7 @@ namespace Test
         //}
 
         [Test]
-        public void one_transcript_one_homozygous()
+        public void OneTranscriptOneHomozygous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_homozygous_missense.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
@@ -50,7 +50,7 @@ namespace Test
         }
 
         [Test]
-        public void one_transcript_one_heterozygous()
+        public void OneTranscriptOneHeterozygous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_heterozygous_missense.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
@@ -71,7 +71,7 @@ namespace Test
         }
 
         [Test]
-        public void one_transcript_one_heterozygous_synonymous()
+        public void OneTranscriptOneHeterozygousSynonymous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_heterozygous_synonymous.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
@@ -91,7 +91,7 @@ namespace Test
         }
 
         [Test]
-        public void one_transcript_one_homozygous_synonymous()
+        public void OneTranscriptOneHomozygousSynonymous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_homozygous_synonymous.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();

@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
-using RNASeqAnalysisWrappers;
+using WorkflowLayer;
+using ToolWrapperLayer;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,118 +11,81 @@ namespace Test
     public class WrapperIntegrationTests
     {
 
-        #region Setup
-
-        [OneTimeSetUp]
-        public void Setup()
-        {
-            DownloadReferences();
-        }
-
-        #endregion Setup
-
         #region Installs
 
-        [Test, Order(-1)]
-        public void TestInstallDependencies()
+        [Test, Order(0)]
+        public void TestInstall()
         {
-            WrapperUtility.Install(TestContext.CurrentContext.TestDirectory);
+            InstallFlow.Run(TestContext.CurrentContext.TestDirectory);
+
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
+
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
+
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
+
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
+
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
+
+            // gatk
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "picard.jar")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "ChromosomeMappings")));
+
+            // skewer
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
+
+            // sratoolkit
+            Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "sratoolkit*").Length > 0);
+            Assert.IsTrue(Directory.GetFiles(Directory.GetDirectories(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0);
+
+            // slncky
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
+            Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "lastz*").Length > 0);
         }
 
-        [Test, Order(0)]
+        [Test, Order(1)]
         public void DownloadReferences()
         {
-            EnsemblDownloadsWrapper.DownloadReferences(
-                TestContext.CurrentContext.TestDirectory,
-                TestContext.CurrentContext.TestDirectory,
-                "grch37",
-                out string genomeFastaPath,
-                out string gtfGeneModelPath,
-                out string gff3GeneModelPath);
-
-            Assert.IsTrue(File.Exists(genomeFastaPath));
-            Assert.IsTrue(File.Exists(gtfGeneModelPath));
-            Assert.IsTrue(File.Exists(gff3GeneModelPath));
-
             // Additional setup for small integration tests
             string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "setup.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(TestContext.CurrentContext.TestDirectory),
 
-                "if [ ! -f 22.fa ]; then wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz; fi",
-                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz ]; then gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz; fi",
+                "if [ ! -f 22.fa ]; then wget " +
+                    "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.20.fa.gz " +
+                    "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.21.fa.gz " +
+                    "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz " +
+                    "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna.chromosome.HG1287_PATCH.fa.gz " +
+                    "; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz ]; then gunzip " +
+                    "Homo_sapiens.GRCh37.75.dna_sm.chromosome.20.fa.gz " +
+                    "Homo_sapiens.GRCh37.75.dna_sm.chromosome.21.fa.gz " +
+                    "Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa.gz " +
+                    "Homo_sapiens.GRCh37.75.dna_sm.chromosome.HG1287_PATCH.fa.gz " +
+                    "; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.20.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.20.fa 20.fa; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.21.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.21.fa 21.fa; fi",
                 "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.22.fa 22.fa; fi",
+                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.HG1287_PATCH.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.HG1287_PATCH.fa HG1287_PATCH.fa; fi",
+                "cat 20.fa 21.fa 22.fa > 202122.fa",
+                "cat 22.fa HG1287_PATCH.fa > 22HG1287_PATCH.fa",
 
-                "if [ ! -f chr1.fa ]; then wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz; fi",
-                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz ]; then gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz; fi",
-                "if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa chr1.fa; fi",
+                //"if [ ! -f chr1.fa ]; then wget ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz; fi",
+                //"if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz ]; then gunzip Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa.gz; fi",
+                //"if [ -f Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa ]; then mv Homo_sapiens.GRCh37.75.dna_sm.chromosome.1.fa chr1.fa; fi",
 
                 "if [ ! -f Homo_sapiens.GRCh37.75.gtf ]; then wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz; fi",
                 "if [ -f Homo_sapiens.GRCh37.75.gtf.gz ]; then gunzip Homo_sapiens.GRCh37.75.gtf.gz; fi",
-                "if [ ! -f chr1.gtf ]; then grep ^1 Homo_sapiens.GRCh37.75.gtf > chr1.gtf; fi",
-                "if [ ! -f 22.gtf ]; then grep ^22 Homo_sapiens.GRCh37.75.gtf > 22.gtf; fi",
+                //"if [ ! -f chr1.gtf ]; then grep ^1 Homo_sapiens.GRCh37.75.gtf > chr1.gtf; fi",
+                @"if [ ! -f 202122.gtf ]; then grep '^20\|^21\|^22' Homo_sapiens.GRCh37.75.gtf > 202122.gtf; fi",
+                @"if [ ! -f 22.gtf ]; then grep '^22' Homo_sapiens.GRCh37.75.gtf > 22.gtf; fi",
+                @"if [ ! -f 22HG1287_PATCH.gtf ]; then grep '^22\|^HG1287_PATCH' Homo_sapiens.GRCh37.75.gtf > 22HG1287_PATCH.gtf; fi",
             }).WaitForExit();
-        }
-
-        [Test, Order(1)]
-        public void TestInstallSTAR()
-        {
-            STARWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallSTARFusion()
-        {
-            STARFusionWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallRSeQC()
-        {
-            RSeQCWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallGATK()
-        {
-            GATKWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallScalpel()
-        {
-            ScalpelWrapper.install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallSkewer()
-        {
-            SkewerWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallSRAToolkit()
-        {
-            SRAToolkitWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sratoolkit")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sratoolkit", "bin", "fastq-dump")));
-        }
-
-        [Test, Order(1)]
-        public void TestInstallSlncky()
-        {
-            SlnckyWrapper.Install(TestContext.CurrentContext.TestDirectory);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
         }
 
         #endregion Installs
@@ -200,7 +164,7 @@ namespace Test
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "sampleGenomeDir")));
         }
 
-        [Test, Order(4)]
+        [Test, Order(3)]
         public void TestAlign()
         {
             STARWrapper.BasicAlignReads
@@ -254,22 +218,23 @@ namespace Test
 
         #region Infer Experiment tests
 
-        [Test, Order(2)]
+        [Test, Order(4)]
         public void StrandSpecificityTest()
         {
-            Assert.IsTrue(RSeQCWrapper.CheckStrandSpecificity(
+            Assert.IsFalse(RSeQCWrapper.CheckStrandSpecificity(
                 TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed")));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.bed"),
+                0.8));
         }
 
         [Test, Order(2)]
         public void InnerDistanceTest()
         {
-            Assert.AreEqual(125, RSeQCWrapper.InferInnerDistance(
+            Assert.AreEqual(132, RSeQCWrapper.InferInnerDistance(
                 TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "paired_end.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.gtf"),
                 out string[] outputFiles));
         }
 
@@ -317,99 +282,96 @@ namespace Test
 
         #region GATK tests
 
-        private string sortedKnownSitesFilename = "";
-
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void DownloadKnownSites()
         {
-            GATKWrapper.DownloadAndSortKnownVariantSitesForEnsembl(
+            GATKWrapper.DownloadUCSCKnownVariantSites(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 true,
                 "grch37",
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa"), // requires the full assembly to sort all of the variants
-                out sortedKnownSitesFilename);
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, sortedKnownSitesFilename)));
+                out string ucscKnownSitesPath);
+            Assert.IsTrue(File.Exists(ucscKnownSitesPath));
+            string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "setupKnownSitesTest.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(TestContext.CurrentContext.TestDirectory),
+                @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.vcf")) + " ]; " + 
+                    @"then grep '^#\|^chr20\|^chr21\|^chr22' " + WrapperUtility.ConvertWindowsPath(ucscKnownSitesPath) + 
+                    " > 202122.vcf; fi",
+            }).WaitForExit();
         }
 
-        [Test, Order(4)]
+        [Test, Order(3)]
         public void GatkWorflow()
         {
-            GATKWrapper.PrepareBam(TestContext.CurrentContext.TestDirectory,
+            GATKWrapper.PrepareBamAndFasta(TestContext.CurrentContext.TestDirectory,
                 8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
-                out string new_bam);
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.fa"),
+                "grch37",
+                out string new_bam,
+                out string ucscGenomeFasta);
 
             GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
                 8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
+                ucscGenomeFasta,
                 new_bam,
                 out string realigned_bam,
                 ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
 
             // Takes kind of a long time, and it's not recommended for RNA-Seq yet
             //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.fa"),
             //    realigned_bam,
             //    out string recal_table_filepath,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory, known_sites_filename));
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.vcf"));
 
             GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
+                ucscGenomeFasta,
                 realigned_bam,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, sortedKnownSitesFilename),
-                out string new_vcf);
-        }
-
-        [Test, Order(3)]
-        public void VariantCall()
-        {
-            GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
-                8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.sorted.grouped.marked.split.mapqfixed.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "common_all_20170710.ensembl.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.vcf"),
                 out string new_vcf);
             Assert.IsTrue(File.Exists(new_vcf));
+            Assert.IsTrue(new FileInfo(new_vcf).Length > 0);
         }
 
         #endregion GATK tests
 
         #region Cufflinks tests
 
-        [Test, Order(3)]
+        [Test, Order(4)]
         public void CufflinksRun()
         {
-            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.sorted.grouped.marked.split.mapqfixed.bam");
+            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.bam");
             CufflinksWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 8,
                 bamPath,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.gtf"),
                 false,
                 true,
                 out string outputDirectory
                 );
-            Assert.IsTrue(File.Exists(Path.Combine(Path.GetDirectoryName(outputDirectory), "transcripts.gtf")));
-            Assert.IsTrue(File.Exists(Path.Combine(Path.GetDirectoryName(outputDirectory), "skipped.gtf")));
-            Assert.IsTrue(File.Exists(Path.Combine(Path.GetDirectoryName(outputDirectory), "isoforms.fpkm_tracking")));
-            Assert.IsTrue(File.Exists(Path.Combine(Path.GetDirectoryName(outputDirectory), "genes.fpkm_tracking")));
+            Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, "transcripts.gtf")));
+            Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, "skipped.gtf")));
+            Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, "isoforms.fpkm_tracking")));
+            Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, "genes.fpkm_tracking")));
         }
 
         #endregion Cufflinks tests
 
         #region Scalpel tests
 
-        [Test]
+        [Test, Order(3)]
         public void ScalpelCall()
         {
             ScalpelWrapper.call_indels(TestContext.CurrentContext.TestDirectory,
                 8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.bed"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.bed"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmedAligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel_test_out"),
                 out string new_vcf);
             Assert.IsTrue(File.Exists(new_vcf));
@@ -452,10 +414,13 @@ namespace Test
 
         #region Runner Tests
 
-        [Test, Order(2)]
+        /// <summary>
+        /// Handling multiple chromosomes
+        /// </summary>
+        [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
-            Fastq2ProteinsRunner.RunFromFastqs(
+            Fastq2ProteinsEngine.RunFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -464,30 +429,37 @@ namespace Test
                 false,
                 true,
                 true,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.vcf"),
                 out string proteinDatabase);
             Assert.IsTrue(new FileInfo(proteinDatabase).Length > 0);
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmed.fastq"));
         }
 
+        /// <summary>
+        /// Single chromosome, so faster, but 
+        /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            Fastq2ProteinsRunner.RunFromSra(
+            Fastq2ProteinsEngine.RunFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
                 8,
-                "SRR6304532",
+                "SRR6319804",
                 false,
                 true,
                 true,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "22.gtf"),
-                out string proteinDatabase);
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "22HG1287_PATCH"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "22HG1287_PATCH.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "22HG1287_PATCH.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "202122.vcf"), // there is no equivalent of the patch; just checking that that works
+                out string proteinDatabase,
+                true,
+                1000);
             Assert.IsTrue(new FileInfo(proteinDatabase).Length > 0);
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "mapper-trimmed.fastq"));
         }
