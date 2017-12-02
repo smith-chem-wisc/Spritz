@@ -14,12 +14,12 @@ namespace Test
         //[Test]
         //public void variants_into_genemodel()
         //{
-        //    VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.vcf"));
+        //    VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.vcf"));
         //    List<VariantContext> variants = vcf.Select(x => x).ToList();
         //    Assert.AreEqual(15574, variants.Count);
 
-        //    Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.fa"));
-        //    GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1.gtf"));
+        //    Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1.fa"));
+        //    GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1.gtf"));
         //    geneModel.amend_transcripts(variants);
         //    List<Protein> proteins = geneModel.genes.SelectMany(g => g.transcripts.SelectMany(t => t.translate(false, true))).ToList();
         //    List<Protein> proteins_without_variants = geneModel.genes.SelectMany(g => g.transcripts.SelectMany(t => t.translate(false, false))).ToList();
@@ -29,14 +29,14 @@ namespace Test
         //}
 
         [Test]
-        public void one_transcript_one_homozygous()
+        public void OneTranscriptOneHomozygous()
         {
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_homozygous_missense.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_missense.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
             Assert.AreEqual(1, variants.Count);
 
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa"));
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_one_transcript.gtf"));
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData",  "chr1_one_transcript.gtf"));
             geneModel.AmendTranscripts(variants);
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
@@ -50,14 +50,14 @@ namespace Test
         }
 
         [Test]
-        public void one_transcript_one_heterozygous()
+        public void OneTranscriptOneHeterozygous()
         {
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_heterozygous_missense.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_missense.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
             Assert.AreEqual(1, variants.Count);
 
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa"));
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_one_transcript.gtf"));
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
             geneModel.AmendTranscripts(variants);
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
@@ -71,14 +71,14 @@ namespace Test
         }
 
         [Test]
-        public void one_transcript_one_heterozygous_synonymous()
+        public void OneTranscriptOneHeterozygousSynonymous()
         {
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_heterozygous_synonymous.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
             Assert.AreEqual(1, variants.Count);
 
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa"));
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_one_transcript.gtf"));
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
             geneModel.AmendTranscripts(variants);
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
@@ -91,14 +91,14 @@ namespace Test
         }
 
         [Test]
-        public void one_transcript_one_homozygous_synonymous()
+        public void OneTranscriptOneHomozygousSynonymous()
         {
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr_1_one_homozygous_synonymous.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_synonymous.vcf"));
             List<VariantContext> variants = vcf.Select(x => x).ToList();
             Assert.AreEqual(1, variants.Count);
 
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa"));
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_one_transcript.gtf"));
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
             geneModel.AmendTranscripts(variants);
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
