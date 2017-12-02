@@ -33,6 +33,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Bio.Core, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Bio.Desktop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Desktop.dll</HintPath>
+    </Reference>
+    <Reference Include="Bio.Platform.Helpers, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Platform.Helpers.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -68,6 +77,9 @@
       <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
       <Name>Proteogenomics</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

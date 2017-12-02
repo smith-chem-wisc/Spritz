@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ToolWrapperLayer
 {
@@ -10,14 +11,16 @@ namespace ToolWrapperLayer
             log = "";
             readTrimmedPaths = new string[readPaths.Length];
             if (readPaths.Length <= 0) return;
-            
+
             // Only create paired entry if paired input, and ignore inputs after second index
+            bool compressed = Path.GetExtension(readPaths[0]) == ".gz";
+            string[] uncompressedReadPaths = compressed ? readPaths.Select(x => Path.Combine(Path.GetDirectoryName(x), Path.GetFileNameWithoutExtension(x))).ToArray() : readPaths;
             for (int i = 0; i < readPaths.Length; i++)
             {
-                if (i == 0) readTrimmedPaths[0] = Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]) + "-trimmed" + (readPaths.Length > 1 ? "-pair1" : "") + ".fastq");
-                if (i == 1) readTrimmedPaths[1] = Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]) + "-trimmed-pair2.fastq");
+                if (i == 0) readTrimmedPaths[0] = Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]) + "-trimmed" + (uncompressedReadPaths.Length > 1 ? "-pair1" : "") + ".fastq");
+                if (i == 1) readTrimmedPaths[1] = Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]) + "-trimmed-pair2.fastq");
             }
-            log = Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]) + "-trimmed.log");
+            log = Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]) + "-trimmed.log");
 
             bool alreadyTrimmed = File.Exists(readTrimmedPaths[0]) && (readPaths.Length == 1 || File.Exists(readTrimmedPaths[1]));
             if (alreadyTrimmed) return;
@@ -28,7 +31,7 @@ namespace ToolWrapperLayer
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "skewer-0.2.2", "skewer")) +
                     " -q " + qualityFilter +
-                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(readPaths[0]), Path.GetFileNameWithoutExtension(readPaths[0]))) +
+                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]))) +
                     " -t " + threads.ToString() +
                     " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "BBMap", "resources", "adapters.fa")) +
                     " " + WrapperUtility.ConvertWindowsPath(readPaths[0]) +

@@ -21,7 +21,7 @@ namespace Test
         [Test]
         public void gtfBasics()
         {
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gtf.gtf"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.AreEqual(165, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
             List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
         }
@@ -29,7 +29,7 @@ namespace Test
         [Test]
         public void gffBasics()
         {
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.AreEqual(148, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
             List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
 
@@ -53,8 +53,8 @@ namespace Test
         [Test]
         public void gffAppliedToOther()
         {
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_gff.gff3"));
-            GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "sample_pacbio.gff3"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
+            GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_pacbio.gff3"));
 
             List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, false, 7)).ToList();
 
@@ -77,7 +77,24 @@ namespace Test
 
         public Genome little_genome()
         {
-            return new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "chr1_sample.fa"));
+            return new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+        }
+
+        [Test]
+        public void KaryotypicOrder()
+        {
+            Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headers.fa"));
+            var seqs = headers.KaryotypicOrder();
+            Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr1" && seqs[1].ID.Split(' ')[0] == "chr2");
+            Assert.IsTrue(seqs[22].ID.Split(' ')[0] == "chrX" && seqs[23].ID.Split(' ')[0] == "chrY" && seqs[24].ID.Split(' ')[0] == "chrM");
+        }
+
+        [Test]
+        public void KaryotypicOrderShort()
+        {
+            Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headersShort.fa"));
+            var seqs = headers.KaryotypicOrder();
+            Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr9" && seqs[1].ID.Split(' ')[0] == "chr20");
         }
     }
 }

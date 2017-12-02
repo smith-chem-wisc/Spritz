@@ -95,7 +95,8 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
-                "STAR/source/STAR" + arguments
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + BamFileSuffix + " ]; then STAR/source/STAR" + arguments + "; fi",
+                File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             }).WaitForExit();
         }
 
@@ -116,7 +117,7 @@ namespace ToolWrapperLayer
             List<string> new_ones = new List<string>();
             foreach(string file in fastq_files)
             {
-                string new_path = Path.Combine(current_directory, Path.GetFileNameWithoutExtension(file) + ".segment.fastq");
+                string new_path = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + ".segment.fastq");
                 new_ones.Add(new_path);
 
                 using (StreamWriter writer = new StreamWriter(new_path))

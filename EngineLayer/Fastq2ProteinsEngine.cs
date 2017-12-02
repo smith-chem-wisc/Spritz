@@ -40,7 +40,7 @@ namespace WorkflowLayer
                 STARWrapper.LoadGenome(bin, genomeStarIndexDirectory);
                 if (inferStrandSpecificity)
                 {
-                    STARWrapper.SubsetFastqs(trimmedFastqs, readSubset, bin, out string[] subsetFastqs);
+                    STARWrapper.SubsetFastqs(trimmedFastqs, readSubset, analysisDirectory, out string[] subsetFastqs);
                     if (useReadSubset) trimmedFastqs = subsetFastqs;
                     string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
                     STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep);
@@ -55,8 +55,8 @@ namespace WorkflowLayer
 
             VCFParser vcf = new VCFParser(vcfPath);
             List<VariantContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).ToList();
-            Genome genome = new Genome(genomeFasta);
-            GeneModel geneModel = new GeneModel(genome, geneModelGtfOrGff);
+            Genome ensemblGenome = new Genome(genomeFasta);
+            GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
             geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Transcripts.SelectMany(t => t.Translate(true, true))).ToList();
             proteinVariantDatabase = Path.Combine(Path.GetDirectoryName(fastqs[0]), Path.GetFileNameWithoutExtension(fastqs[0]) + ".protein.fasta");

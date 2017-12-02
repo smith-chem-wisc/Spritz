@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Bio;
+using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,15 +14,22 @@ namespace ToolWrapperLayer
 
         #region Private Fields
 
-        private static string allGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
+        private static string allGRCh37UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
 
-        private static string commonGRCh37 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
+        private static string commonGRCh37UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
 
-        private static string allGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
+        // Malformed with empty alleles
+        private static string GRCh37Ensembl = "ftp://ftp.ensembl.org/pub/release-75//variation/vcf/homo_sapiens/Homo_sapiens.vcf.gz";
 
-        private static string commonGRCh38 = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
+        private static string allGRCh38UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
+
+        private static string commonGRCh38UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
+
+        private static string GRCh38Ensembl = "ftp://ftp.ensembl.org/pub/release-81//variation/vcf/homo_sapiens/Homo_sapiens.vcf.gz";
 
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
+
+        private static Regex getISequenceHeaderSequenceName = new Regex(@"([\w\d\.\-]+)(.+)");
 
         //http://seqanswers.com/forums/showthread.php?t=22504
         private static string bamToChrBamOneLiner = " | awk 'BEGIN{FS=OFS=\"\t\"} (/^@/ && !/@SQ/){print $0} $2~/^SN:[1-9]|^SN:X|^SN:Y|^SN:MT/{print $0}  $3~/^[1-9]|X|Y|MT/{$3=\"chr\"$3; print $0} ' | sed 's/SN:/SN:chr/g' | sed 's/chrMT/chrM/g' | ";
@@ -60,60 +69,72 @@ namespace ToolWrapperLayer
         /// <param name="binDirectory"></param>
         /// <param name="bam"></param>
         /// <param name="newBam"></param>
-        public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, out string ucscGenomeFasta)
+        public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, out string ucscGenomeFasta, bool convertToUCSC = true)
         {
             // check if sorted and grouped and rename chromosomes
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
-            Dictionary<string, string> chromMappings = File.ReadAllLines(downloadGrch37 ?
-                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
-                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
-                .Select(line => line.Split('\t'))
-                .Where(x => x.Length > 1)
-                .ToDictionary(line => line[0], line => line[1]);
-
-            using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, "scripts", "convertChromNamesOnTheFly.py")))
+            ucscGenomeFasta = genomeFasta;
+            newBam = bam;
+            if (convertToUCSC)
             {
-                writer.Write("input sys\n");
-                writer.Write("for line in sys.stdin\n");
-                writer.Write("  new = line\n");
-                foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
+                newBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
+
+                Dictionary<string, string> chromMappings = File.ReadAllLines(downloadGrch37 ?
+                    Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
+                    Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
+                    .Select(line => line.Split('\t'))
+                    .Where(x => x.Length > 1)
+                    .ToDictionary(line => line[0], line => line[1]);
+
+                // future speedup: could check BAM header to only convert the chroms that are there
+                // future speedup: divide up amongst ProcessorCount # of python scripts and pipe them together
+                using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, "scripts", "convertChromNamesOnTheFly.py")))
                 {
-                    writer.Write("  new = new.replace(new, chr" + a.Key + ", " + a.Value + ")\n");
+                    writer.Write("import sys\n");
+                    writer.Write("for line in sys.stdin:\n");
+                    writer.Write("  new = line\n");
+                    foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
+                    {
+                        writer.Write("  new = new.replace(\"chr" + a.Key + "\", \"" + a.Value + "\")\n");
+                    }
+                    writer.Write("  sys.stdout.write(new)\n");
                 }
-                writer.Write("  sys.stdout.write(new)\n");
+
+                // reheader genomeFasta with UCSC chromsome names; remove the ones that aren't in the UCSC universe
+                Genome ucscGenome = new Genome(genomeFasta);
+                ucscGenome.Chromosomes = ucscGenome.Chromosomes
+                    .Where(x => chromMappings.TryGetValue(getISequenceHeaderSequenceName.Match(x.ID).Groups[1].Value, out string chr) && chr.Length > 0).ToList();
+                foreach (ISequence chrom in ucscGenome.Chromosomes)
+                {
+                    string sequenceName = getISequenceHeaderSequenceName.Match(chrom.ID).Groups[1].Value;
+                    if (chromMappings.TryGetValue(sequenceName, out string chr))
+                    {
+                        chrom.ID = getISequenceHeaderSequenceName.Replace(chrom.ID, m => chr + m.Groups[2]);
+                    }
+                }
+
+                ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
+                Genome.WriteFasta(ucscGenome.KaryotypicOrder(), ucscGenomeFasta);
             }
 
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
             string readGroupedCheckfile = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerReadGrouped");
-            newBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
+            string reorderedBam = Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam) + ".ordered.bam");
             string scriptPath = Path.Combine(binDirectory, "scripts", "check_sorted.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + WrapperUtility.ConvertWindowsPath(readGroupedCheckfile),
-                "samtools view -h " + WrapperUtility.ConvertWindowsPath(bam) + bamToChrBamOneLiner + "python scripts/convertChromNamesOnTheFly.py | samtools view -bS - > " + WrapperUtility.ConvertWindowsPath(newBam),
+                convertToUCSC ? "samtools view -h " + WrapperUtility.ConvertWindowsPath(bam) + bamToChrBamOneLiner + "python scripts/convertChromNamesOnTheFly.py | samtools view -bS - > " + WrapperUtility.ConvertWindowsPath(newBam) : "",
+                GenomeFastaIndexCommand(ucscGenomeFasta),
+                GenomeDictionaryIndexCommand(ucscGenomeFasta),
+                PICARD + " ReorderSam I=" + WrapperUtility.ConvertWindowsPath(newBam) + " O=" + WrapperUtility.ConvertWindowsPath(reorderedBam) + " R=" + WrapperUtility.ConvertWindowsPath(ucscGenomeFasta)
             }).WaitForExit();
+            newBam = reorderedBam;
             bool sorted = new FileInfo(Path.Combine(binDirectory, sortedCheckPath)).Length > 0;
             bool grouped = new FileInfo(Path.Combine(binDirectory, readGroupedCheckfile)).Length > 0;
-
-            // reheader genomeFasta with UCSC chromsome names
-            ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
-            using (StreamReader reader = new StreamReader(Path.Combine(binDirectory, genomeFasta)))
-            using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, ucscGenomeFasta)))
-            {
-                while (true)
-                {
-                    string line = reader.ReadLine();
-                    if (line == null) break;
-                    if (!line.StartsWith(">"))
-                        writer.Write(line + '\n');
-                    string sequenceName = getFastaHeaderSequenceName.Match(line).Groups[2].Value;
-                    if (chromMappings.TryGetValue(sequenceName, out string chr))
-                        writer.Write(getFastaHeaderSequenceName.Replace(line, m => m.Groups[1] + chr + m.Groups[3] + '\n'));
-                }
-            }
 
             // run commands for grouping or sorting
             string groupAndMaybeSortCommand;
@@ -155,7 +176,10 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(scriptName2, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                //reheaderCommand,
+
+                GenomeFastaIndexCommand(ucscGenomeFasta),
+                GenomeDictionaryIndexCommand(ucscGenomeFasta),
+
                 groupAndMaybeSortCommand,
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then " +
                     "picard-tools MarkDuplicates" +
@@ -164,9 +188,6 @@ namespace ToolWrapperLayer
                     " M=" + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
                     " AS=true; fi", // assume sorted
                 "if [ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(groupSortBam) + "; fi", // conserve space by removing former BAM
-
-                GenomeFastaIndexCommand(ucscGenomeFasta),
-                GenomeDictionaryIndexCommand(ucscGenomeFasta),
 
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
 
@@ -312,27 +333,26 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public static void DownloadUCSCKnownVariantSites(string binDirectory, string targetDirectory, bool commonOnly, string reference, out string ucscKnownSitesPath)
+        public static void DownloadUCSCKnownVariantSites(string binDirectory, string targetDirectory, bool commonOnly, string reference, out string knownSitesPath)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
-            string targetFileLocation = commonOnly ?
-                downloadGrch37 ? commonGRCh37 : commonGRCh38 :
-                downloadGrch37 ? allGRCh37 : allGRCh38;
+            string targetFileLocation = 
+                commonOnly ?
+                    (downloadGrch37 ? commonGRCh37UCSC : commonGRCh38UCSC) :
+                    (downloadGrch37 ? allGRCh37UCSC : allGRCh38UCSC);
             string ucscKnownSitesFilename = targetFileLocation.Split('/').Last();
-            ucscKnownSitesPath = Path.Combine(targetDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
+            knownSitesPath = Path.Combine(targetDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
 
-
-            if ((downloadGrch37 || downloadGrch38) 
-                && !File.Exists(ucscKnownSitesPath))
+            if ((downloadGrch37 || downloadGrch38) && !File.Exists(knownSitesPath))
             {
                 string scriptPath = Path.Combine(binDirectory, "scripts", "downloadUcscVariants.bash");
                 WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
                 {
                     "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
                     "wget " + targetFileLocation,
-                    "gunzip " + WrapperUtility.ConvertWindowsPath(ucscKnownSitesPath) + ".gz",
-                    "rm " +  WrapperUtility.ConvertWindowsPath(ucscKnownSitesPath) + ".gz"
+                    "gunzip " + WrapperUtility.ConvertWindowsPath(knownSitesPath) + ".gz",
+                    "rm " +  WrapperUtility.ConvertWindowsPath(knownSitesPath) + ".gz"
                 }).WaitForExit();
             }
         }

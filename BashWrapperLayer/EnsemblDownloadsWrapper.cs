@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -7,8 +8,10 @@ namespace ToolWrapperLayer
     public class EnsemblDownloadsWrapper
     {
 
+        //ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/README
         private static string GRCh37PrimaryAssemblyUrl = "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz";
         public static string GRCh37PrimaryAssemblyFilename { get; } = "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa";
+        //ftp://ftp.ensembl.org/pub/release-81/fasta/homo_sapiens/dna/README
         private static string GRCh38PrimaryAssemblyUrl = "ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz";
         public static string GRCh38PrimaryAssemblyFilename { get; } = "Homo_sapiens.GRCh38.dna.primary_assembly.fa";
 
@@ -56,6 +59,8 @@ namespace ToolWrapperLayer
                 "if [ ! -f " + Path.GetFileName(gff3GeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38Gff3GeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi", // note GRCh37 calls the gtf url instead
                 "if [ -f " + Path.GetFileName(gff3GeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(gff3GeneModelPath) + ".gz; fi",
             }).WaitForExit();
+
+            //Genome.WriteFasta(new Genome(genomeFastaPath).KaryotypicOrder(), genomeFastaPath); // todo: try this for ordering contigs before alignments; does gtf then need to be reordered?
         }
     }
 }
