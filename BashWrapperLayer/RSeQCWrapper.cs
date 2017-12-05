@@ -57,7 +57,12 @@ namespace ToolWrapperLayer
         public static bool CheckStrandSpecificity(string binDirectory, string bamPath, string geneModelPath, double minFractionStrandSpecific)
         {
             string outfile = Path.GetFileNameWithoutExtension(bamPath) + ".inferexpt";
-            string outpath = Path.Combine(binDirectory, outfile);
+            string outpath = Path.Combine(Path.GetDirectoryName(bamPath), outfile);
+
+            // todo: rework this with Bio.IO.BAM
+            // Can use the method IEnumerable<SAMAlignedSequence> Bio.IO.Bam.BamParser.Parse(Stream stream)
+            // and then SAMAlignedSequence.Flag.HasFlag(SAMFlags.ASDFDSADF)
+
             InferExperiment(binDirectory, bamPath, geneModelPath, outpath);
 
             // sometimes the file doesn't close immediately, probably because python is holding onto it for some reason
@@ -111,7 +116,7 @@ namespace ToolWrapperLayer
         {
             if (Path.GetExtension(geneModel) != ".bed")
             {
-                geneModel = BEDOPSWrapper.GtfOrGff2Bed6(binDirectory, geneModel);
+                geneModel = BEDOPSWrapper.Gtf2Bed12(binDirectory, geneModel);
             }
             string script_path = Path.Combine(binDirectory, "scripts", "infer_expt.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>

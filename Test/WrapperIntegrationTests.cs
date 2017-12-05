@@ -2,6 +2,7 @@
 using Bio.IO.FastA;
 using NUnit.Framework;
 using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -315,23 +316,23 @@ namespace Test
         [Test, Order(2)]
         public void DownloadKnownSites()
         {
-            GATKWrapper.DownloadUCSCKnownVariantSites(
+            GATKWrapper.DownloadEnsemblKnownVariantSites(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 true,
                 "grch37",
-                out string knownSitesPath);
-            Assert.IsTrue(File.Exists(knownSitesPath));
+                out string ensemblKnownSitesPath);
+            Assert.IsTrue(File.Exists(ensemblKnownSitesPath));
 
             string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "setupKnownSitesTest.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
                 @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")) + " ]; " +
-                    @"then grep '^#\|^chr20\|^chr21\|^chr22\|^20\|^21\|^22' " + WrapperUtility.ConvertWindowsPath(knownSitesPath) +
+                    @"then grep '^#\|^chr20\|^chr21\|^chr22\|^20\|^21\|^22' " + WrapperUtility.ConvertWindowsPath(ensemblKnownSitesPath) +
                     " > 202122.vcf; fi",
                 @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf")) + " ]; " +
-                    @"then grep '^#\|^chr9\|^chr22\|^chrHG1287_PATCH\|chr21_gl000210_random\|^9\|^22\|^HG1287_PATCH\|^GL000210.1' " + WrapperUtility.ConvertWindowsPath(knownSitesPath) +
+                    @"then grep '^#\|^chr9\|^chr22\|^chrHG1287_PATCH\|chr21_gl000210_random\|^9\|^22\|^HG1287_PATCH\|^GL000210.1' " + WrapperUtility.ConvertWindowsPath(ensemblKnownSitesPath) +
                     " > 922HG1287_PATCH.vcf; fi",
             }).WaitForExit();
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")));
@@ -348,12 +349,13 @@ namespace Test
                 "grch37",
                 out string new_bam);
 
-            GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
-                8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-                new_bam,
-                out string realigned_bam,
-                ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
+            // No longer needed with HaplotypeCaller
+            //GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
+            //    8,
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+            //    new_bam,
+            //    out string realigned_bam,
+            //    ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
 
             // Takes kind of a long time, and it's not recommended for RNA-Seq yet
             //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
@@ -365,7 +367,7 @@ namespace Test
             GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-                realigned_bam,
+                new_bam,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
                 out string new_vcf);
             Assert.IsTrue(File.Exists(new_vcf));
@@ -376,7 +378,7 @@ namespace Test
         public void convertVcf()
         {
             GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.UCSC.ordered.sorted.grouped.marked.split.mapqfixed.realigned.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1Ucsc.vcf"),
                 "grch37",
                 out string ensemblVcf);
             Assert.IsTrue(File.Exists(ensemblVcf));
@@ -416,7 +418,7 @@ namespace Test
             ScalpelWrapper.call_indels(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "scalpel_test_out"),
                 out string new_vcf);
@@ -471,7 +473,12 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
                 8, 
-                new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq,mapper.fastq") },
+                new string[]
+                {
+                    String.Join(",", new string[] {
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"),
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain.fastq") })
+                },
                 false,
                 true,
                 true,

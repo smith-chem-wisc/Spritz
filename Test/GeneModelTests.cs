@@ -86,7 +86,7 @@ namespace Test
         public void KaryotypicOrder()
         {
             Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headers.fa"));
-            var seqs = headers.KaryotypicOrder();
+            var seqs = headers.KaryotypicOrder(" ");
             Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr1" && seqs[1].ID.Split(' ')[0] == "chr2");
             Assert.IsTrue(seqs[22].ID.Split(' ')[0] == "chrX" && seqs[23].ID.Split(' ')[0] == "chrY" && seqs[24].ID.Split(' ')[0] == "chrM");
         }
@@ -95,23 +95,23 @@ namespace Test
         public void KaryotypicOrderShort()
         {
             Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headersShort.fa"));
-            var seqs = headers.KaryotypicOrder();
+            var seqs = headers.KaryotypicOrder(" ");
             Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr9" && seqs[1].ID.Split(' ')[0] == "chr20");
         }
 
-        [Test]
-        public void TryMakingVariantDatabas()
-        {
-            string gff = @"E:\GffParserCrash\Homo_sapiens.GRCh38.81.gff2.gff3";
-            string vcf = @"E:\GffParserCrash\978NAT_ACTGAT_L005_R1_001-trimmed-pair1Aligned.out.UCSC.ordered.sorted.grouped.marked.split.mapqfixed.realigned.vcf";
-            GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(TestContext.CurrentContext.TestDirectory, vcf, "grch38", out string convertedVcf);
-            Genome genome = new Genome(@"E:\GffParserCrash\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
-            genome.Chromosomes = genome.Chromosomes.Where(x => x.ID.Split(' ')[0] == "9").ToList();
-            Fastq2ProteinsEngine.WriteSampleSpecificFasta(
-                convertedVcf,
-                genome,
-                gff,
-                Path.Combine(Path.GetDirectoryName(vcf), Path.GetFileNameWithoutExtension(vcf)));
-        }
+        //[Test]
+        //public void TryMakingVariantDatabas()
+        //{
+        //    string gff = @"E:\GffParserCrash\Homo_sapiens.GRCh38.81.gff2.gff3";
+        //    string vcf = @"E:\GffParserCrash\978NAT_ACTGAT_L005_R1_001-trimmed-pair1Aligned.out.UCSC.ordered.sorted.grouped.marked.split.mapqfixed.realigned.vcf";
+        //    GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(TestContext.CurrentContext.TestDirectory, vcf, "grch38", out string convertedVcf);
+        //    Genome genome = new Genome(@"E:\GffParserCrash\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
+        //    genome.Chromosomes = genome.Chromosomes.Where(x => x.ID.Split(' ')[0] == "9").ToList();
+        //    Fastq2ProteinsEngine.WriteSampleSpecificFasta(
+        //        convertedVcf,
+        //        genome,
+        //        gff,
+        //        Path.Combine(Path.GetDirectoryName(vcf), Path.GetFileNameWithoutExtension(vcf)));
+        //}
     }
 }

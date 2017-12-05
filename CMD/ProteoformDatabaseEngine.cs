@@ -70,8 +70,7 @@ namespace CMD
                 options.GeneModelGtfOrGff = gff3GeneModelPath;
             if (options.ReferenceVcf == null)
             {
-                GATKWrapper.DownloadUCSCKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string ucscVcfPath);
-                GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(options.BinDirectory, ucscVcfPath, options.Reference, out string ensemblVcfPath);
+                GATKWrapper.DownloadEnsemblKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string ensemblVcfPath);
                 options.ReferenceVcf = ensemblVcfPath;
             }
 

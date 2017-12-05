@@ -25,8 +25,7 @@ namespace ToolWrapperLayer
 
         #endregion Public Properties
 
-
-        public static void GenerateGenomeIndex(string bin_directory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, int junctionOverhang = 100)
+        public static void GenerateGenomeIndex(string binDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, int junctionOverhang = 100)
         {
             if (!Directory.Exists(genomeDir)) Directory.CreateDirectory(genomeDir);
             string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
@@ -39,44 +38,44 @@ namespace ToolWrapperLayer
                 (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff") ? " --sjdbGTFtagExonParentTranscript Parent" : "") +
                 " --sjdbOverhang " + junctionOverhang.ToString();
 
-            string script_name = Path.Combine(bin_directory, "scripts", "generate_genome.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "generate_genome.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "STAR/source/STAR" + arguments
             }).WaitForExit();
         }
 
-        public static void LoadGenome(string bin_directory, string genomeDir)
+        public static void LoadGenome(string binDirectory, string genomeDir)
         {
             string arguments = " --genomeLoad " + STARGenomeLoadOption.LoadAndExit.ToString() +
                 " --genomeDir '" + WrapperUtility.ConvertWindowsPath(genomeDir) + "'";
-            string script_name = Path.Combine(bin_directory, "scripts", "load_genome.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "load_genome.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "STAR/source/STAR" + arguments
             }).WaitForExit();
         }
 
 
-        public static void RemoveGenome(string bin_directory)
+        public static void RemoveGenome(string binDirectory, string genomeDir)
         {
-            string script_name = Path.Combine(bin_directory, "scripts", "remove_genome.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "removeGenome.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
-                "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString()
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() + " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir)
             }).WaitForExit();
         }
 
         // fastqs must have \n line endings, not \r\n
-        public static void BasicAlignReads(string bin_directory, int threads, string genomeDir, string[] fastq_files, string outprefix, bool strand_specific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
+        public static void BasicAlignReads(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
-            string reads_in = "\"" + String.Join("\" \"", fastq_files.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
-            string read_command = fastq_files.Any(f => Path.GetExtension(f) == ".gz") ?
+            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
-                fastq_files.Any(f => Path.GetExtension(f) == ".bz2") ?
+                fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
                     " --readFilesCommand bzip2 -c" :
                     "";
             string arguments =
@@ -85,44 +84,44 @@ namespace ToolWrapperLayer
                 " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM Unsorted" +
-                (strand_specific ? "" : " --outSAMstrandField intronMotif") +
+                (strandSpecific ? "" : " --outSAMstrandField intronMotif") +
                 " --chimSegmentMin 12" +
                 " --chimJunctionOverhangMin 12" +
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
 
-            string script_name = Path.Combine(bin_directory, "scripts", "align_reads.bash");
+            string script_name = Path.Combine(binDirectory, "scripts", "align_reads.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + BamFileSuffix + " ]; then STAR/source/STAR" + arguments + "; fi",
                 File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             }).WaitForExit();
         }
 
-        public void SuccessiveAlignReads(string bin_directory, int threads, string genomeDir, List<string[]> fastq_files, string outprefix, bool strand_specific = true)
+        public void SuccessiveAlignReads(string binDirectory, int threads, string genomeDir, List<string[]> fastqFiles, string outprefix, bool strandSpecific = true)
         {
-            LoadGenome(bin_directory, genomeDir);
-            foreach(var fqs in fastq_files)
+            LoadGenome(binDirectory, genomeDir);
+            foreach(var fqs in fastqFiles)
             {
-                BasicAlignReads(bin_directory, threads, genomeDir, fqs, outprefix, strand_specific, STARGenomeLoadOption.LoadAndKeep);
+                BasicAlignReads(binDirectory, threads, genomeDir, fqs, outprefix, strandSpecific, STARGenomeLoadOption.LoadAndKeep);
             }
-            RemoveGenome(bin_directory);
+            RemoveGenome(binDirectory, genomeDir);
         }
 
-        public static void SubsetFastqs(string binDirectory, string[] fastq_files, int reads, string current_directory, out string[] new_files, bool useSeed = false, int seed = 0)
+        public static void SubsetFastqs(string binDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
         {
             // Note: fastqs must have \n line endings, not \r\n
-            new_files = new string[] { Path.Combine(Path.GetDirectoryName(fastq_files[0]), Path.GetFileNameWithoutExtension(fastq_files[0]) + ".segment.fastq") };
-            if (fastq_files.Length > 1)
-                new_files = new string[] { new_files[0], Path.Combine(Path.GetDirectoryName(fastq_files[1]), Path.GetFileNameWithoutExtension(fastq_files[1]) + ".segment.fastq") };
+            newFfiles = new string[] { Path.Combine(Path.GetDirectoryName(fastqFiles[0]), Path.GetFileNameWithoutExtension(fastqFiles[0]) + ".segment.fastq") };
+            if (fastqFiles.Length > 1)
+                newFfiles = new string[] { newFfiles[0], Path.Combine(Path.GetDirectoryName(fastqFiles[1]), Path.GetFileNameWithoutExtension(fastqFiles[1]) + ".segment.fastq") };
 
             string script_path = Path.Combine(binDirectory, "scripts", "subsetReads.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "seqtk sample" + (useSeed || fastq_files.Length > 1 ? " -s" + seed.ToString() : "") + " " + reads.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastq_files[0]) + " > " + WrapperUtility.ConvertWindowsPath(new_files[0]),
-                fastq_files.Length > 1 ? "seqtk sample -s" + seed.ToString()  + " " + reads.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastq_files[1])+ " > " + WrapperUtility.ConvertWindowsPath(new_files[1]) : "",
+                "seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
+                fastqFiles.Length > 1 ? "seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
             }).WaitForExit();
         }
 

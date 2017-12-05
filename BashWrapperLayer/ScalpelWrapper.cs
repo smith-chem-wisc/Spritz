@@ -10,7 +10,7 @@ namespace ToolWrapperLayer
         public static void call_indels(string bin_directory, int threads, string genome_fasta, string bed, string bam, string outdir, out string new_vcf)
         {
             new_vcf = Path.Combine(outdir, "variants.indel.vcf");
-            string script_path = Path.Combine(bin_directory, "scripts", "run_scalpel.bash");
+            string script_path = Path.Combine(bin_directory, "scripts", "scalpel.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
@@ -21,7 +21,6 @@ namespace ToolWrapperLayer
                     " --numprocs " + threads.ToString() + 
                     " --dir " + WrapperUtility.ConvertWindowsPath(outdir),
             }).WaitForExit();
-            File.Delete(script_path);
         }
 
         // Requires cmake, installed in WrapperUtility install
@@ -36,7 +35,6 @@ namespace ToolWrapperLayer
                 "cd ..",
                 "rm scalpel-0.5.3.tar.gz",
             }).WaitForExit();
-            File.Delete(script_path);
         }
     }
 }

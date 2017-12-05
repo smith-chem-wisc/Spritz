@@ -12,13 +12,13 @@ namespace WorkflowLayer
 {
     public class Fastq2ProteinsEngine
     {
-        public static void RunFromSra(string bin, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ucscKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = (int)10e6)
+        public static void RunFromSra(string bin, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
         {
             SRAToolkitWrapper.Fetch(bin, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
-            RunFromFastqs(bin, analysisDirectory, reference, threads, fastqPaths, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, geneModelGtfOrGff, ucscKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
+            RunFromFastqs(bin, analysisDirectory, reference, threads, fastqPaths, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
         }
 
-        public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, string[] fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ucscKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = (int)10e6)
+        public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, string[] fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
         {
             if (Path.GetExtension(genomeFasta) == ".gz")
             {
@@ -26,16 +26,25 @@ namespace WorkflowLayer
                 genomeFasta = Path.ChangeExtension(genomeFasta, null);
             }
 
+            // We need to use the same fasta file throughout and have all the VCF and GTF chromosome reference IDs be the same as these.
+            // Right now this is based on ensembl references, so those are the chromosome IDs I will be using throughout
+            // TODO: try this with UCSC references to judge whether there's a difference in quality / yield / FDR etc in subsequent proteomics analysis
+            // This file needs to be in karyotypic order; this allows us not to have to reorder it for GATK analysis
+            string ensemblFastaHeaderDelimeter = " ";
             string reorderedFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".karyotypic.fa");
             Genome ensemblGenome = new Genome(genomeFasta);
-            if (!ensemblGenome.IsKaryotypic())
+            if (!ensemblGenome.IsKaryotypic(ensemblFastaHeaderDelimeter))
             {
+                ensemblGenome.Chromosomes = ensemblGenome.KaryotypicOrder(ensemblFastaHeaderDelimeter);
                 if (!File.Exists(reorderedFasta))
-                    Genome.WriteFasta(ensemblGenome.KaryotypicOrder(), reorderedFasta);
-                ensemblGenome = new Genome(reorderedFasta);
+                {
+                    Genome.WriteFasta(ensemblGenome.Chromosomes, reorderedFasta);
+                }
             }
             else
+            {
                 reorderedFasta = genomeFasta;
+            }
 
             // Parse comma-separated fastq lists
             proteinVariantDatabases = new List<string>();
@@ -63,8 +72,8 @@ namespace WorkflowLayer
             {
                 STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff);
             }
-            STARWrapper.LoadGenome(bin, genomeStarIndexDirectory);
 
+            STARWrapper.LoadGenome(bin, genomeStarIndexDirectory);
             List<string> outPrefixes = new List<string>();
             foreach (string[] fq in trimmedFastqSeparated)
             {
@@ -73,20 +82,22 @@ namespace WorkflowLayer
                 outPrefixes.Add(outPrefix);
                 if (!File.Exists(outPrefix + STARWrapper.BamFileSuffix) || overwriteStarAlignment)
                 {
+                    bool localStrandSpecific = strandSpecific;
                     if (inferStrandSpecificity)
                     {
                         STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
                         if (useReadSubset) fqForAlignment = subsetFastqs;
                         string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
                         STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep);
-                        strandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
+                        localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
                     }
-                    STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, fqForAlignment, outPrefix, strandSpecific, STARGenomeLoadOption.LoadAndKeep);
+                    STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, fqForAlignment, outPrefix, localStrandSpecific, STARGenomeLoadOption.LoadAndKeep);
                 }
             }
-            STARWrapper.LoadGenome(bin, genomeStarIndexDirectory);
+            STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory);
 
             // Variant calling and protein database writing
+            // todo: check if there are any outPrefixes that are the same and throw an error
             List<string> bamPaths = new List<string>();
             Parallel.ForEach(outPrefixes, outPrefix =>
             {
@@ -96,11 +107,9 @@ namespace WorkflowLayer
             });
             foreach (string newBam in bamPaths)
             {
-                GATKWrapper.RealignIndels(bin, threads, reorderedFasta, newBam, out string realignedBam);
-                GATKWrapper.VariantCalling(bin, threads, reorderedFasta, realignedBam, Path.Combine(bin, ucscKnownSitesPath), out string vcfPath);
-                GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(bin, vcfPath, reference, out string ensemblVcfPath);
+                GATKWrapper.VariantCalling(bin, threads, reorderedFasta, newBam, Path.Combine(bin, ensemblKnownSitesPath), out string vcfPath);
                 proteinVariantDatabases.Add(
-                    WriteSampleSpecificFasta(ensemblVcfPath, ensemblGenome, geneModelGtfOrGff, Path.Combine(Path.GetDirectoryName(fastqs[0]), Path.GetFileNameWithoutExtension(fastqs[0]))));
+                    WriteSampleSpecificFasta(vcfPath, ensemblGenome, geneModelGtfOrGff, Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam))));
             }
 
         }
