@@ -124,6 +124,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="TestData\mapperAgain.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\paired_end.bam">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

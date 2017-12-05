@@ -64,6 +64,32 @@ namespace Proteogenomics
             return orderedChromosomes.ToList();
         }
 
+        public bool IsKaryotypic()
+        {
+            bool ucsc = Chromosomes[0].ID.StartsWith("c");
+            int i = 0;
+            List<string> ids = Chromosomes.Select(x => x.ID).ToList();
+            List<string> names = new List<string>();
+            foreach (string chr in Enumerable.Range(1, 22).Select(x => x.ToString()).Concat(new string[] { "X", "Y", "M" }))
+            {
+                string name = ucsc ? "chr" + chr : chr.ToString() + (chr == "M" ? "T" : "");
+                names.Add(name);
+                int s = ids.IndexOf(name);
+                if (s > 0)
+                    i = s;
+                if (s > 0 && s <= i)
+                    return false;
+            }
+            foreach (string chr in ids.Except(names))
+            {
+                string name = ucsc ? "chr" + chr : chr.ToString() + (chr == "M" ? "T" : "");
+                int s = ids.IndexOf(name);
+                if (s > 0 && s <= i)
+                    return false;
+            }
+            return true;
+        }
+
         public static void WriteFasta(IEnumerable<ISequence> sequences, string filePath)
         {
             FastAFormatter formatter = new FastAFormatter();

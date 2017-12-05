@@ -66,6 +66,7 @@
     <Compile Include="STARGenomeLoadOption.cs" />
     <Compile Include="STARWrapper.cs" />
     <Compile Include="TopHatWrapper.cs" />
+    <Compile Include="UCSCDownloadsWrapper.cs" />
     <Compile Include="WrapperUtility.cs" />
   </ItemGroup>
   <ItemGroup>

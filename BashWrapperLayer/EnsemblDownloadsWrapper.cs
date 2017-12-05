@@ -1,7 +1,7 @@
-﻿using Proteogenomics;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ToolWrapperLayer
 {
@@ -61,6 +61,32 @@ namespace ToolWrapperLayer
             }).WaitForExit();
 
             //Genome.WriteFasta(new Genome(genomeFastaPath).KaryotypicOrder(), genomeFastaPath); // todo: try this for ordering contigs before alignments; does gtf then need to be reordered?
+        }
+
+        public static Dictionary<string, string> UCSC2EnsemblChromosomeMappings(string binDirectory, string reference)
+        {
+            bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
+                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
+                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
+                .Select(line => line.Split('\t'))
+                .Where(x => x.Length > 1)
+                .ToDictionary(line => line[0], line => line[1]);
+            return chromMappings;
+        }
+
+        public static Dictionary<string, string> Ensembl2UCSCChromosomeMappings(string binDirectory, string reference)
+        {
+            bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
+                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
+                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
+                .Select(line => line.Split('\t'))
+                .Where(x => x.Length > 1)
+                .ToDictionary(line => line[0], line => line[1]);
+            return chromMappings;
         }
     }
 }

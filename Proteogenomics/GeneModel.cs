@@ -4,6 +4,7 @@ using Bio.VCF;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -44,7 +45,8 @@ namespace Proteogenomics
 
         public void ReadGeneFeatures(string geneModelFile)
         {
-            List<ISequence> geneFeatures = new GffParser().Parse(geneModelFile).ToList();
+            ForceGffVersionTo2(geneModelFile, out string geneModelWithVersion2MarkedPath);
+            List<ISequence> geneFeatures = new GffParser().Parse(geneModelWithVersion2MarkedPath).ToList();
 
             foreach (ISequence chromFeatures in geneFeatures)
             {
@@ -202,7 +204,7 @@ namespace Proteogenomics
             {
                 for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
                 {
-                    var key = new Tuple<string, long>(x.ChromID, i * binSize);
+                    var key = new Tuple<string, long>(x.ChromID.Split(' ')[0], i * binSize);
                     if (chrIndexVariants.TryGetValue(key, out List<VariantContext> nearby_variants))
                         x.Variants = nearby_variants.Where(v => x.Includes(v.Start)).ToList();
                 }
@@ -224,5 +226,36 @@ namespace Proteogenomics
         }
 
         #endregion Translation Methods
+
+        #region Private Method
+
+        private static Regex gffVersion = new Regex(@"(##gff-version\s+)(\d)");
+        private static void ForceGffVersionTo2(string gffPath, out string gffWithVersionMarked2Path)
+        {
+            gffWithVersionMarked2Path = Path.Combine(Path.GetDirectoryName(gffPath), Path.GetFileNameWithoutExtension(gffPath) + ".gff2" + Path.GetExtension(gffPath));
+            using (StreamReader reader = new StreamReader(gffPath))
+            using (StreamWriter writer = new StreamWriter(gffWithVersionMarked2Path))
+            {
+                while (true)
+                {
+                    string line = reader.ReadLine();
+                    if (line == null)
+                    {
+                        break;
+                    }
+                    if (line.StartsWith("##gff-version"))
+                    {
+                        writer.Write(gffVersion.Replace(line, m => m.Groups[1] + "2") + "\n");
+                    }
+                    else
+                    {
+                        writer.Write(line + '\n');
+                    }
+                }
+            }
+        }
+
+        #endregion Private Method
+
     }
 }

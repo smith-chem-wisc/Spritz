@@ -69,54 +69,46 @@ namespace ToolWrapperLayer
         /// <param name="binDirectory"></param>
         /// <param name="bam"></param>
         /// <param name="newBam"></param>
-        public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, out string ucscGenomeFasta, bool convertToUCSC = true)
+        public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, bool convertToUCSC = true)
         {
             // check if sorted and grouped and rename chromosomes
-            bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
-            ucscGenomeFasta = genomeFasta;
             newBam = bam;
-            if (convertToUCSC)
-            {
-                newBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
+            //string ucscBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
+            //if (convertToUCSC && !File.Exists(ucscBam))
+            //{
+            //    newBam = ucscBam;
+            //    Dictionary<string, string> chromMappings = EnsemblDownloadsWrapper.Ensembl2UCSCChromosomeMappings(binDirectory, reference);
 
-                Dictionary<string, string> chromMappings = File.ReadAllLines(downloadGrch37 ?
-                    Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
-                    Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
-                    .Select(line => line.Split('\t'))
-                    .Where(x => x.Length > 1)
-                    .ToDictionary(line => line[0], line => line[1]);
+            //    // future speedup: could check BAM header to only convert the chroms that are there
+            //    // future speedup: divide up amongst ProcessorCount # of python scripts and pipe them together
+            //    using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, "scripts", "convertChromNamesOnTheFly.py")))
+            //    {
+            //        writer.Write("import sys\n");
+            //        writer.Write("for line in sys.stdin:\n");
+            //        writer.Write("  new = line\n");
+            //        foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
+            //        {
+            //            writer.Write("  new = new.replace(\"chr" + a.Key + "\", \"" + a.Value + "\")\n");
+            //        }
+            //        writer.Write("  sys.stdout.write(new)\n");
+            //    }
 
-                // future speedup: could check BAM header to only convert the chroms that are there
-                // future speedup: divide up amongst ProcessorCount # of python scripts and pipe them together
-                using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, "scripts", "convertChromNamesOnTheFly.py")))
-                {
-                    writer.Write("import sys\n");
-                    writer.Write("for line in sys.stdin:\n");
-                    writer.Write("  new = line\n");
-                    foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
-                    {
-                        writer.Write("  new = new.replace(\"chr" + a.Key + "\", \"" + a.Value + "\")\n");
-                    }
-                    writer.Write("  sys.stdout.write(new)\n");
-                }
+            //    // reheader genomeFasta with UCSC chromsome names; remove the ones that aren't in the UCSC universe
+            //    Genome ucscGenome = new Genome(genomeFasta);
+            //    ucscGenome.Chromosomes = ucscGenome.Chromosomes
+            //        .Where(x => chromMappings.TryGetValue(getISequenceHeaderSequenceName.Match(x.ID).Groups[1].Value, out string chr) && chr.Length > 0).ToList();
+            //    foreach (ISequence chrom in ucscGenome.Chromosomes)
+            //    {
+            //        string sequenceName = getISequenceHeaderSequenceName.Match(chrom.ID).Groups[1].Value;
+            //        if (chromMappings.TryGetValue(sequenceName, out string chr))
+            //        {
+            //            chrom.ID = getISequenceHeaderSequenceName.Replace(chrom.ID, m => chr + m.Groups[2]);
+            //        }
+            //    }
 
-                // reheader genomeFasta with UCSC chromsome names; remove the ones that aren't in the UCSC universe
-                Genome ucscGenome = new Genome(genomeFasta);
-                ucscGenome.Chromosomes = ucscGenome.Chromosomes
-                    .Where(x => chromMappings.TryGetValue(getISequenceHeaderSequenceName.Match(x.ID).Groups[1].Value, out string chr) && chr.Length > 0).ToList();
-                foreach (ISequence chrom in ucscGenome.Chromosomes)
-                {
-                    string sequenceName = getISequenceHeaderSequenceName.Match(chrom.ID).Groups[1].Value;
-                    if (chromMappings.TryGetValue(sequenceName, out string chr))
-                    {
-                        chrom.ID = getISequenceHeaderSequenceName.Replace(chrom.ID, m => chr + m.Groups[2]);
-                    }
-                }
-
-                ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
-                Genome.WriteFasta(ucscGenome.KaryotypicOrder(), ucscGenomeFasta);
-            }
+            //    ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
+            //    Genome.WriteFasta(ucscGenome.KaryotypicOrder(), ucscGenomeFasta);
+            //}
 
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
             string readGroupedCheckfile = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerReadGrouped");
@@ -128,9 +120,9 @@ namespace ToolWrapperLayer
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + WrapperUtility.ConvertWindowsPath(readGroupedCheckfile),
                 convertToUCSC ? "samtools view -h " + WrapperUtility.ConvertWindowsPath(bam) + bamToChrBamOneLiner + "python scripts/convertChromNamesOnTheFly.py | samtools view -bS - > " + WrapperUtility.ConvertWindowsPath(newBam) : "",
-                GenomeFastaIndexCommand(ucscGenomeFasta),
-                GenomeDictionaryIndexCommand(ucscGenomeFasta),
-                PICARD + " ReorderSam I=" + WrapperUtility.ConvertWindowsPath(newBam) + " O=" + WrapperUtility.ConvertWindowsPath(reorderedBam) + " R=" + WrapperUtility.ConvertWindowsPath(ucscGenomeFasta)
+                GenomeFastaIndexCommand(genomeFasta),
+                GenomeDictionaryIndexCommand(genomeFasta),
+                PICARD + " ReorderSam I=" + WrapperUtility.ConvertWindowsPath(newBam) + " O=" + WrapperUtility.ConvertWindowsPath(reorderedBam) + " R=" + WrapperUtility.ConvertWindowsPath(genomeFasta)
             }).WaitForExit();
             newBam = reorderedBam;
             bool sorted = new FileInfo(Path.Combine(binDirectory, sortedCheckPath)).Length > 0;
@@ -168,7 +160,7 @@ namespace ToolWrapperLayer
                     GATK +
                     " -T SplitNCigarReads" +
                     //" --num_threads " + threads.ToString() + // not supported
-                    " -R " + WrapperUtility.ConvertWindowsPath(ucscGenomeFasta) +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
                     " -o " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " -U ALLOW_N_CIGAR_READS";
@@ -177,8 +169,8 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
 
-                GenomeFastaIndexCommand(ucscGenomeFasta),
-                GenomeDictionaryIndexCommand(ucscGenomeFasta),
+                GenomeFastaIndexCommand(genomeFasta),
+                GenomeDictionaryIndexCommand(genomeFasta),
 
                 groupAndMaybeSortCommand,
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then " +
@@ -203,7 +195,7 @@ namespace ToolWrapperLayer
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ] || [ ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ]; then " +
                     GATK +
                     " -T PrintReads" +
-                    " -R " + WrapperUtility.ConvertWindowsPath(ucscGenomeFasta) +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " -o " + WrapperUtility.ConvertWindowsPath(mapQReassigned) +
                     " -rf ReassignMappingQuality; fi", // default mapping quality is 60; required for RNA-Seq aligners
@@ -371,6 +363,35 @@ namespace ToolWrapperLayer
                     " SEQUENCE_DICTIONARY=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) + 
                     "; fi"
             }).WaitForExit();
+        }
+
+        public static void ConvertVCFChromosomesUCSC2Ensembl(string binDirectory, string vcfPath, string reference, out string ensemblVcfPath)
+        {
+            ensemblVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".ensembl.vcf");
+            if (File.Exists(ensemblVcfPath)) return;
+            Dictionary<string, string> ucsc2EnsemblChromosomeMappings = EnsemblDownloadsWrapper.UCSC2EnsemblChromosomeMappings(binDirectory, reference);
+            using (StreamReader reader = new StreamReader(vcfPath))
+            using (StreamWriter writer = new StreamWriter(ensemblVcfPath))
+            {
+                while (true)
+                {
+                    string line = reader.ReadLine();
+                    if (line == null)
+                    {
+                        break;
+                    }
+                    if (line.StartsWith("#"))
+                    {
+                        writer.Write(line + "\n");
+                    }
+                    string[] splitLine = line.Split('\t');
+                    if (splitLine.Length > 1 && ucsc2EnsemblChromosomeMappings.TryGetValue(splitLine[0], out string newChrom))
+                    {
+                        splitLine[0] = newChrom;
+                        writer.Write(String.Join("\t", splitLine) + '\n');
+                    }
+                }
+            }
         }
 
         public static void Install(string currentDirectory)

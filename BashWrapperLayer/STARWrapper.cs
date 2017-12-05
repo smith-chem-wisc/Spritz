@@ -110,31 +110,20 @@ namespace ToolWrapperLayer
             RemoveGenome(bin_directory);
         }
 
-        public static void SubsetFastqs(string[] fastq_files, int reads, string current_directory, out string[] new_files)
+        public static void SubsetFastqs(string binDirectory, string[] fastq_files, int reads, string current_directory, out string[] new_files, bool useSeed = false, int seed = 0)
         {
             // Note: fastqs must have \n line endings, not \r\n
+            new_files = new string[] { Path.Combine(Path.GetDirectoryName(fastq_files[0]), Path.GetFileNameWithoutExtension(fastq_files[0]) + ".segment.fastq") };
+            if (fastq_files.Length > 1)
+                new_files = new string[] { new_files[0], Path.Combine(Path.GetDirectoryName(fastq_files[1]), Path.GetFileNameWithoutExtension(fastq_files[1]) + ".segment.fastq") };
 
-            List<string> new_ones = new List<string>();
-            foreach(string file in fastq_files)
+            string script_path = Path.Combine(binDirectory, "scripts", "subsetReads.bash");
+            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
-                string new_path = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + ".segment.fastq");
-                new_ones.Add(new_path);
-
-                using (StreamWriter writer = new StreamWriter(new_path))
-                using (FileStream fstream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    Stream stream = Path.GetExtension(file) == ".gz" ?
-                        (Stream)(new GZipStream(fstream, CompressionMode.Decompress)) :
-                            fstream;
-                    StreamReader reader = new StreamReader(stream);
-
-                    for (int i = 0; i < reads * 4 && reader.Peek() > -1; i++)
-                    {
-                        writer.Write(reader.ReadLine() + '\n');
-                    }
-                }
-            }
-            new_files = new_ones.ToArray();
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "seqtk sample" + (useSeed || fastq_files.Length > 1 ? " -s" + seed.ToString() : "") + " " + reads.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastq_files[0]) + " > " + WrapperUtility.ConvertWindowsPath(new_files[0]),
+                fastq_files.Length > 1 ? "seqtk sample -s" + seed.ToString()  + " " + reads.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastq_files[1])+ " > " + WrapperUtility.ConvertWindowsPath(new_files[1]) : "",
+            }).WaitForExit();
         }
 
         public static void Install(string binDirectory)
@@ -144,6 +133,9 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "git clone https://github.com/lh3/seqtk.git",
+                "cd seqtk; make",
+                "cd ..",
                 downloadStar ? "git clone https://github.com/alexdobin/STAR.git" : "",
                 downloadStar ? "cd STAR/source" : "",
                 downloadStar ? "make STAR" : "",

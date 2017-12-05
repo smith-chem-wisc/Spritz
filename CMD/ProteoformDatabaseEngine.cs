@@ -70,11 +70,12 @@ namespace CMD
                 options.GeneModelGtfOrGff = gff3GeneModelPath;
             if (options.ReferenceVcf == null)
             {
-                GATKWrapper.DownloadUCSCKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string a);
-                options.ReferenceVcf = a;
+                GATKWrapper.DownloadUCSCKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string ucscVcfPath);
+                GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(options.BinDirectory, ucscVcfPath, options.Reference, out string ensemblVcfPath);
+                options.ReferenceVcf = ensemblVcfPath;
             }
 
-            string proteinDb;
+            List<string> proteinDatabases;
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
                 Fastq2ProteinsEngine.RunFromSra(
@@ -90,7 +91,7 @@ namespace CMD
                     options.GenomeFasta,
                     options.GeneModelGtfOrGff,
                     options.ReferenceVcf,
-                    out proteinDb);
+                    out proteinDatabases);
             }
             else if (options.Fastq1 != null)
             {
@@ -107,14 +108,14 @@ namespace CMD
                     options.GenomeFasta,
                     options.GeneModelGtfOrGff,
                     options.ReferenceVcf,
-                    out proteinDb);
+                    out proteinDatabases);
             }
             else
             {
-                proteinDb = "Error: no fastq or sequence read archive (SRA) was provided.";
+                proteinDatabases = new List<string> { "Error: no fastq or sequence read archive (SRA) was provided." };
             }
 
-            Console.WriteLine("ouptput database to " + proteinDb);
+            Console.WriteLine("output databases to " + String.Join(", and ", proteinDatabases));
             Console.ReadKey();
             
             #endregion Proteoform Database Engine

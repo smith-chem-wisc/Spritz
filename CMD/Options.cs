@@ -49,7 +49,7 @@ namespace CMD
         [Option('g', "geneModelGtfOrGff", Required = false, HelpText = "geneModelGtfOrGff (default = downloaded from Ensembl based on reference)")]
         public string GeneModelGtfOrGff { get; set; }
 
-        [Option('v', "dbsnpVcfReference", Required = false, HelpText = "dbSNP VCF reference file")]
+        [Option('v', "dbsnpVcfReference", Required = false, HelpText = "dbSNP VCF reference file with Ensembl chromosome names")]
         public string ReferenceVcf { get; set; }
     }
 }

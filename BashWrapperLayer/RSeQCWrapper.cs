@@ -57,9 +57,32 @@ namespace ToolWrapperLayer
         public static bool CheckStrandSpecificity(string binDirectory, string bamPath, string geneModelPath, double minFractionStrandSpecific)
         {
             string outfile = Path.GetFileNameWithoutExtension(bamPath) + ".inferexpt";
-            InferExperiment(binDirectory, bamPath, geneModelPath, Path.Combine(binDirectory, outfile));
-            string[] lines = File.ReadAllLines(Path.Combine(binDirectory, outfile));
-            File.Delete(outfile);
+            string outpath = Path.Combine(binDirectory, outfile);
+            InferExperiment(binDirectory, bamPath, geneModelPath, outpath);
+
+            // sometimes the file doesn't close immediately, probably because python is holding onto it for some reason
+            // todo: fix that case, unfinished code below
+            //FileStream stream = null;
+            //bool fileIsLocked = true;
+            //while (fileIsLocked)
+            //{
+            //    FileInfo file = new FileInfo(outfile);
+            //    fileIsLocked = false;
+            //    try
+            //    {
+            //        stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+            //    }
+            //    catch (IOException)
+            //    {
+            //        fileIsLocked = true;
+            //        File.Copy(outpath, outpath + ".tmp");
+            //        File.Delete(outpath);
+            //        outpath = outpath + ".tmp";
+            //    }
+            //}
+            //stream.Close();
+
+            string[] lines = File.ReadAllLines(outpath);
             double fraction_aligned_in_same_direction = double.Parse(lines[lines.Length - 2].Split(':')[1].TrimStart());
             double fraction_aligned_in_other_direction = double.Parse(lines[lines.Length - 1].Split(':')[1].TrimStart());
             return fraction_aligned_in_same_direction / fraction_aligned_in_other_direction < 1 - minFractionStrandSpecific
