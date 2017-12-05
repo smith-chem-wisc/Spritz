@@ -108,6 +108,12 @@
     <Compile Include="WrapperIntegrationTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="TestData\2000reads_1.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\2000reads_2.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\chr1_one_transcript.gtf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

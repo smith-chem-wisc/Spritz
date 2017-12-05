@@ -463,7 +463,7 @@ namespace Test
         #region Runner Tests
 
         /// <summary>
-        /// Handling multiple chromosomes
+        /// Handling multiple fastq files and chromosomes, single-end
         /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
@@ -491,12 +491,50 @@ namespace Test
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
-                File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmed.fastq"));
             }
         }
 
         /// <summary>
-        /// Single chromosome, so faster, but 
+        /// Handling multiple fastq files and chromosomes, single end
+        /// </summary>
+        [Test, Order(3)]
+        public void FullProteinRunFromTwoPairsFastqs()
+        {
+            if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq")))
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
+            if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
+            Fastq2ProteinsEngine.RunFromFastqs(
+                TestContext.CurrentContext.TestDirectory,
+                TestContext.CurrentContext.TestDirectory,
+                "grch37",
+                8,
+                new string[]
+                {
+                    String.Join(",", new string[] {
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"),
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq") }),
+                    String.Join(",", new string[] {
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"),
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq") })
+                },
+                false,
+                true,
+                true,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
+                out List<string> proteinDatabases);
+            foreach (string database in proteinDatabases)
+            {
+                Assert.IsTrue(new FileInfo(database).Length > 0);
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+            }
+        }
+
+        /// <summary>
+        /// Handling tough non-karyotypic ordering of chromosomes and an SRA input
         /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
@@ -521,7 +559,6 @@ namespace Test
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
-                File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmed.fastq"));
             }
         }
 
