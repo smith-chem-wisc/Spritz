@@ -14,11 +14,17 @@ namespace WorkflowLayer
     {
         public static void RunFromSra(string bin, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
         {
-            SRAToolkitWrapper.Fetch(bin, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
-            RunFromFastqs(bin, analysisDirectory, reference, threads, fastqPaths, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
+            List<string[]> fastqs = new List<string[]>();
+            string[] sras = sraAccession.Split(',');
+            foreach (string sra in sras)
+            {
+                SRAToolkitWrapper.Fetch(bin, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
+                fastqs.Add(fastqPaths);
+            }
+            RunFromFastqs(bin, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
         }
 
-        public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, string[] fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
+        public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
         {
             if (Path.GetExtension(genomeFasta) == ".gz")
             {
@@ -46,72 +52,44 @@ namespace WorkflowLayer
                 reorderedFasta = genomeFasta;
             }
 
-            // Parse comma-separated fastq lists
-            proteinVariantDatabases = new List<string>();
-            if (fastqs.Length > 1 && fastqs[0].Count(x => x == ',') != fastqs[1].Count(x => x == ','))
-                return;
-
-            string[] fastqs1 = fastqs[0].Split(',');
-            List<string[]> fastqsSeparated = fastqs.Length == 1 ?
-                fastqs1.Select(x => new string[] { x }).ToList() :
-                fastqs1.Select(x => new string[] { x, fastqs[1].Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
-
-            // Trimming
-            List<string[]> trimmedFastqSeparated = new List<string[]>();
-            List<string> skewerLogs = new List<string>();
-            foreach (string[] fq in fastqsSeparated)
-            {
-                SkewerWrapper.Trim(bin, threads, 19, fq, out string[] trimmedFastqs, out string skewerLog);
-                trimmedFastqSeparated.Add(trimmedFastqs);
-                skewerLogs.Add(skewerLog);
-            }
-
-            // Alignment
+            // Alignment preparation
             Directory.CreateDirectory(genomeStarIndexDirectory);
             if (!File.Exists(Path.Combine(genomeStarIndexDirectory, "SA")))
             {
                 STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff);
             }
 
+            proteinVariantDatabases = new List<string>();
             STARWrapper.LoadGenome(bin, genomeStarIndexDirectory);
-            List<string> outPrefixes = new List<string>();
-            foreach (string[] fq in trimmedFastqSeparated)
+            foreach (string[] fq in fastqs)
             {
-                string[] fqForAlignment = fq;
+                // Trimming
+                SkewerWrapper.Trim(bin, threads, 19, fq, out string[] trimmedFastqs, out string skewerLog);
+
+                // Alignment
+                string[] fqForAlignment = trimmedFastqs;
                 string outPrefix = Path.Combine(Path.GetDirectoryName(fqForAlignment[0]), Path.GetFileNameWithoutExtension(fqForAlignment[0]));
-                outPrefixes.Add(outPrefix);
                 if (!File.Exists(outPrefix + STARWrapper.BamFileSuffix) || overwriteStarAlignment)
                 {
                     bool localStrandSpecific = strandSpecific;
-                    //if (inferStrandSpecificity)
-                    //{
-                    //    STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
-                    //    if (useReadSubset) fqForAlignment = subsetFastqs;
-                    //    string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                    //    STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep);
-                    //    localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
-                    //}
+                    if (inferStrandSpecificity)
+                    {
+                        STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
+                        if (useReadSubset) fqForAlignment = subsetFastqs;
+                        string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
+                        STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep);
+                        localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
+                    }
                     STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, fqForAlignment, outPrefix, localStrandSpecific, STARGenomeLoadOption.LoadAndKeep);
                 }
-            }
-            STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory);
 
-            // Variant calling and protein database writing
-            // todo: check if there are any outPrefixes that are the same and throw an error
-            List<string> bamPaths = new List<string>();
-            Parallel.ForEach(outPrefixes, outPrefix =>
-            {
+                // Variant Calling
                 GATKWrapper.PrepareBamAndFasta(bin, threads, outPrefix + STARWrapper.BamFileSuffix, reorderedFasta, reference, out string newBam);
-                lock (bamPaths) bamPaths.Add(newBam);
-
-            });
-            foreach (string newBam in bamPaths)
-            {
                 GATKWrapper.VariantCalling(bin, threads, reorderedFasta, newBam, Path.Combine(bin, ensemblKnownSitesPath), out string vcfPath);
                 proteinVariantDatabases.Add(
                     WriteSampleSpecificFasta(vcfPath, ensemblGenome, geneModelGtfOrGff, Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam))));
             }
-
+            STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory);
         }
 
         public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, string geneModelGtfOrGff, string outprefix)

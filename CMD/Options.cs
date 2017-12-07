@@ -7,49 +7,49 @@ namespace CMD
 {
     class Options
     {
-        [Option('c', "command", Required = true, HelpText = "command: (1) setup, (2) run, (3) starFusionTest")]
+        [Option('c', "command", Required = true, HelpText = "Command: (1) setup, (2) run, (3) starFusionTest")]
         public string Command { get; set; }
 
-        [Option('b', "binDirectory", Required = false, HelpText = "bin directory for PDE")]
+        [Option('b', "binDirectory", Required = false, HelpText = "Bin directory for PRoteoform Database Engine")]
         public string BinDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
         [Option('a', "analysisDirectory", Required = false, HelpText = "Target directory for downloads and analysis")]
         public string AnalysisDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
-        [Option('r', "StarFusionReference", Required = false, HelpText = "Human reference for STAR fusion (GRCh37 or GRCh38)", DefaultValue = "GRCh38")]
-        public string Reference { get; set; }
+        [Option("fq1", Required = false, HelpText = "FASTQ file for single-end or for pair1 (comma-separated for multiple files)")]
+        public string Fastq1 { get; set; }
+
+        [Option("fq2", Required = false, HelpText = "FASTQ file pair2 (comma-separated for multiple files)")]
+        public string Fastq2 { get; set; }
+
+        [Option('s', "sraAccession", Required = false, HelpText = "SRR or SRX accession for download of fastq files for analysis (comma-separated for multiple SRAs)")]
+        public string SraAccession { get; set; }
 
         [Option('t', "threads", Required = false, HelpText = "Number of threads to use")]
         public int Threads { get; set; } = Environment.ProcessorCount;
 
-        [Option('s', "sraAccession", Required = false, HelpText = "SRR or SRX accession for download of fastq files for analysis")]
-        public string SraAccession { get; set; }
-
-        [Option("fq1", Required = false, HelpText = "FASTQ file for single-end or for pair1")]
-        public string Fastq1 { get; set; }
-
-        [Option("fq2", Required = false, HelpText = "FASTQ file pair2")]
-        public string Fastq2 { get; set; }
-
-        [Option("overwriteStarAlignments", Required = false, HelpText = "overwrite STAR alignments if they already exist")]
-        public bool OverwriteStarAlignments { get; set; }
-
-        [Option("strandSpecific", Required = false, HelpText = "stranded library preparation protocol (true/false)", DefaultValue = false)]
-        public bool StrandSpecific { get; set; }
-
-        [Option("inferStrandedness", Required = false, HelpText = "infer the strandedness with a sample of the fastq files", DefaultValue = true)]
-        public bool InferStrandSpecificity { get; set; }
-
         [Option('d', "genomeDir", Required = false, HelpText = "STAR genome directory (default = genomeFastq without extension)")]
         public string GenomeStarIndexDirectory { get; set; }
 
-        [Option('f', "genomeFasta", Required = false, HelpText = "genomeFasta (default = downloaded from Ensembl based on reference)")]
+        [Option('f', "genomeFasta", Required = false, HelpText = "Genome fasta (default = downloaded from Ensembl based on reference)")]
         public string GenomeFasta { get; set; }
 
-        [Option('g', "geneModelGtfOrGff", Required = false, HelpText = "geneModelGtfOrGff (default = downloaded from Ensembl based on reference)")]
+        [Option('g', "geneModelGtfOrGff", Required = false, HelpText = "Gene model, either GTF, GFF2, or GFF3 (default = downloaded from Ensembl based on reference)")]
         public string GeneModelGtfOrGff { get; set; }
 
-        [Option('v', "dbsnpVcfReference", Required = false, HelpText = "dbSNP VCF reference file with Ensembl chromosome names")]
+        [Option('v', "dbsnpVcfReference", Required = false, HelpText = "VCF reference file from dbSNP")]
         public string ReferenceVcf { get; set; }
+
+        [Option('r', "StarFusionReference", Required = false, HelpText = "Human reference for STAR fusion (GRCh37 or GRCh38)", DefaultValue = "GRCh38")]
+        public string Reference { get; set; }
+
+        [Option("overwriteStarAlignments", Required = false, HelpText = "Overwrite STAR alignments if they already exist", DefaultValue = false)]
+        public bool OverwriteStarAlignments { get; set; }
+
+        [Option("strandSpecific", Required = false, HelpText = "Stranded library preparation protocol", DefaultValue = false)]
+        public bool StrandSpecific { get; set; }
+
+        [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", DefaultValue = false)]
+        public bool InferStrandSpecificity { get; set; }
     }
 }

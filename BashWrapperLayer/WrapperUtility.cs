@@ -78,7 +78,6 @@ namespace ToolWrapperLayer
 
                 // bioinformatics
                 "samtools",
-                "picard-tools",
                 "tophat",
                 "cufflinks",
                 "bedtools",

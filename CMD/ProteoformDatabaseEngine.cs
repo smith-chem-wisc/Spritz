@@ -94,12 +94,21 @@ namespace CMD
             }
             else if (options.Fastq1 != null)
             {
+                // Parse comma-separated fastq lists
+                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
+                    return;
+
+                string[] fastqs1 = options.Fastq1.Split(',');
+                List<string[]> fastqsSeparated = options.Fastq2 == null ?
+                    fastqs1.Select(x => new string[] { x }).ToList() :
+                    fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
+
                 Fastq2ProteinsEngine.RunFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
                     options.Threads,
-                    options.Fastq2 == null ? new string[] { options.Fastq1 } : new string[] { options.Fastq1, options.Fastq2 },
+                    fastqsSeparated,
                     options.StrandSpecific,
                     options.InferStrandSpecificity,
                     options.OverwriteStarAlignments,

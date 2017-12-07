@@ -1,6 +1,4 @@
-﻿using Bio;
-using Proteogenomics;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -36,14 +34,21 @@ namespace ToolWrapperLayer
 
         #endregion Private Fields
 
-        #region Public Fields
-
-        public static string GATK = "java -Xmx20G -jar GenomeAnalysisTK.jar";
-        public static string PICARD = "java -Xmx20G -jar picard.jar";
-
-        #endregion Public Fields
-
         #region Public Methods
+
+        public static string Gatk()
+        {
+            var performance = new PerformanceCounter("Memory", "Available MBytes");
+            var memory = performance.NextValue();
+            return "java -Xmx" + Math.Floor(memory) + "M -jar GenomeAnalysisTK.jar";
+        }
+
+        public static string Picard()
+        {
+            var performance = new PerformanceCounter("Memory", "Available MBytes");
+            var memory = performance.NextValue();
+            return "java -Xmx" + Math.Floor(memory) + "M -jar picard.jar";
+        }
 
         public static void SubsetBam(string binDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
         {
@@ -51,7 +56,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                GATK +
+                Gatk() +
                     " -T PrintReads" +
                     " --num_threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -71,92 +76,17 @@ namespace ToolWrapperLayer
         /// <param name="newBam"></param>
         public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, bool convertToUCSC = true)
         {
-            // check if sorted and grouped and rename chromosomes
-            newBam = bam;
-            //string ucscBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
-            //if (convertToUCSC && !File.Exists(ucscBam))
-            //{
-            //    newBam = ucscBam;
-            //    Dictionary<string, string> chromMappings = EnsemblDownloadsWrapper.Ensembl2UCSCChromosomeMappings(binDirectory, reference);
-
-            //    // future speedup: could check BAM header to only convert the chroms that are there
-            //    // future speedup: divide up amongst ProcessorCount # of python scripts and pipe them together
-            //    using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, "scripts", "convertChromNamesOnTheFly.py")))
-            //    {
-            //        writer.Write("import sys\n");
-            //        writer.Write("for line in sys.stdin:\n");
-            //        writer.Write("  new = line\n");
-            //        foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
-            //        {
-            //            writer.Write("  new = new.replace(\"chr" + a.Key + "\", \"" + a.Value + "\")\n");
-            //        }
-            //        writer.Write("  sys.stdout.write(new)\n");
-            //    }
-
-            //    // reheader genomeFasta with UCSC chromsome names; remove the ones that aren't in the UCSC universe
-            //    Genome ucscGenome = new Genome(genomeFasta);
-            //    ucscGenome.Chromosomes = ucscGenome.Chromosomes
-            //        .Where(x => chromMappings.TryGetValue(getISequenceHeaderSequenceName.Match(x.ID).Groups[1].Value, out string chr) && chr.Length > 0).ToList();
-            //    foreach (ISequence chrom in ucscGenome.Chromosomes)
-            //    {
-            //        string sequenceName = getISequenceHeaderSequenceName.Match(chrom.ID).Groups[1].Value;
-            //        if (chromMappings.TryGetValue(sequenceName, out string chr))
-            //        {
-            //            chrom.ID = getISequenceHeaderSequenceName.Replace(chrom.ID, m => chr + m.Groups[2]);
-            //        }
-            //    }
-
-            //    ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
-            //    Genome.WriteFasta(ucscGenome.KaryotypicOrder(), ucscGenomeFasta);
-            //}
-
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
             string readGroupedCheckfile = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerReadGrouped");
-            //string reorderedBam = Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam) + ".ordered.bam");
-            string scriptPath = Path.Combine(binDirectory, "scripts", "check_sorted." + Path.GetFileNameWithoutExtension(newBam) + ".bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
-                "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + WrapperUtility.ConvertWindowsPath(readGroupedCheckfile),
-                //convertToUCSC ? "samtools view -h " + WrapperUtility.ConvertWindowsPath(bam) + bamToChrBamOneLiner + "python scripts/convertChromNamesOnTheFly.py | samtools view -bS - > " + WrapperUtility.ConvertWindowsPath(newBam) : "",
-                //GenomeFastaIndexCommand(genomeFasta),
-                //GenomeDictionaryIndexCommand(genomeFasta),
-                //PICARD + " ReorderSam I=" + WrapperUtility.ConvertWindowsPath(newBam) + " O=" + WrapperUtility.ConvertWindowsPath(reorderedBam) + " R=" + WrapperUtility.ConvertWindowsPath(genomeFasta)
-            }).WaitForExit();
-            //newBam = reorderedBam;
-            bool sorted = new FileInfo(Path.Combine(binDirectory, sortedCheckPath)).Length > 0;
-            bool grouped = new FileInfo(Path.Combine(binDirectory, readGroupedCheckfile)).Length > 0;
-
-            // run commands for grouping or sorting
-            string groupAndMaybeSortCommand;
-            string groupSortBam = newBam;
-            if (grouped && sorted) return;
-            else if (!grouped)
-            {
-                groupSortBam = Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam) + (!sorted ? ".sorted.grouped.bam" : ".grouped.bam"));
-                groupAndMaybeSortCommand = "if [ ! -f " + WrapperUtility.ConvertWindowsPath(groupSortBam) + " ]; then picard-tools AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library" +
-                    " I=" + WrapperUtility.ConvertWindowsPath(newBam) +
-                    " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam) +
-                    (!sorted ? " SO=coordinate" : "") + 
-                    "; fi";
-            }
-            else // grouped, but not sorted
-            {
-                groupSortBam = Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam) + ".sorted.bam");
-                groupAndMaybeSortCommand = "if [ ! -f " + WrapperUtility.ConvertWindowsPath(groupSortBam) + " ]; then picard-tools SortSam SO=coordinate" +
-                    " I=" + WrapperUtility.ConvertWindowsPath(newBam) +
-                    " O=" + WrapperUtility.ConvertWindowsPath(groupSortBam) +
-                    "; fi";
-            }
-
-            string markedDuplicatesBam = Path.Combine(Path.GetDirectoryName(groupSortBam), Path.GetFileNameWithoutExtension(groupSortBam) + ".marked.bam");
-            string markedDuplicateMetrics = Path.Combine(Path.GetDirectoryName(groupSortBam), Path.GetFileNameWithoutExtension(groupSortBam) + ".marked.metrics");
+            string sortedBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".sorted.bam");
+            string groupedBam = Path.Combine(Path.GetDirectoryName(sortedBam), Path.GetFileNameWithoutExtension(sortedBam) + ".grouped.bam");
+            string markedDuplicatesBam = Path.Combine(Path.GetDirectoryName(groupedBam), Path.GetFileNameWithoutExtension(groupedBam) + ".marked.bam");
+            string markedDuplicateMetrics = Path.Combine(Path.GetDirectoryName(groupedBam), Path.GetFileNameWithoutExtension(groupedBam) + ".marked.metrics");
             string splitTrimBam = Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".split.bam");
             string mapQReassigned = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".mapqfixed.bam");
 
             string splitNCigarReadsCmd =
-                    GATK +
+                    Gatk() +
                     " -T SplitNCigarReads" +
                     //" --num_threads " + threads.ToString() + // not supported
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -164,7 +94,9 @@ namespace ToolWrapperLayer
                     " -o " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " -U ALLOW_N_CIGAR_READS";
 
-            string scriptName2 = Path.Combine(binDirectory, "scripts", "picard." + Path.GetFileNameWithoutExtension(newBam) + ".bash");
+            string tmpDir = Path.Combine(binDirectory, "tmp");
+            Directory.CreateDirectory(tmpDir);
+            string scriptName2 = Path.Combine(binDirectory, "scripts", "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
             WrapperUtility.GenerateAndRunScript(scriptName2, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -172,42 +104,71 @@ namespace ToolWrapperLayer
                 GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
-                groupAndMaybeSortCommand,
+                "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
+                "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + WrapperUtility.ConvertWindowsPath(readGroupedCheckfile),
+
+                // sort
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(sortedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(sortedBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
+                    "samtools sort -f -@ " + Environment.ProcessorCount.ToString() + " -m " + Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue()) + "M " + 
+                        WrapperUtility.ConvertWindowsPath(bam) + " " + WrapperUtility.ConvertWindowsPath(sortedBam) +
+                        "; fi",
+                
+                // group
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
+                    Picard() + " AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library" +
+                    " I=" + WrapperUtility.ConvertWindowsPath(sortedBam) +
+                    " O=" + WrapperUtility.ConvertWindowsPath(groupedBam) +
+                    " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
+                    "; fi",
+                "if [ -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(sortedBam) + "; fi", // conserve space by removing former BAM
+
+                // mark duplicates (AS means assume sorted)
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
-                    "picard-tools MarkDuplicates" +
-                    " I=" + WrapperUtility.ConvertWindowsPath(groupSortBam) +
+                    Picard() + " MarkDuplicates" +
+                    " I=" + WrapperUtility.ConvertWindowsPath(groupedBam) +
                     " O=" + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
                     " M=" + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
-                    " AS=true; fi", // assume sorted
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(groupSortBam) + "; fi", // conserve space by removing former BAM
-
+                    " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
+                    " AS=true" + 
+                    "; fi",
+                "if [ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
 
+                // split and trim reads
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
                     splitNCigarReadsCmd + " -fixMisencodedQuals; fi", // some datasets are probably going to have misencoded quality scores; this just subtracts 31 from all quality scores if possible...
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
                     splitNCigarReadsCmd + "; fi",  // if it didn't run, it probably just found a correctly encoded read, so ditch the fixMisencodedQuals option
-
+                
+                // remove former BAM files and corresponding BAI index to conserve space
                 "if [ -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ]; then " + 
                     "rm -f " +
                     WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " " +
                     WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".bai")) +
                     "; fi",
 
+                // reassign mapQ scores
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ] || [ ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ]; then " +
-                    GATK +
+                    Gatk() +
                     " -T PrintReads" +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " -o " + WrapperUtility.ConvertWindowsPath(mapQReassigned) +
-                    " -rf ReassignMappingQuality; fi", // default mapping quality is 60; required for RNA-Seq aligners
+                    " -rf ReassignMappingQuality" + 
+                    "; fi", // default mapping quality is 60; required for RNA-Seq aligners
                 "samtools index " + WrapperUtility.ConvertWindowsPath(mapQReassigned),
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ]; then rm " +
-                    WrapperUtility.ConvertWindowsPath(splitTrimBam) + "; fi",
+                "if [ -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + "; fi",
             }).WaitForExit();
             newBam = mapQReassigned;
 
@@ -238,7 +199,7 @@ namespace ToolWrapperLayer
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(realignerTable) + " || ! -s " + WrapperUtility.ConvertWindowsPath(realignerTable) + " ]]; then " +
-                    GATK +
+                    Gatk() +
                     " -T RealignerTargetCreator" +
                     " --num_threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -248,7 +209,7 @@ namespace ToolWrapperLayer
                     "; fi",
 
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(newBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(newBam) + " ]]; then " +
-                    GATK +
+                    Gatk() +
                     " -T IndelRealigner" +
                     //" --num_threads " + threads.ToString() + // this tool can't do threaded analysis
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -279,7 +240,7 @@ namespace ToolWrapperLayer
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(recalibrationTablePath) + " ]; then " +
-                    GATK +
+                    Gatk() +
                     " -T BaseRecalibrator" +
                     //" --num_threads " + threads.ToString() + // doesn't support threaded runs
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -309,7 +270,7 @@ namespace ToolWrapperLayer
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(newVcf) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(newVcf) + " ]; then " +
-                    GATK +
+                    Gatk() +
                     " -T HaplotypeCaller" +
                     " -nct " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -365,6 +326,8 @@ namespace ToolWrapperLayer
 
         public static void SortVCF(string binDirectory, string vcfPath, string genomeFastaPath, string sortedVcfPath)
         {
+            string tmpDir = Path.Combine(binDirectory, "tmp");
+            Directory.CreateDirectory(tmpDir);
             string scriptPath = Path.Combine(binDirectory, "scripts", "sortVcf.bash");
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
@@ -372,9 +335,10 @@ namespace ToolWrapperLayer
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 GenomeDictionaryIndexCommand(genomeFastaPath),
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(sortedVcfPath) + " ]; then " +
-                    PICARD + " SortVcf I=" + WrapperUtility.ConvertWindowsPath(vcfPath) +
+                    Picard() + " SortVcf I=" + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " O=" + WrapperUtility.ConvertWindowsPath(sortedVcfPath) +
-                    " SEQUENCE_DICTIONARY=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) + 
+                    " SEQUENCE_DICTIONARY=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
+                    " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
                     "; fi"
             }).WaitForExit();
         }
@@ -442,11 +406,53 @@ namespace ToolWrapperLayer
         {
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + " ]; then " + //rm " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + "; fi\n" +
-                "picard-tools CreateSequenceDictionary R=" + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath)
-                + "; fi";
+                Picard() + " CreateSequenceDictionary" + 
+                    " R=" + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + 
+                    " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
+                    "; fi";
         }
 
         #endregion Private Methods
 
     }
 }
+
+// from PrepareBam originally
+// check if sorted and grouped and rename chromosomes
+//newBam = bam;
+//string ucscBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
+//if (convertToUCSC && !File.Exists(ucscBam))
+//{
+//    newBam = ucscBam;
+//    Dictionary<string, string> chromMappings = EnsemblDownloadsWrapper.Ensembl2UCSCChromosomeMappings(binDirectory, reference);
+
+//    // future speedup: could check BAM header to only convert the chroms that are there
+//    // future speedup: divide up amongst ProcessorCount # of python scripts and pipe them together
+//    using (StreamWriter writer = new StreamWriter(Path.Combine(binDirectory, "scripts", "convertChromNamesOnTheFly.py")))
+//    {
+//        writer.Write("import sys\n");
+//        writer.Write("for line in sys.stdin:\n");
+//        writer.Write("  new = line\n");
+//        foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
+//        {
+//            writer.Write("  new = new.replace(\"chr" + a.Key + "\", \"" + a.Value + "\")\n");
+//        }
+//        writer.Write("  sys.stdout.write(new)\n");
+//    }
+
+//    // reheader genomeFasta with UCSC chromsome names; remove the ones that aren't in the UCSC universe
+//    Genome ucscGenome = new Genome(genomeFasta);
+//    ucscGenome.Chromosomes = ucscGenome.Chromosomes
+//        .Where(x => chromMappings.TryGetValue(getISequenceHeaderSequenceName.Match(x.ID).Groups[1].Value, out string chr) && chr.Length > 0).ToList();
+//    foreach (ISequence chrom in ucscGenome.Chromosomes)
+//    {
+//        string sequenceName = getISequenceHeaderSequenceName.Match(chrom.ID).Groups[1].Value;
+//        if (chromMappings.TryGetValue(sequenceName, out string chr))
+//        {
+//            chrom.ID = getISequenceHeaderSequenceName.Replace(chrom.ID, m => chr + m.Groups[2]);
+//        }
+//    }
+
+//    ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
+//    Genome.WriteFasta(ucscGenome.KaryotypicOrder(), ucscGenomeFasta);
+//}

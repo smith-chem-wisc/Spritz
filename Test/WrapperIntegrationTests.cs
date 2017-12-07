@@ -473,14 +473,13 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
                 8, 
-                new string[]
+                new List<string[]>
                 {
-                    String.Join(",", new string[] {
-                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"),
-                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain.fastq") })
+                    new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
+                    new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain.fastq") },
                 },
                 false,
-                true,
+                false,
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
@@ -509,17 +508,17 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
                 8,
-                new string[]
+                new List<string[]>
                 {
-                    String.Join(",", new string[] {
+                    new string[] {
                         Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"),
-                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq") }),
-                    String.Join(",", new string[] {
-                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"),
-                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq") })
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq") },
+                    new string[] {
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"),
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq") }
                 },
                 false,
-                true,
+                false,
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
@@ -546,7 +545,7 @@ namespace Test
                 8,
                 "SRR6319804",
                 false,
-                true,
+                false,
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa"),
