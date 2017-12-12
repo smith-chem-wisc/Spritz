@@ -1,12 +1,15 @@
 ﻿using Bio.VCF;
 using Proteogenomics;
 using Proteomics;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ToolWrapperLayer;
 using UsefulProteomicsDatabases;
+using System;
 
 namespace WorkflowLayer
 {
@@ -99,14 +102,25 @@ namespace WorkflowLayer
             GeneModel geneModel = new GeneModel(genome, geneModelGtfOrGff);
             geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = new List<Protein>();
-            Parallel.ForEach(geneModel.Genes, g =>
+            List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
+            var partitioner = Partitioner.Create(0, transcripts.Count);
+            //Parallel.ForEach(partitioner, (range, loopState) =>
+            //{
+            //    List<Protein> someProteins = new List<Protein>();
+            //    for (int i = range.Item1; i < range.Item2; i++)
+            //    {
+            //        someProteins.AddRange(transcripts[i].Translate(true, true));
+            //    }
+            //    lock (proteins) proteins.AddRange(someProteins);
+            //});
+            for (int i = 0; i < transcripts.Count; i++)
             {
-                List<Protein> someProteins = g.Transcripts.SelectMany(t => t.Translate(true, true)).ToList();
-                lock (proteins) proteins.AddRange(someProteins);
-            });
+                Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
+                proteins.AddRange(transcripts[i].Translate(true, true));
+            }
             int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
             string proteinVariantDatabase =  outprefix + ".protein.fasta";
-            ProteinDbWriter.WriteFastaDatabase(proteins, proteinVariantDatabase, " ");
+            ProteinDbWriter.WriteFastaDatabase(proteins.OrderBy(p => p.Accession).ToList(), proteinVariantDatabase, " ");
             return proteinVariantDatabase;
         }
     }

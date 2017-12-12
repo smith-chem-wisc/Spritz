@@ -84,9 +84,10 @@ namespace ToolWrapperLayer
                 " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM Unsorted" +
-                (strandSpecific ? "" : " --outSAMstrandField intronMotif") +
+                (strandSpecific ? "" : " --outSAMstrandField intronMotif") + // puts in XS attribute for unstranded data, which is used by Cufflinks
                 " --chimSegmentMin 12" +
                 " --chimJunctionOverhangMin 12" +
+                //" --outFilterIntronMotifs RemoveNoncanonical" +
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
 

@@ -127,7 +127,7 @@ namespace ToolWrapperLayer
                     " O=" + WrapperUtility.ConvertWindowsPath(groupedBam) +
                     " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
                     "; fi",
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(sortedBam) + "; fi", // conserve space by removing former BAM
+                "if [[ -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " && -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(sortedBam) + "; fi", // conserve space by removing former BAM
 
                 // mark duplicates (AS means assume sorted)
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
@@ -140,19 +140,21 @@ namespace ToolWrapperLayer
                     " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
                     " AS=true" + 
                     "; fi",
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
+                "if [[ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " && -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
 
                 // split and trim reads
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
-                    splitNCigarReadsCmd + " -fixMisencodedQuals; fi", // some datasets are probably going to have misencoded quality scores; this just subtracts 31 from all quality scores if possible...
+                    splitNCigarReadsCmd + " -fixMisencodedQuals" + 
+                    "; fi", // some datasets are probably going to have misencoded quality scores; this just subtracts 31 from all quality scores if possible...
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
-                    splitNCigarReadsCmd + "; fi",  // if it didn't run, it probably just found a correctly encoded read, so ditch the fixMisencodedQuals option
+                    splitNCigarReadsCmd + 
+                    "; fi",  // if it didn't run, it probably just found a correctly encoded read, so ditch the fixMisencodedQuals option
                 
                 // remove former BAM files and corresponding BAI index to conserve space
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ]; then " + 
+                "if [[ -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " && -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ]]; then " + 
                     "rm -f " +
                     WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " " +
                     WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(markedDuplicatesBam), Path.GetFileNameWithoutExtension(markedDuplicatesBam) + ".bai")) +
@@ -168,7 +170,7 @@ namespace ToolWrapperLayer
                     " -rf ReassignMappingQuality" + 
                     "; fi", // default mapping quality is 60; required for RNA-Seq aligners
                 "samtools index " + WrapperUtility.ConvertWindowsPath(mapQReassigned),
-                "if [ -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ]; then rm " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + "; fi",
+                "if [[ -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " && -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + "; fi",
             }).WaitForExit();
             newBam = mapQReassigned;
 

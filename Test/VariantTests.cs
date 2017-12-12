@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
+using Bio;
 
 namespace Test
 {
@@ -135,5 +136,44 @@ namespace Test
             Assert.IsTrue(proteinFastaLines[0].Contains(ProteinAnnotation.SynonymousVariantLabel));
             Assert.IsTrue(proteinFastaLines[0].Contains("1:69666"));
         }
+
+        [Test]
+        public void GetExonSeqsWithNearbyVariants()
+        {
+            MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
+            metadata.SubItems["strand"] = new List<string> { "+" };
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 250).ToArray())), 0, 249, "1", metadata);
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "aFewNearby.vcf"));
+            x.Variants = vcf.ToList();
+            List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);
+            Assert.AreEqual(4, h.Count);
+        }
+
+        [Test]
+        public void GetExonSeqsWithTonsNearby()
+        {
+            MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
+            metadata.SubItems["strand"] = new List<string> { "+" };
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 300).ToArray())), 0, 299, "1", metadata);
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "tonsNearby.vcf"));
+            x.Variants = vcf.ToList();
+            List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);
+            Assert.AreEqual(2, h.Count);
+        }
+
+        [Test]
+        public void GetExonSeqsWithTonsFarApart()
+        {
+            MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
+            metadata.SubItems["strand"] = new List<string> { "+" };
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 4001).ToArray())), 0, 4000, "1", metadata);
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "tonsFarApart.vcf"));
+            x.Variants = vcf.ToList();
+            List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101); // would produce 1024 combos without capping max combos
+            Assert.AreEqual(8, h.Count);
+        }
+
+        // test todo: transcript with zero CodingSequenceExons and try to translate them to check that it doesn fail
+        // test todo: multiple transcripts
     }
 }

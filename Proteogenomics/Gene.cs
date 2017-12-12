@@ -26,9 +26,9 @@ namespace Proteogenomics
 
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
 
-        public HashSet<Exon> Exons { get; set; } = new HashSet<Exon>();
+        //public List<Exon> Exons { get; set; } = new List<Exon>();
 
-        public HashSet<Exon> CodingDomainSequences { get; set; } = new HashSet<Exon>();
+        //public List<Exon> CodingDomainSequences { get; set; } = new List<Exon>();
 
         #endregion
 
@@ -49,12 +49,13 @@ namespace Proteogenomics
         public List<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
             List<Protein> proteins = new List<Protein>();
-            Parallel.ForEach(Transcripts, t =>
+            foreach (Transcript t in Transcripts)
+            //Parallel.ForEach(Transcripts, t =>
             {
                 IEnumerable<Protein> p = t.Translate(translateCodingDomains, includeVariants);
                 if (p != null)
                     lock (proteins) proteins.AddRange(p);
-            });
+            }
             return proteins;
         }
 

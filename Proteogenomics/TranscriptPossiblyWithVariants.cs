@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Bio;
 
 namespace Proteogenomics
 {
@@ -10,7 +11,9 @@ namespace Proteogenomics
 
         public Transcript Transcript { get; set; }
 
-        public string Sequence { get; set; }
+        public ISequence Sequence { get; set; }
+
+        public bool ContainsAmbiguity { get; set; }
 
         public bool DerivedFromCodingDomainSequences { get; set; }
 
@@ -26,10 +29,11 @@ namespace Proteogenomics
 
         #region Public Constructor
 
-        public TranscriptPossiblyWithVariants(Transcript transcript, bool usedCodingDomainSequences, string sequence, List<Variant> variants)
+        public TranscriptPossiblyWithVariants(Transcript transcript, bool usedCodingDomainSequences, ISequence sequence, bool containsAmbiguity, List<Variant> variants)
         {
             Transcript = transcript;
             Sequence = sequence;
+            ContainsAmbiguity = containsAmbiguity;
             ZeroBasedCodingStart = 0;
             Variants = variants.OrderBy(v => v.OneBasedStart).ToList();
             ProteinID = transcript.ProteinID;
@@ -47,7 +51,7 @@ namespace Proteogenomics
 
         public bool OkayToTranslate()
         {
-            return Sequence.Length >= 3 && !Sequence.Contains('N');
+            return Sequence.Count >= 3 && !ContainsAmbiguity;
         }
 
         #endregion Public Method

@@ -116,13 +116,13 @@ namespace Proteogenomics
 
                 if (hasExonId)
                 {
-                    currentGene.Exons.Add(exon);
+                    //currentGene.Exons.Add(exon);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (hasProteinId)
                 {
                     if (currentTranscript.CodingDomainSequences.Count == 0) StartCDS.Add(exon);
-                    currentGene.CodingDomainSequences.Add(exon);
+                    //currentGene.CodingDomainSequences.Add(exon);
                     currentTranscript.CodingDomainSequences.Add(exon);
                     currentTranscript.ProteinID = protein_id;
                 }
@@ -177,12 +177,12 @@ namespace Proteogenomics
 
                 if (feature.Key == "exon")
                 {
-                    currentGene.Exons.Add(exon);
+                    //currentGene.Exons.Add(exon);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    currentGene.CodingDomainSequences.Add(exon);
+                    //currentGene.CodingDomainSequences.Add(exon);
                     currentTranscript.CodingDomainSequences.Add(exon);
                 }
             }
@@ -200,7 +200,7 @@ namespace Proteogenomics
                 else chrIndexVariants[key] = new List<VariantContext> { variant };
             }
 
-            foreach (Exon x in Genes.SelectMany(g => g.Exons.Concat(g.CodingDomainSequences)))
+            foreach (Exon x in Genes.SelectMany(g => g.Transcripts.SelectMany(t => t.Exons.Concat(t.CodingDomainSequences))))
             {
                 for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
                 {
