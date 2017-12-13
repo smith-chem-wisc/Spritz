@@ -138,7 +138,7 @@ namespace CMD
             else if (args.Contains("vcf2protein"))
             {
                 Genome genome = new Genome(options.GenomeFasta);
-                proteinDatabases.Add(Fastq2ProteinsEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, options.GeneModelGtfOrGff, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                proteinDatabases.Add(Fastq2ProteinsEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
 
             else

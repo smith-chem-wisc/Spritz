@@ -561,17 +561,6 @@ namespace Test
             }
         }
 
-        [Test]
-        public void BuildVariantFasta()
-        {
-            Genome genome = new Genome(@"D:\VcfProteinFastaGeneration\Homo_sapiens.GRCh38.dna.primary_assembly.karyotypic.fa");
-            Fastq2ProteinsEngine.WriteSampleSpecificFasta(
-                @"D:\VcfProteinFastaGeneration\151NAT_ATCACG_L002_R1_001-trimmed-pair1Aligned.out.sorted.grouped.marked.split.mapqfixed.vcf", 
-                genome, 
-                @"D:\VcfProteinFastaGeneration\Homo_sapiens.GRCh38.81.gff2.gff3",
-                @"151NAT_ATCACG_L002_R1_001-trimmed-pair1Aligned.out.sorted.grouped.marked.split.mapqfixed");
-        }
-
         #endregion Runner Tests
     }
 }

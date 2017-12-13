@@ -90,12 +90,12 @@ namespace WorkflowLayer
                 GATKWrapper.PrepareBamAndFasta(bin, threads, outPrefix + STARWrapper.BamFileSuffix, reorderedFasta, reference, out string newBam);
                 GATKWrapper.VariantCalling(bin, threads, reorderedFasta, newBam, Path.Combine(bin, ensemblKnownSitesPath), out string vcfPath);
                 proteinVariantDatabases.Add(
-                    WriteSampleSpecificFasta(vcfPath, ensemblGenome, geneModelGtfOrGff, Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam))));
+                    WriteSampleSpecificFasta(vcfPath, ensemblGenome, geneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam))));
             }
             STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory);
         }
 
-        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, string geneModelGtfOrGff, string outprefix)
+        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, string geneModelGtfOrGff, int minPeptideLength, string outprefix)
         {
             VCFParser vcf = new VCFParser(vcfPath);
             List<VariantContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).ToList();
@@ -103,16 +103,6 @@ namespace WorkflowLayer
             geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = new List<Protein>();
             List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
-            var partitioner = Partitioner.Create(0, transcripts.Count);
-            //Parallel.ForEach(partitioner, (range, loopState) =>
-            //{
-            //    List<Protein> someProteins = new List<Protein>();
-            //    for (int i = range.Item1; i < range.Item2; i++)
-            //    {
-            //        someProteins.AddRange(transcripts[i].Translate(true, true));
-            //    }
-            //    lock (proteins) proteins.AddRange(someProteins);
-            //});
             for (int i = 0; i < transcripts.Count; i++)
             {
                 Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
@@ -120,7 +110,22 @@ namespace WorkflowLayer
             }
             int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
             string proteinVariantDatabase =  outprefix + ".protein.fasta";
-            ProteinDbWriter.WriteFastaDatabase(proteins.OrderBy(p => p.Accession).ToList(), proteinVariantDatabase, " ");
+            List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
+            ProteinDbWriter.WriteFastaDatabase(proteinsToWrite, proteinVariantDatabase, " ");
+            using (StreamWriter writer = new StreamWriter(outprefix + ".protein.metrics"))
+            {
+                writer.WriteLine(Transcript.combinatoricFailures.ToString() + "\ttranscripts had too many heterozygous variants for combinatorics");
+                Transcript.combinatoricFailures = 0;
+                writer.WriteLine(proteinsToWrite.Count.ToString() + "\tprotein sequences");
+                writer.WriteLine(proteinsToWrite.Min(p => p.BaseSequence.Length).ToString() + "\tminimum length");
+                writer.WriteLine(proteinsToWrite.Max(p => p.BaseSequence.Length).ToString() + "\tmaxium length");
+                writer.WriteLine(proteinsToWrite.Average(p => p.BaseSequence.Length).ToString() + "\taverage length");
+                writer.WriteLine();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SingleAminoAcidVariantLabel) > 0).ToString() + "\tSAV sequences");
+                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SingleAminoAcidVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
+                writer.WriteLine(instancesOfSavs.Max().ToString() + "\tmaximum SAVs in a sequence");
+                writer.WriteLine(instancesOfSavs.Where(x => x > 0).Average().ToString() + "\taverage SAVs in sequence with one");
+            }
             return proteinVariantDatabase;
         }
     }

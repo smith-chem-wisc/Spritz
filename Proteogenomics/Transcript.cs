@@ -48,9 +48,11 @@ namespace Proteogenomics
 
         #region Public Methods
 
+        public static int combinatoricFailures = 0;
         public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
-            List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants).Where(t => t.OkayToTranslate()).ToList();
+            List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants, out bool successfulCombination).Where(t => t.OkayToTranslate()).ToList();
+            if (!successfulCombination) Console.WriteLine("combining exons failed " + combinatoricFailures++.ToString());
             return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes);
         }
 
@@ -73,7 +75,7 @@ namespace Proteogenomics
                 foreach (Exon annotatedStart in annotatedStarts)
                 {
                     long startCodonStart = Strand == "+" ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
-                    List<TranscriptPossiblyWithVariants> transcripts = CombineExonSequences(false, includeVariants).Where(t => t.OkayToTranslate()).ToList();
+                    List<TranscriptPossiblyWithVariants> transcripts = CombineExonSequences(false, includeVariants, out bool success).Where(t => t.OkayToTranslate()).ToList();
                     foreach (TranscriptPossiblyWithVariants transcript in transcripts)
                     {
                         if (Strand == "+")
@@ -106,7 +108,7 @@ namespace Proteogenomics
         /// <param name="exons"></param>
         /// <param name="includeVariants"></param>
         /// <returns></returns>
-        public IEnumerable<TranscriptPossiblyWithVariants> CombineExonSequences(bool translateCodingDomains, bool includeVariants, int maxCombosPerTranscript = 1024)
+        public IEnumerable<TranscriptPossiblyWithVariants> CombineExonSequences(bool translateCodingDomains, bool includeVariants, out bool success, int maxCombosPerTranscript = 32)
         {
             int maxCombos = (int)Math.Log(maxCombosPerTranscript, 2) + 1;
             List<Exon> exons = translateCodingDomains ? CodingDomainSequences : Exons;
@@ -117,12 +119,19 @@ namespace Proteogenomics
             int maxCombosForExons = maxCombos;
             while (totalBranches < 0 || totalBranches > maxCombosPerTranscript)
             {
+                if (exons.Any(x => x.Variants.Sum(v => Variant.ParseVariantContext(v).Count(vv => vv.AlleleFrequency < 0.9)) > maxCombos))
+                {
+                    success = false;
+                    return new List<TranscriptPossiblyWithVariants>();
+                }
                 exonSequences = exons.Select(x => x.GetExonSequences(maxCombosForExons, includeVariants, 0.9, false, 101)).ToList();
                 totalBranches = (int)Math.Pow(2, exonSequences.Sum(possibleExons => possibleExons.Count - 1)) - Convert.ToInt32(exonSequences.Count == 0);
                 maxCombosForExons = (int)Math.Ceiling((double)maxCombosForExons / (double)2);
                 if (maxCombosForExons == 1 && totalBranches > maxCombosPerTranscript)
                 {
-                    break;
+                    // too hard of a problem for now without long-read sequencing data
+                    success = false;
+                    return new List<TranscriptPossiblyWithVariants>();
                 }
             }
             totalBranches = (int)Math.Pow(2, exonSequences.Sum(possibleExons => possibleExons.Count - 1)) - Convert.ToInt32(exonSequences.Count == 0);
@@ -158,6 +167,7 @@ namespace Proteogenomics
                     }
                 }
             }
+            success = true;
             return haplotypicSequences;
         }
 
