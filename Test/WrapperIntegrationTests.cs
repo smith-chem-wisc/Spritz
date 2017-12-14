@@ -166,18 +166,20 @@ namespace Test
         [Test, Order(2)]
         public void TestGenomeGenerate()
         {
-            STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "genomeGenerate.bash"), 
+                STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
                 1,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir"),
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa") },
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.gtf"));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.gtf"))).WaitForExit();
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir")));
         }
 
         [Test, Order(3)]
         public void TestAlign()
         {
-            STARWrapper.BasicAlignReads
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"),
+            STARWrapper.BasicAlignReadCommands
             (
                 TestContext.CurrentContext.TestDirectory,
                 1,
@@ -188,7 +190,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","read2.fastq")
                 },
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "r.")
-            );
+            )).WaitForExit();
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "r.Aligned.out.bam")));
         }
 

@@ -48,11 +48,15 @@ namespace Proteogenomics
 
         #region Public Methods
 
-        public static int combinatoricFailures = 0;
+        public static List<string> combinatoricFailures = new List<string>();
         public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants)
         {
             List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants, out bool successfulCombination).Where(t => t.OkayToTranslate()).ToList();
-            if (!successfulCombination) Console.WriteLine("combining exons failed " + combinatoricFailures++.ToString());
+            if (!successfulCombination)
+            {
+                combinatoricFailures.Add(ID);
+                Console.WriteLine("combining exons failed " + combinatoricFailures.Count.ToString());
+            }
             return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes);
         }
 

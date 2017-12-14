@@ -81,6 +81,7 @@ namespace ToolWrapperLayer
                 "tophat",
                 "cufflinks",
                 "bedtools",
+                "picard-tools",
 
                 // commandline tools
                 "gawk",

@@ -33,6 +33,7 @@ namespace Proteogenomics
         // or for indels use X#XXX or XXX#X where # is the start
         // get the SNV location 1:100000
         // get the codon change Gcc/Acc
+        static HashSet<string> accessions = new HashSet<string>();
         public static List<Protein> OneFrameTranslationWithAnnotation(List<TranscriptPossiblyWithVariants> transcripts)
         {
             Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
@@ -130,9 +131,16 @@ namespace Proteogenomics
                         }
                     }
                 }
-                t.ProteinAnnotation = String.Join(" ", t.Variants.Select(v => v.Annotation));
-                Protein newProtein = new Protein(variantAminoAcidSequence.Split('*')[0], t.ProteinID, null, null, null, null, t.ProteinAnnotation);
+                string accession = t.ProteinID;
+                int arbitraryNumber = 1;
+                while (accessions.Contains(accession))
+                {
+                    accession = t.ProteinID + "_v" + arbitraryNumber++.ToString();
+                }
+                t.ProteinAnnotation = String.Join(" ", t.Variants.Select(v => v.Annotation)) + " OS=Homo sapiens GN=" + t.Transcript.Gene.ID;
+                Protein newProtein = new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, t.ProteinAnnotation);
                 AddProteinIfLessComplex(proteinDictionary, newProtein);
+                accessions.Add(newProtein.Accession);
             }
             return proteinDictionary.Values.ToList();
         }

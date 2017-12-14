@@ -15,6 +15,9 @@ namespace WorkflowLayer
 {
     public class Fastq2ProteinsEngine
     {
+
+        #region Runner Methods
+
         public static void RunFromSra(string bin, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
         {
             List<string[]> fastqs = new List<string[]>();
@@ -58,45 +61,89 @@ namespace WorkflowLayer
             // Alignment preparation
             Directory.CreateDirectory(genomeStarIndexDirectory);
             if (!File.Exists(Path.Combine(genomeStarIndexDirectory, "SA")))
-            {
-                STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff);
-            }
+                WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "genomeGenerate.bash"), STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff)).WaitForExit();
 
+            List<string[]> fastqsForAlignment = new List<string[]>();
+            List<bool> strandSpecificities = new List<bool>();
+            List<string> spliceJunctions = new List<string>();
+            List<string> sortedBamFiles = new List<string>();
+            List<string> dedupedBamFiles = new List<string>();
             proteinVariantDatabases = new List<string>();
-            STARWrapper.LoadGenome(bin, genomeStarIndexDirectory);
+
+            // Trimming and strand specificity
             foreach (string[] fq in fastqs)
             {
-                // Trimming
                 SkewerWrapper.Trim(bin, threads, 19, fq, out string[] trimmedFastqs, out string skewerLog);
-
-                // Alignment
                 string[] fqForAlignment = trimmedFastqs;
-                string outPrefix = Path.Combine(Path.GetDirectoryName(fqForAlignment[0]), Path.GetFileNameWithoutExtension(fqForAlignment[0]));
-                if (!File.Exists(outPrefix + STARWrapper.BamFileSuffix) || overwriteStarAlignment)
-                {
-                    bool localStrandSpecific = strandSpecific;
-                    if (inferStrandSpecificity)
-                    {
-                        STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
-                        if (useReadSubset) fqForAlignment = subsetFastqs;
-                        string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                        STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep);
-                        localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
-                    }
-                    STARWrapper.BasicAlignReads(bin, threads, genomeStarIndexDirectory, fqForAlignment, outPrefix, localStrandSpecific, STARGenomeLoadOption.LoadAndKeep);
-                }
 
-                // Variant Calling
-                GATKWrapper.PrepareBamAndFasta(bin, threads, outPrefix + STARWrapper.BamFileSuffix, reorderedFasta, reference, out string newBam);
-                GATKWrapper.VariantCalling(bin, threads, reorderedFasta, newBam, Path.Combine(bin, ensemblKnownSitesPath), out string vcfPath);
-                proteinVariantDatabases.Add(
-                    WriteSampleSpecificFasta(vcfPath, ensemblGenome, geneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(newBam), Path.GetFileNameWithoutExtension(newBam))));
+                // Infer strand specificity
+                bool localStrandSpecific = strandSpecific;
+                if (inferStrandSpecificity)
+                {
+                    STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
+                    if (useReadSubset) fqForAlignment = subsetFastqs;
+                    string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
+                    WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignSubset.bash"), STARWrapper.BasicAlignReadCommands(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep)).WaitForExit();
+                    localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
+                }
+                strandSpecificities.Add(localStrandSpecific);
+                fastqsForAlignment.Add(fqForAlignment);
             }
-            STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory);
+
+            // Alignment
+            List<string> alignmentCommands = new List<string>();
+            foreach (string[] fq in fastqsForAlignment)
+            {
+                string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
+                if (!File.Exists(outPrefix + STARWrapper.SpliceJunctionFileSuffix) || overwriteStarAlignment)
+                {
+                    alignmentCommands.AddRange(STARWrapper.FirstPassAlignmentCommands(bin, threads, genomeStarIndexDirectory, fq, outPrefix, strandSpecificities[fastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
+                    spliceJunctions.Add(outPrefix + STARWrapper.SpliceJunctionFileSuffix);
+                }
+            }
+            alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory));
+            alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(spliceJunctions, out string spliceJunctionStartDatabase));
+            int uniqueSuffix = 1;
+            foreach (string f in fastqsForAlignment.SelectMany(f => f))
+            {
+                uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
+            }
+            string secondPassGenomeDirectory = genomeStarIndexDirectory + "SecondPass" + uniqueSuffix.ToString();
+            if (!File.Exists(Path.Combine(secondPassGenomeDirectory, "SA")))
+                alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(bin, threads, secondPassGenomeDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff, spliceJunctionStartDatabase));
+            foreach (string[] fq in fastqsForAlignment)
+            {
+                string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
+                if (!File.Exists(outPrefix + STARWrapper.SortedBamFileSuffix) || overwriteStarAlignment)
+                {
+                    alignmentCommands.AddRange(STARWrapper.AlignRNASeqReadsForVariantCalling(bin, threads, secondPassGenomeDirectory, fq, outPrefix, strandSpecificities[fastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
+                    sortedBamFiles.Add(outPrefix + STARWrapper.SortedBamFileSuffix);
+                    dedupedBamFiles.Add(outPrefix + STARWrapper.DedupedBamFileSuffix);
+                }
+            }
+            alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, secondPassGenomeDirectory));
+            WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
+
+            // Variant Calling
+            foreach (string dedupedBam in dedupedBamFiles)
+            {
+                GATKWrapper.VariantCalling(bin, threads, reorderedFasta, dedupedBam, Path.Combine(bin, ensemblKnownSitesPath), out string vcfPath);
+                proteinVariantDatabases.Add(
+                    WriteSampleSpecificFasta(vcfPath, ensemblGenome, geneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam))));
+            }
         }
+
+        #endregion Runner Methods
+
+        #region Sample Specific Database Writing
 
         public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, string geneModelGtfOrGff, int minPeptideLength, string outprefix)
         {
+            if (!File.Exists(vcfPath))
+            {
+                Console.WriteLine("Error: VCF not found: " + vcfPath);
+                return "Error: VCF not found: " + vcfPath;
+            }
             VCFParser vcf = new VCFParser(vcfPath);
             List<VariantContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).ToList();
             GeneModel geneModel = new GeneModel(genome, geneModelGtfOrGff);
@@ -109,13 +156,13 @@ namespace WorkflowLayer
                 proteins.AddRange(transcripts[i].Translate(true, true));
             }
             int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
-            string proteinVariantDatabase =  outprefix + ".protein.fasta";
+            string proteinVariantDatabase = outprefix + ".protein.fasta";
             List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
-            ProteinDbWriter.WriteFastaDatabase(proteinsToWrite, proteinVariantDatabase, " ");
+            ProteinDbWriter.WriteFastaDatabase(proteinsToWrite, proteinVariantDatabase, "|");
             using (StreamWriter writer = new StreamWriter(outprefix + ".protein.metrics"))
             {
-                writer.WriteLine(Transcript.combinatoricFailures.ToString() + "\ttranscripts had too many heterozygous variants for combinatorics");
-                Transcript.combinatoricFailures = 0;
+                writer.WriteLine(String.Join(",", Transcript.combinatoricFailures) + "\ttranscripts had too many heterozygous variants for combinatorics");
+                Transcript.combinatoricFailures = new List<string>();
                 writer.WriteLine(proteinsToWrite.Count.ToString() + "\tprotein sequences");
                 writer.WriteLine(proteinsToWrite.Min(p => p.BaseSequence.Length).ToString() + "\tminimum length");
                 writer.WriteLine(proteinsToWrite.Max(p => p.BaseSequence.Length).ToString() + "\tmaxium length");
@@ -124,9 +171,17 @@ namespace WorkflowLayer
                 writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SingleAminoAcidVariantLabel) > 0).ToString() + "\tSAV sequences");
                 List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SingleAminoAcidVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
                 writer.WriteLine(instancesOfSavs.Max().ToString() + "\tmaximum SAVs in a sequence");
-                writer.WriteLine(instancesOfSavs.Where(x => x > 0).Average().ToString() + "\taverage SAVs in sequence with one");
+                if (instancesOfSavs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSavs.Where(x => x > 0).Average().ToString() + "\taverage SAVs in sequence with one");
+                writer.WriteLine();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SynonymousVariantLabel) > 0).ToString() + "\tsequences with synonymous codon variation");
+                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SynonymousVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
+                writer.WriteLine(instancesOfSynonymousSnvs.Max().ToString() + "\tmaximum synonymous variations in a sequence");
+                if (instancesOfSynonymousSnvs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSynonymousSnvs.Where(x => x > 0).Average().ToString() + "\taverage synonymous variations in sequence with one");
             }
             return proteinVariantDatabase;
         }
+
+        #endregion Sample Specific Database Writing
+
     }
 }
