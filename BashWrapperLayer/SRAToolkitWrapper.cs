@@ -20,7 +20,7 @@ namespace ToolWrapperLayer
         public static void Fetch(string bin, string sraAccession, string destinationDirectoryPath, out string[] fastqPaths, out string logPath)
         {
             logPath = Path.Combine(destinationDirectoryPath, sraAccession + "download.log");
-            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*");
+            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq");
             if (fastqPaths.Length > 0) // already downloaded
             {
                 fastqPaths = fastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();

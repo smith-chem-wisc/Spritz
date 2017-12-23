@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
+using System.Diagnostics;
 
 namespace ToolWrapperLayer
 {
@@ -12,6 +12,12 @@ namespace ToolWrapperLayer
         #region Public Properties
 
         public static string BamFileSuffix { get; } = "Aligned.out.bam";
+
+        public static string SortedBamFileSuffix { get; } = "Aligned.sortedByCoord.out.bam";
+
+        public static string DedupedBamFileSuffix { get; } = "Aligned.sortedByCoord.outProcessed.out.bam";
+
+        public static string DedupedBamFileLog { get; } = "Aligned.sortedByCoord.outLog.out";
 
         public static string SpliceJunctionFileSuffix { get; } = "SJ.out.tab";
 
@@ -25,58 +31,69 @@ namespace ToolWrapperLayer
 
         #endregion Public Properties
 
+        #region Genome Index Methods
 
-        public static void GenerateGenomeIndex(string bin_directory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, int junctionOverhang = 100)
+        public static List<string> GenerateGenomeIndex(string binDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
             if (!Directory.Exists(genomeDir)) Directory.CreateDirectory(genomeDir);
             string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
                 " --runMode genomeGenerate" +
                 " --runThreadN " + threads.ToString() +
-                " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) + 
+                " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) +
                 " --genomeFastaFiles " + fastas +
                 " --sjdbGTFfile " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) +
+                (File.Exists(sjdbFileChrStartEnd) ? " --limitSjdbInsertNsj 1200000 --sjdbFileChrStartEnd " + WrapperUtility.ConvertWindowsPath(sjdbFileChrStartEnd) : "") +
                 (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff") ? " --sjdbGTFtagExonParentTranscript Parent" : "") +
                 " --sjdbOverhang " + junctionOverhang.ToString();
 
-            string script_name = Path.Combine(bin_directory, "scripts", "generate_genome.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "STAR/source/STAR" + arguments
-            }).WaitForExit();
+            };
         }
 
-        public static void LoadGenome(string bin_directory, string genomeDir)
+        public static List<string> RemoveGenome(string binDirectory, string genomeDir)
         {
-            string arguments = " --genomeLoad " + STARGenomeLoadOption.LoadAndExit.ToString() +
-                " --genomeDir '" + WrapperUtility.ConvertWindowsPath(genomeDir) + "'";
-            string script_name = Path.Combine(bin_directory, "scripts", "load_genome.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            string script_name = Path.Combine(binDirectory, "scripts", "removeGenome.bash");
+            return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
-                "STAR/source/STAR" + arguments
-            }).WaitForExit();
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() + " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir)
+            };
         }
 
+        #endregion Genome Index Methods
 
-        public static void RemoveGenome(string bin_directory)
+        #region First-Pass Alignment Methods
+
+        public static List<string> FirstPassAlignmentCommands(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
-            string script_name = Path.Combine(bin_directory, "scripts", "remove_genome.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
-                "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString()
-            }).WaitForExit();
+            return BasicAlignReadCommands(binDirectory, threads, genomeDir, fastqFiles, outprefix, strandSpecific, genomeLoad, "None");
         }
+
+        public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, out string spliceJunctionStarts)
+        {
+            spliceJunctionStarts = Path.Combine(Path.GetDirectoryName(spliceJunctionOuts[0]), "combined." + SpliceJunctionFileSuffix);
+            return new List<string>
+            {
+                "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " + 
+                    String.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
+                    " | grep -v 'MT' >> " +
+                    WrapperUtility.ConvertWindowsPath(spliceJunctionStarts)
+            };
+        }
+
+        #endregion
 
         // fastqs must have \n line endings, not \r\n
-        public static void BasicAlignReads(string bin_directory, int threads, string genomeDir, string[] fastq_files, string outprefix, bool strand_specific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
+        public static List<string> BasicAlignReadCommands(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory, string outSamType = "BAM Unsorted")
         {
-            string reads_in = "\"" + String.Join("\" \"", fastq_files.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
-            string read_command = fastq_files.Any(f => Path.GetExtension(f) == ".gz") ?
+            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
-                fastq_files.Any(f => Path.GetExtension(f) == ".bz2") ?
+                fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
                     " --readFilesCommand bzip2 -c" :
                     "";
             string arguments =
@@ -84,57 +101,81 @@ namespace ToolWrapperLayer
                 " --runThreadN " + threads.ToString() +
                 " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
                 " --readFilesIn " + reads_in +
-                " --outSAMtype BAM Unsorted" +
-                (strand_specific ? "" : " --outSAMstrandField intronMotif") +
+                " --outSAMtype " + outSamType +
+                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                (strandSpecific ? "" : " --outSAMstrandField intronMotif") + // puts in XS attribute for unstranded data, which is used by Cufflinks
                 " --chimSegmentMin 12" +
                 " --chimJunctionOverhangMin 12" +
+                " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
 
-            string script_name = Path.Combine(bin_directory, "scripts", "align_reads.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix) + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix);
+            return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + BamFileSuffix + " ]; then STAR/source/STAR" + arguments + "; fi",
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -f " + fileToCheck + " ]; then STAR/source/STAR" + arguments + "; fi",
                 File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
-            }).WaitForExit();
+            };
         }
 
-        public void SuccessiveAlignReads(string bin_directory, int threads, string genomeDir, List<string[]> fastq_files, string outprefix, bool strand_specific = true)
+        // fastqs must have \n line endings, not \r\n
+        public static List<string> AlignRNASeqReadsForVariantCalling(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
-            LoadGenome(bin_directory, genomeDir);
-            foreach(var fqs in fastq_files)
+            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
+                " --readFilesCommand zcat -c" :
+                fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
+                    " --readFilesCommand bzip2 -c" :
+                    "";
+
+            string alignmentArguments =
+                " --genomeLoad " + genomeLoad.ToString() +
+                " --runMode alignReads" +
+                " --runThreadN " + threads.ToString() +
+                " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
+                " --readFilesIn " + reads_in +
+                " --outSAMtype BAM SortedByCoordinate" +
+                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                (strandSpecific ? "" : " --outSAMstrandField intronMotif") + // puts in XS attribute for unstranded data, which is used by Cufflinks
+                " --chimSegmentMin 12" +
+                " --chimJunctionOverhangMin 12" +
+                " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
+                " --outSAMattrRGline ID:1 PU:platform  PL:illumina SM:sample LB:library" + // this could shorten the time for samples that aren't multiplexed in preprocessing for GATK
+                " --outSAMmapqUnique 60" + // this could be used to ensure compatibility with GATK without having to use the GATK hacks
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
+                read_command; // note in the future, two sets of reads can be comma separated here, and the RGline can also be comma separated to distinguish them later
+
+            string dedupArguments =
+                " --runMode inputAlignmentsFromBAM" +
+                " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
+                " --runThreadN " + threads.ToString() +
+                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) + Path.GetFileNameWithoutExtension(SortedBamFileSuffix);
+
+            return new List<string>
             {
-                BasicAlignReads(bin_directory, threads, genomeDir, fqs, outprefix, strand_specific, STARGenomeLoadOption.LoadAndKeep);
-            }
-            RemoveGenome(bin_directory);
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ]; then STAR/source/STAR" + alignmentArguments + "; fi",
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ]; then STAR/source/STAR" + dedupArguments + "; fi",
+                File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
+            };
         }
 
-        public static void SubsetFastqs(string[] fastq_files, int reads, string current_directory, out string[] new_files)
+        public static void SubsetFastqs(string binDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
         {
             // Note: fastqs must have \n line endings, not \r\n
+            newFfiles = new string[] { Path.Combine(Path.GetDirectoryName(fastqFiles[0]), Path.GetFileNameWithoutExtension(fastqFiles[0]) + ".segment.fastq") };
+            if (fastqFiles.Length > 1)
+                newFfiles = new string[] { newFfiles[0], Path.Combine(Path.GetDirectoryName(fastqFiles[1]), Path.GetFileNameWithoutExtension(fastqFiles[1]) + ".segment.fastq") };
 
-            List<string> new_ones = new List<string>();
-            foreach(string file in fastq_files)
+            string script_path = Path.Combine(binDirectory, "scripts", "subsetReads.bash");
+            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
-                string new_path = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + ".segment.fastq");
-                new_ones.Add(new_path);
-
-                using (StreamWriter writer = new StreamWriter(new_path))
-                using (FileStream fstream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    Stream stream = Path.GetExtension(file) == ".gz" ?
-                        (Stream)(new GZipStream(fstream, CompressionMode.Decompress)) :
-                            fstream;
-                    StreamReader reader = new StreamReader(stream);
-
-                    for (int i = 0; i < reads * 4 && reader.Peek() > -1; i++)
-                    {
-                        writer.Write(reader.ReadLine() + '\n');
-                    }
-                }
-            }
-            new_files = new_ones.ToArray();
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
+                fastqFiles.Length > 1 ? "seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
+            }).WaitForExit();
         }
 
         public static void Install(string binDirectory)
@@ -144,6 +185,9 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "git clone https://github.com/lh3/seqtk.git",
+                "cd seqtk; make",
+                "cd ..",
                 downloadStar ? "git clone https://github.com/alexdobin/STAR.git" : "",
                 downloadStar ? "cd STAR/source" : "",
                 downloadStar ? "make STAR" : "",

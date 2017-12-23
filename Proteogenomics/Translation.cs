@@ -15,7 +15,7 @@ namespace Proteogenomics
 
         public static Protein OneFrameTranslation(TranscriptPossiblyWithVariants transcript)
         {
-            ISequence dnaSequence = new Sequence(Alphabets.DNA, transcript.Sequence);
+            ISequence dnaSequence = transcript.Sequence;
             ISequence rnaSequence = Transcription.Transcribe(transcript.GetExonsUsedInDerivation()[0].Strand == "+" ? dnaSequence : dnaSequence.GetReverseComplementedSequence());
             ISequence proteinSequence = ProteinTranslation.Translate(rnaSequence);
             string proteinBases = SequenceExtensions.ConvertToString(proteinSequence).Split('*')[0];

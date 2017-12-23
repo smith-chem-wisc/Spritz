@@ -4,6 +4,7 @@ using Bio.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System;
 
 namespace Proteogenomics
 {
@@ -65,9 +66,8 @@ namespace Proteogenomics
 
         #region Public Methods
 
-        public IEnumerable<Exon> GetExonSequences(bool getVariantSequences = false, double homozygousThreshold = 1)
+        public List<Exon> GetExonSequences(int maxCombos, bool getVariantSequences = false, double homozygousThreshold = 1, bool phased = false, int fakePhasingRange = 101)
         {
-            string seq = SequenceExtensions.ConvertToString(this.Sequence);
             if (Variants.Count == 0 || !getVariantSequences)
                 return new List<Exon> { new Exon(this) };
 
@@ -80,6 +80,8 @@ namespace Proteogenomics
                 else heterozygous.Add(var);
             }
 
+            // This could be VERY inefficient, e.g. even with just 24 adjacent variants
+            //int maxCount = (int)Math.Log(Int32.MaxValue, 2);
             List<List<Variant>> possibleHaplotypes = new List<List<Variant>> { new List<Variant>(homozygous) };
             possibleHaplotypes.AddRange(
                 Enumerable.Range(1, heterozygous.Count).SelectMany(k =>
@@ -87,11 +89,39 @@ namespace Proteogenomics
                         .Select(heteroAlleles => new List<Variant>(homozygous).Concat(heteroAlleles).ToList()))
                     .ToList());
 
+            // fake phasing (of variants within 100 bp of each other) to eliminate combinitorial explosion
+            // this section eliminates instances where variants that are very close to each other are emitted as separate haplotypes
+            if (!phased)
+            {
+                int range = fakePhasingRange;
+                List<List<Variant>> fakePhased = null;
+                while (fakePhased == null || fakePhased.Count > Math.Max(2, maxCombos))
+                {
+                    fakePhased = new List<List<Variant>>();
+                    List<List<Variant>> phasedLast = possibleHaplotypes.OrderBy(x => x.Count).ToList();
+                    List<int> variantSites = phasedLast.Last().Select(v => v.OneBasedStart).ToList();
+                    foreach (List<Variant> hap in phasedLast)
+                    {
+                        List<int> hapSites = hap.Select(v => v.OneBasedStart).ToList();
+                        bool containsVariantsToFakePhase = variantSites.Any(vs => !hapSites.Contains(vs) && hap.Any(v => Math.Abs(v.OneBasedStart - vs) < range));
+                        if (!containsVariantsToFakePhase)
+                            fakePhased.Add(hap);
+                    }
+                    possibleHaplotypes = fakePhased;
+                    range *= 2;
+                }
+            }
+
+            // get internal byte array for sequence copies
+            // using byte arrays for intermediate data structures greatly improves performance because of copying and storage efficiency over strings
+            byte[] sequenceBytes = new byte[this.Sequence.Count];
+            (this.Sequence as Sequence).CopyTo(sequenceBytes, 0, this.Sequence.Count);
+
             List<Exon> sequences = new List<Exon>();
             foreach (List<Variant> haplotype in possibleHaplotypes)
             {
                 long tmpOneBasedStart = OneBasedStart;
-                StringBuilder builder = new StringBuilder();
+                byte[] newSequence = new byte[this.Sequence.Count + haplotype.Sum(v => v.AlternateAllele.Length - 1)];
                 haplotype.OrderBy(v => v.OneBasedStart);
 
                 int subseqStart;
@@ -103,15 +133,21 @@ namespace Proteogenomics
 
                     subseqStart = (int)(tmpOneBasedStart - this.OneBasedStart);
                     subseqCount = (int)(var.OneBasedStart - tmpOneBasedStart);
-                    if (subseqStart + subseqCount - 1 > seq.Length) // allele extends beyond exon, so mind the exon boundary
+                    if (subseqStart + subseqCount - 1 > this.Sequence.Count) // allele extends beyond exon, so mind the exon boundary
                     {
-                        builder.Append(seq.Substring(subseqStart));
-                        builder.Append(var.AlternateAllele.Substring(0, (int)(this.OneBasedEnd - var.OneBasedStart)));
+                        subseqCount = (int)(this.Sequence.Count - subseqStart);
+                        long subAlleleCount = this.OneBasedEnd - var.OneBasedStart;
+                        Array.Copy(sequenceBytes, subseqStart, newSequence, subseqStart, subseqCount);
+                        Array.Copy(Encoding.UTF8.GetBytes(var.AlternateAllele), 0, newSequence, subseqStart + subseqCount, subAlleleCount);
+                        long newLength = newSequence.Length + this.OneBasedEnd - var.AlternateAllele.Length;
+                        byte[] tmpNewSequence = new byte[newLength];
+                        Array.Copy(newSequence, tmpNewSequence, newLength);
+                        newSequence = tmpNewSequence;
                     }
                     else
                     {
-                        builder.Append(seq.Substring(subseqStart, subseqCount));
-                        builder.Append(var.AlternateAllele);
+                        Array.Copy(sequenceBytes, subseqStart, newSequence, subseqStart, subseqCount);
+                        Array.Copy(Encoding.UTF8.GetBytes(var.AlternateAllele), 0, newSequence, subseqStart + subseqCount, var.AlternateAllele.Length);
                     }
                     tmpOneBasedStart = var.OneBasedStart + var.ReferenceAllele.Length;
                 }
@@ -119,9 +155,9 @@ namespace Proteogenomics
                 // Append the remaining sequence
                 subseqStart = (int)(tmpOneBasedStart - this.OneBasedStart);
                 subseqCount = (int)(OneBasedEnd - tmpOneBasedStart + 1);
-                builder.Append(seq.Substring(subseqStart, subseqCount));
-                Exon x = new Exon(this);
-                x.Sequence = new Sequence(Alphabets.DNA, builder.ToString());
+                Array.Copy(sequenceBytes, subseqStart, newSequence, subseqStart, subseqCount);
+                Sequence seq = new Sequence(this.Sequence.Alphabet, newSequence);
+                Exon x = new Exon(seq, this.OneBasedStart, this.OneBasedEnd, this.ChromID, this.Metadata);
                 x.Variants = haplotype.OfType<VariantContext>().ToList();
                 sequences.Add(x);
             }

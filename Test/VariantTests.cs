@@ -5,6 +5,8 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UsefulProteomicsDatabases;
+using Bio;
 
 namespace Test
 {
@@ -47,6 +49,12 @@ namespace Test
             Assert.IsTrue(proteins[0].FullName != null);
             Assert.IsTrue(proteins[0].FullName.Contains(ProteinAnnotation.SingleAminoAcidVariantLabel));
             Assert.IsTrue(proteins[0].FullName.Contains("1:69640"));
+
+            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_missense.fasta");
+            ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
+            string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
+            Assert.IsTrue(proteinFastaLines[0].Contains(ProteinAnnotation.SingleAminoAcidVariantLabel));
+            Assert.IsTrue(proteinFastaLines[0].Contains("1:69640"));
         }
 
         [Test]
@@ -68,6 +76,12 @@ namespace Test
             Assert.IsTrue(proteins.All(p => p.FullName != null));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SingleAminoAcidVariantLabel)));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69640")));
+
+            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_missense.fasta");
+            ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
+            string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
+            Assert.IsTrue(proteinFastaLines.Any(x => x.Contains(ProteinAnnotation.SingleAminoAcidVariantLabel)));
+            Assert.IsTrue(proteinFastaLines.Any(x => x.Contains("1:69640")));
         }
 
         [Test]
@@ -86,8 +100,14 @@ namespace Test
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(1, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
-            Assert.IsTrue(!proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SynonymousVariantLabel)));
-            Assert.IsTrue(!proteins.Any(p => p.FullName.Contains("1:69666")));
+            Assert.IsFalse(proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SynonymousVariantLabel)));
+            Assert.IsFalse(proteins.Any(p => p.FullName.Contains("1:69666")));
+
+            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.fasta");
+            ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
+            string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
+            Assert.IsFalse(proteinFastaLines[0].Contains(ProteinAnnotation.SynonymousVariantLabel));
+            Assert.IsFalse(proteinFastaLines[0].Contains("1:69666"));
         }
 
         [Test]
@@ -109,6 +129,51 @@ namespace Test
             Assert.IsTrue(proteins.All(p => p.FullName != null));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(ProteinAnnotation.SynonymousVariantLabel)));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
+
+            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_synonymous.fasta");
+            ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
+            string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
+            Assert.IsTrue(proteinFastaLines[0].Contains(ProteinAnnotation.SynonymousVariantLabel));
+            Assert.IsTrue(proteinFastaLines[0].Contains("1:69666"));
         }
+
+        [Test]
+        public void GetExonSeqsWithNearbyVariants()
+        {
+            MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
+            metadata.SubItems["strand"] = new List<string> { "+" };
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 250).ToArray())), 0, 249, "1", metadata);
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "aFewNearby.vcf"));
+            x.Variants = vcf.ToList();
+            List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);
+            Assert.AreEqual(4, h.Count);
+        }
+
+        [Test]
+        public void GetExonSeqsWithTonsNearby()
+        {
+            MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
+            metadata.SubItems["strand"] = new List<string> { "+" };
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 300).ToArray())), 0, 299, "1", metadata);
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "tonsNearby.vcf"));
+            x.Variants = vcf.ToList();
+            List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);
+            Assert.AreEqual(2, h.Count);
+        }
+
+        [Test]
+        public void GetExonSeqsWithTonsFarApart()
+        {
+            MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
+            metadata.SubItems["strand"] = new List<string> { "+" };
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 4001).ToArray())), 0, 4000, "1", metadata);
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "tonsFarApart.vcf"));
+            x.Variants = vcf.ToList();
+            List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101); // would produce 1024 combos without capping max combos
+            Assert.AreEqual(8, h.Count);
+        }
+
+        // test todo: transcript with zero CodingSequenceExons and try to translate them to check that it doesn fail
+        // test todo: multiple transcripts
     }
 }

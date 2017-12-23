@@ -78,10 +78,10 @@ namespace ToolWrapperLayer
 
                 // bioinformatics
                 "samtools",
-                "picard-tools",
                 "tophat",
                 "cufflinks",
                 "bedtools",
+                "picard-tools",
 
                 // commandline tools
                 "gawk",

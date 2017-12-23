@@ -2,6 +2,7 @@
 using Bio.IO.FastA;
 using NUnit.Framework;
 using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -145,6 +146,7 @@ namespace Test
             string[] new_files = new string[0];
 
             STARWrapper.SubsetFastqs(
+                TestContext.CurrentContext.TestDirectory,
                 new string[]
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read1.fastq"),
@@ -164,18 +166,20 @@ namespace Test
         [Test, Order(2)]
         public void TestGenomeGenerate()
         {
-            STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "genomeGenerate.bash"), 
+                STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
                 1,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir"),
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa") },
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.gtf"));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.gtf"))).WaitForExit();
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir")));
         }
 
         [Test, Order(3)]
         public void TestAlign()
         {
-            STARWrapper.BasicAlignReads
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"),
+            STARWrapper.BasicAlignReadCommands
             (
                 TestContext.CurrentContext.TestDirectory,
                 1,
@@ -186,7 +190,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","read2.fastq")
                 },
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "r.")
-            );
+            )).WaitForExit();
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "r.Aligned.out.bam")));
         }
 
@@ -253,7 +257,7 @@ namespace Test
         [Test, Order(2)]
         public void SkewerSingle()
         {
-            SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory, 
+            SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
                 19,
                 1,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read1.fastq") },
@@ -268,10 +272,10 @@ namespace Test
         [Test, Order(2)]
         public void SkewerPaired()
         {
-            SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory, 
+            SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
                 19,
                 1,
-                new string[] 
+                new string[]
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read1.fastq"),
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","read2.fastq")
@@ -299,9 +303,9 @@ namespace Test
                 },
                 out string[] readTrimmedPaths,
                 out string log);
-            Assert.True(readTrimmedPaths[0] == "read1-trimmed-pair1.fastq");
-            Assert.True(readTrimmedPaths[1] == "read1-trimmed-pair2.fastq");
-            Assert.True(log == "read1-trimmed.log");
+            Assert.True(Path.GetFileName(readTrimmedPaths[0]) == "read1-trimmed-pair1.fastq");
+            Assert.True(Path.GetFileName(readTrimmedPaths[1]) == "read1-trimmed-pair2.fastq");
+            Assert.True(Path.GetFileName(log) == "read1-trimmed.log");
             File.Delete(readTrimmedPaths[0]);
             File.Delete(readTrimmedPaths[1]);
             File.Delete(log);
@@ -314,23 +318,23 @@ namespace Test
         [Test, Order(2)]
         public void DownloadKnownSites()
         {
-            GATKWrapper.DownloadUCSCKnownVariantSites(
+            GATKWrapper.DownloadEnsemblKnownVariantSites(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 true,
                 "grch37",
-                out string knownSitesPath);
-            Assert.IsTrue(File.Exists(knownSitesPath));
+                out string ensemblKnownSitesPath);
+            Assert.IsTrue(File.Exists(ensemblKnownSitesPath));
 
             string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "setupKnownSitesTest.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
                 @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")) + " ]; " +
-                    @"then grep '^#\|^chr20\|^chr21\|^chr22\|^20\|^21\|^22' " + WrapperUtility.ConvertWindowsPath(knownSitesPath) + 
+                    @"then grep '^#\|^chr20\|^chr21\|^chr22\|^20\|^21\|^22' " + WrapperUtility.ConvertWindowsPath(ensemblKnownSitesPath) +
                     " > 202122.vcf; fi",
                 @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf")) + " ]; " +
-                    @"then grep '^#\|^chr9\|^chr22\|^chrHG1287_PATCH\|chr21_gl000210_random\|^9\|^22\|^HG1287_PATCH\|^GL000210.1' " + WrapperUtility.ConvertWindowsPath(knownSitesPath) +
+                    @"then grep '^#\|^chr9\|^chr22\|^chrHG1287_PATCH\|chr21_gl000210_random\|^9\|^22\|^HG1287_PATCH\|^GL000210.1' " + WrapperUtility.ConvertWindowsPath(ensemblKnownSitesPath) +
                     " > 922HG1287_PATCH.vcf; fi",
             }).WaitForExit();
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")));
@@ -345,15 +349,15 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 "grch37",
-                out string new_bam,
-                out string ucscGenomeFasta);
+                out string new_bam);
 
-            GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
-                8,
-                ucscGenomeFasta,
-                new_bam,
-                out string realigned_bam,
-                ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
+            // No longer needed with HaplotypeCaller
+            //GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
+            //    8,
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+            //    new_bam,
+            //    out string realigned_bam,
+            //    ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
 
             // Takes kind of a long time, and it's not recommended for RNA-Seq yet
             //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
@@ -364,12 +368,23 @@ namespace Test
 
             GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
                 8,
-                ucscGenomeFasta,
-                realigned_bam,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                new_bam,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
                 out string new_vcf);
             Assert.IsTrue(File.Exists(new_vcf));
             Assert.IsTrue(new FileInfo(new_vcf).Length > 0);
+        }
+
+        [Test, Order(5)]
+        public void convertVcf()
+        {
+            GATKWrapper.ConvertVCFChromosomesUCSC2Ensembl(TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1Ucsc.vcf"),
+                "grch37",
+                out string ensemblVcf);
+            Assert.IsTrue(File.Exists(ensemblVcf));
+            Assert.IsTrue(new FileInfo(ensemblVcf).Length > 0);
         }
 
         #endregion GATK tests
@@ -405,7 +420,7 @@ namespace Test
             ScalpelWrapper.call_indels(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "scalpel_test_out"),
                 out string new_vcf);
@@ -450,7 +465,7 @@ namespace Test
         #region Runner Tests
 
         /// <summary>
-        /// Handling multiple chromosomes
+        /// Handling multiple fastq files and chromosomes, single-end
         /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
@@ -460,21 +475,67 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
                 8, 
-                new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
+                new List<string[]>
+                {
+                    new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
+                    new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain.fastq") },
+                },
                 false,
-                true,
+                false,
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                out string proteinDatabase);
-            Assert.IsTrue(new FileInfo(proteinDatabase).Length > 0);
-            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmed.fastq"));
+                out List<string> proteinDatabases);
+            foreach (string database in proteinDatabases)
+            {
+                Assert.IsTrue(new FileInfo(database).Length > 0);
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+            }
         }
 
         /// <summary>
-        /// Single chromosome, so faster, but 
+        /// Handling multiple fastq files and chromosomes, single end
+        /// </summary>
+        [Test, Order(3)]
+        public void FullProteinRunFromTwoPairsFastqs()
+        {
+            if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq")))
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
+            if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
+            Fastq2ProteinsEngine.RunFromFastqs(
+                TestContext.CurrentContext.TestDirectory,
+                TestContext.CurrentContext.TestDirectory,
+                "grch37",
+                8,
+                new List<string[]>
+                {
+                    new string[] {
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"),
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq") },
+                    new string[] {
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"),
+                        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq") }
+                },
+                false,
+                false,
+                true,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
+                out List<string> proteinDatabases);
+            foreach (string database in proteinDatabases)
+            {
+                Assert.IsTrue(new FileInfo(database).Length > 0);
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+            }
+        }
+
+        /// <summary>
+        /// Handling tough non-karyotypic ordering of chromosomes and an SRA input
         /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
@@ -486,16 +547,20 @@ namespace Test
                 8,
                 "SRR6319804",
                 false,
-                true,
+                false,
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
-                out string proteinDatabase,
+                out List<string> proteinDatabases,
                 true,
                 1000);
-            Assert.IsTrue(new FileInfo(proteinDatabase).Length > 0);
+            foreach (string database in proteinDatabases)
+            {
+                Assert.IsTrue(new FileInfo(database).Length > 0);
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+            }
         }
 
         #endregion Runner Tests

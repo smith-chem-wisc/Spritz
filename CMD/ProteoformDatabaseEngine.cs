@@ -1,11 +1,12 @@
-﻿using System;
+﻿using CommandLine;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using WorkflowLayer;
-using ToolWrapperLayer;
-using CommandLine;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using ToolWrapperLayer;
+using WorkflowLayer;
+using Proteogenomics;
 
 namespace CMD
 {
@@ -54,6 +55,8 @@ namespace CMD
 
             #region Proteoform Database Engine
 
+            // finish setup of options
+
             EnsemblDownloadsWrapper.DownloadReferences(
                 options.BinDirectory, 
                 options.AnalysisDirectory, 
@@ -63,18 +66,30 @@ namespace CMD
                 out string gff3GeneModelPath);
 
             if (options.GenomeStarIndexDirectory == null)
-                options.GenomeStarIndexDirectory = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
-            if (options.GenomeFasta == null)
-                options.GenomeFasta = genomeFastaPath;
-            if (options.GeneModelGtfOrGff == null)
-                options.GeneModelGtfOrGff = gff3GeneModelPath;
-            if (options.ReferenceVcf == null)
             {
-                GATKWrapper.DownloadUCSCKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string a);
-                options.ReferenceVcf = a;
+                options.GenomeStarIndexDirectory = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
             }
 
-            string proteinDb;
+            if (options.GenomeFasta == null)
+            {
+                options.GenomeFasta = genomeFastaPath;
+            }
+
+            if (options.GeneModelGtfOrGff == null)
+            {
+                options.GeneModelGtfOrGff = gff3GeneModelPath;
+            }
+
+            if (options.ReferenceVcf == null)
+            {
+                GATKWrapper.DownloadEnsemblKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string ensemblVcfPath);
+                options.ReferenceVcf = ensemblVcfPath;
+            }
+
+            // run the program
+
+            List<string> proteinDatabases = new List<string>();
+
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
                 Fastq2ProteinsEngine.RunFromSra(
@@ -90,16 +105,26 @@ namespace CMD
                     options.GenomeFasta,
                     options.GeneModelGtfOrGff,
                     options.ReferenceVcf,
-                    out proteinDb);
+                    out proteinDatabases);
             }
+
             else if (options.Fastq1 != null)
             {
+                // Parse comma-separated fastq lists
+                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
+                    return;
+
+                string[] fastqs1 = options.Fastq1.Split(',');
+                List<string[]> fastqsSeparated = options.Fastq2 == null ?
+                    fastqs1.Select(x => new string[] { x }).ToList() :
+                    fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
+
                 Fastq2ProteinsEngine.RunFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
                     options.Threads,
-                    options.Fastq2 == null ? new string[] { options.Fastq1 } : new string[] { options.Fastq1, options.Fastq2 },
+                    fastqsSeparated,
                     options.StrandSpecific,
                     options.InferStrandSpecificity,
                     options.OverwriteStarAlignments,
@@ -107,14 +132,21 @@ namespace CMD
                     options.GenomeFasta,
                     options.GeneModelGtfOrGff,
                     options.ReferenceVcf,
-                    out proteinDb);
-            }
-            else
-            {
-                proteinDb = "Error: no fastq or sequence read archive (SRA) was provided.";
+                    out proteinDatabases);
             }
 
-            Console.WriteLine("ouptput database to " + proteinDb);
+            else if (args.Contains("vcf2protein"))
+            {
+                Genome genome = new Genome(options.GenomeFasta);
+                proteinDatabases.Add(Fastq2ProteinsEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+            }
+
+            else
+            {
+                proteinDatabases = new List<string> { "Error: no fastq or sequence read archive (SRA) was provided." };
+            }
+
+            Console.WriteLine("output databases to " + String.Join(", and ", proteinDatabases));
             Console.ReadKey();
             
             #endregion Proteoform Database Engine
