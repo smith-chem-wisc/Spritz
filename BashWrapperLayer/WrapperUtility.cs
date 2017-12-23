@@ -55,6 +55,11 @@ namespace ToolWrapperLayer
             return RunBashCommand(@"bash", ConvertWindowsPath(script_path));
         }
 
+        public static string EnsureClosedFileCommands(string path)
+        {
+            return "exec 3<> " + ConvertWindowsPath(path) + "; exec 3>&-";
+        }
+
         public static void Install(string binDirectory)
         {
             List<string> commands = new List<string>

@@ -10,6 +10,7 @@ namespace WorkflowLayer
             WrapperUtility.Install(binDirectory);
             Parallel.Invoke
             (
+                () => SnpEffWrapper.Install(binDirectory),
                 () => GATKWrapper.Install(binDirectory),
                 () => RSeQCWrapper.Install(binDirectory),
                 () => ScalpelWrapper.Install(binDirectory),

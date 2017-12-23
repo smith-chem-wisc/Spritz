@@ -22,6 +22,8 @@ namespace Test
         {
             InstallFlow.Run(TestContext.CurrentContext.TestDirectory);
 
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "snpEff.jar")));
+
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
 
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
@@ -61,7 +63,8 @@ namespace Test
                 "grch37",
                 out genomeFastaPath,
                 out string gtf,
-                out string gff
+                out string gff,
+                out string proteinFasta
             );
 
             // - a basic set of chromosomes, fairly small ones
@@ -371,9 +374,9 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 new_bam,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                out string new_vcf);
-            Assert.IsTrue(File.Exists(new_vcf));
-            Assert.IsTrue(new FileInfo(new_vcf).Length > 0);
+                out string newVcf);
+            Assert.IsTrue(File.Exists(newVcf));
+            Assert.IsTrue(new FileInfo(newVcf).Length > 0);
         }
 
         [Test, Order(5)]
@@ -417,17 +420,45 @@ namespace Test
         [Test, Order(4)]
         public void ScalpelCall()
         {
-            ScalpelWrapper.call_indels(TestContext.CurrentContext.TestDirectory,
+            ScalpelWrapper.CallIndels(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "scalpel_test_out"),
-                out string new_vcf);
-            Assert.IsTrue(File.Exists(new_vcf));
+                out string newVcf);
+            Assert.IsTrue(File.Exists(newVcf));
         }
 
-        #endregion
+        #endregion Scalpel tests
+
+        #region SnpEff tests
+
+        [Test, Order(1)]
+        public void DownloadSnpEffDatabase()
+        {
+            SnpEffWrapper.DownloadSnpEffDatabase(TestContext.CurrentContext.TestDirectory,
+                "grch37",
+                out string databaseListPath);
+            Assert.IsTrue(File.Exists(databaseListPath));
+            string[] databases = Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "data"));
+            Assert.IsTrue(databases.Any(x => Path.GetFileName(x).StartsWith("grch37", true, null)));
+        }
+
+        [Test, Order(4)]
+        public void BasicSnpEffAnnotation()
+        {
+            SnpEffWrapper.PrimaryVariantAnnotation(TestContext.CurrentContext.TestDirectory,
+                "grch37",
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1-trimmed-pair1Aligned.sortedByCoord.outProcessed.out.split.vcf"),
+                out string html,
+                out string annVcf
+                );
+            Assert.IsTrue(File.Exists(html) && new FileInfo(html).Length > 0);
+            Assert.IsTrue(File.Exists(annVcf) && new FileInfo(annVcf).Length > 0);
+        }
+
+        #endregion SnpEff tests
 
         #region Bigger STAR tests
 
@@ -487,6 +518,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases);
             foreach (string database in proteinDatabases)
             {
@@ -526,6 +558,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases);
             foreach (string database in proteinDatabases)
             {
@@ -553,6 +586,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases,
                 true,
                 1000);

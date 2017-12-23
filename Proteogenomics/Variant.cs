@@ -1,5 +1,6 @@
 ﻿using Bio.VCF;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Proteogenomics
 {
@@ -10,6 +11,8 @@ namespace Proteogenomics
         #region Public Properties
 
         public VariantContext OriginalContext { get; set; }
+
+        public List<SnpEffAnnotation> SnpEffAnnotations { get; set; } = new List<SnpEffAnnotation>();
 
         public string ReferenceAllele { get; set; }
 
@@ -34,10 +37,18 @@ namespace Proteogenomics
             OneBasedStart = variant.Start;
             ReferenceAllele = variant.Reference.BaseString;
             AlternateAllele = variant.AlternateAlleles[zeroBasedAlleleIndex].BaseString;
-            object af_obj = variant.Attributes["AF"];
-            if (af_obj as string[] != null && double.TryParse((af_obj as string[])[zeroBasedAlleleIndex], out double af)) AlleleFrequency = af;
-            else if (double.TryParse(af_obj as string, out double af2)) AlleleFrequency = af2;
-            else AlleleFrequency = 1;
+            AlleleFrequency = 1;
+
+            if (variant.Attributes.TryGetValue("ANN", out object snpEffAnnotationObj))
+            {
+                SnpEffAnnotations = (snpEffAnnotationObj as string).Split(',').Select(x => new SnpEffAnnotation(x)).ToList();
+            }
+            if (variant.Attributes.TryGetValue("AF", out object alleleFrequencyObj))
+            {
+                if (alleleFrequencyObj as string[] != null && double.TryParse((alleleFrequencyObj as string[])[zeroBasedAlleleIndex], out double af)) AlleleFrequency = af;
+                else if (double.TryParse(alleleFrequencyObj as string, out double af2)) AlleleFrequency = af2;
+                else AlleleFrequency = 1;
+            }
         }
 
         #endregion Public Constructor
