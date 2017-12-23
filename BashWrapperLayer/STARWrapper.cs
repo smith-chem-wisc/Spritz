@@ -35,7 +35,6 @@ namespace ToolWrapperLayer
 
         public static List<string> GenerateGenomeIndex(string binDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
-            if (!Directory.Exists(genomeDir)) Directory.CreateDirectory(genomeDir);
             string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
                 " --runMode genomeGenerate" +
@@ -50,7 +49,8 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "STAR/source/STAR" + arguments
+                "mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir),
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR/source/STAR" + arguments + "; fi"
             };
         }
 
@@ -75,6 +75,7 @@ namespace ToolWrapperLayer
 
         public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, out string spliceJunctionStarts)
         {
+            if (spliceJunctionOuts.Count == 0) throw new ArgumentException("STARWrapper.ProcessFirstPassSpliceCommands: No splice junctions detected for second-pass genome generation.");
             spliceJunctionStarts = Path.Combine(Path.GetDirectoryName(spliceJunctionOuts[0]), "combined." + SpliceJunctionFileSuffix);
             return new List<string>
             {
@@ -114,7 +115,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [ ! -f " + fileToCheck + " ]; then STAR/source/STAR" + arguments + "; fi",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " ) ]]; then STAR/source/STAR" + arguments + "; fi",
                 File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             };
         }
@@ -156,8 +157,8 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ]; then STAR/source/STAR" + alignmentArguments + "; fi",
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ]; then STAR/source/STAR" + dedupArguments + "; fi",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then STAR/source/STAR" + alignmentArguments + "; fi",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then STAR/source/STAR" + dedupArguments + "; fi",
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             };
         }

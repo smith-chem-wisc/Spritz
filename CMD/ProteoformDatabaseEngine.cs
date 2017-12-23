@@ -63,7 +63,13 @@ namespace CMD
                 options.Reference, 
                 out string genomeFastaPath,
                 out string gtfGeneModelPath,
-                out string gff3GeneModelPath);
+                out string gff3GeneModelPath,
+                out string proteinFastaPath);
+
+            SnpEffWrapper.DownloadSnpEffDatabase(
+                options.BinDirectory,
+                options.Reference,
+                out string snpEffDatabaseListPath);
 
             if (options.GenomeStarIndexDirectory == null)
             {
@@ -103,6 +109,7 @@ namespace CMD
                     options.OverwriteStarAlignments,
                     options.GenomeStarIndexDirectory,
                     options.GenomeFasta,
+                    proteinFastaPath,
                     options.GeneModelGtfOrGff,
                     options.ReferenceVcf,
                     out proteinDatabases);
@@ -130,6 +137,7 @@ namespace CMD
                     options.OverwriteStarAlignments,
                     options.GenomeStarIndexDirectory,
                     options.GenomeFasta,
+                    proteinFastaPath,
                     options.GeneModelGtfOrGff,
                     options.ReferenceVcf,
                     out proteinDatabases);
@@ -138,7 +146,8 @@ namespace CMD
             else if (args.Contains("vcf2protein"))
             {
                 Genome genome = new Genome(options.GenomeFasta);
-                proteinDatabases.Add(Fastq2ProteinsEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+                proteinDatabases.Add(Fastq2ProteinsEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, badProteinAccessions, selenocysteineContainingAccessions, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
 
             else

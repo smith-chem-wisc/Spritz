@@ -1,0 +1,13 @@
+#!genome-build GRCh37.p13
+#!genome-version GRCh37
+#!genome-date 2009-02
+#!genome-build-accession NCBI:GCA_000001405.14
+#!genebuild-last-updated 2013-09
+1	protein_coding	gene	738532	739137	.	-	.	gene_id "ENSG00000269831"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding";
+1	protein_coding	transcript	738532	739137	.	-	.	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl";
+1	protein_coding	exon	739121	739137	.	-	.	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; exon_number "1"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl"; exon_id "ENSE00003063549";
+1	protein_coding	CDS	739121	739137	.	-	0	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; exon_number "1"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl"; protein_id "ENSP00000468859";
+1	protein_coding	exon	738788	738812	.	-	.	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; exon_number "2"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl"; exon_id "ENSE00003084653";
+1	protein_coding	CDS	738788	738812	.	-	1	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; exon_number "2"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl"; protein_id "ENSP00000468859";
+1	protein_coding	exon	738532	738618	.	-	.	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; exon_number "3"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl"; exon_id "ENSE00003138540";
+1	protein_coding	CDS	738532	738618	.	-	0	gene_id "ENSG00000269831"; transcript_id "ENST00000599533"; exon_number "3"; gene_name "AL669831.1"; gene_source "ensembl"; gene_biotype "protein_coding"; transcript_name "AL669831.1-201"; transcript_source "ensembl"; protein_id "ENSP00000468859";

@@ -1,0 +1,9 @@
+#!genome-build GRCh37.p13
+#!genome-version GRCh37
+#!genome-date 2009-02
+#!genome-build-accession NCBI:GCA_000001405.14
+#!genebuild-last-updated 2013-09
+MT	insdc	gene	4470	5511	.	+	.	ID=gene:ENSG00000198763;Name=MT-ND2;biotype=protein_coding;description=mitochondrially encoded NADH dehydrogenase 2 [Source:HGNC Symbol%3BAcc:HGNC:7456];gene_id=ENSG00000198763;logic_name=mt_genbank_import;version=3
+MT	insdc	transcript	4470	5511	.	+	.	ID=transcript:ENST00000361453;Parent=gene:ENSG00000198763;Name=MT-ND2-201;biotype=protein_coding;tag=basic;transcript_id=ENST00000361453;transcript_support_level=NA;version=3
+MT	ensembl	exon	4470	5511	.	+	.	Parent=transcript:ENST00000361453;Name=ENSE00001435686;constitutive=1;ensembl_end_phase=1;ensembl_phase=0;exon_id=ENSE00001435686;rank=1;version=3
+MT	ensembl	CDS	4470	5511	.	+	0	ID=CDS:ENSP00000355046;Parent=transcript:ENST00000361453;protein_id=ENSP00000355046

@@ -4,7 +4,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using WorkflowLayer;
+using UsefulProteomicsDatabases;
 using ToolWrapperLayer;
 
 namespace Test
@@ -97,6 +97,35 @@ namespace Test
             Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headersShort.fa"));
             var seqs = headers.KaryotypicOrder(" ");
             Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr9" && seqs[1].ID.Split(' ')[0] == "chr20");
+        }
+
+        [Test]
+        public void SameProteins()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr5script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then wget ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then gunzip " + EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename + ".gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.pep.all.fa"))
+            }).WaitForExit();
+            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+
+            Genome genome = new Genome(@"D:\GRCh38.81\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
+            GeneModel geneModel = new GeneModel(genome, @"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gff3");
+            List<Protein> geneBasedProteins = geneModel.Translate(true, true, badProteinAccessions, selenocysteineContainingAccessions);
+            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh38.81\Homo_sapiens.GRCh38.pep.all.fasta", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression);
+            Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
+
+            foreach (Protein p in proteins)
+            {
+                if (accSeq.TryGetValue(p.Accession, out string seq)) // now handled with the badAccessions: && !p.BaseSequence.Contains('*') && !seq.Contains('*') && !p.BaseSequence.Contains('X'))
+                {
+                    // there are instances where alternative start codons are used where Ensembl somehow doesn't include them correctly
+                    if (!p.FullName.Contains("GRCh38:MT")) Assert.AreEqual(p.BaseSequence, seq);
+                    else Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1)); 
+                }
+            }
         }
 
         //[Test]

@@ -19,7 +19,7 @@ namespace Proteogenomics
         #region Public Constructor
 
         public Genome(string genomeFastaLocation)
-        {
+        {                
             Chromosomes = new FastAParser().Parse(genomeFastaLocation).ToList();
         }
 

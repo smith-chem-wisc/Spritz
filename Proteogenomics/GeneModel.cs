@@ -215,9 +215,9 @@ namespace Proteogenomics
 
         #region Translation Methods
 
-        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants)
+        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
-            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants)).ToList();
+            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, badProteinAccessions, selenocysteineContaining)).ToList();
         }
 
         public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
@@ -233,6 +233,8 @@ namespace Proteogenomics
         private static void ForceGffVersionTo2(string gffPath, out string gffWithVersionMarked2Path)
         {
             gffWithVersionMarked2Path = Path.Combine(Path.GetDirectoryName(gffPath), Path.GetFileNameWithoutExtension(gffPath) + ".gff2" + Path.GetExtension(gffPath));
+            if (File.Exists(gffWithVersionMarked2Path)) return;
+
             using (StreamReader reader = new StreamReader(gffPath))
             using (StreamWriter writer = new StreamWriter(gffWithVersionMarked2Path))
             {

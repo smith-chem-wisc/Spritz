@@ -1,6 +1,5 @@
-﻿using Bio;
+﻿using Bio.Algorithms.Translation;
 using Bio.Extensions;
-using Bio.Algorithms.Translation;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -24,9 +23,9 @@ namespace Proteogenomics
 
         #region Public Methods
 
-        public static Protein OneFrameTranslationWithAnnotation(TranscriptPossiblyWithVariants transcript)
+        public static Protein OneFrameTranslationWithAnnotation(TranscriptPossiblyWithVariants transcript, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
-            return OneFrameTranslationWithAnnotation(new List<TranscriptPossiblyWithVariants> { transcript }).FirstOrDefault();
+            return OneFrameTranslationWithAnnotation(new List<TranscriptPossiblyWithVariants> { transcript }, badProteinAccessions, selenocysteineContaining).FirstOrDefault();
         }
 
         // get the SAV notation X#X
@@ -34,18 +33,18 @@ namespace Proteogenomics
         // get the SNV location 1:100000
         // get the codon change Gcc/Acc
         static HashSet<string> accessions = new HashSet<string>();
-        public static List<Protein> OneFrameTranslationWithAnnotation(List<TranscriptPossiblyWithVariants> transcripts)
+        public static List<Protein> OneFrameTranslationWithAnnotation(List<TranscriptPossiblyWithVariants> transcripts, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
+            badProteinAccessions = badProteinAccessions != null ? badProteinAccessions : new HashSet<string>();
+            selenocysteineContaining = selenocysteineContaining != null ? selenocysteineContaining : new Dictionary<string, string>();
             Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+
             foreach (TranscriptPossiblyWithVariants t in transcripts)
             {
-                ISequence referenceTranscriptSequence = new Sequence(
-                    t.GetExonsUsedInDerivation().OrderByDescending(x => x.Sequence.Alphabet.Count).First().Sequence.Alphabet,
-                    t.GetExonsUsedInDerivation().SelectMany(x => x.Sequence).ToArray());
-                ISequence variantTranscriptSequence = t.Transcript.Strand == "+" ? t.Sequence : t.Sequence.GetReverseComplementedSequence();
-                referenceTranscriptSequence = t.Transcript.Strand == "+" ? referenceTranscriptSequence : referenceTranscriptSequence.GetReverseComplementedSequence();
-                int[] indices = t.GetExonsUsedInDerivation().SelectMany(x => Enumerable.Range((int)x.OneBasedStart, (int)(x.OneBasedEnd - x.OneBasedStart + 1))).ToArray();
-                indices = t.Transcript.Strand == "+" ? indices : indices.Reverse().ToArray();
+                if (badProteinAccessions.Contains(t.ProteinID))
+                    continue; // don't process proteins that have CDS without discrete sequence or without actual start or stop, i.e. containing 'X' or '*'
+                t.PrepareForTranslation();
+                bool hasSelenocysteine = selenocysteineContaining.TryGetValue(t.ProteinID, out string selenocysteineContainingSeq);
                 Variant[] variants = new List<Variant>(t.Variants).ToArray();
                 variants = t.Transcript.Strand == "+" ? variants : variants.Reverse().ToArray();
 
@@ -53,20 +52,17 @@ namespace Proteogenomics
                 int variantIndex = 0;
                 long refSeqIdx = t.ZeroBasedCodingStart - 3;
                 long oneBasedTranscriptStart = t.Transcript.Exons.Min(x => x.OneBasedStart);
-                for (long varSeqIdx = 0; varSeqIdx + 2 < variantTranscriptSequence.Count; varSeqIdx += 3)
+                for (long varSeqIdx = 0; varSeqIdx + 2 < t.VariantTranscriptSequence.Count; varSeqIdx += 3)
                 {
                     refSeqIdx += 3;
-                    Codons.TryLookup(Transcription.GetRnaComplement(referenceTranscriptSequence[refSeqIdx]),
-                            Transcription.GetRnaComplement(referenceTranscriptSequence[refSeqIdx + 1]),
-                            Transcription.GetRnaComplement(referenceTranscriptSequence[refSeqIdx + 2]),
-                            out byte originalAminoAcid);
-                    Codons.TryLookup(Transcription.GetRnaComplement(variantTranscriptSequence[varSeqIdx]),
-                        Transcription.GetRnaComplement(variantTranscriptSequence[varSeqIdx + 1]),
-                        Transcription.GetRnaComplement(variantTranscriptSequence[varSeqIdx + 2]),
-                        out byte newAminoAcid);
-                    variantAminoAcidSequence += char.ToUpperInvariant((char)newAminoAcid);
+                    bool checkForSelenocysteine = hasSelenocysteine && varSeqIdx / 3 < selenocysteineContainingSeq.Length;
+                    byte selenoSeqAminoAcid = checkForSelenocysteine ? (byte)selenocysteineContainingSeq[(int)(varSeqIdx / 3)] : new byte();
+                    TryTranslateBytes(t.Mitochondrial, t.ReferenceTranscriptSequence[refSeqIdx], t.ReferenceTranscriptSequence[refSeqIdx + 1], t.ReferenceTranscriptSequence[refSeqIdx + 2], out byte originalAminoAcid);
+                    TryTranslateBytes(t.Mitochondrial, t.VariantTranscriptSequence[varSeqIdx], t.VariantTranscriptSequence[varSeqIdx + 1], t.VariantTranscriptSequence[varSeqIdx + 2], out byte newAminoAcid);
+                    bool properSelenocysteineSite = hasSelenocysteine && char.ToUpperInvariant((char)selenoSeqAminoAcid) == 'U' && char.ToUpperInvariant((char)newAminoAcid) == '*';
+                    variantAminoAcidSequence += properSelenocysteineSite ? char.ToUpperInvariant((char)selenoSeqAminoAcid) : char.ToUpperInvariant((char)newAminoAcid);
 
-                    long[] referenceCodonIndices = new long[] { indices[refSeqIdx], indices[refSeqIdx + 1], indices[refSeqIdx + 2] };
+                    long[] referenceCodonIndices = new long[] { t.Indices[refSeqIdx], t.Indices[refSeqIdx + 1], t.Indices[refSeqIdx + 2] };
                     if (variantIndex < variants.Length && referenceCodonIndices.Contains(variants[variantIndex].OneBasedStart))
                     {
                         Variant v = variants[variantIndex++];
@@ -76,19 +72,21 @@ namespace Proteogenomics
                             v.Synonymous = originalAminoAcid == newAminoAcid;
                             v.Annotation = (v.Synonymous ? SynonymousVariantLabel : SingleAminoAcidVariantLabel) + " " +
                                 char.ToUpperInvariant((char)originalAminoAcid) + aminoAcidPosition.ToString() + char.ToUpperInvariant((char)newAminoAcid) + " " +
-                                v.Chr + ":" + v.OneBasedStart + " " +
-                                String.Join("",
-                                    char.ToUpperInvariant((char)referenceTranscriptSequence[refSeqIdx]),
-                                    char.ToUpperInvariant((char)referenceTranscriptSequence[refSeqIdx + 1]),
-                                    char.ToUpperInvariant((char)referenceTranscriptSequence[refSeqIdx + 2]))
+                                v.Chr + ":" + 
+                                v.OneBasedStart + " " +
+                                new string(new char[] {
+                                    char.ToUpperInvariant((char)t.ReferenceTranscriptSequence[refSeqIdx]),
+                                    char.ToUpperInvariant((char)t.ReferenceTranscriptSequence[refSeqIdx + 1]),
+                                    char.ToUpperInvariant((char)t.ReferenceTranscriptSequence[refSeqIdx + 2]) })
                                 + "/" +
-                                String.Join("",
-                                    char.ToUpperInvariant((char)variantTranscriptSequence[varSeqIdx]),
-                                    char.ToUpperInvariant((char)variantTranscriptSequence[varSeqIdx + 1]),
-                                    char.ToUpperInvariant((char)variantTranscriptSequence[varSeqIdx + 2]));
+                                new string(new char[] {
+                                    char.ToUpperInvariant((char)t.VariantTranscriptSequence[varSeqIdx]),
+                                    char.ToUpperInvariant((char)t.VariantTranscriptSequence[varSeqIdx + 1]),
+                                    char.ToUpperInvariant((char)t.VariantTranscriptSequence[varSeqIdx + 2]) }) + " " +
+                                (v.Synonymous ? "AF=" + v.AlleleFrequency.ToString() : "");
                         }
 
-                        // TODO: adjust indices to keep stepping across the right portion of the reference transcript
+                        // TODO: adjust t.Indices to keep stepping across the right portion of the reference transcript
                         // TODO: take into account when frameshifts make it miss a stop codon, or if a stop loss causes a runon -- could continue to take from the genome and look up variants...
                         else
                         {
@@ -109,19 +107,12 @@ namespace Proteogenomics
                             {
                                 string originalSequence = new string(new char[] { char.ToUpperInvariant((char)originalAminoAcid) });
                                 string variantSequence = new string(new char[] { char.ToUpperInvariant((char)newAminoAcid) });
-                                for (long ii = refSeqIdx + 3; ii + 2 < referenceTranscriptSequence.Count && (ii - refSeqIdx) / 3 < ((longerAllele.Length - shorterAllele.Length) / 3) + 1; ii += 3)
+                                for (long ii = refSeqIdx + 3; ii + 2 < t.ReferenceTranscriptSequence.Count && (ii - refSeqIdx) / 3 < ((longerAllele.Length - shorterAllele.Length) / 3) + 1; ii += 3)
                                 {
                                     long jj = ii - t.ZeroBasedCodingStart;
-                                    if (insertion && Codons.TryLookup(
-                                            Transcription.GetRnaComplement(variantTranscriptSequence[jj]),
-                                            Transcription.GetRnaComplement(variantTranscriptSequence[jj + 1]),
-                                            Transcription.GetRnaComplement(variantTranscriptSequence[jj + 2]),
-                                            out byte newAminoAcid2))
+                                    if (insertion && TryTranslateBytes(t.Mitochondrial, t.VariantTranscriptSequence[jj], t.VariantTranscriptSequence[jj + 1], t.VariantTranscriptSequence[jj + 2], out byte newAminoAcid2))
                                         variantSequence += newAminoAcid2;
-                                    if (deletion && Codons.TryLookup(Transcription.GetRnaComplement(referenceTranscriptSequence[ii]),
-                                            Transcription.GetRnaComplement(referenceTranscriptSequence[ii + 1]),
-                                            Transcription.GetRnaComplement(referenceTranscriptSequence[ii + 2]),
-                                            out byte originalAminoAcid2))
+                                    if (deletion && TryTranslateBytes(t.Mitochondrial, t.ReferenceTranscriptSequence[ii], t.ReferenceTranscriptSequence[ii + 1], t.ReferenceTranscriptSequence[ii + 2], out byte originalAminoAcid2))
                                         originalSequence += originalAminoAcid2;
                                 }
                                 v.Annotation = (insertion ? InFrameInsertionLabel : InFrameDeletionLabel) + " " +
@@ -138,7 +129,8 @@ namespace Proteogenomics
                     accession = t.ProteinID + "_v" + arbitraryNumber++.ToString();
                 }
                 t.ProteinAnnotation = String.Join(" ", t.Variants.Select(v => v.Annotation)) + " OS=Homo sapiens GN=" + t.Transcript.Gene.ID;
-                Protein newProtein = new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, t.ProteinAnnotation);
+                List<SequenceVariation> sequenceVariations = variants.Select(v => new SequenceVariation(v.OneBasedStart, v.ReferenceAllele, v.AlternateAllele, v.Annotation)).ToList();
+                Protein newProtein = new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, t.ProteinAnnotation, false, false, null, sequenceVariations);
                 AddProteinIfLessComplex(proteinDictionary, newProtein);
                 accessions.Add(newProtein.Accession);
             }
@@ -214,6 +206,30 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
+
+        #region Private Methods
+
+        private static bool TryTranslateBytes(bool mitochondrial, byte base1, byte base2, byte base3, out byte aminoAcid)
+        {
+            if (mitochondrial)
+            {
+                return VertebrateMitochondrialCodons.TryLookup(
+                    Transcription.GetRnaComplement(base1),
+                    Transcription.GetRnaComplement(base2),
+                    Transcription.GetRnaComplement(base3),
+                    out aminoAcid);
+            }
+            else
+            {
+                return Codons.TryLookup(
+                    Transcription.GetRnaComplement(base1),
+                    Transcription.GetRnaComplement(base2),
+                    Transcription.GetRnaComplement(base3),
+                    out aminoAcid);
+            }
+        }
+
+        #endregion Private Methods
 
     }
 }

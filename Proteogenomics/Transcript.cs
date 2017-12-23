@@ -49,7 +49,7 @@ namespace Proteogenomics
         #region Public Methods
 
         public static List<string> combinatoricFailures = new List<string>();
-        public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants)
+        public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
             List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants, out bool successfulCombination).Where(t => t.OkayToTranslate()).ToList();
             if (!successfulCombination)
@@ -57,7 +57,7 @@ namespace Proteogenomics
                 combinatoricFailures.Add(ID);
                 Console.WriteLine("combining exons failed " + combinatoricFailures.Count.ToString());
             }
-            return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes);
+            return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes, badProteinAccessions, selenocysteineContaining);
         }
 
         public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
@@ -87,15 +87,15 @@ namespace Proteogenomics
                             long exonLengthBeforeCodingStart = Exons.Where(x => x.OneBasedEnd < annotatedStart.OneBasedStart).Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
                             long exonZeroBasedCodingStart = startCodonStart - Exons.FirstOrDefault(x => x.Includes(annotatedStart.OneBasedStart)).OneBasedStart;
                             transcript.ZeroBasedCodingStart = exonLengthBeforeCodingStart + exonZeroBasedCodingStart;
-                            long lengthAfterCodingStart = transcript.Sequence.Count - transcript.ZeroBasedCodingStart;
-                            transcript.Sequence = transcript.Sequence.GetSubSequence(transcript.ZeroBasedCodingStart, lengthAfterCodingStart);
+                            long lengthAfterCodingStart = transcript.VariantTranscriptSequence.Count - transcript.ZeroBasedCodingStart;
+                            transcript.VariantTranscriptSequence = transcript.VariantTranscriptSequence.GetSubSequence(transcript.ZeroBasedCodingStart, lengthAfterCodingStart);
                         }
                         else
                         {
                             long length = Exons.Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
                             long chop = Exons.Where(x => x.OneBasedEnd >= annotatedStart.OneBasedEnd).Sum(x => annotatedStart.OneBasedEnd < x.OneBasedStart ? x.OneBasedEnd - x.OneBasedStart + 1 : x.OneBasedEnd - annotatedStart.OneBasedEnd);
                             long lengthAfterCodingStart = length - chop;
-                            transcript.Sequence = transcript.Sequence.GetSubSequence(0, lengthAfterCodingStart);
+                            transcript.VariantTranscriptSequence = transcript.VariantTranscriptSequence.GetSubSequence(0, lengthAfterCodingStart);
                         }
                         Protein p = ProteinAnnotation.OneFrameTranslationWithAnnotation(transcript);
                         if (p.BaseSequence.Length >= minLength && ProteinAnnotation.AddProteinIfLessComplex(proteinDictionary, p))
@@ -141,13 +141,17 @@ namespace Proteogenomics
             totalBranches = (int)Math.Pow(2, exonSequences.Sum(possibleExons => possibleExons.Count - 1)) - Convert.ToInt32(exonSequences.Count == 0);
             TranscriptPossiblyWithVariants[] haplotypicSequences = new TranscriptPossiblyWithVariants[totalBranches];
             byte nByte = Encoding.UTF8.GetBytes("N".ToArray()).First();
+            if (Strand != "+")
+                exonSequences.Reverse();
             foreach (List<Exon> branchedExons in exonSequences)
             {
                 for (int branch = 0; branch < branchedExons.Count; branch++)
                 {
                     // using byte arrays for intermediate data structures greatly improves performance because of copying and storage efficiency over strings
+                    Sequence sequence = Strand == "+" ? branchedExons[branch].Sequence as Sequence : branchedExons[branch].Sequence.GetReverseComplementedSequence() as Sequence;
                     byte[] branchedExonBytes = new byte[branchedExons[branch].Sequence.Count];
-                    (branchedExons[branch].Sequence as Sequence).CopyTo(branchedExonBytes, 0, branchedExonBytes.Length);
+                    sequence.CopyTo(branchedExonBytes, 0, branchedExonBytes.Length);
+                    string seq = new string(branchedExonBytes.Select(b => char.ToUpperInvariant((char)b)).ToArray()); // debugging
 
                     int partitionLength = haplotypicSequences.Length / branchedExons.Count;
                     int startIdx = branch * partitionLength;
@@ -158,15 +162,16 @@ namespace Proteogenomics
                         {
                             haplotypicSequences[j] = new TranscriptPossiblyWithVariants(this,
                                 translateCodingDomains,
-                                branchedExons[branch].Sequence,
+                                sequence,
                                 branchedExons[branch].Sequence.Contains(nByte),
                                 branchedExons[branch].Variants.OfType<Variant>().ToList());
                         }
                         else
                         {
-                            byte[] newSeq = new byte[haplotypicSequences[j].Sequence.Count + branchedExonBytes.Length];
-                            (haplotypicSequences[j].Sequence as Sequence).CopyTo(newSeq, 0, haplotypicSequences[j].Sequence.Count);
-                            Array.Copy(newSeq, haplotypicSequences[j].Sequence.Count, branchedExonBytes, 0, branchedExonBytes.Length);
+                            byte[] newSeq = new byte[haplotypicSequences[j].VariantTranscriptSequence.Count + branchedExonBytes.Length];
+                            (haplotypicSequences[j].VariantTranscriptSequence as Sequence).CopyTo(newSeq, 0, haplotypicSequences[j].VariantTranscriptSequence.Count);
+                            Array.Copy(branchedExonBytes, 0, newSeq, haplotypicSequences[j].VariantTranscriptSequence.Count, branchedExonBytes.Length);
+                            haplotypicSequences[j].VariantTranscriptSequence = new Sequence(haplotypicSequences[j].VariantTranscriptSequence.Alphabet, newSeq);
                         }
                     }
                 }

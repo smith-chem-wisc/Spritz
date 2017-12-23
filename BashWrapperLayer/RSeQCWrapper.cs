@@ -25,15 +25,6 @@ namespace ToolWrapperLayer
             {
                 geneModelPath = BEDOPSWrapper.Gtf2Bed12(binDirectory, geneModelPath);
             }
-            string script_path = Path.Combine(binDirectory, "scripts", "inferInnerDistance.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "python RSeQC-2.6.4/scripts/inner_distance.py" + 
-                    " -i " + WrapperUtility.ConvertWindowsPath(bamPath) + // input
-                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath))) + // out prefix
-                    " -r " + WrapperUtility.ConvertWindowsPath(geneModelPath) // gene model in BED format
-            }).WaitForExit();
 
             outputFiles = new string[]
             {
@@ -41,6 +32,19 @@ namespace ToolWrapperLayer
                 Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceFrequencyTableSuffix,
                 Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceDistanceTableSuffix
             };
+
+            string script_path = Path.Combine(binDirectory, "scripts", "inferInnerDistance.bash");
+            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "python RSeQC-2.6.4/scripts/inner_distance.py" +
+                    " -i " + WrapperUtility.ConvertWindowsPath(bamPath) + // input
+                    " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath))) + // out prefix
+                    " -r " + WrapperUtility.ConvertWindowsPath(geneModelPath), // gene model in BED format
+                WrapperUtility.EnsureClosedFileCommands(outputFiles[0]),
+                WrapperUtility.EnsureClosedFileCommands(outputFiles[1]),
+                WrapperUtility.EnsureClosedFileCommands(outputFiles[2]),
+            }).WaitForExit();
 
             string[] distance_lines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceDistanceTableSuffix);
             List<int> distances = new List<int>();
@@ -64,29 +68,6 @@ namespace ToolWrapperLayer
             // and then SAMAlignedSequence.Flag.HasFlag(SAMFlags.ASDFDSADF)
 
             InferExperiment(binDirectory, bamPath, geneModelPath, outpath);
-
-            // sometimes the file doesn't close immediately, probably because python is holding onto it for some reason
-            // todo: fix that case, unfinished code below
-            //FileStream stream = null;
-            //bool fileIsLocked = true;
-            //while (fileIsLocked)
-            //{
-            //    FileInfo file = new FileInfo(outfile);
-            //    fileIsLocked = false;
-            //    try
-            //    {
-            //        stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
-            //    }
-            //    catch (IOException)
-            //    {
-            //        fileIsLocked = true;
-            //        File.Copy(outpath, outpath + ".tmp");
-            //        File.Delete(outpath);
-            //        outpath = outpath + ".tmp";
-            //    }
-            //}
-            //stream.Close();
-
             string[] lines = File.ReadAllLines(outpath);
             double fraction_aligned_in_same_direction = double.Parse(lines[lines.Length - 2].Split(':')[1].TrimStart());
             double fraction_aligned_in_other_direction = double.Parse(lines[lines.Length - 1].Split(':')[1].TrimStart());
@@ -126,6 +107,7 @@ namespace ToolWrapperLayer
                     " -r " + WrapperUtility.ConvertWindowsPath(geneModel) + 
                     " -i " + WrapperUtility.ConvertWindowsPath(bamFile) + 
                     " > " + WrapperUtility.ConvertWindowsPath(outFile),
+                WrapperUtility.EnsureClosedFileCommands(outFile)
             }).WaitForExit();
         }
 
