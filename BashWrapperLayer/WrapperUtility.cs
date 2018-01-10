@@ -133,9 +133,9 @@ namespace ToolWrapperLayer
                 "rm bedops_linux_x86_64-v2.4.29.tar.bz2",
                 "mv bin bedops",
                 "cd bedops",
-                "wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred",
-                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed",
-                "wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver",
+                "if [ ! -f gtfToGenePred ]; then wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred; fi",
+                "if [ ! -f genePredToBed ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed; fi",
+                "if [ ! -f liftOver ]; wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver; fi",
                 "cd ..",
                 "sudo cp bedops/* /usr/local/bin"
             });

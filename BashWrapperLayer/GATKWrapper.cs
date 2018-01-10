@@ -40,14 +40,7 @@ namespace ToolWrapperLayer
         {
             var performance = new PerformanceCounter("Memory", "Available MBytes");
             var memory = performance.NextValue();
-            return "java -Xmx" + Math.Floor(memory) + "M -jar GenomeAnalysisTK.jar";
-        }
-
-        public static string Picard()
-        {
-            var performance = new PerformanceCounter("Memory", "Available MBytes");
-            var memory = performance.NextValue();
-            return "java -Xmx" + Math.Floor(memory) + "M -jar picard.jar";
+            return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
         }
 
         public static void Install(string currentDirectory)
@@ -56,18 +49,13 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
-                "while [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(currentDirectory, "GenomeAnalysisTK*")) + " ]",
-                "do",
-                "  echo \"Genome Analysis Toolkit (GATK) not found.\nPlease download GATK from their website https://software.broadinstitute.org/gatk/download/ \nThen, place the file (.tar.bz2) in the folder " +
-                    currentDirectory + "\n\"",
-                "  read -n 1 -s -r -p \"Press any key to continue\n\"",
-                "done",
-                "if [ ! -f GenomeAnalysisTK.jar ]; then tar -jxvf GenomeAnalysisTK-*.tar.bz2; fi",
-                "if [ ! -f GenomeAnalysisTK.jar ]; then rm GenomeAnalysisTK-*.tar.bz2; fi",
-                "if [ ! -f GenomeAnalysisTK.jar ]; then mv GenomeAnalysisTK-*/GenomeAnalysisTK.jar .; fi",
-                "if [ -f GenomeAnalysisTK.jar ]; then rm -r GenomeAnalysisTK-*; fi",
+                "if [ ! -f GenomeAnalysisTK.jar ]; then",
+                "  git clone https://github.com/broadinstitute/gatk.git",
+                "  cd gatk",
+                "  ./gradlew localJar",
+                "  cd ..",
+                "fi",
                 "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
-                "if [ ! -f picard.jar ]; then wget https://github.com/broadinstitute/picard/releases/download/2.15.0/picard.jar; fi",
             }).WaitForExit();
         }
 
@@ -82,7 +70,7 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 Gatk() +
-                    " -T PrintReads" +
+                    " PrintReads" +
                     " --num_threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
@@ -102,7 +90,8 @@ namespace ToolWrapperLayer
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 GenomeDictionaryIndexCommand(genomeFastaPath),
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(sortedVcfPath) + " ]; then " +
-                    Picard() + " SortVcf I=" + WrapperUtility.ConvertWindowsPath(vcfPath) +
+                    Gatk() + // formerly picard
+                    " SortVcf I=" + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " O=" + WrapperUtility.ConvertWindowsPath(sortedVcfPath) +
                     " SEQUENCE_DICTIONARY=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
                     " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
@@ -187,21 +176,42 @@ namespace ToolWrapperLayer
         /// <param name=""></param>
         public static void VariantCalling(string binDirectory, int threads, string genomeFasta, string dedupedBam, string dbsnpReferenceVcfPath, out string newVcf)
         {
-            string splitTrimBam = Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + ".split.bam");
+            string fixedQualsBam = Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + ".fixedQuals.bam");
+            string splitTrimBam = Path.Combine(Path.GetDirectoryName(fixedQualsBam), Path.GetFileNameWithoutExtension(fixedQualsBam) + ".split.bam");
             string unfliteredVcf = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".vcf");
             newVcf = Path.Combine(Path.GetDirectoryName(unfliteredVcf), Path.GetFileNameWithoutExtension(unfliteredVcf) + "filtered.vcf");
 
-            string splitNCigarReadsCmd =
+            string fixMisencodedQualsCmd =
                 Gatk() +
-                " -T SplitNCigarReads" +
+                " FixMisencodedBaseQualityReads" +
+                " -I " + WrapperUtility.ConvertWindowsPath(dedupedBam) +
+                " -O " + WrapperUtility.ConvertWindowsPath(fixedQualsBam);
+
+            string splitNCigarReadsCmd1 =
+                Gatk() +
+                " SplitNCigarReads" +
                 //" --num_threads " + threads.ToString() + // not supported
                 " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
-                " -I " + WrapperUtility.ConvertWindowsPath(dedupedBam) +
-                " -o " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
+                " -I " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) +
+                " -O " + WrapperUtility.ConvertWindowsPath(splitTrimBam)
                 //" -rf ReassignOneMappingQuality" + // doing this with STAR
                 //" -RMQF 255" +
                 //" -RMQT 60" + // default mapping quality is 60; required for RNA-Seq aligners
-                " -U ALLOW_N_CIGAR_READS";
+                //" -U ALLOW_N_CIGAR_READS"
+                ;
+
+            string splitNCigarReadsCmd2 =
+                Gatk() +
+                " SplitNCigarReads" +
+                //" --num_threads " + threads.ToString() + // not supported
+                " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                " -I " + WrapperUtility.ConvertWindowsPath(dedupedBam) +
+                " -O " + WrapperUtility.ConvertWindowsPath(splitTrimBam)
+                //" -rf ReassignOneMappingQuality" + // doing this with STAR
+                //" -RMQF 255" +
+                //" -RMQT 60" + // default mapping quality is 60; required for RNA-Seq aligners
+                //" -U ALLOW_N_CIGAR_READS"
+                ;
 
             string scriptName = Path.Combine(binDirectory, "scripts", "variantCalling.bash");
             WrapperUtility.GenerateAndRunScript(scriptName, new List<string>
@@ -213,21 +223,22 @@ namespace ToolWrapperLayer
                 // split and trim reads (some datasets are probably going to have misencoded quality scores; -fixMisencodedQuals just subtracts 31 from all quality scores if possible...)
                 // if it doesn't run with -fixMisencodedQuals, it probably just found a correctly encoded read, so ditch the fixMisencodedQuals option
                 "samtools index " + WrapperUtility.ConvertWindowsPath(dedupedBam),
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) ]]; then " + splitNCigarReadsCmd + " -fixMisencodedQuals" + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) ]]; then " + splitNCigarReadsCmd + "; fi",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " ) ]]; then " + fixMisencodedQualsCmd + "; fi",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) ]]; then " + splitNCigarReadsCmd1 + "; fi",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) ]]; then " + splitNCigarReadsCmd2 + "; fi",
                 "samtools index " + WrapperUtility.ConvertWindowsPath(splitTrimBam),
 
                 // call variants
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) + " ]; then " +
                     Gatk() +
-                    " -T HaplotypeCaller" +
-                    " -nct " + threads.ToString() +
+                    " HaplotypeCaller" +
+                    " --native-pair-hmm-threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
-                    " --standard_min_confidence_threshold_for_calling 20" +
-                    " -dontUseSoftClippedBases" + // for RNA-Seq
+                    " --min-base-quality-score 20" +
+                    " --dont-use-soft-clipped-bases true" + // for RNA-Seq
                     " --dbsnp " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) +
-                    " -o " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) +
                     "; fi",
 
                 // filter variants (RNA-Seq specific params... need to check out recommendations before using DNA-Seq)
@@ -267,9 +278,6 @@ namespace ToolWrapperLayer
             string markedDuplicatesBam = Path.Combine(Path.GetDirectoryName(groupedBam), Path.GetFileNameWithoutExtension(groupedBam) + ".marked.bam");
             string markedDuplicateMetrics = Path.Combine(Path.GetDirectoryName(groupedBam), Path.GetFileNameWithoutExtension(groupedBam) + ".marked.metrics");
 
-            //moved splitReads to variant calling
-            string mapQReassigned = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".mapqfixed.bam");
-
             string tmpDir = Path.Combine(binDirectory, "tmp");
             Directory.CreateDirectory(tmpDir);
             string scriptName2 = Path.Combine(binDirectory, "scripts", "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
@@ -285,33 +293,31 @@ namespace ToolWrapperLayer
                 
                 // group and sort (note, using picard-tools works, but picard.jar somehow is trucating the BAM files)
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ) && " +
-                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
-                    //" ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
-                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
-                    "picard-tools AddOrReplaceReadGroups PU=platform  PL=illumina SM=sample LB=library" +
-                    " I=" + WrapperUtility.ConvertWindowsPath(bam) +
-                    " O=" + WrapperUtility.ConvertWindowsPath(groupedBam) +
-                    " SO=coordinate" +
-                    " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) ]]; then " +
+                    Gatk() +
+                    " AddOrReplaceReadGroups" + 
+                    " -PU platform  -PL illumina -SM sample -LB library" +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(groupedBam) +
+                    " -SO coordinate" +
+                    " --TMP_DIR " + WrapperUtility.ConvertWindowsPath(tmpDir) +
                     "; fi",
                 "if [[ -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " && -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(sortedBam) + "; fi", // conserve space by removing former BAM
 
                 // mark duplicates (AS means assume sorted; note, using picard-tools works, but picard.jar somehow is trucating the BAM files)
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
-                    //" ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
-                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
-                    "picard-tools MarkDuplicates" +
-                    " I=" + WrapperUtility.ConvertWindowsPath(groupedBam) +
-                    " O=" + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
-                    " M=" + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
-                    " TMP_DIR=" + WrapperUtility.ConvertWindowsPath(tmpDir) +
-                    " AS=true" +
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) ]]; then " +
+                    Gatk() + " MarkDuplicates" + // formerly picard
+                    " -I " + WrapperUtility.ConvertWindowsPath(groupedBam) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
+                    " -M " + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
+                    " --TMP_DIR " + WrapperUtility.ConvertWindowsPath(tmpDir) +
+                    " -AS true" +
                     "; fi",
                 "if [[ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " && -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
 
             }).WaitForExit();
-            newBam = mapQReassigned;
+            newBam = markedDuplicatesBam;
 
             // run commands for marking duplicates and trimming reads
             File.Delete(sortedCheckPath);
@@ -322,6 +328,8 @@ namespace ToolWrapperLayer
         /// Realigns indels for a given BAM file
         /// 
         /// This is no longer a required step for HaploytypeCaller, used for variant calling
+        /// 
+        /// Needs updating after switching to GATK 4.0 ... no longer called IndelRealigner, and it looks like the targetIntervals is gone
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <param name="genomeFasta"></param>
@@ -341,7 +349,7 @@ namespace ToolWrapperLayer
 
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(realignerTable) + " || ! -s " + WrapperUtility.ConvertWindowsPath(realignerTable) + " ]]; then " +
                     Gatk() +
-                    " -T RealignerTargetCreator" +
+                    " RealignerTargetCreator" +
                     " --num_threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
@@ -351,13 +359,13 @@ namespace ToolWrapperLayer
 
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(newBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(newBam) + " ]]; then " +
                     Gatk() +
-                    " -T IndelRealigner" +
+                    " LeftAlignIndels" +
                     //" --num_threads " + threads.ToString() + // this tool can't do threaded analysis
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
                     (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
                     " -targetIntervals " +  WrapperUtility.ConvertWindowsPath(realignerTable) +
-                    " -o " + WrapperUtility.ConvertWindowsPath(newBam) +
+                    " --OUTPUT " + WrapperUtility.ConvertWindowsPath(newBam) +
                     "; fi",
             }).WaitForExit();
         }
@@ -382,12 +390,12 @@ namespace ToolWrapperLayer
 
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(recalibrationTablePath) + " ]; then " +
                     Gatk() +
-                    " -T BaseRecalibrator" +
+                    " BaseRecalibrator" +
                     //" --num_threads " + threads.ToString() + // doesn't support threaded runs
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
                     (knownSitesVcf != "" ? " -knownSites " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
-                    " -o " + WrapperUtility.ConvertWindowsPath(recalibrationTablePath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(recalibrationTablePath) +
                     "; fi",
             }).WaitForExit();
         }
@@ -417,9 +425,10 @@ namespace ToolWrapperLayer
         {
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + " ]; then " + //rm " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + "; fi\n" +
-                Picard() + " CreateSequenceDictionary" + 
-                    " R=" + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + 
-                    " O=" + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
+                Gatk() + // formerly picard
+                    " CreateSequenceDictionary" + 
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + 
+                    " -O " + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
                     "; fi";
         }
 
