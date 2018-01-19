@@ -181,22 +181,24 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            bool downloadStar = !Directory.Exists(Path.Combine(binDirectory, "STAR"));
-            string script_path = Path.Combine(binDirectory, "scripts", "installStar.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installStar.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "git clone https://github.com/lh3/seqtk.git",
                 "cd seqtk; make",
                 "cd ..",
-                downloadStar ? "git clone https://github.com/alexdobin/STAR.git" : "",
-                downloadStar ? "cd STAR/source" : "",
-                downloadStar ? "make STAR" : "",
-                downloadStar ? "cd .." : "",
-                downloadStar ? "export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")) : "",
-            }).WaitForExit();
+                "if [ ! -d STAR ]; then ",
+                "  git clone https://github.com/alexdobin/STAR.git",
+                "  cd STAR/source",
+                "  make STAR",
+                "  cd ..",
+                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")),
+                "fi"
+            });
+            return scriptPath;
         }
     }
 }

@@ -75,18 +75,19 @@ namespace ToolWrapperLayer
                 || fraction_aligned_in_same_direction / fraction_aligned_in_other_direction > minFractionStrandSpecific;
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            if (Directory.Exists(Path.Combine(binDirectory, "RSeQC-2.6.4"))) return;
-            string script_path = Path.Combine(binDirectory, "scripts", "install_rseqc.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "install_rseqc.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "wget https://downloads.sourceforge.net/project/rseqc/RSeQC-2.6.4.tar.gz",
-                "tar -xvf RSeQC-2.6.4.tar.gz", // infer_experiment.py is in the scripts folder
-                "rm RSeQC-2.6.4.tar.gz",
-            }).WaitForExit();
-            File.Delete(script_path);
+                "if [ ! -d RSeQC-2.6.4 ]; then",
+                "  wget https://downloads.sourceforge.net/project/rseqc/RSeQC-2.6.4.tar.gz",
+                "  tar -xvf RSeQC-2.6.4.tar.gz", // infer_experiment.py is in the scripts folder
+                "  rm RSeQC-2.6.4.tar.gz",
+                "fi"
+            });
+            return scriptPath;
         }
 
         #endregion Public Methods

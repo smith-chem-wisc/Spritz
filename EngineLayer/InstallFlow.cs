@@ -84,17 +84,33 @@ namespace WorkflowLayer
                 "fi");
 
             // run some scripts in parallel with root permissions
+            string installationLogsDirectory = Path.Combine(binDirectory, "installationLogs");
+            Directory.CreateDirectory(installationLogsDirectory);
             List<string> parallelScripts = new List<string>
             {
+                // require root permissions
                 BEDOPSWrapper.WriteInstallScript(binDirectory),
                 LastzWrapper.WriteInstallScript(binDirectory),
                 MfoldWrapper.WriteInstallScript(binDirectory),
-                GATKWrapper.WriteInstallScript(binDirectory)
+                GATKWrapper.WriteInstallScript(binDirectory),
+
+                // don't necessarily require root permissions
+                RSeQCWrapper.WriteInstallScript(binDirectory),
+                ScalpelWrapper.WriteInstallScript(binDirectory),
+                SkewerWrapper.WriteInstallScript(binDirectory),
+                SlnckyWrapper.WriteInstallScript(binDirectory),
+                SnpEffWrapper.WriteInstallScript(binDirectory),
+                SRAToolkitWrapper.WriteInstallScript(binDirectory),
+                STARWrapper.WriteInstallScript(binDirectory),
+                STARFusionWrapper.WriteInstallScript(binDirectory)
             };
 
             for (int i = 0; i < parallelScripts.Count; i++)
             {
-                commands.Add("bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &");
+                commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");
+                commands.Add("bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &> " + 
+                    WrapperUtility.ConvertWindowsPath(Path.Combine(installationLogsDirectory, Path.GetFileNameWithoutExtension(parallelScripts[i]) + ".log")) + 
+                    " &");
                 commands.Add("proc" + i.ToString() + "=$!");
             }
 
@@ -106,19 +122,6 @@ namespace WorkflowLayer
             // write the and run the installations requiring root permissions
             string scriptPath = Path.Combine(binDirectory, "scripts", "installDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
-
-            // run the installations not requiring root permissions
-            Parallel.Invoke
-            (
-                () => RSeQCWrapper.Install(binDirectory),
-                () => ScalpelWrapper.Install(binDirectory),
-                () => SkewerWrapper.Install(binDirectory),
-                () => SlnckyWrapper.Install(binDirectory),
-                () => SnpEffWrapper.Install(binDirectory),
-                () => SRAToolkitWrapper.Install(binDirectory),
-                () => STARWrapper.Install(binDirectory),
-                () => STARFusionWrapper.Install(binDirectory)
-            );
         }
 
         #endregion Public Method

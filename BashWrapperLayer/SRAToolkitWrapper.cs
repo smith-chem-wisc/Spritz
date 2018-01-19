@@ -37,17 +37,19 @@ namespace ToolWrapperLayer
             fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
         }
 
-        public static void Install(string bin)
+        public static string WriteInstallScript(string binDirectory)
         {
-            if (Directory.GetDirectories(bin, "sratoolkit*").Length > 0)
-                return;
-            string scriptPath = Path.Combine(bin, "scripts", "installSRAToolkit.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installSRAToolkit.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(bin),
-                "wget " + downloadLocation,
-                "tar -xvf sratoolkit.current-ubuntu64.tar.gz",
-                "rm sratoolkit.current-ubuntu64.tar.gz",
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if ls sratoolkit* 1> /dev/null 2>&1; then", // if there are files listed matching the pattern sratoolkit*
+                "  echo \"Found SRAToolkit.\"",
+                "else",
+                "  wget " + downloadLocation,
+                "  tar -xvf sratoolkit.current-ubuntu64.tar.gz",
+                "  rm sratoolkit.current-ubuntu64.tar.gz",
+                "fi"
                 
                 //"wget " + ascpDownloadLocation,
                 //"tar -xvf aspera-connect*.tar.gz",
@@ -55,7 +57,8 @@ namespace ToolWrapperLayer
                 //"echo \"Installing Aspera ASCP Download Client\"",
                 //"sudo sh aspera-connect*.sh",
                 //"rm ascp-install-3.5.4.102989-linux-64.sh",
-            }).WaitForExit();
+            });
+            return scriptPath;
         }
 
         #endregion Public Methods

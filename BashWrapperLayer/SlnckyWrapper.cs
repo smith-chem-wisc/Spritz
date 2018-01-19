@@ -20,10 +20,10 @@ namespace ToolWrapperLayer
 
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            string script_path = Path.Combine(binDirectory, "scripts", "installSlncky.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installSlncky.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "git clone https://github.com/slncky/slncky.git",
@@ -31,7 +31,8 @@ namespace ToolWrapperLayer
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
                 "if [ ! -d annotations ]; then tar -xvf annotations.tar.gz; fi",
                 "if [ ! -d annotations ]; then rm annotations.tar.gz; fi",
-            }).WaitForExit();
+            });
+            return scriptPath;
         }
     }
 }

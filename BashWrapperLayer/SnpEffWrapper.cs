@@ -90,18 +90,17 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            if (Directory.Exists(Path.Combine(binDirectory, "snpEff")) && Directory.Exists(Path.Combine(binDirectory, "skewer-0.2.2")))
-                return;
             string scriptPath = Path.Combine(binDirectory, "scripts", "snpEffInstaller.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip",
-                "unzip snpEff_latest_core.zip",
-                "rm snpEff_latest_core.zip",
-            }).WaitForExit();
+                "if [ ! -d snpEff ]; then wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip; fi",
+                "if [ ! -d snpEff ]; then unzip snpEff_latest_core.zip; fi",
+                "if [ ! -d snpEff ]; then rm snpEff_latest_core.zip; fi",
+            });
+            return scriptPath;
         }
 
         #endregion Public Methods
