@@ -43,6 +43,23 @@ namespace ToolWrapperLayer
             return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
         }
 
+        public static string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installGatk.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -f gatk/build/libs/gatk.jar ]; then",
+                "  git clone https://github.com/broadinstitute/gatk.git",
+                "  cd gatk",
+                "  ./gradlew localJar",
+                "  cd ..",
+                "fi",
+                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
+            });
+            return scriptPath;
+        }
+
         #endregion General Public Methods
 
         #region Random Public Methods

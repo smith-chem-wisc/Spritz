@@ -96,6 +96,7 @@
     <Compile Include="EnsemblDownloadsWrapper.cs" />
     <Compile Include="CufflinksWrapper.cs" />
     <Compile Include="GATKWrapper.cs" />
+    <Compile Include="LastzWrapper.cs" />
     <Compile Include="MeltingWrapper.cs" />
     <Compile Include="MfoldWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
