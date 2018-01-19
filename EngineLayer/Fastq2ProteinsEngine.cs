@@ -27,7 +27,7 @@ namespace WorkflowLayer
                 SRAToolkitWrapper.Fetch(bin, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
                 fastqs.Add(fastqPaths);
             }
-            RunFromFastqs(bin, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, geneModelGtfOrGff, ensemblKnownSitesPath, proteinFasta, out proteinVariantDatabases, useReadSubset, readSubset);
+            RunFromFastqs(bin, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
         }
 
         public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
@@ -76,13 +76,19 @@ namespace WorkflowLayer
 
                 // Infer strand specificity
                 bool localStrandSpecific = strandSpecific;
-                if (inferStrandSpecificity)
+                if (inferStrandSpecificity || useReadSubset)
                 {
                     STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
-                    if (useReadSubset) fqForAlignment = subsetFastqs;
-                    string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                    WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignSubset.bash"), STARWrapper.BasicAlignReadCommands(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep)).WaitForExit();
-                    localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
+                    if (useReadSubset)
+                    {
+                        fqForAlignment = subsetFastqs;
+                    }
+                    if (inferStrandSpecificity)
+                    {
+                        string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
+                        WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignSubset.bash"), STARWrapper.BasicAlignReadCommands(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep)).WaitForExit();
+                        localStrandSpecific = RSeQCWrapper.CheckStrandSpecificity(bin, subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
+                    }
                 }
                 strandSpecificities.Add(localStrandSpecific);
                 fastqsForAlignment.Add(fqForAlignment);
@@ -99,13 +105,13 @@ namespace WorkflowLayer
                 }
                 spliceJunctions.Add(outPrefix + STARWrapper.SpliceJunctionFileSuffix);
             }
-            alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory));
-            alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(spliceJunctions, out string spliceJunctionStartDatabase));
             int uniqueSuffix = 1;
             foreach (string f in fastqsForAlignment.SelectMany(f => f))
             {
                 uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
             }
+            alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory));
+            alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(spliceJunctions, uniqueSuffix, out string spliceJunctionStartDatabase));
             string secondPassGenomeDirectory = genomeStarIndexDirectory + "SecondPass" + uniqueSuffix.ToString();
             alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(bin, threads, secondPassGenomeDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff, spliceJunctionStartDatabase));
             foreach (string[] fq in fastqsForAlignment)

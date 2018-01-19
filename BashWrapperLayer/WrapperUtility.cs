@@ -74,19 +74,22 @@ namespace ToolWrapperLayer
                 // installers
                 "gcc",
                 "g++",
+                "gfortran",
                 "make",
                 "cmake",
                 "build-essential",
 
                 // file compression
                 "zlib1g-dev",
+                "unzip",
 
                 // bioinformatics
                 "samtools",
                 "tophat",
                 "cufflinks",
                 "bedtools",
-                "picard-tools",
+                "ncbi-blast+",
+                "melting",
 
                 // commandline tools
                 "gawk",
@@ -121,37 +124,63 @@ namespace ToolWrapperLayer
                 "else\n" +
                 "  sudo add-apt-repository ppa:webupd8team/java\n" +
                 "  sudo apt-get -y update\n" +
-                "  sudo apt-get -y install oracle-java8-installer\n" +
+                "  sudo apt-get -y install openjdk-8-jdk\n" + // need the JDK for some GATK install, not the JRE found in oracle-java8-installer
                 "fi");
 
-            // bedops setup
+            // bedops, gtfToGenePred, genePredToBed, liftOver setup
             commands.AddRange(new List<string>
             {
                 "cd " + ConvertWindowsPath(binDirectory),
-                "wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2",
-                "tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2",
-                "rm bedops_linux_x86_64-v2.4.29.tar.bz2",
-                "mv bin bedops",
+                "if [ ! -d bedops ]; then wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
+                "if [ ! -d bedops ]; then tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
+                "if [ ! -d bedops ]; then rm bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
+                "if [ ! -d bedops ]; then mv bin bedops; fi",
                 "cd bedops",
                 "if [ ! -f gtfToGenePred ]; then wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred; fi",
                 "if [ ! -f genePredToBed ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed; fi",
-                "if [ ! -f liftOver ]; wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver; fi",
+                "if [ ! -f liftOver ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver; fi",
                 "cd ..",
                 "sudo cp bedops/* /usr/local/bin"
             });
 
-            // lastz and liftOver setup
+            // lastz setup
             commands.AddRange(new List<string>
             {
                 "cd " + ConvertWindowsPath(binDirectory),
-                "wget https://github.com/lastz/lastz/archive/1.04.00.tar.gz",
-                "tar -xvf 1.04.00.tar.gz",
-                "rm 1.04.00.tar.gz",
-                "cd lastz-1.04.00",
-                "make",
-                "chmod +X src/lastz",
-                "sudo cp src/lastz /usr/local/bin",
-                "cd ..",
+                "if [ ! -d lastz-1.04.00]; then wget https://github.com/lastz/lastz/archive/1.04.00.tar.gz; fi",
+                "if [ ! -d lastz-1.04.00]; then tar -xvf 1.04.00.tar.gz; fi",
+                "if [ ! -d lastz-1.04.00]; then rm 1.04.00.tar.gz; fi",
+                "if [ ! -d lastz-1.04.00]; then cd lastz-1.04.00; fi",
+                "if [ ! -d lastz-1.04.00]; then make; fi",
+                "if [ ! -d lastz-1.04.00]; then chmod +X src/lastz; fi",
+                "if [ ! -d lastz-1.04.00]; then sudo cp src/lastz /usr/local/bin; fi",
+                "if [ ! -d lastz-1.04.00]; then cd ..; fi",
+            });
+
+            // mfold setup
+            commands.AddRange(new List<string>
+            {
+                "cd " + ConvertWindowsPath(binDirectory),
+                "if [ ! -d mfold-3.6]; then wget --no-check http://unafold.rna.albany.edu/download/mfold-3.6.tar.gz; fi",
+                "if [ ! -d mfold-3.6]; then tar -xvf mfold-3.6.tar.gz; fi",
+                "if [ ! -d mfold-3.6]; then rm mfold-3.6.tar.gz; fi",
+                "if [ ! -d mfold-3.6]; then cd mfold-3.6; fi",
+                "if [ ! -d mfold-3.6]; then ./configure; fi",
+                "if [ ! -d mfold-3.6]; then make; fi",
+                "if [ ! -d mfold-3.6]; then sudo make install; fi"
+            });
+
+            // gatk setup
+            commands.AddRange(new List<string>
+            {
+                "cd " + ConvertWindowsPath(binDirectory),
+                "if [ ! -f gatk/build/libs/gatk.jar ]; then",
+                "  git clone https://github.com/broadinstitute/gatk.git",
+                "  cd gatk",
+                "  ./gradlew localJar",
+                "  cd ..",
+                "fi",
+                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
             });
 
             string scriptPath = Path.Combine(binDirectory, "scripts", "install_dependencies.bash");

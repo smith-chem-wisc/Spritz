@@ -73,16 +73,18 @@ namespace ToolWrapperLayer
             return BasicAlignReadCommands(binDirectory, threads, genomeDir, fastqFiles, outprefix, strandSpecific, genomeLoad, "None");
         }
 
-        public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, out string spliceJunctionStarts)
+        public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, int uniqueSuffix, out string spliceJunctionStarts)
         {
             if (spliceJunctionOuts.Count == 0) throw new ArgumentException("STARWrapper.ProcessFirstPassSpliceCommands: No splice junctions detected for second-pass genome generation.");
-            spliceJunctionStarts = Path.Combine(Path.GetDirectoryName(spliceJunctionOuts[0]), "combined." + SpliceJunctionFileSuffix);
+            spliceJunctionStarts = Path.Combine(Path.GetDirectoryName(spliceJunctionOuts[0]), "combined" + uniqueSuffix.ToString() + "." + SpliceJunctionFileSuffix);
             return new List<string>
             {
-                "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " + 
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) + " ]; then " +
+                    "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " + 
                     String.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " | grep -v 'MT' >> " +
-                    WrapperUtility.ConvertWindowsPath(spliceJunctionStarts)
+                    WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) +
+                    "; fi"
             };
         }
 

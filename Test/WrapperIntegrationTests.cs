@@ -36,7 +36,6 @@ namespace Test
 
             // gatk
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "gatk", "build", "libs", "gatk.jar")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "picard.jar")));
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "ChromosomeMappings")));
 
             // skewer
@@ -51,6 +50,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
             Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "lastz*").Length > 0);
+
+            // mfold
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "mfold-3.6", "scripts", "mfold")));
         }
 
         private string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa");
@@ -261,8 +263,8 @@ namespace Test
         public void SkewerSingle()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
-                19,
                 1,
+                19,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read1.fastq") },
                 out string[] readTrimmedPaths,
                 out string log);
@@ -450,7 +452,7 @@ namespace Test
         {
             SnpEffWrapper.PrimaryVariantAnnotation(TestContext.CurrentContext.TestDirectory,
                 "grch37",
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1-trimmed-pair1Aligned.sortedByCoord.outProcessed.out.split.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.vcf"),
                 out string html,
                 out string annVcf
                 );
@@ -516,9 +518,9 @@ namespace Test
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases);
             foreach (string database in proteinDatabases)
             {
@@ -563,7 +565,7 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+                //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); // no longer happens with variant filtering criteria
             }
         }
 
@@ -593,10 +595,11 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+               // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
             }
         }
 
         #endregion Runner Tests
+
     }
 }

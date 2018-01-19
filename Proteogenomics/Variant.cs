@@ -41,7 +41,7 @@ namespace Proteogenomics
 
             if (variant.Attributes.TryGetValue("ANN", out object snpEffAnnotationObj))
             {
-                SnpEffAnnotations = (snpEffAnnotationObj as string).Split(',').Select(x => new SnpEffAnnotation(x)).ToList();
+                SnpEffAnnotations = (snpEffAnnotationObj as string[]).Select(x => new SnpEffAnnotation(x)).ToList();
             }
             if (variant.Attributes.TryGetValue("AF", out object alleleFrequencyObj))
             {

@@ -48,7 +48,8 @@ namespace ToolWrapperLayer
 
             // check for existing list and database
             bool databaseListExists = File.Exists(databaseListPath);
-            string[] existingDatabases = Directory.GetDirectories(Path.Combine(binDirectory, "snpEff", "data"));
+            string databaseDirectory = Path.Combine(binDirectory, "snpEff", "data");
+            string[] existingDatabases = Directory.Exists(databaseDirectory) ? Directory.GetDirectories(databaseDirectory) : new string[0];
             bool databaseExists = existingDatabases.Any(d => Path.GetFileName(d).StartsWith(reference, true, null));
             if (databaseListExists && databaseExists)
                 return;
