@@ -56,18 +56,21 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
-                "while [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(currentDirectory, "GenomeAnalysisTK*")) + " ]",
-                "do",
-                "  echo \"Genome Analysis Toolkit (GATK) not found.\nPlease download GATK from their website https://software.broadinstitute.org/gatk/download/ \nThen, place the file (.tar.bz2) in the folder " +
-                    currentDirectory + "\n\"",
-                "  read -n 1 -s -r -p \"Press any key to continue\n\"",
-                "done",
-                "if [ ! -f GenomeAnalysisTK.jar ]; then tar -jxvf GenomeAnalysisTK-*.tar.bz2; fi",
-                "if [ ! -f GenomeAnalysisTK.jar ]; then rm GenomeAnalysisTK-*.tar.bz2; fi",
-                "if [ ! -f GenomeAnalysisTK.jar ]; then mv GenomeAnalysisTK-*/GenomeAnalysisTK.jar .; fi",
-                "if [ -f GenomeAnalysisTK.jar ]; then rm -r GenomeAnalysisTK-*; fi",
-                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
-                "if [ ! -f picard.jar ]; then wget https://github.com/broadinstitute/picard/releases/download/2.15.0/picard.jar; fi",
+                "wget https://github.com/$(wget https://github.com/broadinstitute/gatk/releases/latest -O - | egrep '/.*/.*/.*zip' -o)",
+                "unzip gatk*.zip",
+                "rm gatk*.zip"
+                //"while [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(currentDirectory, "GenomeAnalysisTK*")) + " ]",
+                //"do",
+                //"  echo \"Genome Analysis Toolkit (GATK) not found.\nPlease download GATK from their website https://software.broadinstitute.org/gatk/download/ \nThen, place the file (.tar.bz2) in the folder " +
+                //    currentDirectory + "\n\"",
+                //"  read -n 1 -s -r -p \"Press any key to continue\n\"",
+                //"done",
+                //"if [ ! -f GenomeAnalysisTK.jar ]; then tar -jxvf GenomeAnalysisTK-*.tar.bz2; fi",
+                //"if [ ! -f GenomeAnalysisTK.jar ]; then rm GenomeAnalysisTK-*.tar.bz2; fi",
+                //"if [ ! -f GenomeAnalysisTK.jar ]; then mv GenomeAnalysisTK-*/GenomeAnalysisTK.jar .; fi",
+                //"if [ -f GenomeAnalysisTK.jar ]; then rm -r GenomeAnalysisTK-*; fi",
+                //"if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
+                //"if [ ! -f picard.jar ]; then wget https://github.com/broadinstitute/picard/releases/download/2.15.0/picard.jar; fi",
             }).WaitForExit();
         }
 
