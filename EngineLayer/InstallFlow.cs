@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using ToolWrapperLayer;
 
 namespace WorkflowLayer
@@ -45,10 +44,10 @@ namespace WorkflowLayer
 
         #region Public Method
 
-        public static void Run(string binDirectory)
+        public static void Install(string binDirectory)
         {
             // get root permissions and update and upgrade the repositories
-            List<string> commands = new List<string>
+            List<string> commands = new List<string> 
             {
                 "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
@@ -58,12 +57,14 @@ namespace WorkflowLayer
             // install dependencies from aptitude
             foreach (string dependency in aptitudeDependencies)
             {
-                commands.Add(
+                commands.Add
+                (
                     "if commmand -v " + dependency + " > /dev/null 2>&1 ; then\n" +
                     "  echo found\n" +
                     "else\n" +
                     "  sudo apt-get -y install " + dependency + "\n" +
-                    "fi");
+                    "fi"
+                );
             }
 
             // python setup
@@ -73,7 +74,8 @@ namespace WorkflowLayer
             commands.Add("sudo pip install --upgrade qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
 
             // java8 setup
-            commands.Add(
+            commands.Add
+            (
                 "version=$(java -version 2>&1 | awk -F '\"' '/version/ {print $2}')\n" +
                 "if [[ \"$version\" > \"1.5\" ]]; then\n" +
                 "  echo found\n" +
@@ -81,7 +83,8 @@ namespace WorkflowLayer
                 "  sudo add-apt-repository ppa:webupd8team/java\n" +
                 "  sudo apt-get -y update\n" +
                 "  sudo apt-get -y install openjdk-8-jdk\n" + // need the JDK for some GATK install, not the JRE found in oracle-java8-installer
-                "fi");
+                "fi"
+            );
 
             // run some scripts in parallel with root permissions
             string installationLogsDirectory = Path.Combine(binDirectory, "installationLogs");

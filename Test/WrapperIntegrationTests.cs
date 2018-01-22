@@ -20,7 +20,7 @@ namespace Test
         [Test, Order(0)]
         public void TestInstall()
         {
-            InstallFlow.Run(TestContext.CurrentContext.TestDirectory);
+            InstallFlow.Install(TestContext.CurrentContext.TestDirectory);
 
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "snpEff.jar")));
 

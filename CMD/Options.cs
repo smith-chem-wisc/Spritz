@@ -40,16 +40,16 @@ namespace CMD
         [Option('v', "dbsnpVcfReference", Required = false, HelpText = "VCF reference file from dbSNP")]
         public string ReferenceVcf { get; set; }
 
-        [Option('r', "StarFusionReference", Required = false, HelpText = "Human reference for STAR fusion (GRCh37 or GRCh38)", DefaultValue = "GRCh38")]
+        [Option('r', "StarFusionReference", Required = false, HelpText = "Human reference for STAR fusion (GRCh37 or GRCh38)", Default = "GRCh38")]
         public string Reference { get; set; }
 
-        [Option("overwriteStarAlignments", Required = false, HelpText = "Overwrite STAR alignments if they already exist", DefaultValue = false)]
+        [Option("overwriteStarAlignments", Required = false, HelpText = "Overwrite STAR alignments if they already exist", Default = false)]
         public bool OverwriteStarAlignments { get; set; }
 
-        [Option("strandSpecific", Required = false, HelpText = "Stranded library preparation protocol", DefaultValue = false)]
+        [Option("strandSpecific", Required = false, HelpText = "Stranded library preparation protocol", Default = false)]
         public bool StrandSpecific { get; set; }
 
-        [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", DefaultValue = false)]
+        [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
     }
 }

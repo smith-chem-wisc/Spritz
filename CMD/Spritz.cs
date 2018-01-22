@@ -19,12 +19,12 @@ namespace CMD
 
             if (args.Contains("setup"))
             {
-                InstallFlow.Run(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                InstallFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
                 return;
             }
 
-            Options options = new Options();
-            bool isValid = Parser.Default.ParseArgumentsStrict(args, options);
+            Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
+            Options options = result.Value;
 
             #endregion Setup
 
