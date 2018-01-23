@@ -13,9 +13,25 @@ using System;
 
 namespace WorkflowLayer
 {
-    public class LncRNAEngine
+    public class LncRNADiscoveryEngine
     {
-        public static void RunLnckyRNAFromFastq(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, bool useReadSubset = false, int readSubset = 300000)
+        
+        public static void Test(string test)
+        {
+            string script_path = Path.Combine(test, "scripts", "test.sh");
+            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(test),
+                "echo " + "HaHa"
+            }).WaitForExit();
+        }
+
+        public static void RunLncRNADiscoveryFromFastq(string bin, string analysisDirectory, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, bool useReadSubset = false, int readSubset = 300000)
+        {
+
+        }
+
+        public static void RunSTAR(string bin, string analysisDirectory, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, bool useReadSubset = false, int readSubset = 300000)
         {
             if (Path.GetExtension(genomeFasta) == ".gz")
             {
@@ -106,18 +122,27 @@ namespace WorkflowLayer
             alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, secondPassGenomeDirectory));
             WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
 
-
-
         }
 
-        public static void Test(string test)
+        public static void RunCufflink()
         {
-            string script_path = Path.Combine(test, "scripts", "test.sh");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(test),
-                "echo " + "HaHa"
-            }).WaitForExit();
+
         }
+
+        public static void Rungtf2bed()
+        {
+
+        }
+
+        public static void RunEnsembl2UCSC()
+        {
+
+        }
+
+        public static void RunSlncky()
+        {
+
+        }
+
     }
 }

@@ -112,7 +112,7 @@
   <ItemGroup>
     <Compile Include="Fastq2ProteinsEngine.cs" />
     <Compile Include="InstallFlow.cs" />
-    <Compile Include="LncRNAEngine.cs" />
+    <Compile Include="LncRNADiscoveryEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

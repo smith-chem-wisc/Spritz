@@ -65,10 +65,9 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                LncRNAEngine.RunLnckyRNAFromFastq(
+                LncRNADiscoveryEngine.RunLncRNADiscoveryFromFastq(
                     options.BinDirectory,
                     options.AnalysisDirectory,
-                    options.Reference,
                     options.Threads,
                     fastqsSeparated,
                     options.StrandSpecific,
@@ -76,10 +75,8 @@ namespace CMD
                     options.OverwriteStarAlignments,
                     options.GenomeStarIndexDirectory,
                     options.GenomeFasta,
-                    "",
-                    options.GeneModelGtfOrGff,
-                    options.ReferenceVcf);
-                LncRNAEngine.Test(options.BinDirectory);
+                    options.GeneModelGtfOrGff);
+                // LncRNADiscoveryEngine.Test(options.BinDirectory);
                 return;
             }
 
