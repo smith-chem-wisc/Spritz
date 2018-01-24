@@ -521,7 +521,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
-            Fastq2ProteinsEngine.RunFromFastqs(
+            SampleSpecificProteinDatabaseEngine.GenerateFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -557,7 +557,7 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
-            Fastq2ProteinsEngine.RunFromFastqs(
+            SampleSpecificProteinDatabaseEngine.GenerateFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -595,7 +595,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            Fastq2ProteinsEngine.RunFromSra(
+            SampleSpecificProteinDatabaseEngine.GenerateFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",

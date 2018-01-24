@@ -113,7 +113,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Fastq2ProteinsEngine.cs" />
+    <Compile Include="PrepareInputFileFlow.cs" />
+    <Compile Include="STAR2PassAlignFlow.cs" />
+    <Compile Include="SampleSpecificProteinDatabaseEngine.cs" />
     <Compile Include="InstallFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proteogenomics", "Proteogen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolWrapperLayer", "BashWrapperLayer\ToolWrapperLayer.csproj", "{7F0B5697-1BBB-4FF5-9BF2-434F0A9C2C60}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkflowLayer", "EngineLayer\WorkflowLayer.csproj", "{3F662A6D-C8C6-466E-A8F3-8BED397CB5F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkflowLayer", "WorkflowLayer\WorkflowLayer.csproj", "{3F662A6D-C8C6-466E-A8F3-8BED397CB5F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

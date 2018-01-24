@@ -6,9 +6,6 @@ namespace ToolWrapperLayer
 {
     public class SamtoolsWrapper
     {
-
-        public string Samtools { get; set; }
-
         public static string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installSamtools.bash");
@@ -23,8 +20,6 @@ namespace ToolWrapperLayer
                 "  ./configure --prefix=/usr/local/bin",
                 "  make",
                 "  make install",
-                "  chmod +X samtools",
-                "  cp samtools /usr/bin/local",
                 "fi"
             });
             return scriptPath;

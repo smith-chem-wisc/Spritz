@@ -136,10 +136,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EngineLayer\WorkflowLayer.csproj">
-      <Project>{3f662a6d-c8c6-466e-a8f3-8bed397cb5f8}</Project>
-      <Name>WorkflowLayer</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BashWrapperLayer\ToolWrapperLayer.csproj">
       <Project>{7f0b5697-1bbb-4ff5-9bf2-434f0a9c2c60}</Project>
       <Name>ToolWrapperLayer</Name>
@@ -147,6 +143,10 @@
     <ProjectReference Include="..\Proteogenomics\Proteogenomics.csproj">
       <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
       <Name>Proteogenomics</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WorkflowLayer\WorkflowLayer.csproj">
+      <Project>{3f662a6d-c8c6-466e-a8f3-8bed397cb5f8}</Project>
+      <Name>WorkflowLayer</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

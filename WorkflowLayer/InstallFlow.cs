@@ -23,6 +23,9 @@ namespace WorkflowLayer
             "zlib1g-dev",
             "unzip",
             "liblzma-dev",
+            "libncurses5-dev",
+            "libbz2-dev",
+
 
             // bioinformatics -- keep this to illustrate that these things are super outdated in aptitude
             //"samtools", // out of date
