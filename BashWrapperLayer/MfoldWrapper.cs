@@ -8,7 +8,7 @@ namespace ToolWrapperLayer
     {
         public static string WriteInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installMfold.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMfold.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),

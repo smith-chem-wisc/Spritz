@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace ToolWrapperLayer
 {
@@ -81,6 +82,20 @@ namespace ToolWrapperLayer
     /// </summary>
     public class MeltingWrapper
     {
-
+        public static string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMelting.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d MELTING5.1.1 ]; then",
+                "  wget --no-check -O MELTING5.1.1.tar.gz http://sourceforge.net/projects/melting/files/meltingJava/melting5/MELTING5.1.1.tar.gz/download",
+                "  tar -xvf MELTING5.1.1.tar.gz; rm MELTING5.1.1.tar.gz",
+                "  cd MELTING5.1.1",
+                "  ./Install.unices",
+                "fi"
+            });
+            return scriptPath;
+        }
     }
 }

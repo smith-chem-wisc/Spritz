@@ -22,14 +22,15 @@ namespace WorkflowLayer
             // file compression
             "zlib1g-dev",
             "unzip",
+            "liblzma-dev",
 
-            // bioinformatics
-            "samtools",
-            "tophat",
-            "cufflinks",
-            "bedtools",
-            "ncbi-blast+",
-            "melting",
+            // bioinformatics -- keep this to illustrate that these things are super outdated in aptitude
+            //"samtools", // out of date
+            //"tophat", // super outdated in aptitude
+            //"cufflinks", // super outdated in aptitude
+            //"bedtools", // super outdated (2013) in aptitude
+            //"ncbi-blast+", // very outdated (2.2 from 2014, instead of 2.7)
+            //"melting", // outdated (v4 in aptidude, v5 on main site which was totally rewritten)
 
             // commandline tools
             "gawk",
@@ -87,17 +88,23 @@ namespace WorkflowLayer
             );
 
             // run some scripts in parallel with root permissions
-            string installationLogsDirectory = Path.Combine(binDirectory, "installationLogs");
+            string installationLogsDirectory = Path.Combine(binDirectory, "scripts", "installLogs");
             Directory.CreateDirectory(installationLogsDirectory);
             List<string> parallelScripts = new List<string>
             {
                 // require root permissions
                 BEDOPSWrapper.WriteInstallScript(binDirectory),
+                BLASTWrapper.WriteInstallScript(binDirectory),
                 LastzWrapper.WriteInstallScript(binDirectory),
+                MeltingWrapper.WriteInstallScript(binDirectory),
                 MfoldWrapper.WriteInstallScript(binDirectory),
-                GATKWrapper.WriteInstallScript(binDirectory),
+                SamtoolsWrapper.WriteInstallScript(binDirectory),
 
                 // don't necessarily require root permissions
+                BedtoolsWrapper.WriteInstallScript(binDirectory),
+                CufflinksWrapper.WriteInstallScript(binDirectory),
+                GATKWrapper.WriteInstallScript(binDirectory),
+                HISAT2Wrapper.WriteInstallScript(binDirectory),
                 RSeQCWrapper.WriteInstallScript(binDirectory),
                 ScalpelWrapper.WriteInstallScript(binDirectory),
                 SkewerWrapper.WriteInstallScript(binDirectory),
@@ -105,7 +112,8 @@ namespace WorkflowLayer
                 SnpEffWrapper.WriteInstallScript(binDirectory),
                 SRAToolkitWrapper.WriteInstallScript(binDirectory),
                 STARWrapper.WriteInstallScript(binDirectory),
-                STARFusionWrapper.WriteInstallScript(binDirectory)
+                STARFusionWrapper.WriteInstallScript(binDirectory),
+                TopHatWrapper.WriteInstallScript(binDirectory)
             };
 
             for (int i = 0; i < parallelScripts.Count; i++)
@@ -123,7 +131,7 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installDependencies.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 

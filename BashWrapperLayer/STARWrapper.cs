@@ -49,7 +49,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir),
+                "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR/source/STAR" + arguments + "; fi"
             };
         }
@@ -183,7 +183,7 @@ namespace ToolWrapperLayer
 
         public static string WriteInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installStar.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStar.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),

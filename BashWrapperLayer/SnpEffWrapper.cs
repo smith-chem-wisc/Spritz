@@ -92,7 +92,7 @@ namespace ToolWrapperLayer
 
         public static string WriteInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "snpEffInstaller.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "snpEffInstaller.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),

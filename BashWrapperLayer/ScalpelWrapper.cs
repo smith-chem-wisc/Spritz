@@ -24,12 +24,12 @@ namespace ToolWrapperLayer
         }
 
         // Requires cmake, installed in WrapperUtility install
-        public static string WriteInstallScript(string currentDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "installScalpel.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installScalpel.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "if [ ! -d scalpel-0.5.3 ]; then",
                 "  wget --no-check http://sourceforge.net/projects/scalpel/files/scalpel-0.5.3.tar.gz; tar zxvf scalpel-0.5.3.tar.gz; cd scalpel-0.5.3; make",
                 "  cd ..",

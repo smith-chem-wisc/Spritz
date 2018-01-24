@@ -41,7 +41,7 @@ namespace ToolWrapperLayer
 
         public static string WriteInstallScript(string currentDirectory)
         {
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "downloadInstallSkewer.bash");
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "installScripts", "installSkewer.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),

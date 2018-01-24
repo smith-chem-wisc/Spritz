@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace ToolWrapperLayer
 {
@@ -55,6 +56,19 @@ namespace ToolWrapperLayer
     /// </summary>
     public class BLASTWrapper
     {
-
+        public static string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMelting.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d ncbi-blast-2.7.1+ ]; then",
+                "  wget --no-check ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz",
+                "  tar -xvf ncbi-blast-2.7.1+-x64-linux.tar.gz; rm ncbi-blast-2.7.1+-x64-linux",
+                "  cp ncbi-blast-2.7.1+/bin/* /usr/local/bin",
+                "fi"
+            });
+            return scriptPath;
+        }
     }
 }

@@ -39,7 +39,7 @@ namespace ToolWrapperLayer
 
         public static string WriteInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installSRAToolkit.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installSRAToolkit.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),

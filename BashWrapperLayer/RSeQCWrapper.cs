@@ -77,7 +77,7 @@ namespace ToolWrapperLayer
 
         public static string WriteInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "install_rseqc.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installRSeQC.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),

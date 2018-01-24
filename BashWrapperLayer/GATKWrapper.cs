@@ -43,9 +43,9 @@ namespace ToolWrapperLayer
             return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
         }
 
-        public static string WriteInstallScript(string binDirectory)
+        public static string WriteGitCloneInstallScript(string binDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installGatk.bash");
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installGatk.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -56,6 +56,22 @@ namespace ToolWrapperLayer
                 "  cd ..",
                 "fi",
                 "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
+            });
+            return scriptPath;
+        }
+
+        public static string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installGatk.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d gatk ]; then",
+                "  wget --no-check https://github.com/broadinstitute/gatk/releases/download/4.0.0.0/gatk-4.0.0.0.zip",
+                "  unzip gatk-4.0.0.0.zip",
+                "  rm gatk-4.0.0.0.zip",
+                "  mv gatk-4.0.0.0 gatk",
+                "fi"
             });
             return scriptPath;
         }
@@ -182,6 +198,7 @@ namespace ToolWrapperLayer
             string unfliteredVcf = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".vcf");
             newVcf = Path.Combine(Path.GetDirectoryName(unfliteredVcf), Path.GetFileNameWithoutExtension(unfliteredVcf) + "filtered.vcf");
 
+            // This also filters malformed reads
             string fixMisencodedQualsCmd =
                 Gatk() +
                 " FixMisencodedBaseQualityReads" +
@@ -218,16 +235,21 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(scriptName, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                GenomeFastaIndexCommand(genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(binDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 // split and trim reads (some datasets are probably going to have misencoded quality scores; -fixMisencodedQuals just subtracts 31 from all quality scores if possible...)
-                // if it doesn't run with -fixMisencodedQuals, it probably just found a correctly encoded read, so ditch the fixMisencodedQuals option
-                "samtools index " + WrapperUtility.ConvertWindowsPath(dedupedBam),
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " ) ]]; then " + fixMisencodedQualsCmd + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) ]]; then " + splitNCigarReadsCmd1 + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) ]]; then " + splitNCigarReadsCmd2 + "; fi",
-                "samtools index " + WrapperUtility.ConvertWindowsPath(splitTrimBam),
+                // exit code of 2 means that the FixMisencodedQualityBaseReads errored out because there were correctly encode base quality scores
+                SamtoolsWrapper.IndexBamCommand(binDirectory, dedupedBam),
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " ) ]]; then",
+                "  " + fixMisencodedQualsCmd,
+                "  if [ $? -ne 2 ]; then",
+                "    " + splitNCigarReadsCmd1,
+                "  else",
+                "    " + splitNCigarReadsCmd2,
+                "  fi",
+                "fi",
+                SamtoolsWrapper.IndexBamCommand(binDirectory, splitTrimBam),
 
                 // call variants
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) + " ]; then " +
@@ -286,7 +308,7 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
 
-                GenomeFastaIndexCommand(genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(binDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
@@ -345,7 +367,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                GenomeFastaIndexCommand(genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(binDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(realignerTable) + " || ! -s " + WrapperUtility.ConvertWindowsPath(realignerTable) + " ]]; then " +
@@ -386,7 +408,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                GenomeFastaIndexCommand(genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(binDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(recalibrationTablePath) + " ]; then " +
@@ -416,11 +438,6 @@ namespace ToolWrapperLayer
         #endregion Defunct Methods, or might be used for DNA-Seq
 
         #region Private Methods
-
-        private static string GenomeFastaIndexCommand(string genomeFastaPath)
-        {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
-        }
 
         private static string GenomeDictionaryIndexCommand(string genomeFastaPath)
         {
