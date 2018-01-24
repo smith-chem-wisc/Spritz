@@ -6,33 +6,76 @@ using System.Diagnostics;
 
 namespace ToolWrapperLayer
 {
-    public class STARWrapper
+    /// <summary>
+    /// STAR is a fast and accurate spliced aligner for RNA-Seq data. It requires a lot of RAM, ~40 GB of free RAM.
+    /// It has an option for two-pass alignment, which improves the accuracy of splice junction detection.
+    /// </summary>
+    public class STARWrapper :
+        IInstallable
     {
 
         #region Public Properties
 
+        /// <summary>
+        /// Output BAM file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string BamFileSuffix { get; } = "Aligned.out.bam";
 
+        /// <summary>
+        /// Output sorted BAM file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string SortedBamFileSuffix { get; } = "Aligned.sortedByCoord.out.bam";
 
+        /// <summary>
+        /// Output deduped BAM file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string DedupedBamFileSuffix { get; } = "Aligned.sortedByCoord.outProcessed.out.bam";
 
+        /// <summary>
+        /// Output deduping log file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string DedupedBamFileLog { get; } = "Aligned.sortedByCoord.outLog.out";
 
+        /// <summary>
+        /// Output splice junction file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string SpliceJunctionFileSuffix { get; } = "SJ.out.tab";
 
+        /// <summary>
+        /// Log file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string LogFileSuffix { get; } = "Log.out";
 
+        /// <summary>
+        /// Final log file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string LogFinalFileSuffix { get; } = "Log.final.out";
 
+        /// <summary>
+        /// Chimeric alignment file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string ChimericSamFileSuffix { get; } = "Chimeric.out.sam";
 
+        /// <summary>
+        /// Chimeric junction file. Suffix tagged onto the output prefix
+        /// </summary>
         public static string ChimericJunctionsFileSuffix { get; } = "Chimeric.out.junction";
 
         #endregion Public Properties
 
         #region Genome Index Methods
 
+        /// <summary>
+        /// Generates indices for STAR alignments.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="genomeDir"></param>
+        /// <param name="genomeFastas"></param>
+        /// <param name="geneModelGtfOrGff"></param>
+        /// <param name="sjdbFileChrStartEnd"></param>
+        /// <param name="junctionOverhang"></param>
+        /// <returns></returns>
         public static List<string> GenerateGenomeIndex(string binDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
             string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
@@ -54,6 +97,12 @@ namespace ToolWrapperLayer
             };
         }
 
+        /// <summary>
+        /// Removes genome indices from memory.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="genomeDir"></param>
+        /// <returns></returns>
         public static List<string> RemoveGenome(string binDirectory, string genomeDir)
         {
             string script_name = Path.Combine(binDirectory, "scripts", "removeGenome.bash");
@@ -66,13 +115,71 @@ namespace ToolWrapperLayer
 
         #endregion Genome Index Methods
 
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an installation script for STAR. Also installs seqtk, which is useful for subsetting fastq files.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStar.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "git clone https://github.com/lh3/seqtk.git",
+                "cd seqtk; make",
+                "cd ..",
+                "if [ ! -d STAR ]; then ",
+                "  git clone https://github.com/alexdobin/STAR.git",
+                "  cd STAR/source",
+                "  make STAR",
+                "  cd ..",
+                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")),
+                "fi"
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing STAR and seqtk.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
         #region First-Pass Alignment Methods
 
+        /// <summary>
+        /// Aligns reads and outputs junctions of spliced alignments. Does not output an alignment map.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="genomeDir"></param>
+        /// <param name="fastqFiles"></param>
+        /// <param name="outprefix"></param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="genomeLoad"></param>
+        /// <returns></returns>
         public static List<string> FirstPassAlignmentCommands(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
             return BasicAlignReadCommands(binDirectory, threads, genomeDir, fastqFiles, outprefix, strandSpecific, genomeLoad, "None");
         }
 
+        /// <summary>
+        /// Bundles splice jucntions from first pass alignments into a single splice junction file for second-pass alignment.
+        /// Excludes splice junctions for mitochondrial chromosome alignments.
+        /// </summary>
+        /// <param name="spliceJunctionOuts"></param>
+        /// <param name="uniqueSuffix"></param>
+        /// <param name="spliceJunctionStarts"></param>
+        /// <returns></returns>
         public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, int uniqueSuffix, out string spliceJunctionStarts)
         {
             if (spliceJunctionOuts.Count == 0) throw new ArgumentException("STARWrapper.ProcessFirstPassSpliceCommands: No splice junctions detected for second-pass genome generation.");
@@ -88,9 +195,23 @@ namespace ToolWrapperLayer
             };
         }
 
-        #endregion
+        #endregion First-Pass Alignment Methods
 
-        // fastqs must have \n line endings, not \r\n
+        #region Public Methods
+
+        /// <summary>
+        /// Aligns reads and outputs alignment map and chimeric alignments.
+        /// Note: fastqs must have \n line endings, not \r\n.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="genomeDir"></param>
+        /// <param name="fastqFiles"></param>
+        /// <param name="outprefix"></param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="genomeLoad"></param>
+        /// <param name="outSamType"></param>
+        /// <returns></returns>
         public static List<string> BasicAlignReadCommands(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory, string outSamType = "BAM Unsorted")
         {
             string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
@@ -122,7 +243,18 @@ namespace ToolWrapperLayer
             };
         }
 
-        // fastqs must have \n line endings, not \r\n
+        /// <summary>
+        /// Aligns reads and outputs alignment map and chimeric alignments. Duplicate reads are removed (deduped) from the alignment map, a step that's recommended for variant calling.
+        /// Note: fastqs must have \n line endings, not \r\n.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="genomeDir"></param>
+        /// <param name="fastqFiles"></param>
+        /// <param name="outprefix"></param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="genomeLoad"></param>
+        /// <returns></returns>
         public static List<string> AlignRNASeqReadsForVariantCalling(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
             string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
@@ -165,9 +297,19 @@ namespace ToolWrapperLayer
             };
         }
 
+        /// <summary>
+        /// Uses seqtk to get a subset of reads from a (pair of) fastq file(s).
+        /// Note: fastqs must have \n line endings, not \r\n.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="fastqFiles"></param>
+        /// <param name="reads"></param>
+        /// <param name="currentDirectory"></param>
+        /// <param name="newFfiles"></param>
+        /// <param name="useSeed"></param>
+        /// <param name="seed"></param>
         public static void SubsetFastqs(string binDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
         {
-            // Note: fastqs must have \n line endings, not \r\n
             newFfiles = new string[] { Path.Combine(Path.GetDirectoryName(fastqFiles[0]), Path.GetFileNameWithoutExtension(fastqFiles[0]) + ".segment.fastq") };
             if (fastqFiles.Length > 1)
                 newFfiles = new string[] { newFfiles[0], Path.Combine(Path.GetDirectoryName(fastqFiles[1]), Path.GetFileNameWithoutExtension(fastqFiles[1]) + ".segment.fastq") };
@@ -181,24 +323,7 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static string WriteInstallScript(string binDirectory)
-        {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStar.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "git clone https://github.com/lh3/seqtk.git",
-                "cd seqtk; make",
-                "cd ..",
-                "if [ ! -d STAR ]; then ",
-                "  git clone https://github.com/alexdobin/STAR.git",
-                "  cd STAR/source",
-                "  make STAR",
-                "  cd ..",
-                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")),
-                "fi"
-            });
-            return scriptPath;
-        }
+        #endregion Public Methods
+
     }
 }

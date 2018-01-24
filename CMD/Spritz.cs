@@ -19,7 +19,7 @@ namespace CMD
 
             if (args.Contains("setup"))
             {
-                InstallFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                ManagePackagesFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
                 return;
             }
 

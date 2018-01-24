@@ -7,46 +7,108 @@ using Proteomics;
 
 namespace ToolWrapperLayer
 {
+    /// <summary>
+    /// This class helps manage the downloading of Ensembl references, used for everything from alignment to annotaiton.
+    /// </summary>
     public class EnsemblDownloadsWrapper
     {
 
         #region Primary Assembly Genome Fasta URLs and Filenames
 
-        //ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/README
+        /// <summary>
+        /// Primary assembly for GRCh37. See ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/README for more info.
+        /// </summary>
         private static string GRCh37PrimaryAssemblyUrl = "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz";
+
+        /// <summary>
+        /// Filename for Primary assembly for GRCh37. See ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/README for more info.
+        /// </summary>
         public static string GRCh37PrimaryAssemblyFilename { get; } = "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa";
-        //ftp://ftp.ensembl.org/pub/release-81/fasta/homo_sapiens/dna/README
+
+        /// <summary>
+        /// Primary assembly for GRCh38. See ftp://ftp.ensembl.org/pub/release-81/fasta/homo_sapiens/dna/README for more info.
+        /// </summary>
         private static string GRCh38PrimaryAssemblyUrl = "ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz";
+
+        /// <summary>
+        /// Filename for Primary assembly for GRCh38. See ftp://ftp.ensembl.org/pub/release-81/fasta/homo_sapiens/dna/README for more info.
+        /// </summary>
         public static string GRCh38PrimaryAssemblyFilename { get; } = "Homo_sapiens.GRCh38.dna.primary_assembly.fa";
 
         #endregion Primary Assembly Genome Fasta URLs and Filenames
 
         #region GTF Gene Model URLs and Filenames
 
+        /// <summary>
+        /// GTF gene model for GRCh37.
+        /// </summary>
         private static string GRCh37GtfGeneModelUrl = "ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz";
+
+        /// <summary>
+        /// Filename for GRCh37 gene model.
+        /// </summary>
         public static string GRCh37GtfGeneModelFilename { get; } = "Homo_sapiens.GRCh37.75.gtf";
+
+        /// <summary>
+        /// GTF gene model for GRCh38.
+        /// </summary>
         private static string GRCh38GtfGeneModelUrl = "ftp://ftp.ensembl.org/pub/release-81/gtf/homo_sapiens/Homo_sapiens.GRCh38.81.gtf.gz";
+
+        /// <summary>
+        /// Filename for GRCh38 gene model.
+        /// </summary>
         public static string GRCh38GtfGeneModelFilename { get; } = "Homo_sapiens.GRCh38.81.gtf";
 
         #endregion GTF Gene Model URLs and Filenames
 
         #region GFF3 Gene Model URLs and Filenames
 
-        // There are no gff3 gene models for GRCh37
+        /// <summary>
+        /// GFF3 gene model for GRCh38. Note, there are no gff3 gene models for GRCh37.
+        /// </summary>
         private static string GRCh38Gff3GeneModelUrl = "ftp://ftp.ensembl.org/pub/release-81/gff3/homo_sapiens/Homo_sapiens.GRCh38.81.gff3.gz";
+
+        /// <summary>
+        /// Filename for GFF3 gene model for GRCh38.
+        /// </summary>
         public static string GRCh38Gff3GeneModelFilename { get; } = "Homo_sapiens.GRCh38.81.gff3";
 
         #endregion GFF3 Gene Model URLs and Filenames
 
         #region Protein Fasta URLs and Filenames
 
+        /// <summary>
+        /// Protein fasta file (pep.all) for GRCh37.
+        /// </summary>
         private static string GRCh37ProteinFastaUrl = "ftp://ftp.ensembl.org/pub/release-75//fasta/homo_sapiens/pep/Homo_sapiens.GRCh37.75.pep.all.fa.gz";
+
+        /// <summary>
+        /// Filename for Protein fasta file (pep.all) for GRCh37.
+        /// </summary>
         public static string GRCh37ProteinFastaFilename { get; } = "Homo_sapiens.GRCh37.75.pep.all.fa";
+
+        /// <summary>
+        /// Protein fasta file (pep.all) for GRCh38.
+        /// </summary>
         private static string GRCh38ProteinFastaUrl = "ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz";
+
+        /// <summary>
+        /// Filename for Protein fasta file (pep.all) for GRCh38.
+        /// </summary>
         public static string GRCh38ProteinFastaFilename { get; } = "Homo_sapiens.GRCh38.pep.all.fa";
 
         #endregion Protein Fasta URLs and Filenames
 
+        /// <summary>
+        /// Downloads Ensembl references for GRCh37 or GRCh38.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="targetDirectory"></param>
+        /// <param name="reference"></param>
+        /// <param name="genomeFastaPath"></param>
+        /// <param name="gtfGeneModelPath"></param>
+        /// <param name="gff3GeneModelPath"></param>
+        /// <param name="proteinFastaPath"></param>
         public static void DownloadReferences(string binDirectory, string targetDirectory, string reference, out string genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath, out string proteinFastaPath)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
@@ -93,6 +155,12 @@ namespace ToolWrapperLayer
             //Genome.WriteFasta(new Genome(genomeFastaPath).KaryotypicOrder(), genomeFastaPath); // todo: try this for ordering contigs before alignments; does gtf then need to be reordered?
         }
 
+        /// <summary>
+        /// Converts UCSC chromosome names to Ensembl chromosome names.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
         public static Dictionary<string, string> UCSC2EnsemblChromosomeMappings(string binDirectory, string reference)
         {
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
@@ -106,6 +174,12 @@ namespace ToolWrapperLayer
             return chromMappings;
         }
 
+        /// <summary>
+        /// Converts Ensembl chromosome names to UCSC chromosome names.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
         public static Dictionary<string, string> Ensembl2UCSCChromosomeMappings(string binDirectory, string reference)
         {
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);

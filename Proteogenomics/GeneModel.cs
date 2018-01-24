@@ -10,26 +10,52 @@ using System.Text.RegularExpressions;
 
 namespace Proteogenomics
 {
+    /// <summary>
+    /// Contains representation of genes, transcripts, exons, etc. represented in a gene model. Can be amended with variants.
+    /// </summary>
     public class GeneModel
     {
 
         #region Private Fields
 
-        private static Regex attributeKey = new Regex(@"([\w]+)"); // first instance of a word
-        private static Regex attributeValue = new Regex(@"""([\w.]+)"""); // anything inside the quotes
+        /// <summary>
+        /// Gets the first instance of a word
+        /// </summary>
+        private static Regex attributeKey = new Regex(@"([\w]+)");
+
+        /// <summary>
+        /// Gets anything inside quotes
+        /// </summary>
+        private static Regex attributeValue = new Regex(@"""([\w.]+)""");
 
         #endregion Private Fields
 
         #region Public Properties
 
+        /// <summary>
+        /// Genome this gene model is based on.
+        /// </summary>
         public Genome Genome { get; set; }
+
+        /// <summary>
+        /// Genes represented in this gene model.
+        /// </summary>
         public List<Gene> Genes { get; set; } = new List<Gene>();
+
+        /// <summary>
+        /// Start codons represented in this gene model.
+        /// </summary>
         public List<Exon> StartCDS { get; set; } = new List<Exon>();
 
         #endregion Public Properties
 
         #region Public Constructor
 
+        /// <summary>
+        /// Constructs this GeneModel object from a Genome object and a corresponding GTF or GFF3 gene model file.
+        /// </summary>
+        /// <param name="genome"></param>
+        /// <param name="geneModelFile"></param>
         public GeneModel(Genome genome, string geneModelFile)
         {
             this.Genome = genome;
@@ -89,6 +115,14 @@ namespace Proteogenomics
             }
         }
 
+        /// <summary>
+        /// Processes a feature from a GFF3 gene model file.
+        /// </summary>
+        /// <param name="feature"></param>
+        /// <param name="OneBasedStart"></param>
+        /// <param name="OneBasedEnd"></param>
+        /// <param name="chromSeq"></param>
+        /// <param name="attributes"></param>
         public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
         {
             bool hasGeneId = attributes.TryGetValue("gene_id", out string gene_id);
@@ -129,6 +163,14 @@ namespace Proteogenomics
             }
         }
 
+        /// <summary>
+        /// Processes a feature from a GTF gene model file.
+        /// </summary>
+        /// <param name="feature"></param>
+        /// <param name="OneBasedStart"></param>
+        /// <param name="OneBasedEnd"></param>
+        /// <param name="chromSeq"></param>
+        /// <param name="attributes"></param>
         public void ProcessGtfFeature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
         {
             bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
@@ -188,16 +230,36 @@ namespace Proteogenomics
             }
         }
 
-        public void AmendTranscripts(List<VariantContext> variants)
+        /// <summary>
+        /// Enters variant information into transcripts based on SnpEff annotations and into exons based on location.
+        /// </summary>
+        /// <param name="superVariants"></param>
+        public void AmendTranscripts(List<VariantSuperContext> superVariants)
         {
             int binSize = 100000;
-            Dictionary<Tuple<string, long>, List<VariantContext>> chrIndexVariants = new Dictionary<Tuple<string, long>, List<VariantContext>>();
-            foreach(VariantContext variant in variants)
+            Dictionary<Tuple<string, long>, List<VariantSuperContext>> chrIndexVariants = new Dictionary<Tuple<string, long>, List<VariantSuperContext>>();
+            Dictionary<string, List<SnpEffAnnotation>> transcriptIdSnpEffVariants = new Dictionary<string, List<SnpEffAnnotation>>();
+            foreach (VariantSuperContext superVariant in superVariants)
             {
-                var key = new Tuple<string, long>(variant.Chr, variant.Start / binSize * binSize);
-                if (chrIndexVariants.TryGetValue(key, out List<VariantContext> vars))
-                    vars.Add(variant);
-                else chrIndexVariants[key] = new List<VariantContext> { variant };
+                var key = new Tuple<string, long>(superVariant.Chr, superVariant.Start / binSize * binSize);
+                if (chrIndexVariants.TryGetValue(key, out List<VariantSuperContext> vars))
+                    vars.Add(superVariant);
+                else
+                    chrIndexVariants[key] = new List<VariantSuperContext> { superVariant };
+
+                foreach (SnpEffAnnotation a in superVariants.SelectMany(v => v.SnpEffAnnotations))
+                {
+                    if (transcriptIdSnpEffVariants.TryGetValue(a.FeatureID, out List<SnpEffAnnotation> asdf))
+                        asdf.Add(a);
+                    else
+                        transcriptIdSnpEffVariants.Add(a.FeatureID, new List<SnpEffAnnotation> { a });
+                }
+            }
+
+            foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
+            {
+                if (transcriptIdSnpEffVariants.TryGetValue(t.ID, out List<SnpEffAnnotation> annotations))
+                    t.SnpEffVariants = annotations;
             }
 
             foreach (Exon x in Genes.SelectMany(g => g.Transcripts.SelectMany(t => t.Exons.Concat(t.CodingDomainSequences))))
@@ -205,8 +267,8 @@ namespace Proteogenomics
                 for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
                 {
                     var key = new Tuple<string, long>(x.ChromID.Split(' ')[0], i * binSize);
-                    if (chrIndexVariants.TryGetValue(key, out List<VariantContext> nearby_variants))
-                        x.Variants = nearby_variants.Where(v => x.Includes(v.Start)).ToList();
+                    if (chrIndexVariants.TryGetValue(key, out List<VariantSuperContext> nearby_variants))
+                        x.Variants = nearby_variants.Where(v => x.Includes(v.Start)).OfType<VariantContext>().ToList();
                 }
             }
         }

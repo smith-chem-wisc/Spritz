@@ -26,10 +26,6 @@ namespace Proteogenomics
 
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
 
-        //public List<Exon> Exons { get; set; } = new List<Exon>();
-
-        //public List<Exon> CodingDomainSequences { get; set; } = new List<Exon>();
-
         #endregion
 
         #region Public Constructors

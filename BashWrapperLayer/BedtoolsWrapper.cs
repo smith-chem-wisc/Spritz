@@ -7,9 +7,21 @@ using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class BedtoolsWrapper
+    /// <summary>
+    /// Bedtools is a commonly used toolkit for manipulating BED files.
+    /// </summary>
+    public class BedtoolsWrapper :
+        IInstallable
     {
-        public static string WriteInstallScript(string binDirectory)
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an install script for bedtools.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installBedtools.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -25,5 +37,18 @@ namespace ToolWrapperLayer
             });
             return scriptPath;
         }
+
+        /// <summary>
+        /// Writes a script for removing bedtools.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
     }
 }

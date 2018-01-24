@@ -3,9 +3,20 @@ using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class BEDOPSWrapper
+    /// <summary>
+    /// BEDOPS is a toolkit for performing basic operations and manipulations of BED files, which contain genomic intervals.
+    /// </summary>
+    public class BEDOPSWrapper :
+        IInstallable
     {
-        public static string WriteInstallScript(string binDirectory)
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an install script for BEDOPS.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installBedops.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -25,7 +36,27 @@ namespace ToolWrapperLayer
             return scriptPath;
         }
 
-        // see https://www.biostars.org/p/206342/ for awk fix
+        /// <summary>
+        /// Writes a script for removing BEDOPS.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
+        /// <summary>
+        /// Converts a gene model file (GTF or GFF2) to BED6, meaning the BED file has the minimum 6 columns.
+        /// 
+        /// See https://www.biostars.org/p/206342/ for the awk fix.
+        /// 
+        /// </summary>
+        /// <param name="bin"></param>
+        /// <param name="gtfOrGffPath"></param>
+        /// <returns></returns>
         public static string GtfOrGff2Bed6(string bin, string gtfOrGffPath)
         {
             string extension = Path.GetExtension(gtfOrGffPath);
@@ -44,7 +75,15 @@ namespace ToolWrapperLayer
             return bedPath;
         }
 
-        // see https://gist.github.com/gireeshkbogu/f478ad8495dca56545746cd391615b93
+        /// <summary>
+        /// Converts a gene model file (GTF or GFF2?) to a BED12 file with all 12 columns sometimes required of a BED file.
+        /// 
+        /// see https://gist.github.com/gireeshkbogu/f478ad8495dca56545746cd391615b93
+        /// 
+        /// </summary>
+        /// <param name="bin"></param>
+        /// <param name="gtf_path"></param>
+        /// <returns></returns>
         public static string Gtf2Bed12(string bin, string gtf_path)
         {
             string genePredPath = Path.Combine(Path.GetDirectoryName(gtf_path), Path.GetFileNameWithoutExtension(gtf_path) + ".genePred");

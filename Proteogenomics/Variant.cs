@@ -12,13 +12,13 @@ namespace Proteogenomics
 
         public VariantContext OriginalContext { get; set; }
 
-        public List<SnpEffAnnotation> SnpEffAnnotations { get; set; } = new List<SnpEffAnnotation>();
-
         public string ReferenceAllele { get; set; }
 
         public string AlternateAllele { get; set; }
 
         public double AlleleFrequency { get; set; }
+
+        //public int AlleleReadDepth { get; set; }
 
         public int OneBasedStart { get; set; }
 
@@ -39,16 +39,20 @@ namespace Proteogenomics
             AlternateAllele = variant.AlternateAlleles[zeroBasedAlleleIndex].BaseString;
             AlleleFrequency = 1;
 
-            if (variant.Attributes.TryGetValue("ANN", out object snpEffAnnotationObj))
-            {
-                SnpEffAnnotations = (snpEffAnnotationObj as string[]).Select(x => new SnpEffAnnotation(x)).ToList();
-            }
             if (variant.Attributes.TryGetValue("AF", out object alleleFrequencyObj))
             {
                 if (alleleFrequencyObj as string[] != null && double.TryParse((alleleFrequencyObj as string[])[zeroBasedAlleleIndex], out double af)) AlleleFrequency = af;
                 else if (double.TryParse(alleleFrequencyObj as string, out double af2)) AlleleFrequency = af2;
                 else AlleleFrequency = 1;
             }
+
+            // untested
+            //if (variant.Attributes.TryGetValue("DP", out object readDepthObj))
+            //{
+            //    if (readDepthObj as string[] != null && double.TryParse((readDepthObj as string[])[zeroBasedAlleleIndex], out double dp)) AlleleReadDepth = dp;
+            //    else if (double.TryParse(readDepthObj as string, out double dp2)) AlleleReadDepth = dp2;
+            //    else AlleleReadDepth = 1;
+            //}
         }
 
         #endregion Public Constructor

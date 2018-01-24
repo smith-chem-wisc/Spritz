@@ -4,8 +4,51 @@ using System.Linq;
 
 namespace ToolWrapperLayer
 {
-    public class SkewerWrapper
+    /// <summary>
+    /// Skewer is a program for trimming adapter sequences and filtering low quality reads.
+    /// </summary>
+    public class SkewerWrapper :
+        IInstallable
     {
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes a script for installing skewer.
+        /// </summary>
+        /// <param name="currentDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string currentDirectory)
+        {
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "installScripts", "installSkewer.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
+                "if [ ! -d BBMap ]; then git clone https://github.com/BioInfoTools/BBMap.git; fi", // has adapter sequences in the resources file
+                "if [ ! -d skewer-0.2.2 ]; then",
+                "  wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
+                "  tar -xvf 0.2.2.tar.gz",
+                "  rm 0.2.2.tar.gz",
+                "  cd skewer-0.2.2",
+                "  make",
+                "fi"
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing skewer.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
+        #region Public Method
+
         public static void Trim(string binDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
         {
             log = "";
@@ -39,22 +82,7 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static string WriteInstallScript(string currentDirectory)
-        {
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "installScripts", "installSkewer.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
-                "if [ ! -d BBMap ]; then git clone https://github.com/BioInfoTools/BBMap.git; fi", // has adapter sequences in the resources file
-                "if [ ! -d skewer-0.2.2 ]; then",
-                "  wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
-                "  tar -xvf 0.2.2.tar.gz",
-                "  rm 0.2.2.tar.gz",
-                "  cd skewer-0.2.2",
-                "  make",
-                "fi"
-            });
-            return scriptPath;
-        }
+        #endregion Public Method
+
     }
 }
