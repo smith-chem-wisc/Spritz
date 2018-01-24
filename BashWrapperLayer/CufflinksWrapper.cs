@@ -53,13 +53,29 @@ namespace ToolWrapperLayer
                     "; fi",
                 "bam=" +  WrapperUtility.ConvertWindowsPath(bamPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then bam=" + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + "; fi",
-                "cufflinks " +
+                "cufflinks-2.2.1/cufflinks " +
                     " --num-threads " + threads.ToString() +
                     " --GTF-guide " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
                     (strandSpecific ? "--library-type fr-firststrand" : "") +
                     " $bam",
             }).WaitForExit();
+        }
+
+        public static string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installCufflinks.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d cufflinks-2.2.1 ]; then",
+                "  wget --no-check http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz",
+                "  tar -xvf cufflinks-2.2.1.Linux_x86_64.tar.gz",
+                "  rm cufflinks-2.2.1.Linux_x86_64.tar.gz",
+                "  mv cufflinks-2.2.1.Linux_x86_64 cufflinks-2.2.1",
+                "fi"
+            });
+            return scriptPath;
         }
 
         #endregion Public Method

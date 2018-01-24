@@ -48,7 +48,8 @@ namespace ToolWrapperLayer
 
             // check for existing list and database
             bool databaseListExists = File.Exists(databaseListPath);
-            string[] existingDatabases = Directory.GetDirectories(Path.Combine(binDirectory, "snpEff", "data"));
+            string databaseDirectory = Path.Combine(binDirectory, "snpEff", "data");
+            string[] existingDatabases = Directory.Exists(databaseDirectory) ? Directory.GetDirectories(databaseDirectory) : new string[0];
             bool databaseExists = existingDatabases.Any(d => Path.GetFileName(d).StartsWith(reference, true, null));
             if (databaseListExists && databaseExists)
                 return;
@@ -89,18 +90,17 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            if (Directory.Exists(Path.Combine(binDirectory, "snpEff")) && Directory.Exists(Path.Combine(binDirectory, "skewer-0.2.2")))
-                return;
-            string scriptPath = Path.Combine(binDirectory, "scripts", "snpEffInstaller.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "snpEffInstaller.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip",
-                "unzip snpEff_latest_core.zip",
-                "rm snpEff_latest_core.zip",
-            }).WaitForExit();
+                "if [ ! -d snpEff ]; then wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip; fi",
+                "if [ ! -d snpEff ]; then unzip snpEff_latest_core.zip; fi",
+                "if [ ! -d snpEff ]; then rm snpEff_latest_core.zip; fi",
+            });
+            return scriptPath;
         }
 
         #endregion Public Methods

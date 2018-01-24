@@ -19,12 +19,12 @@ namespace CMD
 
             if (args.Contains("setup"))
             {
-                InstallFlow.Run(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                InstallFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
                 return;
             }
 
-            Options options = new Options();
-            bool isValid = Parser.Default.ParseArgumentsStrict(args, options);
+            Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
+            Options options = result.Value;
 
             #endregion Setup
 
@@ -98,7 +98,7 @@ namespace CMD
 
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
-                Fastq2ProteinsEngine.RunFromSra(
+                SampleSpecificProteinDatabaseEngine.GenerateFromSra(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -126,7 +126,7 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                Fastq2ProteinsEngine.RunFromFastqs(
+                SampleSpecificProteinDatabaseEngine.GenerateFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -147,7 +147,7 @@ namespace CMD
             {
                 Genome genome = new Genome(options.GenomeFasta);
                 EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-                proteinDatabases.Add(Fastq2ProteinsEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, badProteinAccessions, selenocysteineContainingAccessions, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                proteinDatabases.Add(SampleSpecificProteinDatabaseEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, badProteinAccessions, selenocysteineContainingAccessions, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
 
             else

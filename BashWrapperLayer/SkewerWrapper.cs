@@ -39,21 +39,22 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static void Install(string currentDirectory)
+        public static string WriteInstallScript(string currentDirectory)
         {
-            if (Directory.Exists(Path.Combine(currentDirectory, "BBMap")) && Directory.Exists(Path.Combine(currentDirectory, "skewer-0.2.2")))
-                return;
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "downloadInstallSkewer.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            string scriptPath = Path.Combine(currentDirectory, "scripts", "installScripts", "installSkewer.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
-                "git clone https://github.com/BioInfoTools/BBMap.git", // has adapter sequences in the resources file
-                "wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
-                "tar -xvf 0.2.2.tar.gz",
-                "rm 0.2.2.tar.gz",
-                "cd skewer-0.2.2",
-                "make"
-            }).WaitForExit();
+                "if [ ! -d BBMap ]; then git clone https://github.com/BioInfoTools/BBMap.git; fi", // has adapter sequences in the resources file
+                "if [ ! -d skewer-0.2.2 ]; then",
+                "  wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
+                "  tar -xvf 0.2.2.tar.gz",
+                "  rm 0.2.2.tar.gz",
+                "  cd skewer-0.2.2",
+                "  make",
+                "fi"
+            });
+            return scriptPath;
         }
     }
 }

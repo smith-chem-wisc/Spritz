@@ -60,19 +60,21 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            bool downloadFusion = !Directory.Exists(Path.Combine(binDirectory, "STAR-Fusion_v1.1.0"));
-            string script_path = Path.Combine(binDirectory, "scripts", "installStarFusion.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStarFusion.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                downloadFusion ? "wget https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.1.0/STAR-Fusion_v1.1.0.tar.gz" : "",
-                downloadFusion ? "tar -xvf STAR-Fusion_v1.1.0.tar.gz" : "",
-                downloadFusion ? "rm STAR-Fusion_v1.1.0.tar.gz" : "",
-                downloadFusion ? "cd STAR-Fusion_v1.1.0" : "",
-                downloadFusion ? "make" : "",
-            }).WaitForExit();
+                "if [ ! -d STAR-Fusion_v1.1.0 ]; then",
+                "  wget https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.1.0/STAR-Fusion_v1.1.0.tar.gz",
+                "  tar -xvf STAR-Fusion_v1.1.0.tar.gz",
+                "  rm STAR-Fusion_v1.1.0.tar.gz",
+                "  cd STAR-Fusion_v1.1.0",
+                "  make",
+                "fi",
+            });
+            return scriptPath;
         }
     }
 }
