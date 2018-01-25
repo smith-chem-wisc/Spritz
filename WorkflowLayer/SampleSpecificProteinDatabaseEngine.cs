@@ -89,13 +89,13 @@ namespace WorkflowLayer
                 writer.WriteLine(proteinsToWrite.Max(p => p.BaseSequence.Length).ToString() + "\tmaxium length");
                 writer.WriteLine(proteinsToWrite.Average(p => p.BaseSequence.Length).ToString() + "\taverage length");
                 writer.WriteLine();
-                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SingleAminoAcidVariantLabel) > 0).ToString() + "\tSAV sequences");
-                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SingleAminoAcidVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf("missense") > 0).ToString() + "\tSAV sequences");
+                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace("missense", "").Length) / "missense".Length).ToList();
                 writer.WriteLine(instancesOfSavs.Max().ToString() + "\tmaximum SAVs in a sequence");
                 if (instancesOfSavs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSavs.Where(x => x > 0).Average().ToString() + "\taverage SAVs in sequence with one");
                 writer.WriteLine();
-                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SynonymousVariantLabel) > 0).ToString() + "\tsequences with synonymous codon variation");
-                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SynonymousVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf("synonymous") > 0).ToString() + "\tsequences with synonymous codon variation");
+                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace("synonymous", "").Length) / "synonymous".Length).ToList();
                 writer.WriteLine(instancesOfSynonymousSnvs.Max().ToString() + "\tmaximum synonymous variations in a sequence");
                 if (instancesOfSynonymousSnvs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSynonymousSnvs.Where(x => x > 0).Average().ToString() + "\taverage synonymous variations in sequence with one");
             }

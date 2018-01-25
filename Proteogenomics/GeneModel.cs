@@ -247,7 +247,7 @@ namespace Proteogenomics
                 else
                     chrIndexVariants[key] = new List<VariantSuperContext> { superVariant };
 
-                foreach (SnpEffAnnotation a in superVariants.SelectMany(v => v.SnpEffAnnotations))
+                foreach (SnpEffAnnotation a in superVariant.SnpEffAnnotations)
                 {
                     if (transcriptIdSnpEffVariants.TryGetValue(a.FeatureID, out List<SnpEffAnnotation> asdf))
                         asdf.Add(a);

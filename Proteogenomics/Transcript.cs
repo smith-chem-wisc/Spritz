@@ -105,6 +105,11 @@ namespace Proteogenomics
             badProteinAccessions = badProteinAccessions != null ? badProteinAccessions : new HashSet<string>();
             selenocysteineContaining = selenocysteineContaining != null ? selenocysteineContaining : new Dictionary<string, string>();
             Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+
+            // don't process proteins that have CDS without discrete sequence or without actual start or stop, i.e. containing 'X' or '*'
+            if (badProteinAccessions.Contains(ProteinID))
+                return new List<Protein>(); 
+
             Protein baseProtein = Translate(true, false, badProteinAccessions, selenocysteineContaining).FirstOrDefault();
             string proteinSequence = "";
             if (baseProtein != null)
@@ -162,10 +167,10 @@ namespace Proteogenomics
                 foreach (SnpEffAnnotation a in annotations)
                 {
                     variantAminoAcidSequence = variantAminoAcidSequence.Substring(0, a.AminoAcidLocation - 1) + a.AlternateAminoAcid + variantAminoAcidSequence.Substring(a.AminoAcidLocation, variantAminoAcidSequence.Length - a.AminoAcidLocation);
-                 }
+                }
                 List<SnpEffAnnotation> combinedAnnotations = synonymous.Concat(annotations).ToList();
-                string proteinSnpEffAnnotation = "ANN=" + String.Join(",", combinedAnnotations.Select(a => a.Annotation)) + " OS=Homo sapiens GN=" + Gene.ID;
-                List<SequenceVariation> sequenceVariations = combinedAnnotations.Select(a => new SequenceVariation(a.Variant.Start, a.Variant.Reference.BaseString, a.Allele, a.Annotation)).ToList();
+                string proteinSnpEffAnnotation = "{" + String.Join(" ", combinedAnnotations.Select(a => "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";" + a.Annotation)) + "} OS=Homo sapiens GN=" + Gene.ID;
+                List<SequenceVariation> sequenceVariations = combinedAnnotations.Select(a => new SequenceVariation(a.Variant.Start, a.Variant.Reference.BaseString, a.Allele, "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";ANN=" + a.Annotation)).ToList();
                 string accession = ProteinID;
                 int arbitraryNumber = 1;
                 while (accessions.Contains(accession))
