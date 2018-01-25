@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EverythingRunnerEngine.cs" />
+    <Compile Include="LncRNADiscoveryEngine.cs" />
     <Compile Include="PrepareInputFileFlow.cs" />
     <Compile Include="SpritzWorkflow.cs" />
     <Compile Include="STAR2PassAlignFlow.cs" />
@@ -122,7 +123,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BashWrapperLayer\ToolWrapperLayer.csproj">
+    <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">
       <Project>{7f0b5697-1bbb-4ff5-9bf2-434f0a9c2c60}</Project>
       <Name>ToolWrapperLayer</Name>
     </ProjectReference>
