@@ -195,5 +195,25 @@ namespace SpritzGUI
             }
 
         }
+
+        private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RemoveLastTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
