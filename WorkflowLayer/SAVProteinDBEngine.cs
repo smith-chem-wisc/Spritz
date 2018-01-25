@@ -10,7 +10,7 @@ using UsefulProteomicsDatabases;
 
 namespace WorkflowLayer
 {
-    public class SampleSpecificProteinDatabaseEngine
+    public class SAVProteinDBEngine
     {
 
         #region Runner Methods
