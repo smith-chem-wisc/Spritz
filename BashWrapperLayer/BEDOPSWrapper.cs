@@ -5,7 +5,25 @@ namespace ToolWrapperLayer
 {
     public class BEDOPSWrapper
     {
-        // Installation takes place in WrapperUtility because it requires sudo access
+        public static string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installBedops.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d bedops ]; then wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
+                "if [ ! -d bedops ]; then tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
+                "if [ ! -d bedops ]; then rm bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
+                "if [ ! -d bedops ]; then mv bin bedops; fi",
+                "cd bedops",
+                "if [ ! -f gtfToGenePred ]; then wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred; fi",
+                "if [ ! -f genePredToBed ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed; fi",
+                "if [ ! -f liftOver ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver; fi",
+                "cd ..",
+                "sudo cp bedops/* /usr/local/bin"
+            });
+            return scriptPath;
+        }
 
         // see https://www.biostars.org/p/206342/ for awk fix
         public static string GtfOrGff2Bed6(string bin, string gtfOrGffPath)

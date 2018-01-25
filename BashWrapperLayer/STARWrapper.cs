@@ -49,7 +49,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir),
+                "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR/source/STAR" + arguments + "; fi"
             };
         }
@@ -73,16 +73,18 @@ namespace ToolWrapperLayer
             return BasicAlignReadCommands(binDirectory, threads, genomeDir, fastqFiles, outprefix, strandSpecific, genomeLoad, "None");
         }
 
-        public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, out string spliceJunctionStarts)
+        public static List<string> ProcessFirstPassSpliceCommands(List<string> spliceJunctionOuts, int uniqueSuffix, out string spliceJunctionStarts)
         {
             if (spliceJunctionOuts.Count == 0) throw new ArgumentException("STARWrapper.ProcessFirstPassSpliceCommands: No splice junctions detected for second-pass genome generation.");
-            spliceJunctionStarts = Path.Combine(Path.GetDirectoryName(spliceJunctionOuts[0]), "combined." + SpliceJunctionFileSuffix);
+            spliceJunctionStarts = Path.Combine(Path.GetDirectoryName(spliceJunctionOuts[0]), "combined" + uniqueSuffix.ToString() + "." + SpliceJunctionFileSuffix);
             return new List<string>
             {
-                "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " + 
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) + " ]; then " +
+                    "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " + 
                     String.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " | grep -v 'MT' >> " +
-                    WrapperUtility.ConvertWindowsPath(spliceJunctionStarts)
+                    WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) +
+                    "; fi"
             };
         }
 
@@ -179,22 +181,24 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static void Install(string binDirectory)
+        public static string WriteInstallScript(string binDirectory)
         {
-            bool downloadStar = !Directory.Exists(Path.Combine(binDirectory, "STAR"));
-            string script_path = Path.Combine(binDirectory, "scripts", "installStar.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStar.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "git clone https://github.com/lh3/seqtk.git",
                 "cd seqtk; make",
                 "cd ..",
-                downloadStar ? "git clone https://github.com/alexdobin/STAR.git" : "",
-                downloadStar ? "cd STAR/source" : "",
-                downloadStar ? "make STAR" : "",
-                downloadStar ? "cd .." : "",
-                downloadStar ? "export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")) : "",
-            }).WaitForExit();
+                "if [ ! -d STAR ]; then ",
+                "  git clone https://github.com/alexdobin/STAR.git",
+                "  cd STAR/source",
+                "  make STAR",
+                "  cd ..",
+                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")),
+                "fi"
+            });
+            return scriptPath;
         }
     }
 }

@@ -231,5 +231,6 @@ namespace Proteogenomics
         };
 
         #endregion Public Fields
+
     }
 }

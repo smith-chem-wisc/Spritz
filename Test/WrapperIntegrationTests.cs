@@ -20,32 +20,52 @@ namespace Test
         [Test, Order(0)]
         public void TestInstall()
         {
-            InstallFlow.Run(TestContext.CurrentContext.TestDirectory);
+            InstallFlow.Install(TestContext.CurrentContext.TestDirectory);
 
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "snpEff.jar")));
-
+            // bedops
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
 
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
+            // bedtools
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedtools2", "bin", "bedtools")));
 
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
-
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
-
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
+            // cufflinks
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "cufflinks-2.2.1")));
 
             // gatk
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "GenomeAnalysisTK.jar")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "picard.jar")));
+            Assert.IsTrue(Directory.GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "gatk"), "gatk*local.jar").Length > 0);
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "ChromosomeMappings")));
+
+            // hisat2
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "hisat2-2.1.0", "hisat2")));
+
+            // mfold
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "mfold-3.6", "scripts", "mfold")));
+
+            // rseqc
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
+
+            // samtools
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "samtools-1.6", "samtools")));
+
+            // scalpel
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
 
             // skewer
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
 
+            // snpeff
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "snpEff.jar")));
+
             // sratoolkit
             Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "sratoolkit*").Length > 0);
             Assert.IsTrue(Directory.GetFiles(Directory.GetDirectories(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0);
+
+            // star
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
+
+            // star-fusion
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
 
             // slncky
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
@@ -261,8 +281,8 @@ namespace Test
         public void SkewerSingle()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
-                19,
                 1,
+                19,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read1.fastq") },
                 out string[] readTrimmedPaths,
                 out string log);
@@ -349,7 +369,7 @@ namespace Test
         {
             GATKWrapper.PrepareBamAndFasta(TestContext.CurrentContext.TestDirectory,
                 8,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 "grch37",
                 out string new_bam);
@@ -450,7 +470,7 @@ namespace Test
         {
             SnpEffWrapper.PrimaryVariantAnnotation(TestContext.CurrentContext.TestDirectory,
                 "grch37",
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1-trimmed-pair1Aligned.sortedByCoord.outProcessed.out.split.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.vcf"),
                 out string html,
                 out string annVcf
                 );
@@ -501,7 +521,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
-            Fastq2ProteinsEngine.RunFromFastqs(
+            SampleSpecificProteinDatabaseEngine.GenerateFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -516,9 +536,9 @@ namespace Test
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases);
             foreach (string database in proteinDatabases)
             {
@@ -537,7 +557,7 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
-            Fastq2ProteinsEngine.RunFromFastqs(
+            SampleSpecificProteinDatabaseEngine.GenerateFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -556,24 +576,26 @@ namespace Test
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases);
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+                //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); // no longer happens with variant filtering criteria
             }
         }
 
         /// <summary>
         /// Handling tough non-karyotypic ordering of chromosomes and an SRA input
+        /// 
+        /// This also tests well-encoded quality scores, so if it starts to fail, check out whether the exit code of the FixMisencodedQualityBaseReads is expected (2 for failure).
         /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            Fastq2ProteinsEngine.RunFromSra(
+            SampleSpecificProteinDatabaseEngine.GenerateFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
@@ -584,19 +606,20 @@ namespace Test
                 true,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 out List<string> proteinDatabases,
                 true,
                 1000);
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+               // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
             }
         }
 
         #endregion Runner Tests
+
     }
 }
