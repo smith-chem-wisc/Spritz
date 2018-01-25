@@ -101,10 +101,12 @@
     <Compile Include="CufflinksWrapper.cs" />
     <Compile Include="GATKWrapper.cs" />
     <Compile Include="HISAT2Wrapper.cs" />
+    <Compile Include="IInstallable.cs" />
     <Compile Include="LastzWrapper.cs" />
     <Compile Include="MeltingWrapper.cs" />
     <Compile Include="MfoldWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RSEMWrapper.cs" />
     <Compile Include="RSeQCWrapper.cs" />
     <Compile Include="SamtoolsWrapper.cs" />
     <Compile Include="ScalpelWrapper.cs" />

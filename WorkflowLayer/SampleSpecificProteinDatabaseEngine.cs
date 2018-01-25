@@ -57,7 +57,7 @@ namespace WorkflowLayer
                 return "Error: VCF not found: " + vcfPath;
             }
             VCFParser vcf = new VCFParser(vcfPath);
-            List<VariantContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).ToList();
+            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).Select(v => new VariantSuperContext(v)).ToList();
             GeneModel geneModel = new GeneModel(genome, geneModelGtfOrGff);
             geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = new List<Protein>();
@@ -65,7 +65,7 @@ namespace WorkflowLayer
             for (int i = 0; i < transcripts.Count; i++)
             {
                 Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
-                proteins.AddRange(transcripts[i].Translate(true, true, badProteinAccessions, selenocysteineContaininAccessions));
+                proteins.AddRange(transcripts[i].TranslateFromSnpEffAnnotatedSNVs(true, true, badProteinAccessions, selenocysteineContaininAccessions));
             }
             int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
             string proteinVariantDatabase = outprefix + ".protein.fasta";
@@ -89,13 +89,13 @@ namespace WorkflowLayer
                 writer.WriteLine(proteinsToWrite.Max(p => p.BaseSequence.Length).ToString() + "\tmaxium length");
                 writer.WriteLine(proteinsToWrite.Average(p => p.BaseSequence.Length).ToString() + "\taverage length");
                 writer.WriteLine();
-                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SingleAminoAcidVariantLabel) > 0).ToString() + "\tSAV sequences");
-                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SingleAminoAcidVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf("missense") > 0).ToString() + "\tSAV sequences");
+                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace("missense", "").Length) / "missense".Length).ToList();
                 writer.WriteLine(instancesOfSavs.Max().ToString() + "\tmaximum SAVs in a sequence");
                 if (instancesOfSavs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSavs.Where(x => x > 0).Average().ToString() + "\taverage SAVs in sequence with one");
                 writer.WriteLine();
-                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(ProteinAnnotation.SynonymousVariantLabel) > 0).ToString() + "\tsequences with synonymous codon variation");
-                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(ProteinAnnotation.SynonymousVariantLabel, "").Length) / ProteinAnnotation.SingleAminoAcidVariantLabel.Length).ToList();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf("synonymous") > 0).ToString() + "\tsequences with synonymous codon variation");
+                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace("synonymous", "").Length) / "synonymous".Length).ToList();
                 writer.WriteLine(instancesOfSynonymousSnvs.Max().ToString() + "\tmaximum synonymous variations in a sequence");
                 if (instancesOfSynonymousSnvs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSynonymousSnvs.Where(x => x > 0).Average().ToString() + "\taverage synonymous variations in sequence with one");
             }

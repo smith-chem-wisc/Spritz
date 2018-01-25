@@ -8,6 +8,30 @@ namespace WorkflowLayer
 {
     public class STAR2PassAlignFlow
     {
+        /// <summary>
+        /// Runs a two-pass alignment for a given set of fastq files.
+        /// </summary>
+        /// <param name="bin"></param>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="reference"></param>
+        /// <param name="threads"></param>
+        /// <param name="fastqs">List of fastq files, which may be paired in a string[].</param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="inferStrandSpecificity"></param>
+        /// <param name="overwriteStarAlignment"></param>
+        /// <param name="genomeStarIndexDirectory"></param>
+        /// <param name="reorderedFasta"></param>
+        /// <param name="proteinFasta"></param>
+        /// <param name="geneModelGtfOrGff"></param>
+        /// <param name="ensemblKnownSitesPath"></param>
+        /// <param name="firstPassSpliceJunctions"></param>
+        /// <param name="secondPassGenomeDirectory"></param>
+        /// <param name="sortedBamFiles"></param>
+        /// <param name="dedupedBamFiles"></param>
+        /// <param name="chimericSamFiles"></param>
+        /// <param name="chimericJunctionFiles"></param>
+        /// <param name="useReadSubset"></param>
+        /// <param name="readSubset"></param>
         public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string reorderedFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, bool useReadSubset = false, int readSubset = 300000)
         {
             // Alignment preparation

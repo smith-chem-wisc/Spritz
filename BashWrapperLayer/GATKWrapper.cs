@@ -7,22 +7,43 @@ using System.Text.RegularExpressions;
 
 namespace ToolWrapperLayer
 {
-    public class GATKWrapper
+    /// <summary>
+    /// GATK is the genome analysis toolkit, used for calling variants from nucleotide sequencing data and for preparing alignment maps for variant calling.
+    /// </summary>
+    public class GATKWrapper :
+        IInstallable
     {
 
         #region Private Fields
 
+        /// <summary>
+        /// All dbSNP reference alleles for GRCh37, used for variant calling
+        /// </summary>
         private static string allGRCh37UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/All_20170710.vcf.gz";
 
+        /// <summary>
+        /// Common dbSNP reference alleles for GRCh37, used for variant calling
+        /// </summary>
         private static string commonGRCh37UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh37p13/VCF/GATK/common_all_20170710.vcf.gz";
 
-        // Malformed with empty alleles
+        /// <summary>
+        /// dbSNP reference alleles for GRCh37 from Ensembl. Don't use this. The VCF is malformed with some empty alleles.
+        /// </summary>
         private static string GRCh37Ensembl = "ftp://ftp.ensembl.org/pub/release-75//variation/vcf/homo_sapiens/Homo_sapiens.vcf.gz";
 
+        /// <summary>
+        /// All dbSNP reference alleles for GRCh38, used for variant calling
+        /// </summary>
         private static string allGRCh38UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/All_20170710.vcf.gz";
 
+        /// <summary>
+        /// Common dbSNP reference alleles for GRCh38, used for variant calling
+        /// </summary>
         private static string commonGRCh38UCSC = "ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz";
 
+        /// <summary>
+        /// dbSNP reference alleles for GRCh37 from Ensembl. Don't use this. The VCF might be malformed with some empty alleles, although I haven't checked like I did for the GRCh37 one.
+        /// </summary>
         private static string GRCh38Ensembl = "ftp://ftp.ensembl.org/pub/release-81//variation/vcf/homo_sapiens/Homo_sapiens.vcf.gz";
 
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
@@ -36,6 +57,10 @@ namespace ToolWrapperLayer
 
         #region General Public Methods
 
+        /// <summary>
+        /// Generic command for calling GATK, allowing use of all free memory.
+        /// </summary>
+        /// <returns></returns>
         public static string Gatk()
         {
             var performance = new PerformanceCounter("Memory", "Available MBytes");
@@ -43,6 +68,11 @@ namespace ToolWrapperLayer
             return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
         }
 
+        /// <summary>
+        /// Writes an installation script for installing GATK from source. Requires root permissions to install gradle the first time.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
         public static string WriteGitCloneInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installGatk.bash");
@@ -60,7 +90,12 @@ namespace ToolWrapperLayer
             return scriptPath;
         }
 
-        public static string WriteInstallScript(string binDirectory)
+        /// <summary>
+        /// Writes an installation script for installing GATK from pre-built binaries.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installGatk.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -76,10 +111,29 @@ namespace ToolWrapperLayer
             return scriptPath;
         }
 
+        /// <summary>
+        /// Writes a script for removing gatk.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
         #endregion General Public Methods
 
         #region Random Public Methods
 
+        /// <summary>
+        /// Generic method for subsetting a BAM file. Useful for testing new methods.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="bam"></param>
+        /// <param name="genomeFasta"></param>
+        /// <param name="genomeRegion"></param>
+        /// <param name="outputBam"></param>
         public static void SubsetBam(string binDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
         {
             string script_name = Path.Combine(binDirectory, "scripts", "subset_bam.bash");
@@ -96,6 +150,13 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
+        /// <summary>
+        /// Sorts a VCF file based on the chromosome ordering in the genome fasta.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="vcfPath"></param>
+        /// <param name="genomeFastaPath"></param>
+        /// <param name="sortedVcfPath"></param>
         public static void SortVCF(string binDirectory, string vcfPath, string genomeFastaPath, string sortedVcfPath)
         {
             string tmpDir = Path.Combine(binDirectory, "tmp");
@@ -184,13 +245,18 @@ namespace ToolWrapperLayer
         #region Variant Calling
 
         /// <summary>
-        /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually
+        /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually. 
+        /// 
+        /// Also splits and trims reads splice junction reads with SplitNCigarReads. 
+        /// Apparently cigars are genomic intervals, and splice junctions are represented by a bunch of N's (unkonwn nucleotide), HaplotypeCaller requires splitting them in the BAM file.
+        ///
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="genomeFasta"></param>
         /// <param name="dedupedBam"></param>
-        /// <param name=""></param>
+        /// <param name="dbsnpReferenceVcfPath"></param>
+        /// <param name="newVcf"></param>
         public static void VariantCalling(string binDirectory, int threads, string genomeFasta, string dedupedBam, string dbsnpReferenceVcfPath, out string newVcf)
         {
             string fixedQualsBam = Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + ".fixedQuals.bam");
@@ -285,13 +351,15 @@ namespace ToolWrapperLayer
         #region Defunct Methods, or might be used for DNA-Seq
 
         /// <summary>
-        /// Groups and sorts reads, and marks duplicates using Picard Tools. Then, splits and trims reads with SplitNCigarReads.
-        /// 
-        /// TODO: separate out the ucsc conversions from before
+        /// Groups (I'm just using one group, so it's more a formality) and sorts reads. Marks duplicates.
         /// </summary>
         /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
         /// <param name="bam"></param>
+        /// <param name="genomeFasta"></param>
+        /// <param name="reference"></param>
         /// <param name="newBam"></param>
+        /// <param name="convertToUCSC"></param>
         public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, bool convertToUCSC = true)
         {
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
@@ -423,13 +491,19 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        // using GenotypeGVCFs on all VCF files together, for DNA sequence analysis
+        /// <summary>
+        /// using GenotypeGVCFs on all VCF files together, for DNA sequence analysis
+        /// </summary>
+        /// <returns></returns>
         public static Process genotype()
         {
             return null;
         }
 
-        // using VariantRecalibrator, ApplyRecalibration, and then VariantFiltration -- apparently mostly for DNAseq
+        /// <summary>
+        /// using VariantRecalibrator, ApplyRecalibration, and then VariantFiltration -- apparently mostly for DNAseq
+        /// </summary>
+        /// <returns></returns>
         public static Process filter_variants()
         {
             return null;
@@ -439,6 +513,11 @@ namespace ToolWrapperLayer
 
         #region Private Methods
 
+        /// <summary>
+        /// Creates a dictionary for the genome fasta, used by many GATK tools.
+        /// </summary>
+        /// <param name="genomeFastaPath"></param>
+        /// <returns></returns>
         private static string GenomeDictionaryIndexCommand(string genomeFastaPath)
         {
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");

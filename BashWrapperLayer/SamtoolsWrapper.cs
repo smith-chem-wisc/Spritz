@@ -4,9 +4,20 @@ using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class SamtoolsWrapper
+    /// <summary>
+    /// Samtools is a staple of genomic analysis, allowing indexing, sorting, and inspection of alignment maps.
+    /// </summary>
+    public class SamtoolsWrapper :
+        IInstallable
     {
-        public static string WriteInstallScript(string binDirectory)
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes a script to install samtools.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installSamtools.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -25,10 +36,24 @@ namespace ToolWrapperLayer
             return scriptPath;
         }
 
+        /// <summary>
+        /// Writes a script for removing samtools.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
+        #region Public Methods
+
         public static string GenomeFastaIndexCommand(string binDirectory, string genomeFastaPath)
         {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then " + 
-                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + 
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then " +
+                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) +
                 " faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
         }
 
@@ -36,5 +61,8 @@ namespace ToolWrapperLayer
         {
             return WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath);
         }
+
+        #endregion Public Methods
+
     }
 }

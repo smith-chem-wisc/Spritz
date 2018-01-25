@@ -8,12 +8,47 @@ using System.Globalization;
 namespace ToolWrapperLayer
 {
     /// <summary>
+    /// SnpEff is a program for annotating variants, e.g. as missense or synonymous mutations.
+    /// 
     /// Program citation: http://snpeff.sourceforge.net/SnpEff_paper.pdf
     /// 
     /// Note: SnpEff realigns indels to the 3-prime end, which isn't ideal based on the scalpel review.
     /// </summary>
-    public class SnpEffWrapper
+    public class SnpEffWrapper :
+        IInstallable
     {
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes a script for installing SnpEff.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "snpEffInstaller.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d snpEff ]; then wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip; fi",
+                "if [ ! -d snpEff ]; then unzip snpEff_latest_core.zip; fi",
+                "if [ ! -d snpEff ]; then rm snpEff_latest_core.zip; fi",
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing SnpEff.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
 
         #region Public Methods
 
@@ -88,19 +123,6 @@ namespace ToolWrapperLayer
                 "echo \"\t" + snpeffReference + ".M.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "snpEff", "snpEff.config")),
                 "echo \"\t" + snpeffReference + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "snpEff", "snpEff.config")),
             }).WaitForExit();
-        }
-
-        public static string WriteInstallScript(string binDirectory)
-        {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "snpEffInstaller.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [ ! -d snpEff ]; then wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip; fi",
-                "if [ ! -d snpEff ]; then unzip snpEff_latest_core.zip; fi",
-                "if [ ! -d snpEff ]; then rm snpEff_latest_core.zip; fi",
-            });
-            return scriptPath;
         }
 
         #endregion Public Methods

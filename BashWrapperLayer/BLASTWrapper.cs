@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace ToolWrapperLayer
 {
     /// <summary>
+    /// BLAST+ is a set of local alignment tools for nucleotide (blastn, etc.) and protein (blastp, etc.) sequences.
+    /// 
     /// BLASTN USAGE (Nucleotide-Nucleotide BLAST 2.2.28+)
     ///  blastn[-h][-help][-import_search_strategy filename]
     ///    [-export_search_strategy filename][-task task_name][-db database_name]
@@ -54,9 +53,18 @@ namespace ToolWrapperLayer
     ///    [-max_target_seqs num_sequences][-num_threads int_value][-ungapped]
     ///    [-remote][-comp_based_stats compo][-use_sw_tback][-version]
     /// </summary>
-    public class BLASTWrapper
+    public class BLASTWrapper :
+        IInstallable
     {
-        public static string WriteInstallScript(string binDirectory)
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an install script for BLAST+.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMelting.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -70,5 +78,18 @@ namespace ToolWrapperLayer
             });
             return scriptPath;
         }
+
+        /// <summary>
+        /// Writes a script for removing bedtools.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
     }
 }

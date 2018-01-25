@@ -5,20 +5,71 @@ using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class CufflinksWrapper
+    /// <summary>
+    /// Cufflinks is a program that performs transcript reconstruction from RNA-Seq data. It's particularly useful for genome-guided reconstruction.
+    /// </summary>
+    public class CufflinksWrapper :
+        IInstallable
     {
 
         #region Public Properties
 
+        /// <summary>
+        /// Output filename for reconstructed transcripts gene model.
+        /// </summary>
         public static string TranscriptsFilename { get; } = "transcripts.gtf";
 
+        /// <summary>
+        /// Output file for skipped transcripts.
+        /// </summary>
         public static string SkippedTranscriptsFilename { get; } = "skipped.gtf";
 
+        /// <summary>
+        /// Output file for isoform abundance (although I favor using RSEM).
+        /// </summary>
         public static string IsoformAbundanceFilename { get; } = "isoforms.fpkm_tracking";
 
+        /// <summary>
+        /// Output file for gene abundance (although I favor using RSEM).
+        /// </summary>
         public static string GeneAbundanceFilename { get; } = "genes.fpkm_tracking";
 
         #endregion Public Properties
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes a script for installing cufflinks.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installCufflinks.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d cufflinks-2.2.1 ]; then",
+                "  wget --no-check http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz",
+                "  tar -xvf cufflinks-2.2.1.Linux_x86_64.tar.gz",
+                "  rm cufflinks-2.2.1.Linux_x86_64.tar.gz",
+                "  mv cufflinks-2.2.1.Linux_x86_64 cufflinks-2.2.1",
+                "fi"
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing cufflinks.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
 
         #region Public Method
 
@@ -29,10 +80,10 @@ namespace ToolWrapperLayer
         /// <param name="binDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="bamPath"></param>
-        /// <param name="outputDirectory"></param>
         /// <param name="geneModelGtfOrGffPath"></param>
         /// <param name="strandSpecific"></param>
         /// <param name="inferStrandSpecificity"></param>
+        /// <param name="outputDirectory"></param>
         public static void AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
         {
             if (inferStrandSpecificity)
@@ -60,22 +111,6 @@ namespace ToolWrapperLayer
                     (strandSpecific ? "--library-type fr-firststrand" : "") +
                     " $bam",
             }).WaitForExit();
-        }
-
-        public static string WriteInstallScript(string binDirectory)
-        {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installCufflinks.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [ ! -d cufflinks-2.2.1 ]; then",
-                "  wget --no-check http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz",
-                "  tar -xvf cufflinks-2.2.1.Linux_x86_64.tar.gz",
-                "  rm cufflinks-2.2.1.Linux_x86_64.tar.gz",
-                "  mv cufflinks-2.2.1.Linux_x86_64 cufflinks-2.2.1",
-                "fi"
-            });
-            return scriptPath;
         }
 
         #endregion Public Method

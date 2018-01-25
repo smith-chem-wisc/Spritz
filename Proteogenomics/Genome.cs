@@ -12,12 +12,19 @@ namespace Proteogenomics
 
         #region Public Properties
 
+        /// <summary>
+        /// Chromosomes contained in this genome.
+        /// </summary>
         public List<ISequence> Chromosomes { get; set; }
 
         #endregion Public Properties
 
         #region Public Constructor
 
+        /// <summary>
+        /// Parses the chromosomes listed in a genome fasta.
+        /// </summary>
+        /// <param name="genomeFastaLocation"></param>
         public Genome(string genomeFastaLocation)
         {                
             Chromosomes = new FastAParser().Parse(genomeFastaLocation).ToList();
@@ -25,9 +32,13 @@ namespace Proteogenomics
 
         #endregion Public Constructor
 
-
         #region Public Method
 
+        /// <summary>
+        /// Orders the chromosomes in this genome by karyotypic order, i.e. by chromosome size.
+        /// </summary>
+        /// <param name="fastaHeaderDelimeter"></param>
+        /// <returns></returns>
         public List<ISequence> KaryotypicOrder(string fastaHeaderDelimeter)
         {
             ISequence[] orderedChromosomes = new ISequence[Chromosomes.Count];
@@ -64,6 +75,11 @@ namespace Proteogenomics
             return orderedChromosomes.ToList();
         }
 
+        /// <summary>
+        /// Checks whether the chromosomes are listed in karyotypic order, i.e. by chromosome size.
+        /// </summary>
+        /// <param name="fastaHeaderDelimeter"></param>
+        /// <returns></returns>
         public bool IsKaryotypic(string fastaHeaderDelimeter)
         {
             bool ucsc = Chromosomes[0].ID.StartsWith("c");
@@ -108,5 +124,6 @@ namespace Proteogenomics
         }
 
         #endregion Public Method
+
     }
 }

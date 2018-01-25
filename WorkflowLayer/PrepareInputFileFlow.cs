@@ -5,8 +5,17 @@ using ToolWrapperLayer;
 
 namespace WorkflowLayer
 {
+    /// <summary>
+    /// Workflow for preparing input files before running other workflows.
+    /// </summary>
     public class PrepareInputFileFlow
     {
+        /// <summary>
+        /// Prepares an Ensembl genome fasta for alignment and all following analysis. The main issue is that Ensembl orders chromosomes lexigraphically, not karyotypically, like some software like GATK expects.
+        /// </summary>
+        /// <param name="genomeFasta"></param>
+        /// <param name="ensemblGenome"></param>
+        /// <param name="reorderedFasta"></param>
         public static void PrepareEnsemblGenomeFasta(string genomeFasta, out Genome ensemblGenome, out string reorderedFasta)
         {
             if (Path.GetExtension(genomeFasta) == ".gz")

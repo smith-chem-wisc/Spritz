@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ToolWrapperLayer
 {
-    class UCSCDownloadsWrapper
+    public class UCSCDownloadsWrapper
     {
     }
 }

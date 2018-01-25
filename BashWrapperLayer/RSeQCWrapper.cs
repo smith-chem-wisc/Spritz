@@ -5,7 +5,11 @@ using System.Linq;
 
 namespace ToolWrapperLayer
 {
-    public class RSeQCWrapper
+    /// <summary>
+    /// RSeQC is a tookit of quality control scripts.
+    /// </summary>
+    public class RSeQCWrapper : 
+        IInstallable
     {
         #region Public Properties
 
@@ -16,6 +20,43 @@ namespace ToolWrapperLayer
         public static string InnerDistanceDistanceTableSuffix { get; } = ".inner_distance.txt";
 
         #endregion Public Properties
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an installation script for RSeQC.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installRSeQC.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d RSeQC-2.6.4 ]; then",
+                "  wget https://downloads.sourceforge.net/project/rseqc/RSeQC-2.6.4.tar.gz",
+                "  tar -xvf RSeQC-2.6.4.tar.gz", // infer_experiment.py is in the scripts folder
+                "  rm RSeQC-2.6.4.tar.gz",
+                "fi"
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script to remove RSeQC.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="bamPath"></param>
+        /// <param name="geneModelPath"></param>
+        /// <param name="outputFiles"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
 
         #region Public Methods
 
@@ -73,21 +114,6 @@ namespace ToolWrapperLayer
             double fraction_aligned_in_other_direction = double.Parse(lines[lines.Length - 1].Split(':')[1].TrimStart());
             return fraction_aligned_in_same_direction / fraction_aligned_in_other_direction < 1 - minFractionStrandSpecific
                 || fraction_aligned_in_same_direction / fraction_aligned_in_other_direction > minFractionStrandSpecific;
-        }
-
-        public static string WriteInstallScript(string binDirectory)
-        {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installRSeQC.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [ ! -d RSeQC-2.6.4 ]; then",
-                "  wget https://downloads.sourceforge.net/project/rseqc/RSeQC-2.6.4.tar.gz",
-                "  tar -xvf RSeQC-2.6.4.tar.gz", // infer_experiment.py is in the scripts folder
-                "  rm RSeQC-2.6.4.tar.gz",
-                "fi"
-            });
-            return scriptPath;
         }
 
         #endregion Public Methods

@@ -14,28 +14,65 @@ namespace Test
     [TestFixture]
     public class VariantTests
     {
-        //[Test]
-        //public void variants_into_genemodel()
-        //{
-        //    VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "wgEncodeRep1.Aligned.out.sorted.grouped.marked.split.mapqfixed.realigned.vcf"));
-        //    List<VariantContext> variants = vcf.Select(x => x).ToList();
-        //    Assert.AreEqual(15574, variants.Count);
+        [Test]
+        public void AmendTranscripts()
+        {
+            VCFParser vcf99999 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_99999.vcf")); // added a snpeff variant to this one
+            VCFParser vcf100000 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_100000.vcf"));
+            VCFParser vcf100001 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_100001.vcf"));
+            VCFParser vcf200000 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_200000.vcf"));
+            VCFParser vcf200001 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_200001.vcf"));
+            List<VariantSuperContext> variants99999 = vcf99999.Select(x => new VariantSuperContext(x)).ToList();
+            List<VariantSuperContext> variants100000 = vcf100000.Select(x => new VariantSuperContext(x)).ToList();
+            List<VariantSuperContext> variants100001 = vcf100001.Select(x => new VariantSuperContext(x)).ToList();
+            List<VariantSuperContext> variants200000 = vcf200000.Select(x => new VariantSuperContext(x)).ToList();
+            List<VariantSuperContext> variants200001 = vcf200001.Select(x => new VariantSuperContext(x)).ToList();
 
-        //    Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1.fa"));
-        //    GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1.gtf"));
-        //    geneModel.amend_transcripts(variants);
-        //    List<Protein> proteins = geneModel.genes.SelectMany(g => g.transcripts.SelectMany(t => t.translate(false, true))).ToList();
-        //    List<Protein> proteins_without_variants = geneModel.genes.SelectMany(g => g.transcripts.SelectMany(t => t.translate(false, false))).ToList();
-        //    HashSet<string> variant_seqs = new HashSet<string>(proteins.Select(p => p.BaseSequence));
-        //    HashSet<string> seqs = new HashSet<string>(proteins_without_variants.Select(p => p.BaseSequence));
-        //    Assert.IsTrue(variant_seqs.Count != seqs.Count);
-        //}
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel;
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
+            geneModel.AmendTranscripts(variants99999);
+            Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
+            geneModel.AmendTranscripts(variants100000);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
+            geneModel.AmendTranscripts(variants100000);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
+            geneModel.AmendTranscripts(variants100001);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
+            geneModel.AmendTranscripts(variants100001);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
+            geneModel.AmendTranscripts(variants200000);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
+            geneModel.AmendTranscripts(variants200000);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
+            geneModel.AmendTranscripts(variants200001);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
+            Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
+        }
 
         [Test]
         public void OneTranscriptOneHomozygous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_missense.vcf"));
-            List<VariantContext> variants = vcf.Select(x => x).ToList();
+            List<VariantSuperContext> variants = vcf.Select(x => new VariantSuperContext(x)).ToList();
             Assert.AreEqual(1, variants.Count);
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
@@ -62,7 +99,7 @@ namespace Test
         public void OneTranscriptOneHeterozygous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_missense.vcf"));
-            List<VariantContext> variants = vcf.Select(x => x).ToList();
+            List<VariantSuperContext> variants = vcf.Select(x => new VariantSuperContext(x)).ToList();
             Assert.AreEqual(1, variants.Count);
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
@@ -89,7 +126,7 @@ namespace Test
         public void OneTranscriptOneHeterozygousSynonymous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.vcf"));
-            List<VariantContext> variants = vcf.Select(x => x).ToList();
+            List<VariantSuperContext> variants = vcf.Select(x => new VariantSuperContext(x)).ToList();
             Assert.AreEqual(1, variants.Count);
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
@@ -115,7 +152,7 @@ namespace Test
         public void OneTranscriptOneHomozygousSynonymous()
         {
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_synonymous.vcf"));
-            List<VariantContext> variants = vcf.Select(x => x).ToList();
+            List<VariantSuperContext> variants = vcf.Select(x => new VariantSuperContext(x)).ToList();
             Assert.AreEqual(1, variants.Count);
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));

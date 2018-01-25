@@ -1,11 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System;
 
 namespace ToolWrapperLayer
 {
-    public class SRAToolkitWrapper
+    /// <summary>
+    /// SRAToolkit is used to download sequence read archives from GEO-SRA.
+    /// </summary>
+    public class SRAToolkitWrapper :
+        IInstallable
     {
 
         #region Private Fields
@@ -15,29 +19,14 @@ namespace ToolWrapperLayer
 
         #endregion Private Fields
 
-        #region Public Methods
+        #region Installation Methods
 
-        public static void Fetch(string bin, string sraAccession, string destinationDirectoryPath, out string[] fastqPaths, out string logPath)
-        {
-            logPath = Path.Combine(destinationDirectoryPath, sraAccession + "download.log");
-            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq");
-            if (fastqPaths.Length > 0) // already downloaded
-            {
-                fastqPaths = fastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();
-                return;
-            };
-            string scriptPath = Path.Combine(bin, "scripts", "download" + sraAccession + ".bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
-            {
-                "echo \"Downloading " + sraAccession + "\"",
-                "cd " + WrapperUtility.ConvertWindowsPath(bin),
-                "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(destinationDirectoryPath) + "\" " +
-                    sraAccession + " > " + WrapperUtility.ConvertWindowsPath(logPath),
-            }).WaitForExit();
-            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
-        }
-
-        public static string WriteInstallScript(string binDirectory)
+        /// <summary>
+        /// Writes an installation script for SRAToolkit.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installSRAToolkit.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -59,6 +48,40 @@ namespace ToolWrapperLayer
                 //"rm ascp-install-3.5.4.102989-linux-64.sh",
             });
             return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing SRAToolkit.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
+        #region Public Methods
+
+        public static void Fetch(string bin, string sraAccession, string destinationDirectoryPath, out string[] fastqPaths, out string logPath)
+        {
+            logPath = Path.Combine(destinationDirectoryPath, sraAccession + "download.log");
+            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq");
+            if (fastqPaths.Length > 0) // already downloaded
+            {
+                fastqPaths = fastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();
+                return;
+            };
+            string scriptPath = Path.Combine(bin, "scripts", "download" + sraAccession + ".bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            {
+                "echo \"Downloading " + sraAccession + "\"",
+                "cd " + WrapperUtility.ConvertWindowsPath(bin),
+                "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(destinationDirectoryPath) + "\" " +
+                    sraAccession + " > " + WrapperUtility.ConvertWindowsPath(logPath),
+            }).WaitForExit();
+            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
         }
 
         #endregion Public Methods

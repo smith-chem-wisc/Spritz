@@ -4,9 +4,21 @@ using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class MfoldWrapper
+    /// <summary>
+    /// Mfold calculates the most probable conformations of a DNA or RNA molecule. Can be used to figure out the most probable single-stranded regions.
+    /// </summary>
+    public class MfoldWrapper :
+        IInstallable
     {
-        public static string WriteInstallScript(string binDirectory)
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an installation script for mfold.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMfold.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -24,5 +36,18 @@ namespace ToolWrapperLayer
             });
             return scriptPath;
         }
+
+        /// <summary>
+        /// Writes a script for removing cufflinks.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
     }
 }

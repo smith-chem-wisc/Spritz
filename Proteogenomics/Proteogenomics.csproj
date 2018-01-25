@@ -136,11 +136,13 @@
     <Compile Include="Genome.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProteinAnnotation.cs" />
+    <Compile Include="ProteogenomicsUtility.cs" />
     <Compile Include="SnpEffAnnotation.cs" />
     <Compile Include="Translation.cs" />
     <Compile Include="Transcript.cs" />
     <Compile Include="Variant.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
+    <Compile Include="VariantSuperContext.cs" />
     <Compile Include="VertebrateMitochondrialCodons.cs" />
   </ItemGroup>
   <ItemGroup>
