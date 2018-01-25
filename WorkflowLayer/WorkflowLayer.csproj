@@ -113,7 +113,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="PrepareInputFileFlow.cs" />
+    <Compile Include="SpritzWorkflow.cs" />
     <Compile Include="STAR2PassAlignFlow.cs" />
     <Compile Include="SampleSpecificProteinDatabaseEngine.cs" />
     <Compile Include="ManagePackagesFlow.cs" />
