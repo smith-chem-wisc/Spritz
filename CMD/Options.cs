@@ -52,7 +52,7 @@ namespace CMD
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
 
-        [Option("lncRNAWorkflow", Required =false, HelpText = "Start a lncRNA workflow -skewer-STAR-cufflinks-slncky", DefaultValue = false)]
+        [Option("lncRNAWorkflow", Required =false, HelpText = "Start a lncRNA workflow -skewer-STAR-cufflinks-slncky", Default = false)]
         public bool lncRNAWorkflow { get; set; }
     }
 }
