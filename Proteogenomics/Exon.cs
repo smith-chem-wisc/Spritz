@@ -1,10 +1,9 @@
 ﻿using Bio;
 using Bio.VCF;
-using Bio.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System;
 
 namespace Proteogenomics
 {
@@ -13,20 +12,38 @@ namespace Proteogenomics
 
         #region Private Properties
 
+        /// <summary>
+        /// Metadata from the bio parser, used to query strand.
+        /// </summary>
         private MetadataListItem<List<string>> Metadata { get; set; }
 
         #endregion Private Properties
 
         #region Public Properties
 
+        /// <summary>
+        /// Sequence using BioDotNet interface
+        /// </summary>
         public ISequence Sequence { get; set; }
 
+        /// <summary>
+        /// Chromosome name
+        /// </summary>
         public string ChromID { get; set; }
 
+        /// <summary>
+        /// Strand of the chromosome that this exon is on.
+        /// </summary>
         public string Strand { get; set; }
 
+        /// <summary>
+        /// Start position.
+        /// </summary>
         public long OneBasedStart { get; set; } = -1;
 
+        /// <summary>
+        /// End position.
+        /// </summary>
         public long OneBasedEnd { get; set; } = -1;
 
         /// <summary>
@@ -164,10 +181,6 @@ namespace Proteogenomics
             return sequences;
         }
 
-        //public override int GetHashCode()
-        //{
-        //    return metadata.Key ^ metadata.SubItems["features"];
-        //}
 
         public bool IsBefore(Exon segment)
         {

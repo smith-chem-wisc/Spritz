@@ -5,8 +5,52 @@ using System.Linq;
 
 namespace ToolWrapperLayer
 {
-    public class STARFusionWrapper
+    /// <summary>
+    /// STARFusion is a program for analyzing gene fusion events detected using the STAR aligner.
+    /// </summary>
+    public class STARFusionWrapper :
+        IInstallable
     {
+
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes a script for installing STAR-Fusion.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
+        {
+            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStarFusion.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -d STAR-Fusion_v1.1.0 ]; then",
+                "  wget https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.1.0/STAR-Fusion_v1.1.0.tar.gz",
+                "  tar -xvf STAR-Fusion_v1.1.0.tar.gz",
+                "  rm STAR-Fusion_v1.1.0.tar.gz",
+                "  cd STAR-Fusion_v1.1.0",
+                "  make",
+                "fi",
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing STAR-Fusion.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+
+        #endregion Installation Methods
+
+        #region Public Methods
+
         public static void RunStarFusion(string bin_directory, string reference, int threads, string chemericOutJunction, string[] fastq_files, string outdir)
         {
             bool g37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
@@ -60,21 +104,7 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
-        public static string WriteInstallScript(string binDirectory)
-        {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStarFusion.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [ ! -d STAR-Fusion_v1.1.0 ]; then",
-                "  wget https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.1.0/STAR-Fusion_v1.1.0.tar.gz",
-                "  tar -xvf STAR-Fusion_v1.1.0.tar.gz",
-                "  rm STAR-Fusion_v1.1.0.tar.gz",
-                "  cd STAR-Fusion_v1.1.0",
-                "  make",
-                "fi",
-            });
-            return scriptPath;
-        }
+        #endregion Public Methods
+
     }
 }

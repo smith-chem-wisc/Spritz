@@ -1,16 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class HISAT2Wrapper
+    /// <summary>
+    /// HISAT2 is a fast and efficient splice RNA-Seq aligner. It has recently (2015) replaced TopHat2 as a low-RAM spliced aligner of choice.
+    /// </summary>
+    public class HISAT2Wrapper :
+        IInstallable
     {
 
-        public static string WriteInstallScript(string binDirectory)
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an installation script for HISAT2.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installHisat2.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -25,5 +33,18 @@ namespace ToolWrapperLayer
             });
             return scriptPath;
         }
+
+        /// <summary>
+        /// Writes a script for removing hisat2.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
+
     }
 }

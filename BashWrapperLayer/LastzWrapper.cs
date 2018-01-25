@@ -4,9 +4,20 @@ using System.IO;
 
 namespace ToolWrapperLayer
 {
-    public class LastzWrapper
+    /// <summary>
+    /// LASTZ is a local alignment tool. Used by Slncky in this software.
+    /// </summary>
+    public class LastzWrapper :
+        IInstallable
     {
-        public static string WriteInstallScript(string binDirectory)
+        #region Installation Methods
+
+        /// <summary>
+        /// Writes an installation script for lastz.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string binDirectory)
         {
             string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installLastz.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
@@ -25,5 +36,17 @@ namespace ToolWrapperLayer
             });
             return scriptPath;
         }
+
+        /// <summary>
+        /// Writes a script for removing lastz.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string binDirectory)
+        {
+            return null;
+        }
+
+        #endregion Installation Methods
     }
 }

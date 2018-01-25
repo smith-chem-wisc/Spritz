@@ -1,14 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ToolWrapperLayer;
 
 namespace WorkflowLayer
 {
-    public class InstallFlow
+    /// <summary>
+    /// Workflow for installing and managing packages and programs.
+    /// </summary>
+    public class ManagePackagesFlow
     {
 
         #region Private Field
 
+        /// <summary>
+        /// List of dependencies to fetch from aptitude using `sudo apt-get install`
+        /// </summary>
         private static List<string> aptitudeDependencies = new List<string>
         {
             // installers
@@ -44,10 +52,43 @@ namespace WorkflowLayer
             "libpython2.7-dev",
         };
 
+        /// <summary>
+        /// List of tools for installation or removal.
+        /// </summary>
+        private static List<IInstallable> tools = new List<IInstallable>
+        {
+            // require root permissions
+            new BEDOPSWrapper(),
+            new BLASTWrapper(),
+            new LastzWrapper(),
+            new MeltingWrapper(),
+            new MfoldWrapper(),
+            new SamtoolsWrapper(),
+
+            // don't necessarily require root permissions
+            new BedtoolsWrapper(),
+            new CufflinksWrapper(),
+            new GATKWrapper(),
+            new HISAT2Wrapper(),
+            new RSeQCWrapper(),
+            new ScalpelWrapper(),
+            new SkewerWrapper(),
+            new SlnckyWrapper(),
+            new SnpEffWrapper(),
+            new SRAToolkitWrapper(),
+            new STARWrapper(),
+            new STARFusionWrapper(),
+            new TopHatWrapper()
+        };
+
         #endregion Private Field
 
-        #region Public Method
+        #region Public Methods
 
+        /// <summary>
+        /// Installs packages and programs for analysis in Spritz.
+        /// </summary>
+        /// <param name="binDirectory"></param>
         public static void Install(string binDirectory)
         {
             // get root permissions and update and upgrade the repositories
@@ -90,35 +131,12 @@ namespace WorkflowLayer
                 "fi"
             );
 
-            // run some scripts in parallel with root permissions
+            // write some scripts in parallel with root permissions
             string installationLogsDirectory = Path.Combine(binDirectory, "scripts", "installLogs");
             Directory.CreateDirectory(installationLogsDirectory);
-            List<string> parallelScripts = new List<string>
-            {
-                // require root permissions
-                BEDOPSWrapper.WriteInstallScript(binDirectory),
-                BLASTWrapper.WriteInstallScript(binDirectory),
-                LastzWrapper.WriteInstallScript(binDirectory),
-                MeltingWrapper.WriteInstallScript(binDirectory),
-                MfoldWrapper.WriteInstallScript(binDirectory),
-                SamtoolsWrapper.WriteInstallScript(binDirectory),
+            List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(binDirectory)).ToList();
 
-                // don't necessarily require root permissions
-                BedtoolsWrapper.WriteInstallScript(binDirectory),
-                CufflinksWrapper.WriteInstallScript(binDirectory),
-                GATKWrapper.WriteInstallScript(binDirectory),
-                HISAT2Wrapper.WriteInstallScript(binDirectory),
-                RSeQCWrapper.WriteInstallScript(binDirectory),
-                ScalpelWrapper.WriteInstallScript(binDirectory),
-                SkewerWrapper.WriteInstallScript(binDirectory),
-                SlnckyWrapper.WriteInstallScript(binDirectory),
-                SnpEffWrapper.WriteInstallScript(binDirectory),
-                SRAToolkitWrapper.WriteInstallScript(binDirectory),
-                STARWrapper.WriteInstallScript(binDirectory),
-                STARFusionWrapper.WriteInstallScript(binDirectory),
-                TopHatWrapper.WriteInstallScript(binDirectory)
-            };
-
+            // run scripts in background
             for (int i = 0; i < parallelScripts.Count; i++)
             {
                 commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");
@@ -128,6 +146,7 @@ namespace WorkflowLayer
                 commands.Add("proc" + i.ToString() + "=$!");
             }
 
+            // wait on the scripts to finish
             for (int i = 0; i < parallelScripts.Count; i++)
             {
                 commands.Add("wait $proc" + i.ToString());
@@ -138,7 +157,41 @@ namespace WorkflowLayer
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 
-        #endregion Public Method
+        /// <summary>
+        /// Cleans all programs installed by Spritz. Intentionally leaves packages installed from aptitude, since they're effectively only base packages, now.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        public static void Clean(string binDirectory)
+        {
+            List<string> commands = new List<string>();
+
+            // write some scripts in parallel with root permissions
+            string toolRemovalLogs = Path.Combine(binDirectory, "scripts", "toolRemovalLogs");
+            Directory.CreateDirectory(toolRemovalLogs);
+            List<string> parallelScripts = tools.Select(t => t.WriteRemoveScript(binDirectory)).ToList();
+
+            // run scripts in background
+            for (int i = 0; i < parallelScripts.Count; i++)
+            {
+                commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");
+                commands.Add("bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &> " +
+                    WrapperUtility.ConvertWindowsPath(Path.Combine(toolRemovalLogs, Path.GetFileNameWithoutExtension(parallelScripts[i]) + ".log")) +
+                    " &");
+                commands.Add("proc" + i.ToString() + "=$!");
+            }
+
+            // wait on the scripts to finish
+            for (int i = 0; i < parallelScripts.Count; i++)
+            {
+                commands.Add("wait $proc" + i.ToString());
+            }
+
+            // write the and run the installations requiring root permissions
+            string scriptPath = Path.Combine(binDirectory, "scripts", "removalScripts", "installDependencies.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
+        }
+
+        #endregion Public Methods
 
     }
 }

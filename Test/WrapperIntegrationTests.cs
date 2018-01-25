@@ -20,7 +20,7 @@ namespace Test
         [Test, Order(0)]
         public void TestInstall()
         {
-            InstallFlow.Install(TestContext.CurrentContext.TestDirectory);
+            ManagePackagesFlow.Install(TestContext.CurrentContext.TestDirectory);
 
             // bedops
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));

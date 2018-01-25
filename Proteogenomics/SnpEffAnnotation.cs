@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Proteogenomics
 {
@@ -10,6 +12,16 @@ namespace Proteogenomics
     {
 
         #region Annotation Properties
+
+        /// <summary>
+        /// Parent variant containing this annotation.
+        /// </summary>
+        public VariantSuperContext Variant { get; set; }
+
+        /// <summary>
+        /// Original SnpEff annotation string.
+        /// </summary>
+        public string Annotation { get; set; }
 
         public string Allele { get; set; }
         public string[] Effects { get; set; }
@@ -67,6 +79,10 @@ namespace Proteogenomics
 
         #region Interpreted Properties
 
+        public int AminoAcidLocation { get; set; }
+        public char ReferenceAminoAcid { get; set; }
+        public char AlternateAminoAcid { get; set; }
+        public bool Missense { get; set; }
         public bool Synonymous { get; set; }
         public bool FrameshiftVariant { get; set; }
         public bool BadTranscript { get; set; }
@@ -75,8 +91,10 @@ namespace Proteogenomics
 
         #region Constructor
 
-        public SnpEffAnnotation(string annotation)
+        public SnpEffAnnotation(VariantSuperContext variant, string annotation)
         {
+            Variant = variant;
+            Annotation = annotation;
             string[] a = annotation.Split('|');
             Allele = a[0];
             Effects = a[1].Split('&');
@@ -89,16 +107,26 @@ namespace Proteogenomics
             if (a[8].Split('/').Length > 0 && int.TryParse(a[8].Split('/')[0], out int x)) ExonIntronRank = x;
             if (a[8].Split('/').Length > 1 && int.TryParse(a[8].Split('/')[1], out int y)) ExonIntronTotal = y;
             HGVSNotationDnaLevel = a[9];
-            if (a[10].Split('/').Length > 0 && int.TryParse(a[10].Split('/')[0], out x)) OneBasedTranscriptCDNAPosition = x;
-            if (a[10].Split('/').Length > 1 && int.TryParse(a[10].Split('/')[1], out y)) TranscriptCDNALength = y;
-            if (a[11].Split('/').Length > 0 && int.TryParse(a[11].Split('/')[0], out x)) OneBasedCodingDomainSequencePosition = x;
-            if (a[11].Split('/').Length > 1 && int.TryParse(a[11].Split('/')[1], out y)) CodingDomainSequenceLengthIncludingStopCodon = y;
-            if (a[12].Split('/').Length > 0 && int.TryParse(a[12].Split('/')[0], out x)) OneBasedProteinPosition = x;
-            if (a[12].Split('/').Length > 1 && int.TryParse(a[12].Split('/')[1], out y)) ProteinLength = y;
-            if (int.TryParse(a[13], out y)) DistanceToFeature = y;
-            Warnings = a[14].Split('&');
+            HGVSNotationProteinLevel = a[10];
+            if (a[11].Split('/').Length > 0 && int.TryParse(a[11].Split('/')[0], out x)) OneBasedTranscriptCDNAPosition = x;
+            if (a[11].Split('/').Length > 1 && int.TryParse(a[11].Split('/')[1], out y)) TranscriptCDNALength = y;
+            if (a[12].Split('/').Length > 0 && int.TryParse(a[12].Split('/')[0], out x)) OneBasedCodingDomainSequencePosition = x;
+            if (a[12].Split('/').Length > 1 && int.TryParse(a[12].Split('/')[1], out y)) CodingDomainSequenceLengthIncludingStopCodon = y;
+            if (a[13].Split('/').Length > 0 && int.TryParse(a[13].Split('/')[0], out x)) OneBasedProteinPosition = x;
+            if (a[13].Split('/').Length > 1 && int.TryParse(a[13].Split('/')[1], out y)) ProteinLength = y;
+            if (int.TryParse(a[14], out y)) DistanceToFeature = y;
+            Warnings = a[15].Split('&');
+            
+            if (HGVSNotationProteinLevel != null)
+            {
+                GroupCollection hgvsProteinMatch = HGVSProteinRegex.Match(HGVSNotationProteinLevel).Groups;
+                if (hgvsProteinMatch.Count > 2) ReferenceAminoAcid = ProteogenomicsUtility.amino_acids_3to1[hgvsProteinMatch[2].Value];
+                if (hgvsProteinMatch.Count > 3 && int.TryParse(hgvsProteinMatch[3].Value, out int location)) AminoAcidLocation = location;
+                if (hgvsProteinMatch.Count > 4) AlternateAminoAcid = ProteogenomicsUtility.amino_acids_3to1[hgvsProteinMatch[4].Value];
+            }
 
-            Synonymous = Effects.Any(eff => NonSynonymousVariations.Contains(eff));
+            Missense = Effects.Any(eff => eff == "missense_variant");
+            Synonymous = !Effects.Any(eff => NonSynonymousVariations.Contains(eff));
             FrameshiftVariant = Effects.Contains("frameshift_variant");
             BadTranscript = Warnings.Any(w => BadTranscriptWarnings.Contains(w));
         }
@@ -106,6 +134,8 @@ namespace Proteogenomics
         #endregion Constructor
 
         #region Private Fields
+
+        private Regex HGVSProteinRegex = new Regex(@"(p\.)([A-Z][a-z][a-z])(\d+)([A-Z][a-z][a-z])");
 
         private string[] HighPutativeImpactEffects = new string[]
         {
@@ -140,7 +170,7 @@ namespace Proteogenomics
 
         private string[] NonSynonymousVariations = new string[]
         {
-            "exon_loss_variant", //
+            "exon_loss_variant",
             "frameshift_variant",
             "rare_amino_acid_variant",
             "start_lost",
