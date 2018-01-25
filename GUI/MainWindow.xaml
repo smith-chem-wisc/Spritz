@@ -148,6 +148,8 @@
                             <RowDefinition Height="20" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
+                            <RowDefinition Height="36" />
+                            <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />
@@ -185,7 +187,17 @@
                                 </DataTemplate>-->
                             </TreeView.Resources>
                         </TreeView>
-                        <Button x:Name="RunWorkflowButton" Content="Run workflows!" Click="RunWorkflowButton_Click" FontSize="12" Grid.Row="2" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                            <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
+                            <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
+                            <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
+                            <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
+                        </StackPanel>
+                        <DockPanel Margin="5" Grid.Row="3" LastChildFill="True">
+                            <Label Content="Output Folder:" />
+                            <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
+                        </DockPanel>
+                        <Button x:Name="RunWorkflowButton" Content="Run workflows!" Click="RunWorkflowButton_Click" FontSize="12" Grid.Row="4" />
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>

@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.IO;
 using System.Collections.ObjectModel;
-//using WorkflowLayer;
+using WorkflowLayer;
 
 
 namespace SpritzGUI
@@ -21,6 +21,8 @@ namespace SpritzGUI
         private readonly ObservableCollection<GenomeFastaDataGrid> genomeFastaCollection = new ObservableCollection<GenomeFastaDataGrid>();
         private readonly ObservableCollection<GeneSetDataGrid> geneSetCollection = new ObservableCollection<GeneSetDataGrid>();
         private readonly ObservableCollection<RNASeqFastqDataGrid> rnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
+        private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
+        private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
 
         public MainWindow()
         {
@@ -87,7 +89,13 @@ namespace SpritzGUI
 
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
-
+            dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+            for (int i = 0; i < staticTasksObservableCollection.Count; i++)
+            {
+                dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].spritzWorkflow.WorkflowType.ToString(), staticTasksObservableCollection[i].spritzWorkflow));
+            }
+            WorkflowTreeView.DataContext = dynamicTasksObservableCollection;
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzWorkflow>(b.DisplayName, b.workflow)).ToList(), rnaSeqFastqCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), genomeFastaCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), geneSetCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), OutputFolderTextBox.Text);
         }
 
         private void DataGridCell_MouseDoubleClick(object sender, MouseButtonEventArgs e)

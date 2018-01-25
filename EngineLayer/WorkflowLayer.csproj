@@ -110,10 +110,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="Fastq2ProteinsEngine.cs" />
     <Compile Include="InstallFlow.cs" />
     <Compile Include="LncRNADiscoveryEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SpritzWorkflow.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Bio.VCF\Bio.VCF.csproj">

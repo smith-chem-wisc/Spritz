@@ -1,21 +1,21 @@
-﻿//using WorkflowLayer;
-//namespace SpritzGUI
-//{
-//    public class InRunTask : ForTreeView
-//    {
-//        #region Public Fields
+﻿using WorkflowLayer;
+namespace SpritzGUI
+{
+    public class InRunTask : ForTreeView
+    {
+        #region Public Fields
 
-//        public readonly MetaMorpheusTask task;
+        public readonly SpritzWorkflow workflow;
 
-//        #endregion Public Fields
+        #endregion Public Fields
 
-//        #region Public Constructors
+        #region Public Constructors
 
-//        public InRunTask(string displayName, MetaMorpheusTask task) : base(displayName, displayName)
-//        {
-//            this.task = task;
-//        }
+        public InRunTask(string displayName, SpritzWorkflow workflow) : base(displayName, displayName)
+        {
+            this.workflow = workflow;
+        }
 
-//        #endregion Public Constructors
-//    }
-//}
+        #endregion Public Constructors
+    }
+}
