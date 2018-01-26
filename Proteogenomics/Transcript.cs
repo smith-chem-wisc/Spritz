@@ -85,7 +85,7 @@ namespace Proteogenomics
 
         #endregion Public Constructors
 
-        #region Translate and Replace Methods
+        #region Translate and Replace with SnpEff Annotated Variations Method
 
         /// <summary>
         /// Stores accessions for checking that they are unique.
@@ -182,7 +182,7 @@ namespace Proteogenomics
             return proteins;
         }
 
-        #endregion Translate and Replace Methods
+        #endregion Translate and Replace with SnpEff Annotated Variations Method
 
         #region Translate from Variant Nucleotide Sequences Methods
 

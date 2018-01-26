@@ -147,7 +147,8 @@ namespace CMD
             {
                 Genome genome = new Genome(options.GenomeFasta);
                 EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-                proteinDatabases.Add(SAVProteinDBEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, badProteinAccessions, selenocysteineContainingAccessions, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                GeneModel geneModel = new GeneModel(genome, options.GeneModelGtfOrGff);
+                proteinDatabases.Add(SAVProteinDBEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
 
             else

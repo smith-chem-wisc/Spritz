@@ -115,8 +115,8 @@
   <ItemGroup>
     <Compile Include="AlternateGeneModel2ProteinDBEngine.cs" />
     <Compile Include="CaptureOligoDesignFlow.cs" />
-    <Compile Include="GeneFusionProteinDBEngine.cs" />
-    <Compile Include="IndelProteinDBEngine.cs" />
+    <Compile Include="GeneFusionTranscriptEngine.cs" />
+    <Compile Include="IndelTranscriptEngine.cs" />
     <Compile Include="STAR2PassAlignFlow.cs" />
     <Compile Include="SAVProteinDBEngine.cs" />
     <Compile Include="ManageToolsFlow.cs" />

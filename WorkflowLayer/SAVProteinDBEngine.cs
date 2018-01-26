@@ -47,7 +47,7 @@ namespace WorkflowLayer
             foreach (string dedupedBam in dedupedBamFiles)
             {
                 variantCallingCommands.AddRange(GATKWrapper.SplitNCigarReads(binDirectory, genomeFasta, dedupedBam, out string splitTrimBam));
-                variantCallingCommands.AddRange(GATKWrapper.VariantCalling(binDirectory, threads, reorderedFasta, dedupedBam, Path.Combine(binDirectory, ensemblKnownSitesPath), out string vcfPath));
+                variantCallingCommands.AddRange(GATKWrapper.VariantCalling(binDirectory, threads, reorderedFasta, splitTrimBam, Path.Combine(binDirectory, ensemblKnownSitesPath), out string vcfPath));
                 vcfFilePaths.Add(vcfPath);
                 variantCallingCommands.AddRange(SnpEffWrapper.PrimaryVariantAnnotation(binDirectory, reference, vcfPath, out string htmlReport, out string annotatedVcfPath, out string annotatedGenesSummaryPath));
                 annotatedVcfFilePaths.Add(annotatedVcfPath);
@@ -56,15 +56,17 @@ namespace WorkflowLayer
             }
             WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
 
+            // Generate databases
+            GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
             proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf => 
-                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, badProteinAccessions, selenocysteineContainingAccessions, geneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
+                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
         }
 
         #endregion Runner Methods
 
         #region Sample Specific Database Writing
 
-        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, string geneModelGtfOrGff, int minPeptideLength, string outprefix)
+        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
         {
             if (!File.Exists(vcfPath))
             {
@@ -73,7 +75,6 @@ namespace WorkflowLayer
             }
             VCFParser vcf = new VCFParser(vcfPath);
             List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).Select(v => new VariantSuperContext(v)).ToList();
-            GeneModel geneModel = new GeneModel(genome, geneModelGtfOrGff);
             geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = new List<Protein>();
             List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();

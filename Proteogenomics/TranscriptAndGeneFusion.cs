@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WorkflowLayer
+namespace Proteogenomics
 {
-    public class GeneFusionProteinDBEngine
+    class TranscriptAndGeneFusion
     {
-
     }
 }
