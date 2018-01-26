@@ -96,6 +96,8 @@ namespace SpritzGUI
             }
             WorkflowTreeView.DataContext = dynamicTasksObservableCollection;
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzWorkflow>(b.DisplayName, b.workflow)).ToList(), rnaSeqFastqCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), genomeFastaCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), geneSetCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), OutputFolderTextBox.Text);
+            var t = new Task(a.Run);
+            t.Start();
         }
 
         private void DataGridCell_MouseDoubleClick(object sender, MouseButtonEventArgs e)
