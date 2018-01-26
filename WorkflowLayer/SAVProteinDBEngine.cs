@@ -37,18 +37,6 @@ namespace WorkflowLayer
             STAR2PassAlignFlow.AlignFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
-            // Split and trim reads
-            List<string> splitTrimBams = new List<string>();
-            List<string> parallelScripts = new List<string>();
-            foreach (string dedupedBam in dedupedBamFiles)
-            {
-                string script = Path.Combine(binDirectory, "scripts", "splitNTrim", "splitNTrim" + dedupedBam.GetHashCode() + ".bash");
-                WrapperUtility.GenerateScript(script, GATKWrapper.SplitNCigarReads(binDirectory, genomeFasta, dedupedBam, out string splitTrimBam));
-                splitTrimBams.Add(splitTrimBam);
-                parallelScripts.Add(script);
-            }
-            Parallel.ForEach(parallelScripts, script => WrapperUtility.RunBashCommand("bash", WrapperUtility.ConvertWindowsPath(script)).WaitForExit());
-
             // Variant Calling
             string scriptName = Path.Combine(binDirectory, "scripts", "variantCalling.bash");
             List<string> variantCallingCommands = new List<string>();
@@ -58,6 +46,7 @@ namespace WorkflowLayer
             List<string> annotatedGenesSummaryPaths = new List<string>();
             foreach (string dedupedBam in dedupedBamFiles)
             {
+                variantCallingCommands.AddRange(GATKWrapper.SplitNCigarReads(binDirectory, genomeFasta, dedupedBam, out string splitTrimBam));
                 variantCallingCommands.AddRange(GATKWrapper.VariantCalling(binDirectory, threads, reorderedFasta, dedupedBam, Path.Combine(binDirectory, ensemblKnownSitesPath), out string vcfPath));
                 vcfFilePaths.Add(vcfPath);
                 variantCallingCommands.AddRange(SnpEffWrapper.PrimaryVariantAnnotation(binDirectory, reference, vcfPath, out string htmlReport, out string annotatedVcfPath, out string annotatedGenesSummaryPath));

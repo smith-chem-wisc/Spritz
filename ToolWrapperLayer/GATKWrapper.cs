@@ -256,6 +256,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Splits and trims reads splice junction reads with SplitNCigarReads. 
         /// Apparently cigars are genomic intervals, and splice junctions are represented by a bunch of N's (unkonwn nucleotide), HaplotypeCaller requires splitting them in the BAM file.
+        ///
+        /// It's tempting to want to run a few of these at the same time because it's not well parallelized. It's just not worth it. It uses quite a bit of RAM and racks the I/O at the beginning when reading the BAM files.
+        /// Could possibly do 4 at a time on 128 GB RAM and 28 processors.
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <param name="genomeFasta"></param>
