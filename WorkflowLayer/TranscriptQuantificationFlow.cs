@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace WorkflowLayer
 {
-    class TranscriptQuantificationFlow
+    public class TranscriptQuantificationFlow
     {
+
     }
 }

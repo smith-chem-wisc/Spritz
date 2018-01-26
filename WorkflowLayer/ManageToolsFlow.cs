@@ -9,7 +9,7 @@ namespace WorkflowLayer
     /// <summary>
     /// Workflow for installing and managing packages and programs.
     /// </summary>
-    public class ManagePackagesFlow
+    public class ManageToolsFlow
     {
 
         #region Private Field

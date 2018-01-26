@@ -10,6 +10,7 @@ namespace ToolWrapperLayer
     public class SamtoolsWrapper :
         IInstallable
     {
+
         #region Installation Methods
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace ToolWrapperLayer
 
         public static string IndexBamCommand(string binDirectory, string bamPath)
         {
-            return WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath);
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath) + "; fi";
         }
 
         #endregion Public Methods

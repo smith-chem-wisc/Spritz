@@ -20,7 +20,7 @@ namespace Test
         [Test, Order(0)]
         public void TestInstall()
         {
-            ManagePackagesFlow.Install(TestContext.CurrentContext.TestDirectory);
+            ManageToolsFlow.Install(TestContext.CurrentContext.TestDirectory);
 
             // bedops
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
@@ -367,34 +367,43 @@ namespace Test
         [Test, Order(4)]
         public void GatkWorflow()
         {
-            GATKWrapper.PrepareBamAndFasta(TestContext.CurrentContext.TestDirectory,
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "gatkWorkflowTest.bash"), new List<string>
+            (
+                GATKWrapper.PrepareBamAndFasta(TestContext.CurrentContext.TestDirectory,
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 "grch37",
-                out string new_bam);
+                out string new_bam).Concat(
 
-            // No longer needed with HaplotypeCaller
-            //GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
-            //    8,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-            //    new_bam,
-            //    out string realigned_bam,
-            //    ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
-
-            // Takes kind of a long time, and it's not recommended for RNA-Seq yet
-            //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.fa"),
-            //    realigned_bam,
-            //    out string recal_table_filepath,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.vcf"));
-
-            GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
-                8,
+                GATKWrapper.SplitNCigarReads(TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 new_bam,
+                out string splitTrimBam).Concat(
+
+                // No longer needed with HaplotypeCaller
+                //GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
+                //    8,
+                //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                //    new_bam,
+                //    out string realigned_bam,
+                //    ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
+
+                // Takes kind of a long time, and it's not recommended for RNA-Seq yet
+                //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
+                //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.fa"),
+                //    realigned_bam,
+                //    out string recal_table_filepath,
+                //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.vcf"));
+
+                GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
+                8,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                splitTrimBam,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                out string newVcf);
+                out string newVcf)))
+            )).WaitForExit();
+
             Assert.IsTrue(File.Exists(newVcf));
             Assert.IsTrue(new FileInfo(newVcf).Length > 0);
         }
@@ -472,10 +481,12 @@ namespace Test
                 "grch37",
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.vcf"),
                 out string html,
-                out string annVcf
+                out string annVcf,
+                out string annGenes
                 );
             Assert.IsTrue(File.Exists(html) && new FileInfo(html).Length > 0);
             Assert.IsTrue(File.Exists(annVcf) && new FileInfo(annVcf).Length > 0);
+            Assert.IsTrue(File.Exists(annVcf) && new FileInfo(annGenes).Length > 0);
         }
 
         #endregion SnpEff tests
@@ -521,7 +532,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
-            SAVProteinDBEngine.GenerateFromFastqs(
+            SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -543,7 +554,7 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("missense")));
             }
         }
 
@@ -557,7 +568,7 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
-            SAVProteinDBEngine.GenerateFromFastqs(
+            SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -583,7 +594,7 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); // no longer happens with variant filtering criteria
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any missense variations for this test set with variant filtering criteria
             }
         }
 
@@ -595,7 +606,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            SAVProteinDBEngine.GenerateFromSra(
+            SAVProteinDBEngine.GenerateSAVProteinsFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",

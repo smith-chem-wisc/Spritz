@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WorkflowLayer
 {
-    public class AlternateGeneModel2ProteinDBEngine
+    public class IndelTranscriptEngine
     {
 
     }
