@@ -8,5 +8,6 @@ namespace WorkflowLayer
 {
     public class GeneFusionProteinDBEngine
     {
+
     }
 }

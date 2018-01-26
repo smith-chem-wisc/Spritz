@@ -117,10 +117,9 @@
     <Compile Include="CaptureOligoDesignFlow.cs" />
     <Compile Include="GeneFusionProteinDBEngine.cs" />
     <Compile Include="IndelProteinDBEngine.cs" />
-    <Compile Include="PrepareInputFileFlow.cs" />
     <Compile Include="STAR2PassAlignFlow.cs" />
     <Compile Include="SAVProteinDBEngine.cs" />
-    <Compile Include="ManagePackagesFlow.cs" />
+    <Compile Include="ManageToolsFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TranscriptQuantificationFlow.cs" />
   </ItemGroup>

@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace WorkflowLayer
 {
-    class CaptureOligoDesignFlow
+    public class CaptureOligoDesignFlow
     {
+
     }
 }

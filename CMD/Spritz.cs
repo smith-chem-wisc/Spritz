@@ -19,7 +19,7 @@ namespace CMD
 
             if (args.Contains("setup"))
             {
-                ManagePackagesFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
                 return;
             }
 
@@ -98,7 +98,7 @@ namespace CMD
 
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
-                SAVProteinDBEngine.GenerateFromSra(
+                SAVProteinDBEngine.GenerateSAVProteinsFromSra(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -126,7 +126,7 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                SAVProteinDBEngine.GenerateFromFastqs(
+                SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
