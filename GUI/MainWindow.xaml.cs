@@ -217,5 +217,23 @@ namespace SpritzGUI
         {
 
         }
+
+        private void UpdateOutputFolderTextbox()
+        {
+            if (rnaSeqFastqCollection.Any())
+            {
+                var MatchingChars =
+                    from len in Enumerable.Range(0, rnaSeqFastqCollection.Select(b => b.FilePath).Min(s => s.Length)).Reverse()
+                    let possibleMatch = rnaSeqFastqCollection.Select(b => b.FilePath).First().Substring(0, len)
+                    where rnaSeqFastqCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
+                    select possibleMatch;
+
+                OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+            }
+            else
+            {
+                OutputFolderTextBox.Clear();
+            }
+        }
     }
 }
