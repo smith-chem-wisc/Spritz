@@ -13,9 +13,15 @@ using System;
 
 namespace WorkflowLayer
 {
-    public class LncRNADiscoveryEngine
+    public class LncRNADiscoveryWF : SpritzWorkflow
     {
-        
+        public LncRNADiscoveryWF() : base(MyWorkflow.LncRnaDiscovery)
+        {
+            rnaSeqAlignParameters = new RnaSeqAlignParameters();
+        }   
+
+        public RnaSeqAlignParameters rnaSeqAlignParameters { get; set; }
+       
         public static void Test(string test)
         {
             string script_path = Path.Combine(test, "scripts", "test.sh");

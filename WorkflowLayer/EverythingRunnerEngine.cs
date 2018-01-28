@@ -27,6 +27,8 @@ namespace WorkflowLayer
             currentGeneSetFilenameList = startingGeneSetFilenameList;
         }
 
+        public static event EventHandler<StringListEventArgs> NewRnaSeqFastqHandler;
+
         public void Run()
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
@@ -44,7 +46,19 @@ namespace WorkflowLayer
             {
                 var ok = taskList[i];
 
+                var outputFolderForThisTask = Path.Combine(outputFolder, ok.Item1);
+
+                if (!Directory.Exists(outputFolderForThisTask))
+                    Directory.CreateDirectory(outputFolderForThisTask);
+
+
+
             }
+        }
+
+        private void NewRnaSeqFastq(List<string> newRnaSeqFastq)
+        {
+            NewRnaSeqFastqHandler?.Invoke(this, new StringListEventArgs(newRnaSeqFastq));
         }
     }
 }

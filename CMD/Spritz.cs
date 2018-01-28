@@ -65,7 +65,7 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                LncRNADiscoveryEngine.RunLncRNADiscoveryFromFastq(
+                LncRNADiscoveryWF.RunLncRNADiscoveryFromFastq(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Threads,

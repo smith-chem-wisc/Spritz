@@ -31,7 +31,11 @@ namespace SpritzGUI
             dataGridFASTA.DataContext = genomeFastaCollection;
             dataGridGeneSet.DataContext = geneSetCollection;
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
+
+            EverythingRunnerEngine.NewRnaSeqFastqHandler += AddNewRnaSeqFastq;
         }
+
+        
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
@@ -80,7 +84,7 @@ namespace SpritzGUI
 
         private void BtnAddLncRNADiscover_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new LncRNADiscoverWF();
+            var dialog = new LncRNADiscoverWFWindows();
             if (dialog.ShowDialog() == true)
             {
 
@@ -193,6 +197,7 @@ namespace SpritzGUI
                 case ".fastq.gz":
                     RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
                     rnaSeqFastqCollection.Add(rnaSeqFastq);
+                    UpdateOutputFolderTextbox();
                     break;
             }
 
@@ -216,6 +221,24 @@ namespace SpritzGUI
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => AddNewRnaSeqFastq(sender, e)));
+            }
+            else
+            {
+                foreach (var uu in rnaSeqFastqCollection)
+                {
+                    uu.Use = false;
+                }
+                foreach (var newRnaSeqFastqData in e.StringList)
+                    rnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
+                UpdateOutputFolderTextbox();
+            }
         }
 
         private void UpdateOutputFolderTextbox()

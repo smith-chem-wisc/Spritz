@@ -115,10 +115,12 @@
   <ItemGroup>
     <Compile Include="AlternateGeneModel2ProteinDBEngine.cs" />
     <Compile Include="CaptureOligoDesignFlow.cs" />
+    <Compile Include="EventArgs\StringListEventArgs.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="GeneFusionProteinDBEngine.cs" />
     <Compile Include="IndelProteinDBEngine.cs" />
-    <Compile Include="LncRNADiscoveryEngine.cs" />
+    <Compile Include="LncRNADiscoveryWF.cs" />
+    <Compile Include="Parameters\RnaSeqAlignParameters.cs" />
     <Compile Include="PrepareInputFileFlow.cs" />
     <Compile Include="SAVProteinDBEngine.cs" />
     <Compile Include="SpritzWorkflow.cs" />

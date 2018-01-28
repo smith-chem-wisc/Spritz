@@ -65,7 +65,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="LncRNADiscoverWF.xaml">
+    <Page Include="LncRNADiscoverWFWindows.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -83,8 +83,8 @@
     <Compile Include="Fastq2ProteinsWF.xaml.cs">
       <DependentUpon>Fastq2ProteinsWF.xaml</DependentUpon>
     </Compile>
-    <Compile Include="LncRNADiscoverWF.xaml.cs">
-      <DependentUpon>LncRNADiscoverWF.xaml</DependentUpon>
+    <Compile Include="LncRNADiscoverWFWindows.xaml.cs">
+      <DependentUpon>LncRNADiscoverWFWindows.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
