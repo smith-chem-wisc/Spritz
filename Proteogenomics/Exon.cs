@@ -88,9 +88,9 @@ namespace Proteogenomics
             if (Variants.Count == 0 || !getVariantSequences)
                 return new List<Exon> { new Exon(this) };
 
-            List<Variant> homozygous = new List<Variant>();
-            List<Variant> heterozygous = new List<Variant>();
-            foreach (Variant var in Variants.SelectMany(v => Variant.ParseVariantContext(v)))
+            List<VariantOld> homozygous = new List<VariantOld>();
+            List<VariantOld> heterozygous = new List<VariantOld>();
+            foreach (VariantOld var in Variants.SelectMany(v => VariantOld.ParseVariantContext(v)))
             {
                 // todo: allow depth filter here using "DP" column, especially for indels
                 if (var.AlleleFrequency >= homozygousThreshold) homozygous.Add(var); // homozygous if the allele frequency is about 1
@@ -99,11 +99,11 @@ namespace Proteogenomics
 
             // This could be VERY inefficient, e.g. even with just 24 adjacent variants
             //int maxCount = (int)Math.Log(Int32.MaxValue, 2);
-            List<List<Variant>> possibleHaplotypes = new List<List<Variant>> { new List<Variant>(homozygous) };
+            List<List<VariantOld>> possibleHaplotypes = new List<List<VariantOld>> { new List<VariantOld>(homozygous) };
             possibleHaplotypes.AddRange(
                 Enumerable.Range(1, heterozygous.Count).SelectMany(k =>
-                    ExtensionMethods.Combinations(heterozygous, k)
-                        .Select(heteroAlleles => new List<Variant>(homozygous).Concat(heteroAlleles).ToList()))
+                    ProteogenomicsUtility.Combinations(heterozygous, k)
+                        .Select(heteroAlleles => new List<VariantOld>(homozygous).Concat(heteroAlleles).ToList()))
                     .ToList());
 
             // fake phasing (of variants within 100 bp of each other) to eliminate combinitorial explosion
@@ -111,13 +111,13 @@ namespace Proteogenomics
             if (!phased)
             {
                 int range = fakePhasingRange;
-                List<List<Variant>> fakePhased = null;
+                List<List<VariantOld>> fakePhased = null;
                 while (fakePhased == null || fakePhased.Count > Math.Max(2, maxCombos))
                 {
-                    fakePhased = new List<List<Variant>>();
-                    List<List<Variant>> phasedLast = possibleHaplotypes.OrderBy(x => x.Count).ToList();
+                    fakePhased = new List<List<VariantOld>>();
+                    List<List<VariantOld>> phasedLast = possibleHaplotypes.OrderBy(x => x.Count).ToList();
                     List<int> variantSites = phasedLast.Last().Select(v => v.OneBasedStart).ToList();
-                    foreach (List<Variant> hap in phasedLast)
+                    foreach (List<VariantOld> hap in phasedLast)
                     {
                         List<int> hapSites = hap.Select(v => v.OneBasedStart).ToList();
                         bool containsVariantsToFakePhase = variantSites.Any(vs => !hapSites.Contains(vs) && hap.Any(v => Math.Abs(v.OneBasedStart - vs) < range));
@@ -135,7 +135,7 @@ namespace Proteogenomics
             (this.Sequence as Sequence).CopyTo(sequenceBytes, 0, this.Sequence.Count);
 
             List<Exon> sequences = new List<Exon>();
-            foreach (List<Variant> haplotype in possibleHaplotypes)
+            foreach (List<VariantOld> haplotype in possibleHaplotypes)
             {
                 long tmpOneBasedStart = OneBasedStart;
                 byte[] newSequence = new byte[this.Sequence.Count + haplotype.Sum(v => v.AlternateAllele.Length - 1)];
@@ -143,7 +143,7 @@ namespace Proteogenomics
 
                 int subseqStart;
                 int subseqCount;
-                foreach (Variant var in haplotype)
+                foreach (VariantOld var in haplotype)
                 {
                     if (var.OneBasedStart < tmpOneBasedStart)
                         continue; // variant collides with previous variant

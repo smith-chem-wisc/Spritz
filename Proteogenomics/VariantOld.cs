@@ -1,10 +1,10 @@
 ﻿using Bio.VCF;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Proteogenomics
 {
-    public class Variant
+    public class VariantOld
         : VariantContext
     {
 
@@ -30,7 +30,7 @@ namespace Proteogenomics
 
         #region Public Constructor
 
-        public Variant(VariantContext variant, int zeroBasedAlleleIndex)
+        public VariantOld(VariantContext variant, int zeroBasedAlleleIndex)
             : base(variant)
         {
             OriginalContext = variant;
@@ -59,11 +59,11 @@ namespace Proteogenomics
 
         #region Public Method
 
-        public static IEnumerable<Variant> ParseVariantContext(VariantContext variant)
+        public static IEnumerable<VariantOld> ParseVariantContext(VariantContext variant)
         {
             for (int i = 0; i < variant.AlternateAlleles.Count; i++)
             {
-                yield return new Variant(variant, i);
+                yield return new VariantOld(variant, i);
             }
         }
 

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using ToolWrapperLayer;
 using UsefulProteomicsDatabases;
 
@@ -35,7 +34,7 @@ namespace WorkflowLayer
         {
             PrepareEnsemblGenomeFasta(genomeFasta, out Genome ensemblGenome, out string reorderedFasta);
             STAR2PassAlignFlow.AlignFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+            EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
             // Variant Calling
             string scriptName = Path.Combine(binDirectory, "scripts", "variantCalling.bash");
@@ -59,14 +58,14 @@ namespace WorkflowLayer
             // Generate databases
             GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
             proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf => 
-                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
+                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
         }
 
         #endregion Runner Methods
 
         #region Sample Specific Database Writing
 
-        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
+        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
         {
             if (!File.Exists(vcfPath))
             {
@@ -74,14 +73,14 @@ namespace WorkflowLayer
                 return "Error: VCF not found: " + vcfPath;
             }
             VCFParser vcf = new VCFParser(vcfPath);
-            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).Select(v => new VariantSuperContext(v)).ToList();
-            geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = new List<Protein>();
+            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).Select(v => new VariantSuperContext(v)).ToList();
+            geneModel.AmendTranscripts(singleNucleotideVariants, reference);
             List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
             for (int i = 0; i < transcripts.Count; i++)
             {
                 Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
-                proteins.AddRange(transcripts[i].TranslateFromSnpEffAnnotatedSNVs(true, true, badProteinAccessions, selenocysteineContaininAccessions));
+                proteins.AddRange(transcripts[i].TranslateFromSnpEffAnnotatedSNVs(true, true, reference, proteinSeqeunces, badProteinAccessions, selenocysteineContaininAccessions));
             }
             int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
             string proteinVariantDatabase = outprefix + ".protein.fasta";

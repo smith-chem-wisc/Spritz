@@ -31,39 +31,39 @@ namespace Test
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
             GeneModel geneModel;
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            geneModel.AmendTranscripts(variants99999);
+            geneModel.AmendTranscripts(variants99999, "GRCh37");
             Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            geneModel.AmendTranscripts(variants100000);
+            geneModel.AmendTranscripts(variants100000, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            geneModel.AmendTranscripts(variants100000);
+            geneModel.AmendTranscripts(variants100000, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            geneModel.AmendTranscripts(variants100001);
+            geneModel.AmendTranscripts(variants100001, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            geneModel.AmendTranscripts(variants100001);
+            geneModel.AmendTranscripts(variants100001, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            geneModel.AmendTranscripts(variants200000);
+            geneModel.AmendTranscripts(variants200000, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(1, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            geneModel.AmendTranscripts(variants200000);
+            geneModel.AmendTranscripts(variants200000, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            geneModel.AmendTranscripts(variants200001);
+            geneModel.AmendTranscripts(variants200001, "GRCh37");
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].SnpEffVariants.Count);
             Assert.AreEqual(0, geneModel.Genes[0].Transcripts[0].Exons[0].Variants.Count);
         }
@@ -77,7 +77,7 @@ namespace Test
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData",  "chr1_one_transcript.gtf"));
-            geneModel.AmendTranscripts(variants);
+            geneModel.AmendTranscripts(variants, "GRCh37");
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
@@ -104,7 +104,7 @@ namespace Test
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
-            geneModel.AmendTranscripts(variants);
+            geneModel.AmendTranscripts(variants, "GRCh37");
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
@@ -131,7 +131,7 @@ namespace Test
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
-            geneModel.AmendTranscripts(variants);
+            geneModel.AmendTranscripts(variants, "GRCh37");
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
@@ -157,7 +157,7 @@ namespace Test
 
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
-            geneModel.AmendTranscripts(variants);
+            geneModel.AmendTranscripts(variants, "GRCh37");
             List<Protein> proteins = geneModel.Translate(true, true).ToList();
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
@@ -218,7 +218,7 @@ namespace Test
             }).WaitForExit();
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.5.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr5_selenocysteineContaining.gtf"));
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
             List<Protein> proteins_wo_variant = geneModel.Translate(true, false, badProteinAccessions, selenocysteineContainingAccessions).ToList();
             Assert.AreEqual("MWRSLGLALALCLLPSGGTESQDQSSLCKQPPAWSIRDQDPMLNSNGSVTVVALLQASUYLCILQASKLEDLRVKLKKEGYSNISYIVVNHQGISSRLKYTHLKNKVSEHIPVYQQEENQTDVWTLLNGSKDDFLIYDRCGRLVYHLGLPFSFLTFPYVEEAIKIAYCEKKCGNCSLTTLKDEDFCKRVSLATVDKTVETPSPHYHHEHHHNHGHQHLGSSELSENQQPGAPNAPTHPAPPGLHHHHKHKGQHRQGHPENRDMPASEDLQDLQKKLCRKRCINQLLCKLPTDSELAPRSUCCHCRHLIFEKTGSAITUQCKENLPSLCSUQGLRAEENITESCQURLPPAAUQISQQLIPTEASASURUKNQAKKUEUPSN",
                 proteins_wo_variant[0].BaseSequence);

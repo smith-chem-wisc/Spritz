@@ -42,12 +42,12 @@ namespace Proteogenomics
 
         #region Public Methods
 
-        public List<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public List<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
             List<Protein> proteins = new List<Protein>();
             foreach (Transcript t in Transcripts)
             {
-                IEnumerable<Protein> p = t.Translate(translateCodingDomains, includeVariants,badProteinAccessions, selenocysteineContaining);
+                IEnumerable<Protein> p = t.Translate(translateCodingDomains, includeVariants, incompleteTranscriptAccessions, selenocysteineContaining);
                 if (p != null)
                     lock (proteins) proteins.AddRange(p);
             }

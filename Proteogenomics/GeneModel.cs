@@ -125,20 +125,21 @@ namespace Proteogenomics
         /// <param name="attributes"></param>
         public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
         {
-            bool hasGeneId = attributes.TryGetValue("gene_id", out string gene_id);
-            bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcript_id);
-            bool hasExonId = attributes.TryGetValue("exon_id", out string exon_id);
-            bool hasProteinId = attributes.TryGetValue("protein_id", out string protein_id);
+            bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
+            bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcriptId);
+            bool hasTranscriptVersion = attributes.TryGetValue("version", out string transcriptVersion) && hasTranscriptId;
+            bool hasExonId = attributes.TryGetValue("exon_id", out string exonId);
+            bool hasProteinId = attributes.TryGetValue("protein_id", out string proteinId);
 
-            if (hasGeneId && (currentGene == null || hasGeneId && gene_id != currentGene.ID))
+            if (hasGeneId && (currentGene == null || hasGeneId && geneId != currentGene.ID))
             {
-                currentGene = new Gene(gene_id, chromSeq, feature);
+                currentGene = new Gene(geneId, chromSeq, feature);
                 Genes.Add(currentGene);
             }
 
-            if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcript_id != currentTranscript.ID))
+            if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                currentTranscript = new Transcript(transcript_id, currentGene, feature);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, feature);
                 currentGene.Transcripts.Add(currentTranscript);
             }
 
@@ -158,7 +159,7 @@ namespace Proteogenomics
                     if (currentTranscript.CodingDomainSequences.Count == 0) StartCDS.Add(exon);
                     //currentGene.CodingDomainSequences.Add(exon);
                     currentTranscript.CodingDomainSequences.Add(exon);
-                    currentTranscript.ProteinID = protein_id;
+                    currentTranscript.ProteinID = proteinId;
                 }
             }
         }
@@ -195,7 +196,7 @@ namespace Proteogenomics
                     Genes.Add(currentGene);
                 }
 
-                currentTranscript = new Transcript(transcriptId, currentGene, feature);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, feature);
                 currentGene.Transcripts.Add(currentTranscript);
             }
 
@@ -209,7 +210,7 @@ namespace Proteogenomics
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    currentTranscript = new Transcript(transcriptId, currentGene, null);
+                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, null);
                     currentGene.Transcripts.Add(currentTranscript);
                 }
 
@@ -234,7 +235,7 @@ namespace Proteogenomics
         /// Enters variant information into transcripts based on SnpEff annotations and into exons based on location.
         /// </summary>
         /// <param name="superVariants"></param>
-        public void AmendTranscripts(List<VariantSuperContext> superVariants)
+        public void AmendTranscripts(List<VariantSuperContext> superVariants, string reference)
         {
             int binSize = 100000;
             Dictionary<Tuple<string, long>, List<VariantSuperContext>> chrIndexVariants = new Dictionary<Tuple<string, long>, List<VariantSuperContext>>();
@@ -258,7 +259,10 @@ namespace Proteogenomics
 
             foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
             {
-                if (transcriptIdSnpEffVariants.TryGetValue(t.ID, out List<SnpEffAnnotation> annotations))
+                string id = reference.StartsWith("GRCh38") ?
+                    t.ID + "." + t.Version :
+                    t.ID;
+                if (transcriptIdSnpEffVariants.TryGetValue(id, out List<SnpEffAnnotation> annotations))
                     t.SnpEffVariants = annotations;
             }
 
@@ -277,9 +281,9 @@ namespace Proteogenomics
 
         #region Translation Methods
 
-        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
-            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, badProteinAccessions, selenocysteineContaining)).ToList();
+            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
         }
 
         public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
@@ -292,6 +296,13 @@ namespace Proteogenomics
         #region Private Method
 
         private static Regex gffVersion = new Regex(@"(##gff-version\s+)(\d)");
+
+        /// <summary>
+        /// Required for using DotNetBio because it only handles GFF version 2 in the header.
+        /// The only difference in the new version is within the attributes, which are stored as free text anyway.
+        /// </summary>
+        /// <param name="gffPath"></param>
+        /// <param name="gffWithVersionMarked2Path"></param>
         private static void ForceGffVersionTo2(string gffPath, out string gffWithVersionMarked2Path)
         {
             gffWithVersionMarked2Path = Path.Combine(Path.GetDirectoryName(gffPath), Path.GetFileNameWithoutExtension(gffPath) + ".gff2" + Path.GetExtension(gffPath));

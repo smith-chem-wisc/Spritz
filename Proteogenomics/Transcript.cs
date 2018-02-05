@@ -28,6 +28,11 @@ namespace Proteogenomics
         public string ID { get; set; }
 
         /// <summary>
+        /// The transcript version
+        /// </summary>
+        public string Version { get; set; }
+
+        /// <summary>
         /// The strand this transcript lies on. Either '+' or '-'; might also be '.' if it's unknown, but would need to check.
         /// </summary>
         public string Strand { get; set; }
@@ -70,14 +75,15 @@ namespace Proteogenomics
         /// <summary>
         /// Constructor from the GFF3 reader information, including IDs, strand and Protein ID if available.
         /// </summary>
-        /// <param name="ID"></param>
+        /// <param name="id"></param>
         /// <param name="gene"></param>
         /// <param name="metadata"></param>
         /// <param name="ProteinID"></param>
-        public Transcript(string ID, Gene gene, MetadataListItem<List<string>> metadata, string ProteinID = null)
+        public Transcript(string id, string version, Gene gene, MetadataListItem<List<string>> metadata, string ProteinID = null)
         {
-            this.ID = ID;
-            this.ProteinID = ProteinID == null ? ID : ProteinID;
+            this.ID = id;
+            this.Version = version;
+            this.ProteinID = ProteinID == null ? id : ProteinID;
             this.Gene = gene;
             this.Metadata = metadata;
             this.Strand = metadata.SubItems["strand"][0];
@@ -100,21 +106,14 @@ namespace Proteogenomics
         /// <param name="badProteinAccessions"></param>
         /// <param name="selenocysteineContaining"></param>
         /// <returns></returns>
-        public IEnumerable<Protein> TranslateFromSnpEffAnnotatedSNVs(bool translateCodingDomains, bool includeVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public IEnumerable<Protein> TranslateFromSnpEffAnnotatedSNVs(bool translateCodingDomains, bool includeVariants, string reference, Dictionary<string, string> proteinSequences, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
             badProteinAccessions = badProteinAccessions != null ? badProteinAccessions : new HashSet<string>();
             selenocysteineContaining = selenocysteineContaining != null ? selenocysteineContaining : new Dictionary<string, string>();
-            Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
 
             // don't process proteins that have CDS without discrete sequence or without actual start or stop, i.e. containing 'X' or '*'
-            if (badProteinAccessions.Contains(ProteinID))
-                return new List<Protein>(); 
-
-            Protein baseProtein = Translate(true, false, badProteinAccessions, selenocysteineContaining).FirstOrDefault();
-            string proteinSequence = "";
-            if (baseProtein != null)
-                proteinSequence = baseProtein.BaseSequence;
-            else
+            proteinSequences.TryGetValue(ProteinID, out string proteinSequence);
+            if (proteinSequence == null || badProteinAccessions.Contains(ProteinID))
                 return new List<Protein>();
 
             // todo: allow depth filter here using "DP" column, especially for indels
@@ -123,7 +122,8 @@ namespace Proteogenomics
             List<SnpEffAnnotation> homozygousMissense = new List<SnpEffAnnotation>();
             List<SnpEffAnnotation> heterozygousMissense = new List<SnpEffAnnotation>();
             List<SnpEffAnnotation> other = new List<SnpEffAnnotation>();
-            foreach (SnpEffAnnotation a in SnpEffVariants.Where(annotation => annotation.FeatureID == ID))
+            string id = reference.StartsWith("GRCh38") ? ID + "." + Version : ID;
+            foreach (SnpEffAnnotation a in SnpEffVariants.Where(annotation => annotation.FeatureID == id))
             {
                 if (a.Synonymous) synonymous.Add(a);
                 else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency >= homozygousThreshold) homozygousMissense.Add(a);
@@ -135,7 +135,7 @@ namespace Proteogenomics
             List<List<SnpEffAnnotation>> missenseCombinations = new List<List<SnpEffAnnotation>> { new List<SnpEffAnnotation>(homozygousMissense) };
             missenseCombinations.AddRange(
                 Enumerable.Range(1, heterozygousMissense.Count).SelectMany(k =>
-                    ExtensionMethods.Combinations(heterozygousMissense, k)
+                    ProteogenomicsUtility.Combinations(heterozygousMissense, k)
                         .Select(heteroAlleles => new List<SnpEffAnnotation>(homozygousMissense).Concat(heteroAlleles).ToList()))
                     .ToList());
 
@@ -186,7 +186,7 @@ namespace Proteogenomics
 
         #region Translate from Variant Nucleotide Sequences Methods
 
-        public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
             List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants, out bool successfulCombination).Where(t => t.OkayToTranslate()).ToList();
             if (!successfulCombination)
@@ -194,7 +194,7 @@ namespace Proteogenomics
                 combinatoricFailures.Add(ID);
                 Console.WriteLine("combining exons failed " + combinatoricFailures.Count.ToString());
             }
-            return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes, badProteinAccessions, selenocysteineContaining);
+            return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes, incompleteTranscriptAccessions, selenocysteineContaining);
         }
 
         public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
@@ -260,7 +260,7 @@ namespace Proteogenomics
             int maxCombosForExons = maxCombos;
             while (totalBranches < 0 || totalBranches > maxCombosPerTranscript)
             {
-                if (exons.Any(x => x.Variants.Sum(v => Variant.ParseVariantContext(v).Count(vv => vv.AlleleFrequency < 0.9)) > maxCombos))
+                if (exons.Any(x => x.Variants.Sum(v => VariantOld.ParseVariantContext(v).Count(vv => vv.AlleleFrequency < 0.9)) > maxCombos))
                 {
                     success = false;
                     return new List<TranscriptPossiblyWithVariants>();
@@ -301,7 +301,7 @@ namespace Proteogenomics
                                 translateCodingDomains,
                                 sequence,
                                 branchedExons[branch].Sequence.Contains(nByte),
-                                branchedExons[branch].Variants.OfType<Variant>().ToList());
+                                branchedExons[branch].Variants.OfType<VariantOld>().ToList());
                         }
                         else
                         {

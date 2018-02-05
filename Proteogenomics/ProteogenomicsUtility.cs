@@ -32,7 +32,17 @@ namespace Proteogenomics
             { 'T', "Thr" },
             { 'V', "Val" },
             { 'W', "Trp" },
-            { 'Y', "Tyr" }
+            { 'Y', "Tyr" },
+
+            { '*', "Ter" },
+            { '-', "Gap" },
+            { 'U', "Sec" },
+            { 'O', "Pyl" },
+
+            { 'X', "Xaa" },
+            { 'Z', "Glx" },
+            { 'B', "Asx" },
+            { 'J', "Xle" },
         };
 
         public static Dictionary<string, char> amino_acids_3to1 =
@@ -41,6 +51,13 @@ namespace Proteogenomics
                 one_to_three => one_to_three.Key);
 
         #endregion IUPAC Codes Not Contained in DotNetBio
+
+        public static IEnumerable<IEnumerable<T>> Combinations<T>(this IEnumerable<T> elements, int k)//given an array of elements, it returns all combination sub arrays of length k
+        {
+            return k == 0 ?
+                new[] { new T[0] } :
+                elements.SelectMany((e, i) => elements.Skip(i + 1).Combinations(k - 1).Select(c => (new[] { e }).Concat(c)));
+        }
 
     }
 }

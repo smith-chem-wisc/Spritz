@@ -13,7 +13,7 @@ namespace Proteogenomics
         /// <summary>
         /// Custom variant object, which has one allele each
         /// </summary>
-        public List<Variant> Variants { get; } = new List<Variant>();
+        public List<VariantOld> Variants { get; } = new List<VariantOld>();
 
         /// <summary>
         /// SnpEff annotaitons for this location.
@@ -27,7 +27,7 @@ namespace Proteogenomics
         public VariantSuperContext(VariantContext variantContext) 
             : base(variantContext)
         {
-            Variants = Proteogenomics.Variant.ParseVariantContext(variantContext).ToList();
+            Variants = Proteogenomics.VariantOld.ParseVariantContext(variantContext).ToList();
 
             if (this.Attributes.TryGetValue("ANN", out object snpEffAnnotationObj))
             {
