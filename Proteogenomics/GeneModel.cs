@@ -70,7 +70,7 @@ namespace Proteogenomics
 
         #endregion Public Constructor
 
-        #region Read Gene Models
+        #region Public Methods -- Read Gene Model File
 
         private Gene currentGene = null;
         private Transcript currentTranscript = null;
@@ -150,8 +150,9 @@ namespace Proteogenomics
 
             if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, feature);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
                 currentGene.Transcripts.Add(currentTranscript);
+                Forest.Add(currentTranscript);
             }
 
             if (hasExonId || hasProteinId)
@@ -159,7 +160,7 @@ namespace Proteogenomics
                 if (hasExonId)
                 {
                     ISequence exon_dna = chromSeq.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chromSeq.ID, feature);
+                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chromSeq.ID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (hasProteinId)
@@ -205,8 +206,9 @@ namespace Proteogenomics
                     Forest.Add(currentGene);
                 }
 
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, feature);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
                 currentGene.Transcripts.Add(currentTranscript);
+                Forest.Add(currentTranscript);
             }
 
             if (feature.Key == "exon" || feature.Key == "CDS")
@@ -215,18 +217,20 @@ namespace Proteogenomics
                 {
                     currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
+                    Forest.Add(currentGene);
                 }
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
+                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
                     currentGene.Transcripts.Add(currentTranscript);
+                    Forest.Add(currentTranscript);
                 }
 
                 if (feature.Key == "exon")
                 {
                     ISequence exon_dna = chromSeq.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chromSeq.ID, feature);
+                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chromSeq.ID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
@@ -237,103 +241,9 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Read Gene Models
+        #endregion Public Methods -- Read Gene Model File
 
-        #region Public Methods
-
-        /// <summary>
-        /// Creates UTRs for transcripts and 
-        /// </summary>
-        public void CreateUTRsAndIntergenicRegions()
-        {
-            foreach (IntervalTree it in Forest.Forest.Values)
-            {
-                Gene previousPositiveStrandGene = null;
-                Gene previousNegativeStrandGene = null;
-                foreach (Gene gene in it.Intervals.OfType<Gene>().OrderBy(g => g.OneBasedStart))
-                {
-                    Gene previous = gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene;
-                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.ChromID, gene.Strand, (gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
-
-                    if (gene.Strand == "+")
-                        previousPositiveStrandGene = gene;
-                    if (gene.Strand == "-")
-                        previousNegativeStrandGene = gene;
-
-                    if (intergenic != null && intergenic.Length() <= 0)
-                        Forest.Add(intergenic);
-
-                    foreach (Transcript t in gene.Transcripts)
-                    {
-                        t.CreateUTRs();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Enters variant information into transcripts based on SnpEff annotations and into exons based on location.
-        /// </summary>
-        /// <param name="superVariants"></param>
-        public void AmendTranscripts(List<VariantSuperContext> superVariants, string reference)
-        {
-            int binSize = 100000;
-            Dictionary<Tuple<string, long>, List<VariantSuperContext>> chrIndexVariants = new Dictionary<Tuple<string, long>, List<VariantSuperContext>>();
-            Dictionary<string, List<SnpEffAnnotation>> transcriptIdSnpEffVariants = new Dictionary<string, List<SnpEffAnnotation>>();
-            foreach (VariantSuperContext superVariant in superVariants)
-            {
-                var key = new Tuple<string, long>(superVariant.Chr, superVariant.Start / binSize * binSize);
-                if (chrIndexVariants.TryGetValue(key, out List<VariantSuperContext> vars))
-                    vars.Add(superVariant);
-                else
-                    chrIndexVariants[key] = new List<VariantSuperContext> { superVariant };
-
-                foreach (SnpEffAnnotation a in superVariant.SnpEffAnnotations)
-                {
-                    if (transcriptIdSnpEffVariants.TryGetValue(a.FeatureID, out List<SnpEffAnnotation> asdf))
-                        asdf.Add(a);
-                    else
-                        transcriptIdSnpEffVariants.Add(a.FeatureID, new List<SnpEffAnnotation> { a });
-                }
-            }
-
-            foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
-            {
-                string id = reference.StartsWith("GRCh38") ?
-                    t.ID + "." + t.Version :
-                    t.ID;
-                if (transcriptIdSnpEffVariants.TryGetValue(id, out List<SnpEffAnnotation> annotations))
-                    t.SnpEffVariants = annotations;
-            }
-
-            foreach (Exon x in Genes.SelectMany(g => g.Transcripts.SelectMany(t => t.Exons.Concat(t.CodingDomainSequences))))
-            {
-                for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
-                {
-                    var key = new Tuple<string, long>(x.ChromID.Split(' ')[0], i * binSize);
-                    if (chrIndexVariants.TryGetValue(key, out List<VariantSuperContext> nearby_variants))
-                        x.Variants = nearby_variants.Where(v => x.Includes(v.Start)).OfType<VariantContext>().ToList();
-                }
-            }
-        }
-
-        #endregion Public Methods
-
-        #region Translation Methods
-
-        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
-        {
-            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
-        }
-
-        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
-        {
-            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, translateWithVariants, minPeptideLength)).ToList();
-        }
-
-        #endregion Translation Methods
-
-        #region Private Method
+        #region Private Method -- Read Gene Model File
 
         private static Regex gffVersion = new Regex(@"(##gff-version\s+)(\d)");
 
@@ -370,7 +280,84 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Private Method
+        #endregion Private Method -- Read Gene Model File
+
+        #region Public Methods
+
+        /// <summary>
+        /// Creates UTRs for transcripts and 
+        /// </summary>
+        public void CreateUTRsAndIntergenicRegions()
+        {
+            foreach (IntervalTree it in Forest.Forest.Values)
+            {
+                Gene previousPositiveStrandGene = null;
+                Gene previousNegativeStrandGene = null;
+                foreach (Gene gene in it.Intervals.OfType<Gene>().OrderBy(g => g.OneBasedStart))
+                {
+                    Gene previous = gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene;
+                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.ChromosomeID, gene.Strand, (gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
+
+                    if (gene.Strand == "+")
+                        previousPositiveStrandGene = gene;
+                    if (gene.Strand == "-")
+                        previousNegativeStrandGene = gene;
+
+                    if (intergenic != null && intergenic.Length() <= 0)
+                        Forest.Add(intergenic);
+
+                    Chromosome chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.ChromosomeID == gene.ChromosomeID);
+                    foreach (Transcript t in gene.Transcripts)
+                    {
+                        Forest.Add(t.CreateIntrons());
+                        Forest.Add(t.CreateUTRs());
+                        Forest.Add(t.CreateUpDown(chromSeq));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Apply a list of variants to the intervals within this gene model
+        /// </summary>
+        /// <param name="variants"></param>
+        public void ApplyVariants(List<Variant> variants)
+        {
+            IntervalTree VariantTree = new IntervalTree(variants.OfType<Interval>());
+            VariantTree.Build();
+            foreach (Variant v in variants)
+            {
+                List<Interval> intervals = Forest.Forest[v.ChromosomeID].Stab(v.OneBasedStart);
+                foreach (Interval i in intervals)
+                {
+                    i.ApplyVariant(v);
+                }
+            }
+            foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
+            {
+                List<Variant> transcriptVariants = VariantTree.Query(t).OfType<Variant>().Reverse().ToList();
+                foreach (Variant v in transcriptVariants)
+                {
+                    
+                }
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Translation Methods
+
+        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        {
+            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
+        }
+
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
+        {
+            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, translateWithVariants, minPeptideLength)).ToList();
+        }
+
+        #endregion Translation Methods
 
     }
 }

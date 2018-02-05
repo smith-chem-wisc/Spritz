@@ -25,7 +25,7 @@ namespace Proteogenomics
 
         }
 
-        public IntervalNode(List<Interval> intervals)
+        public IntervalNode(IEnumerable<Interval> intervals)
         {
             Build(intervals);
         }
@@ -38,9 +38,9 @@ namespace Proteogenomics
         /// Build an interval tree
         /// </summary>
         /// <param name="intervals"></param>
-        public void Build(List<Interval> intervals)
+        public void Build(IEnumerable<Interval> intervals)
         {
-            if (intervals.Count == 0)
+            if (intervals.Count() == 0)
             {
                 Center = 0;
                 return;

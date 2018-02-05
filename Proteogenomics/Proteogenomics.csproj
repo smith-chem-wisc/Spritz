@@ -133,17 +133,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CDS.cs" />
-    <Compile Include="Chromosome.cs" />
+    <Compile Include="Intervals\CDS.cs" />
+    <Compile Include="Intervals\Chromosome.cs" />
+    <Compile Include="Intervals\Downstream.cs" />
     <Compile Include="Exon.cs" />
     <Compile Include="Gene.cs" />
     <Compile Include="GeneModel.cs" />
     <Compile Include="Genome.cs" />
-    <Compile Include="Intergenic.cs" />
-    <Compile Include="Interval.cs" />
-    <Compile Include="IntervalForest.cs" />
-    <Compile Include="IntervalNode.cs" />
-    <Compile Include="IntervalTree.cs" />
+    <Compile Include="Intervals\Intergenic.cs" />
+    <Compile Include="Intervals\Interval.cs" />
+    <Compile Include="IntervalTree\IntervalForest.cs" />
+    <Compile Include="IntervalTree\IntervalNode.cs" />
+    <Compile Include="IntervalTree\IntervalTree.cs" />
+    <Compile Include="Intervals\Intron.cs" />
     <Compile Include="TranscriptAndGeneFusion.cs" />
     <Compile Include="TranscriptAndIndel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -152,9 +154,10 @@
     <Compile Include="SnpEffAnnotation.cs" />
     <Compile Include="Translation.cs" />
     <Compile Include="Transcript.cs" />
-    <Compile Include="UTR.cs" />
-    <Compile Include="UTR3Prime.cs" />
-    <Compile Include="UTR5Prime.cs" />
+    <Compile Include="Intervals\Upstream.cs" />
+    <Compile Include="Intervals\UTR.cs" />
+    <Compile Include="Intervals\UTR3Prime.cs" />
+    <Compile Include="Intervals\UTR5Prime.cs" />
     <Compile Include="Variant.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
     <Compile Include="VertebrateMitochondrialCodons.cs" />

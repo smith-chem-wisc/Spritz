@@ -7,6 +7,12 @@ namespace Proteogenomics
     public static class ProteogenomicsUtility
     {
 
+        #region Constant
+
+        public const string ENSEMBL_FASTA_HEADER_DELIMETER = " ";
+
+        #endregion Constant
+
         #region IUPAC Codes Not Contained in DotNetBio
 
         public static char[] amino_acids = "ACDEFGHIKLMNPQRSTVWY".ToCharArray();

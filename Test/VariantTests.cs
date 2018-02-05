@@ -251,8 +251,7 @@ namespace Test
         public void GetExonSeqsWithNearbyVariants()
         {
             MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
-            metadata.SubItems["strand"] = new List<string> { "+" };
-            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 250).ToArray())), 0, 249, "1", metadata);
+            Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 250).ToArray())), 0, 249, "1", "+");
             VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "aFewNearby.vcf"));
             x.Variants = vcf.ToList();
             List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);

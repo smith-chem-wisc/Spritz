@@ -11,15 +11,6 @@ namespace Proteogenomics
         Interval
     {
 
-        #region Private Properties
-
-        /// <summary>
-        /// Metadata from the bio parser, used to query strand.
-        /// </summary>
-        private MetadataListItem<List<string>> Metadata { get; set; }
-
-        #endregion Private Properties
-
         #region Public Properties
 
         /// <summary>
@@ -36,14 +27,10 @@ namespace Proteogenomics
 
         #region Public Constructor
 
-        public Exon(ISequence Sequence, long start, long stop, string chrom_id, MetadataListItem<List<string>> metadata)
+        public Exon(ISequence Sequence, long oneBasedStart, long oneBasedEnd, string chromID, string strand)
+            : base(chromID, strand, oneBasedStart, oneBasedEnd)
         {
             this.Sequence = Sequence;
-            this.OneBasedStart = start;
-            this.OneBasedEnd = stop;
-            this.ChromID = chrom_id;
-            this.Strand = metadata.SubItems["strand"][0];
-            this.Metadata = metadata;
         }
 
         #endregion Public Constructor
@@ -55,7 +42,7 @@ namespace Proteogenomics
             this.Sequence = exon.Sequence;
             this.OneBasedStart = exon.OneBasedStart;
             this.OneBasedEnd = exon.OneBasedEnd;
-            this.ChromID = exon.ChromID;
+            this.ChromosomeID = exon.ChromosomeID;
             this.Strand = exon.Metadata.SubItems["strand"][0];
             this.Metadata = exon.Metadata;
         }
@@ -155,7 +142,7 @@ namespace Proteogenomics
                 subseqCount = (int)(OneBasedEnd - tmpOneBasedStart + 1);
                 Array.Copy(sequenceBytes, subseqStart, newSequence, subseqStart, subseqCount);
                 Sequence seq = new Sequence(this.Sequence.Alphabet, newSequence);
-                Exon x = new Exon(seq, this.OneBasedStart, this.OneBasedEnd, this.ChromID, this.Metadata);
+                Exon x = new Exon(seq, this.OneBasedStart, this.OneBasedEnd, this.ChromosomeID, this.Metadata);
                 x.Variants = haplotype.OfType<VariantContext>().ToList();
                 sequences.Add(x);
             }

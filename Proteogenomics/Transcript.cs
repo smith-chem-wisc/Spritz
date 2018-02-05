@@ -12,15 +12,6 @@ namespace Proteogenomics
         : Interval
     {
 
-        #region Private Properties
-
-        /// <summary>
-        /// This comes straight from the Bio.NET object
-        /// </summary>
-        private MetadataListItem<List<string>> Metadata { get; set; }
-
-        #endregion
-
         #region Public Properties
 
         /// <summary>
@@ -32,11 +23,6 @@ namespace Proteogenomics
         /// The transcript version
         /// </summary>
         public string Version { get; set; }
-
-        /// <summary>
-        /// The strand this transcript lies on. Either '+' or '-'; might also be '.' if it's unknown, but would need to check.
-        /// </summary>
-        public string Strand { get; set; }
 
         /// <summary>
         /// The parent gene containing this transcript.
@@ -52,6 +38,21 @@ namespace Proteogenomics
         /// List of the untranslated regions
         /// </summary>
         public List<UTR> UTRs { get; set; } = new List<UTR>();
+
+        /// <summary>
+        /// Downstream region, 5 kb by default
+        /// </summary>
+        public Downstream Downstream { get; set; }
+
+        /// <summary>
+        /// Upstream region, 5 kb by default
+        /// </summary>
+        public Upstream Upstream { get; set; }
+
+        /// <summary>
+        /// Introns for this transcript
+        /// </summary>
+        public List<Intron> Introns { get; set; }
 
         /// <summary>
         /// A list of coding domain sequences (CDS), which are represented as Exons.
@@ -72,6 +73,8 @@ namespace Proteogenomics
 
         #region Translation Information
 
+        public const int DEFAULT_UP_DOWN_LENGTH = 5000;
+
         public static List<string> combinatoricFailures = new List<string>();
 
         #endregion Translation Information
@@ -85,19 +88,25 @@ namespace Proteogenomics
         /// <param name="gene"></param>
         /// <param name="metadata"></param>
         /// <param name="ProteinID"></param>
-        public Transcript(string id, string version, Gene gene, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata, string ProteinID = null)
-            : base(gene.ChromID, strand, oneBasedStart, oneBasedEnd)
+        public Transcript(string id, string version, Gene gene, string strand, long oneBasedStart, long oneBasedEnd, string ProteinID = null)
+            : base(gene.ChromosomeID, strand, oneBasedStart, oneBasedEnd)
         {
             this.ID = id;
             this.Version = version;
-            this.ProteinID = ProteinID == null ? id : ProteinID;
+            this.ProteinID = ProteinID ?? id;
             this.Gene = gene;
-            this.Metadata = metadata;
         }
 
         #endregion Public Constructors
 
         #region Translate and Replace with SnpEff Annotated Variations Method
+
+        public override IEnumerable<Interval> ApplyToCodingSequences(List<Variant> variants)
+        {
+            base.ApplyVariant(variant);
+            List<Transcript> result = new List<Transcript>();
+
+        }
 
         /// <summary>
         /// Stores accessions for checking that they are unique.
@@ -208,7 +217,7 @@ namespace Proteogenomics
             List<Exon> annotatedStarts = new List<Exon>();
             for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
             {
-                if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromID, Strand, i * indexBinSize), out List<Exon> exons))
+                if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromosomeID, Strand, i * indexBinSize), out List<Exon> exons))
                     annotatedStarts.AddRange(exons.Where(x => 
                         Exons.Any(xx => xx.Includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
                             && xx.Includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
@@ -325,9 +334,16 @@ namespace Proteogenomics
 
         #endregion Translate from Variant Nucleotide Sequences Methods
 
-        public void CreateUTRs()
+        #region Create Interval Methods
+
+        /// <summary>
+        /// Create UTR regions for this transcript
+        /// </summary>
+        public List<UTR> CreateUTRs()
         {
-            if (CodingDomainSequences.Count == 0) return;
+            if (CodingDomainSequences.Count == 0)
+                return UTRs;
+
             CodingDomainSequences = CodingDomainSequences.OrderBy(c => c.OneBasedStart).ToList();
             long codingLeft = CodingDomainSequences.First().OneBasedStart;
             long codingRight = CodingDomainSequences.Last().OneBasedEnd;
@@ -336,14 +352,64 @@ namespace Proteogenomics
                 if (x.OneBasedStart < codingLeft)
                 {
                     long end = x.OneBasedEnd < codingLeft ? x.OneBasedEnd : codingLeft;
-                    UTRs.Add(Strand == "+" ? new UTR5Prime(ChromID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(ChromID, Strand, x.OneBasedStart, end) as UTR);
+                    UTRs.Add(Strand == "+" ? new UTR5Prime(ChromosomeID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(ChromosomeID, Strand, x.OneBasedStart, end) as UTR);
                 }
                 if (x.OneBasedEnd > CodingDomainSequences.Last().OneBasedEnd)
                 {
                     long start = x.OneBasedStart < codingRight ? x.OneBasedStart : codingRight;
-                    UTRs.Add(Strand == "+" ? new UTR3Prime(ChromID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(ChromID, Strand, start, x.OneBasedEnd) as UTR);
+                    UTRs.Add(Strand == "+" ? new UTR3Prime(ChromosomeID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(ChromosomeID, Strand, start, x.OneBasedEnd) as UTR);
                 }
             }
+            return UTRs;
         }
+
+        /// <summary>
+        /// Creates upstream and downstream intervals for this transcript
+        /// </summary>
+        /// <param name="chromosomeSequence"></param>
+        public List<Interval> CreateUpDown(Chromosome chromosomeSequence)
+        {
+            long chrMin = 1;
+            long chrMax = chromosomeSequence.Sequence.Count;
+
+            // Create up/down stream intervals and add them to the list
+            long beforeStart = Math.Max(chrMin - DEFAULT_UP_DOWN_LENGTH, chrMin);
+            long beforeEnd = Math.Max(chrMin - 1, chrMin);
+            long afterStart = Math.Min(OneBasedEnd + 1, chrMax);
+            long afterEnd = Math.Min(OneBasedEnd + DEFAULT_UP_DOWN_LENGTH, chrMax);
+
+            if (Strand == "+")
+            {
+                if (beforeStart < beforeEnd) Upstream = new Upstream(chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
+                if (afterStart < afterEnd) Downstream = new Downstream(chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
+            }
+            else
+            {
+                if (afterStart < afterEnd) Upstream = new Upstream(chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
+                if (beforeStart < beforeEnd) Downstream = new Downstream(chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
+            }
+
+            return new List<Interval> { Upstream, Downstream };
+        }
+
+        public List<Intron> CreateIntrons()
+        {
+            Exon previous = null;
+            foreach (Exon x in Exons)
+            {
+                if (previous == null)
+                {
+                    previous = x;
+                    continue;
+                }
+                Intron intron = new Intron(x.ChromosomeID, x.Strand, previous.OneBasedEnd + 1, x.OneBasedStart - 1);
+                if (intron.Length() > 0)
+                    Introns.Add(intron);
+            }
+            return Introns;
+        }
+
+        #endregion Create Interval Methods
+
     }
 }

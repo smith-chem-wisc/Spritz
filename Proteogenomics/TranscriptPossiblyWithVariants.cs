@@ -71,7 +71,7 @@ namespace Proteogenomics
                     Enumerable.Range((int)x.OneBasedStart, (int)(x.OneBasedEnd - x.OneBasedStart + 1)) :
                     Enumerable.Range((int)x.OneBasedStart, (int)(x.OneBasedEnd - x.OneBasedStart + 1)).Reverse()
                 ).ToArray();
-            Mitochondrial = Transcript.Gene.ChromID.StartsWith("M");
+            Mitochondrial = Transcript.Gene.ChromosomeID.StartsWith("M");
         }
 
         #endregion Public Method

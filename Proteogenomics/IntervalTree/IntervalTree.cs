@@ -9,7 +9,7 @@ namespace Proteogenomics
 
         public IntervalNode Head { get; set; } = new IntervalNode();
 
-        public List<Interval> Intervals { get; set; } = new List<Interval>();
+        public List<Interval> Intervals { get; set; }
 
         public bool Synced { get; set; } = false;
 
@@ -28,7 +28,7 @@ namespace Proteogenomics
         /// Instantiate a new interval tree with a list of intervals
         /// </summary>
         /// <param name="intervals"></param>
-        public IntervalTree(List<Interval> intervals)
+        public IntervalTree(IEnumerable<Interval> intervals)
         {
             Head = new IntervalNode(intervals);
             this.Intervals = new List<Interval>(intervals);

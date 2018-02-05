@@ -6,19 +6,20 @@ using System.Threading.Tasks;
 
 namespace Proteogenomics
 {
-    public class CDS :
-        Interval
+    public class Intron
+        : Interval
     {
 
         #region Constructors
 
-        public CDS(string chromID, string strand, long oneBasedStart, long oneBasedEnd) :
-            base(chromID, strand, oneBasedStart, oneBasedEnd)
+        public Intron(string chromID, string strand, long oneBasedStart, long oneBasedEnd)
+            : base(chromID, strand, oneBasedStart, oneBasedEnd)
         {
 
         }
 
-        public CDS(CDS cds) : base(cds)
+        public Intron(Intron intron)
+            : base(intron)
         {
 
         }

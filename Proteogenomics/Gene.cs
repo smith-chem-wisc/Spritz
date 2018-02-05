@@ -61,7 +61,7 @@ namespace Proteogenomics
             Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts = new Dictionary<Tuple<string, string, long>, List<Exon>>();
             foreach (Exon x in genesWithCodingDomainSequences.Genes.SelectMany(g => g.Transcripts).Select(t => t.CodingDomainSequences.FirstOrDefault()).Where(x => x != null))
             {
-                Tuple<string, string, long> key = new Tuple<string, string, long>(x.ChromID, x.Strand, x.OneBasedStart / indexBinSize * indexBinSize);
+                Tuple<string, string, long> key = new Tuple<string, string, long>(x.ChromosomeID, x.Strand, x.OneBasedStart / indexBinSize * indexBinSize);
                 binnedCodingStarts.TryGetValue(key, out List<Exon> xs);
                 if (xs == null) binnedCodingStarts.Add(key, new List<Exon> { x });
                 else binnedCodingStarts[key].Add(x);
