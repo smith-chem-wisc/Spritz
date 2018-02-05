@@ -16,7 +16,7 @@ namespace Proteogenomics
         /// <summary>
         /// Parent variant containing this annotation.
         /// </summary>
-        public VariantSuperContext Variant { get; set; }
+        public Variant Variant { get; set; }
 
         /// <summary>
         /// Original SnpEff annotation string.
@@ -91,7 +91,7 @@ namespace Proteogenomics
 
         #region Constructor
 
-        public SnpEffAnnotation(VariantSuperContext variant, string annotation)
+        public SnpEffAnnotation(Variant variant, string annotation)
         {
             Variant = variant;
             Annotation = annotation;

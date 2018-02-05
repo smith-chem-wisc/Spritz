@@ -134,11 +134,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CDS.cs" />
+    <Compile Include="Chromosome.cs" />
     <Compile Include="Exon.cs" />
     <Compile Include="Gene.cs" />
     <Compile Include="GeneModel.cs" />
     <Compile Include="Genome.cs" />
     <Compile Include="Intergenic.cs" />
+    <Compile Include="Interval.cs" />
+    <Compile Include="IntervalForest.cs" />
+    <Compile Include="IntervalNode.cs" />
+    <Compile Include="IntervalTree.cs" />
     <Compile Include="TranscriptAndGeneFusion.cs" />
     <Compile Include="TranscriptAndIndel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -150,9 +155,8 @@
     <Compile Include="UTR.cs" />
     <Compile Include="UTR3Prime.cs" />
     <Compile Include="UTR5Prime.cs" />
-    <Compile Include="VariantOld.cs" />
+    <Compile Include="Variant.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
-    <Compile Include="VariantSuperContext.cs" />
     <Compile Include="VertebrateMitochondrialCodons.cs" />
   </ItemGroup>
   <ItemGroup>

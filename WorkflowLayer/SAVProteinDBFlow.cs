@@ -74,7 +74,9 @@ namespace WorkflowLayer
             }
             VCFParser vcf = new VCFParser(vcfPath);
             List<Protein> proteins = new List<Protein>();
-            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).Select(v => new VariantSuperContext(v)).ToList();
+            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x)
+                .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
+                .Select(v => new VariantSuperContext(v)).ToList();
             geneModel.AmendTranscripts(singleNucleotideVariants, reference);
             List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
             for (int i = 0; i < transcripts.Count; i++)

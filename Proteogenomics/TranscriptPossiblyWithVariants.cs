@@ -25,7 +25,7 @@ namespace Proteogenomics
 
         public long ZeroBasedCodingStart { get; set; }
         
-        public List<VariantOld> Variants { get; set; }
+        public List<Variant> Variants { get; set; }
 
         public string ProteinID { get; set; }
 
@@ -35,7 +35,7 @@ namespace Proteogenomics
 
         #region Public Constructor
 
-        public TranscriptPossiblyWithVariants(Transcript transcript, bool usedCodingDomainSequences, ISequence sequence, bool containsAmbiguity, List<VariantOld> variants)
+        public TranscriptPossiblyWithVariants(Transcript transcript, bool usedCodingDomainSequences, ISequence sequence, bool containsAmbiguity, List<Variant> variants)
         {
             Transcript = transcript;
             VariantTranscriptSequence = sequence;

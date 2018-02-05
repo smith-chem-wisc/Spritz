@@ -7,7 +7,8 @@ using System.Linq;
 
 namespace Proteogenomics
 {
-    public class Gene
+    public class Gene :
+        Interval
     {
 
         #region Private Properties
@@ -20,20 +21,20 @@ namespace Proteogenomics
 
         public string ID { get; set; }
 
-        public string ChromID { get; set; }
-
         public ISequence Chromosome { get; set; }
 
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
+
+        public IntervalTree TranscriptTree { get; set; }
 
         #endregion
 
         #region Public Constructors
 
-        public Gene(string ID, ISequence chromosome, MetadataListItem<List<string>> metadata)
+        public Gene(string ID, ISequence chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
+            : base(chromosome.ID, strand, oneBasedStart, oneBasedEnd)
         {
             this.ID = ID;
-            this.ChromID = chromosome.ID;
             this.Chromosome = chromosome;
             this.Metadata = metadata;
         }

@@ -45,7 +45,7 @@ namespace Proteogenomics
                     continue; // don't process proteins that have CDS without discrete sequence or without actual start or stop, i.e. containing 'X' or '*'
                 t.PrepareForTranslation();
                 bool hasSelenocysteine = selenocysteineContaining.TryGetValue(t.ProteinID, out string selenocysteineContainingSeq);
-                VariantOld[] variants = new List<VariantOld>(t.Variants).ToArray();
+                Variant[] variants = new List<Variant>(t.Variants).ToArray();
                 variants = t.Transcript.Strand == "+" ? variants : variants.Reverse().ToArray();
 
                 string variantAminoAcidSequence = "";
@@ -65,7 +65,7 @@ namespace Proteogenomics
                     long[] referenceCodonIndices = new long[] { t.Indices[refSeqIdx], t.Indices[refSeqIdx + 1], t.Indices[refSeqIdx + 2] };
                     if (variantIndex < variants.Length && referenceCodonIndices.Contains(variants[variantIndex].OneBasedStart))
                     {
-                        VariantOld v = variants[variantIndex++];
+                        Variant v = variants[variantIndex++];
                         long aminoAcidPosition = refSeqIdx / 3 + 1;
                         if (v.ReferenceAllele.Length == v.AlternateAllele.Length) // single amino acid variation
                         {

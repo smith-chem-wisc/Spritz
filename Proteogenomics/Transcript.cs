@@ -9,6 +9,7 @@ using System.Text;
 namespace Proteogenomics
 {
     public class Transcript
+        : Interval
     {
 
         #region Private Properties
@@ -48,9 +49,14 @@ namespace Proteogenomics
         public List<Exon> Exons { get; set; } = new List<Exon>();
 
         /// <summary>
+        /// List of the untranslated regions
+        /// </summary>
+        public List<UTR> UTRs { get; set; } = new List<UTR>();
+
+        /// <summary>
         /// A list of coding domain sequences (CDS), which are represented as Exons.
         /// </summary>
-        public List<Exon> CodingDomainSequences { get; set; } = new List<Exon>();
+        public List<CDS> CodingDomainSequences { get; set; } = new List<CDS>();
 
         /// <summary>
         /// Variants annotated for this transcript using SnpEff.
@@ -79,14 +85,14 @@ namespace Proteogenomics
         /// <param name="gene"></param>
         /// <param name="metadata"></param>
         /// <param name="ProteinID"></param>
-        public Transcript(string id, string version, Gene gene, MetadataListItem<List<string>> metadata, string ProteinID = null)
+        public Transcript(string id, string version, Gene gene, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata, string ProteinID = null)
+            : base(gene.ChromID, strand, oneBasedStart, oneBasedEnd)
         {
             this.ID = id;
             this.Version = version;
             this.ProteinID = ProteinID == null ? id : ProteinID;
             this.Gene = gene;
             this.Metadata = metadata;
-            this.Strand = metadata.SubItems["strand"][0];
         }
 
         #endregion Public Constructors
@@ -260,7 +266,7 @@ namespace Proteogenomics
             int maxCombosForExons = maxCombos;
             while (totalBranches < 0 || totalBranches > maxCombosPerTranscript)
             {
-                if (exons.Any(x => x.Variants.Sum(v => VariantOld.ParseVariantContext(v).Count(vv => vv.AlleleFrequency < 0.9)) > maxCombos))
+                if (exons.Any(x => x.Variants.Sum(v => Variant.ParseVariantContext(v).Count(vv => vv.AlleleFrequency < 0.9)) > maxCombos))
                 {
                     success = false;
                     return new List<TranscriptPossiblyWithVariants>();
@@ -301,7 +307,7 @@ namespace Proteogenomics
                                 translateCodingDomains,
                                 sequence,
                                 branchedExons[branch].Sequence.Contains(nByte),
-                                branchedExons[branch].Variants.OfType<VariantOld>().ToList());
+                                branchedExons[branch].Variants.OfType<Variant>().ToList());
                         }
                         else
                         {
@@ -319,5 +325,25 @@ namespace Proteogenomics
 
         #endregion Translate from Variant Nucleotide Sequences Methods
 
+        public void CreateUTRs()
+        {
+            if (CodingDomainSequences.Count == 0) return;
+            CodingDomainSequences = CodingDomainSequences.OrderBy(c => c.OneBasedStart).ToList();
+            long codingLeft = CodingDomainSequences.First().OneBasedStart;
+            long codingRight = CodingDomainSequences.Last().OneBasedEnd;
+            foreach (Exon x in Exons.OrderBy(c => c.OneBasedStart))
+            {
+                if (x.OneBasedStart < codingLeft)
+                {
+                    long end = x.OneBasedEnd < codingLeft ? x.OneBasedEnd : codingLeft;
+                    UTRs.Add(Strand == "+" ? new UTR5Prime(ChromID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(ChromID, Strand, x.OneBasedStart, end) as UTR);
+                }
+                if (x.OneBasedEnd > CodingDomainSequences.Last().OneBasedEnd)
+                {
+                    long start = x.OneBasedStart < codingRight ? x.OneBasedStart : codingRight;
+                    UTRs.Add(Strand == "+" ? new UTR3Prime(ChromID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(ChromID, Strand, start, x.OneBasedEnd) as UTR);
+                }
+            }
+        }
     }
 }
