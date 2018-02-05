@@ -134,19 +134,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CDS.cs" />
-    <Compile Include="Chromosome.cs" />
-    <Compile Include="Effect\EffectType.cs" />
-    <Compile Include="Effect\VariantEffect.cs" />
     <Compile Include="Exon.cs" />
     <Compile Include="Gene.cs" />
     <Compile Include="GeneModel.cs" />
     <Compile Include="Genome.cs" />
     <Compile Include="Intergenic.cs" />
-    <Compile Include="Interval\Interval.cs" />
-    <Compile Include="Interval\IntervalAndSubIntervals.cs" />
-    <Compile Include="Interval\Intron.cs" />
-    <Compile Include="Interval\Marker.cs" />
-    <Compile Include="Interval\Markers.cs" />
     <Compile Include="TranscriptAndGeneFusion.cs" />
     <Compile Include="TranscriptAndIndel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -158,10 +150,31 @@
     <Compile Include="UTR.cs" />
     <Compile Include="UTR3Prime.cs" />
     <Compile Include="UTR5Prime.cs" />
-    <Compile Include="Variant.cs" />
     <Compile Include="VariantOld.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
     <Compile Include="VariantSuperContext.cs" />
+    <Compile Include="VCF\EffFormatVersion.cs" />
+    <Compile Include="VCF\FileIndexChrPos.cs" />
+    <Compile Include="VCF\FileIterator.cs" />
+    <Compile Include="VCF\IParser.cs" />
+    <Compile Include="VCF\LineChrPos.cs" />
+    <Compile Include="VCF\MarkerFileIterator.cs" />
+    <Compile Include="VCF\PedigreeEntry.cs" />
+    <Compile Include="VCF\Variant.cs" />
+    <Compile Include="VCF\VariantVcfEntry.cs" />
+    <Compile Include="VCF\VcfConsequence.cs" />
+    <Compile Include="VCF\VcfConsequenceHeader.cs" />
+    <Compile Include="VCF\VcfEffect.cs" />
+    <Compile Include="VCF\VcfEntry.cs" />
+    <Compile Include="VCF\VcfFileIterator.cs" />
+    <Compile Include="VCF\VcfGenotype.cs" />
+    <Compile Include="VCF\VcfHeader\VcfHeader.cs" />
+    <Compile Include="VCF\VcfHeader\VcfHeaderEntry.cs" />
+    <Compile Include="VCF\VcfHeader\VcfHeaderFormat.cs" />
+    <Compile Include="VCF\VcfHeader\VcfHeaderInfo.cs" />
+    <Compile Include="VCF\VcfInfoType.cs" />
+    <Compile Include="VCF\VcfLof.cs" />
+    <Compile Include="VCF\VcfNmd.cs" />
     <Compile Include="VertebrateMitochondrialCodons.cs" />
   </ItemGroup>
   <ItemGroup>
