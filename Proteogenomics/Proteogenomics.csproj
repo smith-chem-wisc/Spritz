@@ -153,28 +153,6 @@
     <Compile Include="VariantOld.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
     <Compile Include="VariantSuperContext.cs" />
-    <Compile Include="VCF\EffFormatVersion.cs" />
-    <Compile Include="VCF\FileIndexChrPos.cs" />
-    <Compile Include="VCF\FileIterator.cs" />
-    <Compile Include="VCF\IParser.cs" />
-    <Compile Include="VCF\LineChrPos.cs" />
-    <Compile Include="VCF\MarkerFileIterator.cs" />
-    <Compile Include="VCF\PedigreeEntry.cs" />
-    <Compile Include="VCF\Variant.cs" />
-    <Compile Include="VCF\VariantVcfEntry.cs" />
-    <Compile Include="VCF\VcfConsequence.cs" />
-    <Compile Include="VCF\VcfConsequenceHeader.cs" />
-    <Compile Include="VCF\VcfEffect.cs" />
-    <Compile Include="VCF\VcfEntry.cs" />
-    <Compile Include="VCF\VcfFileIterator.cs" />
-    <Compile Include="VCF\VcfGenotype.cs" />
-    <Compile Include="VCF\VcfHeader\VcfHeader.cs" />
-    <Compile Include="VCF\VcfHeader\VcfHeaderEntry.cs" />
-    <Compile Include="VCF\VcfHeader\VcfHeaderFormat.cs" />
-    <Compile Include="VCF\VcfHeader\VcfHeaderInfo.cs" />
-    <Compile Include="VCF\VcfInfoType.cs" />
-    <Compile Include="VCF\VcfLof.cs" />
-    <Compile Include="VCF\VcfNmd.cs" />
     <Compile Include="VertebrateMitochondrialCodons.cs" />
   </ItemGroup>
   <ItemGroup>
