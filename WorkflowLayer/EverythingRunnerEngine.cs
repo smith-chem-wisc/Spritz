@@ -17,14 +17,14 @@ namespace WorkflowLayer
         List<string> currentGenomeFilenameList;
         List<string> currentGeneSetFilenameList;
 
-        public EverythingRunnerEngine(List<Tuple<string, SpritzWorkflow>> taskList, List<string> startingRnaSeqFilenameList, List<string> startingGenomeFilenameList, List<string> startingGeneSetFilenameList, string outputFolder)
+        public EverythingRunnerEngine(List<Tuple<string, SpritzWorkflow>> taskList, List<string> startingGenomeFilenameList, List<string> startingGeneSetFilenameList, List<string> startingRnaSeqFilenameList, string outputFolder)
         {
             this.taskList = taskList;
             this.outputFolder = outputFolder;
 
-            currentRnaSeqFilenameList = startingRnaSeqFilenameList;
             currentGenomeFilenameList = startingGenomeFilenameList;
             currentGeneSetFilenameList = startingGeneSetFilenameList;
+            currentRnaSeqFilenameList = startingRnaSeqFilenameList;
         }
 
         public static event EventHandler<StringListEventArgs> NewRnaSeqFastqHandler;
@@ -36,11 +36,11 @@ namespace WorkflowLayer
             outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
             //Used for test
-            //var writtenFile = Path.Combine(outputFolder, "test.txt");
-            //using (StreamWriter output = new StreamWriter(writtenFile))
-            //{
-            //    output.WriteLine("What a day!");
-            //}
+            var writtenFile = Path.Combine(outputFolder, "test.txt");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("What a day!");
+            }
 
             for (int i = 0; i < taskList.Count; i++)
             {
@@ -51,7 +51,7 @@ namespace WorkflowLayer
                 if (!Directory.Exists(outputFolderForThisTask))
                     Directory.CreateDirectory(outputFolderForThisTask);
 
-
+                ok.Item2.RunTask(outputFolderForThisTask, currentGenomeFilenameList, currentGeneSetFilenameList, currentRnaSeqFilenameList, ok.Item1);
 
             }
         }

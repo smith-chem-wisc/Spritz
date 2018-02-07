@@ -155,16 +155,16 @@
                             <Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />
                             <Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>
                         </StackPanel>
-                        <TreeView x:Name="WorkflowTreeView" Grid.Row="1">
+                        <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}">
                             <TreeView.Resources>
-                                <!--<HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
+                                <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="T " />
                                         <TextBlock Text="{Binding DisplayName}" />
                                         <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"  Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
-                                </HierarchicalDataTemplate>-->
+                                </HierarchicalDataTemplate>
                                 <!--<HierarchicalDataTemplate DataType="{x:Type CollectionForTreeView}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="C " />
@@ -180,11 +180,11 @@
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </DataTemplate>-->
-                                <!--<DataTemplate DataType="{x:Type local:PreRunTask}">
+                                <DataTemplate DataType="{x:Type local:PreRunTask}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding DisplayName}" />
                                     </StackPanel>
-                                </DataTemplate>-->
+                                </DataTemplate>
                             </TreeView.Resources>
                         </TreeView>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">

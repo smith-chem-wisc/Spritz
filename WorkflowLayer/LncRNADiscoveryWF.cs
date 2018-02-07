@@ -32,30 +32,9 @@ namespace WorkflowLayer
             }).WaitForExit();
         }
 
-        public static void RunLncRNADiscoveryFromFastq(string bin, string analysisDirectory, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string geneModelGtfOrGff, bool useReadSubset = false, int readSubset = 300000)
+        protected override void RunSpecific(string OutputFolder, List<string> genomeFastaList, List<string> geneSetList, List<string> rnaSeqFastqList)
         {
-
+            Test("Test");
         }
-
-        public static void RunCufflink()
-        {
-
-        }
-
-        public static void Rungtf2bed()
-        {
-
-        }
-
-        public static void RunEnsembl2UCSC()
-        {
-
-        }
-
-        public static void RunSlncky()
-        {
-
-        }
-
     }
 }

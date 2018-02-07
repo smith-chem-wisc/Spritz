@@ -24,6 +24,7 @@ namespace SpritzGUI
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
 
+
         public MainWindow()
         {
             InitializeComponent();
@@ -31,6 +32,7 @@ namespace SpritzGUI
             dataGridFASTA.DataContext = genomeFastaCollection;
             dataGridGeneSet.DataContext = geneSetCollection;
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
+            workflowTreeView.DataContext = staticTasksObservableCollection;
 
             EverythingRunnerEngine.NewRnaSeqFastqHandler += AddNewRnaSeqFastq;
         }
@@ -91,6 +93,23 @@ namespace SpritzGUI
             }
         }
 
+        private void UpdateTaskGuiStuff()
+        {
+            if (staticTasksObservableCollection.Count == 0)
+            {
+                RunWorkflowButton.IsEnabled = false;
+                RemoveLastTaskButton.IsEnabled = false;
+                ClearTasksButton.IsEnabled = false;
+                ResetTasksButton.IsEnabled = false;
+            }
+            else
+            {
+                RunWorkflowButton.IsEnabled = true;
+                RemoveLastTaskButton.IsEnabled = true;
+                ClearTasksButton.IsEnabled = true;
+            }
+        }
+
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
@@ -98,7 +117,7 @@ namespace SpritzGUI
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].spritzWorkflow.WorkflowType.ToString(), staticTasksObservableCollection[i].spritzWorkflow));
             }
-            WorkflowTreeView.DataContext = dynamicTasksObservableCollection;
+            workflowTreeView.DataContext = dynamicTasksObservableCollection;
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzWorkflow>(b.DisplayName, b.workflow)).ToList(), rnaSeqFastqCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), genomeFastaCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), geneSetCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), OutputFolderTextBox.Text);
             var t = new Task(a.Run);
             t.Start();
