@@ -15,6 +15,8 @@ namespace WorkflowLayer
     }
     public abstract class SpritzWorkflow
     {
+        //public static event EventHandler<StringEventArgs> NewCollectionHandler;
+
         protected SpritzWorkflow(MyWorkflow workflowType)
         {
             WorkflowType = workflowType;

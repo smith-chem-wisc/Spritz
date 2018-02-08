@@ -13,15 +13,15 @@ using System;
 
 namespace WorkflowLayer
 {
-    public class LncRNADiscoveryWF : SpritzWorkflow
+    public class Fastq2ProteinsWF : SpritzWorkflow
     {
-        public LncRNADiscoveryWF() : base(MyWorkflow.LncRnaDiscovery)
+        public Fastq2ProteinsWF() : base(MyWorkflow.Fastaq2Proteins)
         {
             rnaSeqAlignParameters = new RnaSeqAlignParameters();
-        }   
+        }
 
         public RnaSeqAlignParameters rnaSeqAlignParameters { get; set; }
-       
+
         public static void Test(string test)
         {
             string script_path = Path.Combine(test, "scripts", "test.sh");

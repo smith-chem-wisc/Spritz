@@ -35,9 +35,42 @@ namespace SpritzGUI
             workflowTreeView.DataContext = staticTasksObservableCollection;
 
             EverythingRunnerEngine.NewRnaSeqFastqHandler += AddNewRnaSeqFastq;
+            
+            //SpritzWorkflow.NewCollectionHandler += NewCollectionHandler;
+
+            UpdateTaskGuiStuff();
+
         }
 
-        
+        private void NewCollectionHandler(object sender, StringEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewCollectionHandler(sender, s)));
+            }
+            else
+            {
+                // Find the task or the collection!!!
+
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+
+                for (int i = 1; i < s.nestedIDs.Count - 1; i++)
+                {
+                    var hm = s.nestedIDs[i];
+                    try
+                    {
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                    catch
+                    {
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                }
+
+                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.S, s.nestedIDs.Last()));
+            }
+        }
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
@@ -60,6 +93,13 @@ namespace SpritzGUI
                 }
         }
 
+        private void AddTaskToCollection(SpritzWorkflow ye)
+        {
+            PreRunTask te = new PreRunTask(ye);
+            staticTasksObservableCollection.Add(te);
+            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.WorkflowType.ToString();
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             
@@ -77,10 +117,11 @@ namespace SpritzGUI
 
         private void BtnAddFastq2Proteins_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Fastq2ProteinsWF();
+            var dialog = new Fastq2ProteinsWFWindows();
             if (dialog.ShowDialog()==true)
             {
-
+                AddTaskToCollection(dialog.TheTask);
+                UpdateTaskGuiStuff();
             }
         }
 
@@ -89,7 +130,8 @@ namespace SpritzGUI
             var dialog = new LncRNADiscoverWFWindows();
             if (dialog.ShowDialog() == true)
             {
-
+                AddTaskToCollection(dialog.TheTask);
+                UpdateTaskGuiStuff();
             }
         }
 

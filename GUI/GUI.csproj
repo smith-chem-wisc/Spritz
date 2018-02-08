@@ -61,7 +61,7 @@
     <Compile Include="TreeViews\InRunTask.cs" />
     <Compile Include="TreeViews\OutputFileForTreeView.cs" />
     <Compile Include="TreeViews\PreRunTask.cs" />
-    <Page Include="Fastq2ProteinsWF.xaml">
+    <Page Include="Fastq2ProteinsWFWindows.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -80,8 +80,8 @@
     <Compile Include="DataGrids\GeneSetDataGrid.cs" />
     <Compile Include="DataGrids\GenomeFastaDataGrid.cs" />
     <Compile Include="DataGrids\RNASeqFastqDataGrid.cs" />
-    <Compile Include="Fastq2ProteinsWF.xaml.cs">
-      <DependentUpon>Fastq2ProteinsWF.xaml</DependentUpon>
+    <Compile Include="Fastq2ProteinsWFWindows.xaml.cs">
+      <DependentUpon>Fastq2ProteinsWFWindows.xaml</DependentUpon>
     </Compile>
     <Compile Include="LncRNADiscoverWFWindows.xaml.cs">
       <DependentUpon>LncRNADiscoverWFWindows.xaml</DependentUpon>
