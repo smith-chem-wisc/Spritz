@@ -5,6 +5,12 @@ namespace WorkflowLayer
 {
     public class StringListEventArgs : EventArgs
     {
+        #region Public Properties
+
+        public IEnumerable<string> StringList { get; }
+
+        #endregion Public Properties
+
         #region Public Constructors
 
         public StringListEventArgs(List<string> stringList)
@@ -13,11 +19,5 @@ namespace WorkflowLayer
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public IEnumerable<string> StringList { get; }
-
-        #endregion Public Properties
     }
 }

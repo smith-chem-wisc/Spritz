@@ -18,17 +18,17 @@ namespace SpritzGUI
     /// <summary>
     /// Interaction logic for LncRNADiscoverWF.xaml
     /// </summary>
-    public partial class LncRNADiscoverWFWindows : Window
+    public partial class LncRNADiscoverFlowWindows : Window
     {
-        public LncRNADiscoverWFWindows()
+        public LncRNADiscoverFlowWindows()
         {
             InitializeComponent();
 
-            TheTask = new LncRNADiscoveryWF();
+            TheTask = new LncRNADiscoveryFlow();
 
         }
 
-        internal LncRNADiscoveryWF TheTask { get; private set; }
+        internal LncRNADiscoveryFlow TheTask { get; private set; }
 
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
@@ -38,7 +38,7 @@ namespace SpritzGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            RnaSeqAlignParameters rnaSeqAlignParameters = new RnaSeqAlignParameters();
+            Parameters parameters = new Parameters();
 
         }
     }

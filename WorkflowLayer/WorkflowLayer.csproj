@@ -119,11 +119,11 @@
     <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="GeneFusionProteinDBEngine.cs" />
     <Compile Include="IndelProteinDBEngine.cs" />
-    <Compile Include="LncRNADiscoveryWF.cs" />
-    <Compile Include="Parameters\RnaSeqAlignParameters.cs" />
+    <Compile Include="LncRNADiscoveryFlow.cs" />
+    <Compile Include="Parameters\Parameters.cs" />
     <Compile Include="PrepareInputFileFlow.cs" />
     <Compile Include="SAVProteinDBEngine.cs" />
-    <Compile Include="SpritzWorkflow.cs" />
+    <Compile Include="SpritzFlow.cs" />
     <Compile Include="STAR2PassAlignFlow.cs" />
     <Compile Include="ManagePackagesFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

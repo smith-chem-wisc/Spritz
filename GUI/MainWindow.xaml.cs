@@ -77,7 +77,7 @@ namespace SpritzGUI
 
         private void BtnAddFastq2Proteins_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Fastq2ProteinsWF();
+            var dialog = new Fastq2ProteinsFlowWindows();
             if (dialog.ShowDialog()==true)
             {
 
@@ -86,7 +86,7 @@ namespace SpritzGUI
 
         private void BtnAddLncRNADiscover_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new LncRNADiscoverWFWindows();
+            var dialog = new LncRNADiscoverFlowWindows();
             if (dialog.ShowDialog() == true)
             {
 
@@ -118,7 +118,7 @@ namespace SpritzGUI
                 dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].spritzWorkflow.WorkflowType.ToString(), staticTasksObservableCollection[i].spritzWorkflow));
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzWorkflow>(b.DisplayName, b.workflow)).ToList(), rnaSeqFastqCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), genomeFastaCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), geneSetCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), OutputFolderTextBox.Text);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzFlow>(b.DisplayName, b.workflow)).ToList(), rnaSeqFastqCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), genomeFastaCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), geneSetCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), OutputFolderTextBox.Text);
             var t = new Task(a.Run);
             t.Start();
         }
@@ -136,7 +136,7 @@ namespace SpritzGUI
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
             {
-                Filter = "Database Files|*.fa",
+                Filter = "Genome Fasta Files (*.fa; *.fasta)|*.fa; *.fasta",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -158,7 +158,7 @@ namespace SpritzGUI
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
             {
-                Filter = "Database Files|*.fastq",
+                Filter = "FASTQ Files|*.fastq",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -180,7 +180,7 @@ namespace SpritzGUI
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
             {
-                Filter = "Database Files|*.gtf;*.gff3",
+                Filter = "Gene Model Files|*.gtf;*.gff3",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true

@@ -13,14 +13,14 @@ using System;
 
 namespace WorkflowLayer
 {
-    public class LncRNADiscoveryWF : SpritzWorkflow
+    public class LncRNADiscoveryFlow : SpritzFlow
     {
-        public LncRNADiscoveryWF() : base(MyWorkflow.LncRnaDiscovery)
+        public LncRNADiscoveryFlow() : base(MyWorkflow.LncRnaDiscovery)
         {
-            rnaSeqAlignParameters = new RnaSeqAlignParameters();
+            Parameters = new Parameters();
         }   
 
-        public RnaSeqAlignParameters rnaSeqAlignParameters { get; set; }
+        public Parameters Parameters { get; set; }
        
         public static void Test(string test)
         {

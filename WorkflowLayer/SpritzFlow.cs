@@ -13,9 +13,9 @@ namespace WorkflowLayer
         Fastaq2Proteins,
         LncRnaDiscovery
     }
-    public abstract class SpritzWorkflow
+    public abstract class SpritzFlow
     {
-        protected SpritzWorkflow(MyWorkflow workflowType)
+        protected SpritzFlow(MyWorkflow workflowType)
         {
             WorkflowType = workflowType;
         }

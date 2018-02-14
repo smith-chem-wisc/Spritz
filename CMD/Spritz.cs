@@ -55,7 +55,7 @@ namespace CMD
 
             #region Proteoform Database Engine
             //lncRNA workflow
-            if (options.lncRNAWorkflow)
+            if (options.Command == "lncRNA")
             {
                 if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
                     return;
@@ -65,17 +65,18 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                LncRNADiscoveryWF.RunLncRNADiscoveryFromFastq(
-                    options.BinDirectory,
-                    options.AnalysisDirectory,
-                    options.Threads,
-                    fastqsSeparated,
-                    options.StrandSpecific,
-                    options.InferStrandSpecificity,
-                    options.OverwriteStarAlignments,
-                    options.GenomeStarIndexDirectory,
-                    options.GenomeFasta,
-                    options.GeneModelGtfOrGff);
+                //LncRNADiscoveryFlow.RunLncRNADiscoveryFromFastq(
+                //    options.BinDirectory,
+                //    options.AnalysisDirectory,
+                //    options.Threads,
+                //    fastqsSeparated,
+                //    options.StrandSpecific,
+                //    options.InferStrandSpecificity,
+                //    options.OverwriteStarAlignments,
+                //    options.GenomeStarIndexDirectory,
+                //    options.GenomeFasta,
+                //    options.GeneModelGtfOrGff);
+
                 // LncRNADiscoveryEngine.Test(options.BinDirectory);
                 return;
             }

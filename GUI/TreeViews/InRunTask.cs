@@ -6,13 +6,13 @@ namespace SpritzGUI
     {
         #region Public Fields
 
-        public readonly SpritzWorkflow workflow;
+        public readonly SpritzFlow workflow;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public InRunTask(string displayName, SpritzWorkflow workflow) : base(displayName, displayName)
+        public InRunTask(string displayName, SpritzFlow workflow) : base(displayName, displayName)
         {
             this.workflow = workflow;
         }

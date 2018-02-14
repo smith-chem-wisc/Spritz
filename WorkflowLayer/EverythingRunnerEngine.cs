@@ -11,13 +11,13 @@ namespace WorkflowLayer
 {
     public class EverythingRunnerEngine
     {
-        private readonly List<Tuple<string, SpritzWorkflow>> taskList;
+        private readonly List<Tuple<string, SpritzFlow>> taskList;
         private string outputFolder;
         List<string> currentRnaSeqFilenameList;
         List<string> currentGenomeFilenameList;
         List<string> currentGeneSetFilenameList;
 
-        public EverythingRunnerEngine(List<Tuple<string, SpritzWorkflow>> taskList, List<string> startingGenomeFilenameList, List<string> startingGeneSetFilenameList, List<string> startingRnaSeqFilenameList, string outputFolder)
+        public EverythingRunnerEngine(List<Tuple<string, SpritzFlow>> taskList, List<string> startingGenomeFilenameList, List<string> startingGeneSetFilenameList, List<string> startingRnaSeqFilenameList, string outputFolder)
         {
             this.taskList = taskList;
             this.outputFolder = outputFolder;

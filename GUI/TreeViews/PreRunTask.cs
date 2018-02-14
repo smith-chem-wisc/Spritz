@@ -6,13 +6,13 @@ namespace SpritzGUI
     {
         #region Public Fields
 
-        public readonly SpritzWorkflow spritzWorkflow;
+        public readonly SpritzFlow spritzWorkflow;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public PreRunTask(SpritzWorkflow theWorkflow)
+        public PreRunTask(SpritzFlow theWorkflow)
         {
             this.spritzWorkflow = theWorkflow;
         }

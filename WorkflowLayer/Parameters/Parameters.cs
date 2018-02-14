@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace WorkflowLayer
 {
-    public class RnaSeqAlignParameters
+    public class Parameters
     {
-        public RnaSeqAlignParameters()
+        public Parameters()
         {
 
         }

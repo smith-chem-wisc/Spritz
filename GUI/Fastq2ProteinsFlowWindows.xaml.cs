@@ -17,9 +17,9 @@ namespace SpritzGUI
     /// <summary>
     /// Interaction logic for Fastq2ProteinsWF.xaml
     /// </summary>
-    public partial class Fastq2ProteinsWF : Window
+    public partial class Fastq2ProteinsFlowWindows : Window
     {
-        public Fastq2ProteinsWF()
+        public Fastq2ProteinsFlowWindows()
         {
             InitializeComponent();
         }
