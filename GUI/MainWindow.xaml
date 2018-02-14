@@ -165,21 +165,21 @@
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
-                                <!--<HierarchicalDataTemplate DataType="{x:Type CollectionForTreeView}" ItemsSource="{Binding Children}">
+                                <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="C " />
                                         <TextBlock Text="{Binding DisplayName}" />
                                         <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
-                                </HierarchicalDataTemplate>-->
-                                <!--<DataTemplate DataType="{x:Type local: OutputFileForTreeView}">
+                                </HierarchicalDataTemplate>
+                                <DataTemplate DataType="{x:Type local:OutputFileForTreeView}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="F " />
                                         <TextBlock Text="{Binding DisplayName}" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
-                                </DataTemplate>-->
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type local:PreRunTask}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding DisplayName}" />

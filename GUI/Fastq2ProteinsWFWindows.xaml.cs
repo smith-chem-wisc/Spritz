@@ -16,19 +16,18 @@ using WorkflowLayer;
 namespace SpritzGUI
 {
     /// <summary>
-    /// Interaction logic for LncRNADiscoverWF.xaml
+    /// Interaction logic for Fastq2ProteinsWF.xaml
     /// </summary>
-    public partial class LncRNADiscoverFlowWindows : Window
+    public partial class Fastq2ProteinsWFWindows : Window
     {
-        public LncRNADiscoverFlowWindows()
+        public Fastq2ProteinsWFWindows()
         {
             InitializeComponent();
 
-            TheTask = new LncRNADiscoveryFlow();
-
+            TheTask = new Fastq2ProteinsWF();
         }
 
-        internal LncRNADiscoveryFlow TheTask { get; private set; }
+        internal Fastq2ProteinsWF TheTask { get; private set; }
 
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
@@ -38,7 +37,7 @@ namespace SpritzGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            Parameters parameters = new Parameters();
+            RnaSeqAlignParameters rnaSeqAlignParameters = new RnaSeqAlignParameters();
 
             DialogResult = true;
         }
