@@ -13,14 +13,14 @@ using System;
 
 namespace WorkflowLayer
 {
-    public class Fastq2ProteinsWF : SpritzWorkflow
+    public class Fastq2ProteinsFlow : SpritzFlow
     {
-        public Fastq2ProteinsWF() : base(MyWorkflow.Fastaq2Proteins)
+        public Fastq2ProteinsFlow() : base(MyWorkflow.Fastaq2Proteins)
         {
-            rnaSeqAlignParameters = new RnaSeqAlignParameters();
+            parameters = new Parameters();
         }
 
-        public RnaSeqAlignParameters rnaSeqAlignParameters { get; set; }
+        public Parameters parameters { get; set; }
 
         public static void Test(string test)
         {
