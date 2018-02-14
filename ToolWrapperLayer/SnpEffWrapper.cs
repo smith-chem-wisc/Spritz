@@ -59,21 +59,22 @@ namespace ToolWrapperLayer
             return "java -Xmx" + Math.Floor(memory) + "M -jar snpEff/snpEff.jar";
         }
 
-        public static void PrimaryVariantAnnotation(string binDirectory, string reference, string vcfPath, out string htmlReport, out string annotatedVcfPath)
+        public static List<string> PrimaryVariantAnnotation(string binDirectory, string reference, string vcfPath, out string htmlReport, out string annotatedVcfPath, out string annotatedGenesSummaryPath)
         {
             annotatedVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".snpEffAnnotated.vcf");
             htmlReport = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".snpEffAnnotated.html");
+            annotatedGenesSummaryPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".snpEffAnnotated.genes.txt");
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(binDirectory, "snpEff", "data"));
-            if (File.Exists(annotatedVcfPath)) return;
+            if (File.Exists(annotatedVcfPath)) return new List<string>();
             string scriptPath = Path.Combine(binDirectory, "scripts", "snpEffAnnotation.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(htmlReport) +
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " > " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath)
-            }).WaitForExit();
+            };
         }
 
         // see here for how to generate them from scratch: http://lab.loman.net/2012/11/16/how-to-get-snpeff-working-with-bacterial-genomes-from-ncbi/

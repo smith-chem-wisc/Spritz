@@ -209,6 +209,15 @@ namespace ToolWrapperLayer
         {
             DownloadUCSCKnownVariantSites(binDirectory, targetDirectory, commonOnly, reference, out string ucscKnownSitesPath);
             ConvertVCFChromosomesUCSC2Ensembl(binDirectory, ucscKnownSitesPath, reference, out ensemblKnownSitesPath);
+
+            // indexing is used for most GATK tools
+            string scriptPath = Path.Combine(binDirectory, "scripts", "indexKnownVariantSites.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(ucscKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(ucscKnownSitesPath) + "; fi",
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(ensemblKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(ensemblKnownSitesPath) + "; fi",
+            }).WaitForExit();
         }
 
         public static void ConvertVCFChromosomesUCSC2Ensembl(string binDirectory, string vcfPath, string reference, out string ensemblVcfPath)
@@ -245,24 +254,21 @@ namespace ToolWrapperLayer
         #region Variant Calling
 
         /// <summary>
-        /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually. 
-        /// 
-        /// Also splits and trims reads splice junction reads with SplitNCigarReads. 
+        /// Splits and trims reads splice junction reads with SplitNCigarReads. 
         /// Apparently cigars are genomic intervals, and splice junctions are represented by a bunch of N's (unkonwn nucleotide), HaplotypeCaller requires splitting them in the BAM file.
         ///
+        /// It's tempting to want to run a few of these at the same time because it's not well parallelized. It's just not worth it. It uses quite a bit of RAM and racks the I/O at the beginning when reading the BAM files.
+        /// Could possibly do 4 at a time on 128 GB RAM and 28 processors.
         /// </summary>
         /// <param name="binDirectory"></param>
-        /// <param name="threads"></param>
         /// <param name="genomeFasta"></param>
         /// <param name="dedupedBam"></param>
-        /// <param name="dbsnpReferenceVcfPath"></param>
-        /// <param name="newVcf"></param>
-        public static void VariantCalling(string binDirectory, int threads, string genomeFasta, string dedupedBam, string dbsnpReferenceVcfPath, out string newVcf)
+        /// <param name="splitTrimBam"></param>
+        /// <returns></returns>
+        public static List<string> SplitNCigarReads(string binDirectory, string genomeFasta, string dedupedBam, out string splitTrimBam)
         {
             string fixedQualsBam = Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + ".fixedQuals.bam");
-            string splitTrimBam = Path.Combine(Path.GetDirectoryName(fixedQualsBam), Path.GetFileNameWithoutExtension(fixedQualsBam) + ".split.bam");
-            string unfliteredVcf = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".vcf");
-            newVcf = Path.Combine(Path.GetDirectoryName(unfliteredVcf), Path.GetFileNameWithoutExtension(unfliteredVcf) + "filtered.vcf");
+            splitTrimBam = Path.Combine(Path.GetDirectoryName(fixedQualsBam), Path.GetFileNameWithoutExtension(fixedQualsBam) + ".split.bam");
 
             // This also filters malformed reads
             string fixMisencodedQualsCmd =
@@ -297,8 +303,8 @@ namespace ToolWrapperLayer
                 //" -U ALLOW_N_CIGAR_READS"
                 ;
 
-            string scriptName = Path.Combine(binDirectory, "scripts", "variantCalling.bash");
-            WrapperUtility.GenerateAndRunScript(scriptName, new List<string>
+
+            List<string> commands = new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(binDirectory, genomeFasta),
@@ -316,6 +322,32 @@ namespace ToolWrapperLayer
                 "  fi",
                 "fi",
                 SamtoolsWrapper.IndexBamCommand(binDirectory, splitTrimBam),
+            };
+            return commands;
+        }
+
+        /// <summary>
+        /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually. 
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="genomeFasta"></param>
+        /// <param name="splitTrimBam"></param>
+        /// <param name="dbsnpReferenceVcfPath"></param>
+        /// <param name="newVcf"></param>
+        public static List<string> VariantCalling(string binDirectory, int threads, string genomeFasta, string splitTrimBam, string dbsnpReferenceVcfPath, out string newVcf)
+        {
+            string unfliteredVcf = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".vcf");
+            newVcf = Path.Combine(Path.GetDirectoryName(unfliteredVcf), Path.GetFileNameWithoutExtension(unfliteredVcf) + "filtered.vcf");
+
+            List<string> commands = new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                SamtoolsWrapper.GenomeFastaIndexCommand(binDirectory, genomeFasta),
+                GenomeDictionaryIndexCommand(genomeFasta),
+
+                // check that reference VCF is indexed
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + "; fi",
 
                 // call variants
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(unfliteredVcf) + " ]; then " +
@@ -342,8 +374,9 @@ namespace ToolWrapperLayer
                 //    " -filterName QD -filter \"QD < 2.0\"" +
                 //    " -o " + WrapperUtility.ConvertWindowsPath(newVcf) +
                 //    "; fi",
-            }).WaitForExit();
+            };
             newVcf = unfliteredVcf;
+            return commands;
         }
 
         #endregion Variant Calling
@@ -360,7 +393,7 @@ namespace ToolWrapperLayer
         /// <param name="reference"></param>
         /// <param name="newBam"></param>
         /// <param name="convertToUCSC"></param>
-        public static void PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, bool convertToUCSC = true)
+        public static List<string> PrepareBamAndFasta(string binDirectory, int threads, string bam, string genomeFasta, string reference, out string newBam, bool convertToUCSC = true)
         {
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
             string readGroupedCheckfile = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerReadGrouped");
@@ -372,7 +405,7 @@ namespace ToolWrapperLayer
             string tmpDir = Path.Combine(binDirectory, "tmp");
             Directory.CreateDirectory(tmpDir);
             string scriptName2 = Path.Combine(binDirectory, "scripts", "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
-            WrapperUtility.GenerateAndRunScript(scriptName2, new List<string>
+            List<string> commands = new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
 
@@ -407,12 +440,13 @@ namespace ToolWrapperLayer
                 "if [[ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " && -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
 
-            }).WaitForExit();
+            };
             newBam = markedDuplicatesBam;
 
             // run commands for marking duplicates and trimming reads
             File.Delete(sortedCheckPath);
             File.Delete(readGroupedCheckfile);
+            return commands;
         }
 
         /// <summary>

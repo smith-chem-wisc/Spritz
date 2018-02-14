@@ -19,7 +19,7 @@ namespace CMD
 
             if (args.Contains("setup"))
             {
-                ManagePackagesFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
                 return;
             }
 
@@ -124,7 +124,7 @@ namespace CMD
 
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
-                SAVProteinDBEngine.GenerateFromSra(
+                SAVProteinDBEngine.GenerateSAVProteinsFromSra(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -152,7 +152,7 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                SAVProteinDBEngine.GenerateFromFastqs(
+                SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -173,7 +173,8 @@ namespace CMD
             {
                 Genome genome = new Genome(options.GenomeFasta);
                 EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-                proteinDatabases.Add(SAVProteinDBEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, badProteinAccessions, selenocysteineContainingAccessions, options.GeneModelGtfOrGff, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                GeneModel geneModel = new GeneModel(genome, options.GeneModelGtfOrGff);
+                proteinDatabases.Add(SAVProteinDBEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
 
             else

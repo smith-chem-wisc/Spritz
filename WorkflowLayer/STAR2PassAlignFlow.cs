@@ -6,8 +6,14 @@ using ToolWrapperLayer;
 
 namespace WorkflowLayer
 {
+    /// <summary>
+    /// Contains a workflow for running a 2-pass STAR alignment on a set of FASTQ files.
+    /// </summary>
     public class STAR2PassAlignFlow
     {
+
+        #region Public Method
+
         /// <summary>
         /// Runs a two-pass alignment for a given set of fastq files.
         /// </summary>
@@ -32,7 +38,7 @@ namespace WorkflowLayer
         /// <param name="chimericJunctionFiles"></param>
         /// <param name="useReadSubset"></param>
         /// <param name="readSubset"></param>
-        public static void RunFromFastqs(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string reorderedFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, bool useReadSubset = false, int readSubset = 300000)
+        public static void AlignFastqs(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string reorderedFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, bool useReadSubset = false, int readSubset = 300000)
         {
             // Alignment preparation
             WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "genomeGenerate.bash"), STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff)).WaitForExit();
@@ -107,5 +113,8 @@ namespace WorkflowLayer
             alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, secondPassGenomeDirectory));
             WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
         }
+
+        #endregion Public Method
+
     }
 }
