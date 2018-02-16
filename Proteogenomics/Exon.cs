@@ -38,13 +38,9 @@ namespace Proteogenomics
         #region Private Constructor
 
         private Exon(Exon exon)
+            : base(exon)
         {
             this.Sequence = exon.Sequence;
-            this.OneBasedStart = exon.OneBasedStart;
-            this.OneBasedEnd = exon.OneBasedEnd;
-            this.ChromosomeID = exon.ChromosomeID;
-            this.Strand = exon.Metadata.SubItems["strand"][0];
-            this.Metadata = exon.Metadata;
         }
 
         #endregion Private Constructor
@@ -142,7 +138,7 @@ namespace Proteogenomics
                 subseqCount = (int)(OneBasedEnd - tmpOneBasedStart + 1);
                 Array.Copy(sequenceBytes, subseqStart, newSequence, subseqStart, subseqCount);
                 Sequence seq = new Sequence(this.Sequence.Alphabet, newSequence);
-                Exon x = new Exon(seq, this.OneBasedStart, this.OneBasedEnd, this.ChromosomeID, this.Metadata);
+                Exon x = new Exon(seq, this.OneBasedStart, this.OneBasedEnd, this.ChromosomeID, this.Strand);
                 x.Variants = haplotype.OfType<VariantContext>().ToList();
                 sequences.Add(x);
             }

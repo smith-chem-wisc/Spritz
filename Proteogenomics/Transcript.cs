@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Bio.VCF;
 
 namespace Proteogenomics
 {
@@ -132,7 +133,6 @@ namespace Proteogenomics
                 return new List<Protein>();
 
             // todo: allow depth filter here using "DP" column, especially for indels
-            double homozygousThreshold = 0.9;
             List<SnpEffAnnotation> synonymous = new List<SnpEffAnnotation>();
             List<SnpEffAnnotation> homozygousMissense = new List<SnpEffAnnotation>();
             List<SnpEffAnnotation> heterozygousMissense = new List<SnpEffAnnotation>();
@@ -141,8 +141,8 @@ namespace Proteogenomics
             foreach (SnpEffAnnotation a in SnpEffVariants.Where(annotation => annotation.FeatureID == id))
             {
                 if (a.Synonymous) synonymous.Add(a);
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency >= homozygousThreshold) homozygousMissense.Add(a);
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency < homozygousThreshold) heterozygousMissense.Add(a);
+                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HOMOZYGOUS_ALT) homozygousMissense.Add(a);
+                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HETEROZYGOUS) heterozygousMissense.Add(a);
                 else other.Add(a);
             }
 
@@ -163,11 +163,11 @@ namespace Proteogenomics
             {
                 fakePhased = new List<List<SnpEffAnnotation>>();
                 List<List<SnpEffAnnotation>> phasedLast = missenseCombinations.OrderBy(x => x.Count).ToList();
-                List<int> variantSites = phasedLast.Last().Select(v => v.Variant.Start).ToList();
+                List<long> variantSites = phasedLast.Last().Select(v => v.Variant.OneBasedStart).ToList();
                 foreach (List<SnpEffAnnotation> hap in phasedLast)
                 {
-                    List<int> hapSites = hap.Select(v => v.Variant.Start).ToList();
-                    bool containsVariantsToFakePhase = variantSites.Any(vs => !hapSites.Contains(vs) && hap.Any(v => Math.Abs(v.Variant.Start - vs) < range));
+                    List<long> hapSites = hap.Select(v => v.Variant.OneBasedStart).ToList();
+                    bool containsVariantsToFakePhase = variantSites.Any(vs => !hapSites.Contains(vs) && hap.Any(v => Math.Abs(v.Variant.OneBasedStart - vs) < range));
                     if (!containsVariantsToFakePhase)
                         fakePhased.Add(hap);
                 }
@@ -185,7 +185,7 @@ namespace Proteogenomics
                 }
                 List<SnpEffAnnotation> combinedAnnotations = synonymous.Concat(annotations).ToList();
                 string proteinSnpEffAnnotation = "{" + String.Join(" ", combinedAnnotations.Select(a => "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";" + a.Annotation)) + "} OS=Homo sapiens GN=" + Gene.ID;
-                List<SequenceVariation> sequenceVariations = combinedAnnotations.Select(a => new SequenceVariation(a.Variant.Start, a.Variant.Reference.BaseString, a.Allele, "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";ANN=" + a.Annotation)).ToList();
+                List<SequenceVariation> sequenceVariations = combinedAnnotations.Select(a => new SequenceVariation(a.Variant.OneBasedStart, a.Variant.ReferenceAlleleString, a.Allele, "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";ANN=" + a.Annotation)).ToList();
                 string accession = ProteinID;
                 int arbitraryNumber = 1;
                 while (accessions.Contains(accession))
