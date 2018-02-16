@@ -14,7 +14,7 @@ namespace WorkflowLayer
     /// <summary>
     /// Create a database of proteins with single amino acid variants (SAVs) using GATK and SnpEff.
     /// </summary>
-    public class SAVProteinDBEngine
+    public class SAVProteinDBFlow
     {
 
         #region Runner Methods

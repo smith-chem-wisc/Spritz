@@ -7,7 +7,7 @@ namespace CMD
 {
     class Options
     {
-        [Option('c', "command", Required = true, HelpText = "Command: (1) setup, (2) run, (3) vcf2protein, (4) starFusionTest")]
+        [Option('c', "command", Required = true, HelpText = "Command: (1) setup, (2) run, (3) vcf2protein, (4) starFusionTest, (5) lncRNADiscovery")]
         public string Command { get; set; }
 
         [Option('b', "binDirectory", Required = false, HelpText = "Bin directory for Proteoform Database Engine")]
@@ -52,7 +52,5 @@ namespace CMD
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
 
-        [Option("lncRNA", Required =false, HelpText = "Start a lncRNA workflow -skewer-STAR-cufflinks-slncky")]
-        public string lncRNAWorkflow { get; set; }
     }
 }
