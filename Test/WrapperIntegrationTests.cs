@@ -532,7 +532,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
-            SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
+            SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -568,7 +568,7 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
-            SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
+            SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -606,7 +606,7 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            SAVProteinDBEngine.GenerateSAVProteinsFromSra(
+            SAVProteinDBFlow.GenerateSAVProteinsFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",

@@ -120,9 +120,12 @@
     <Compile Include="EventArgs\StringListEventArgs.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="Fastq2ProteinsFlow.cs" />
+    <Compile Include="GeneFusionTranscriptFlow.cs" />
+    <Compile Include="IndelTranscriptFlow.cs" />
     <Compile Include="LncRNADiscoveryFlow.cs" />
+    <Compile Include="ManageToolsFlow.cs" />
     <Compile Include="Parameters\Parameters.cs" />
-    <Compile Include="SAVProteinDBEngine.cs" />
+    <Compile Include="SAVProteinDBFlow.cs" />
     <Compile Include="SpritzFlow.cs" />
     <Compile Include="STAR2PassAlignFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

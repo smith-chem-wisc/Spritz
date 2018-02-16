@@ -55,7 +55,7 @@ namespace CMD
 
             #region Proteoform Database Engine
             //lncRNA workflow
-            if (options.Command == "lncRNA")
+            if (options.Command.Equals("lncRNADiscovery", StringComparison.InvariantCultureIgnoreCase))
             {
                 if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
                     return;
@@ -124,7 +124,7 @@ namespace CMD
 
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
-                SAVProteinDBEngine.GenerateSAVProteinsFromSra(
+                SAVProteinDBFlow.GenerateSAVProteinsFromSra(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -152,7 +152,7 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                SAVProteinDBEngine.GenerateSAVProteinsFromFastqs(
+                SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -174,7 +174,7 @@ namespace CMD
                 Genome genome = new Genome(options.GenomeFasta);
                 EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
                 GeneModel geneModel = new GeneModel(genome, options.GeneModelGtfOrGff);
-                proteinDatabases.Add(SAVProteinDBEngine.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                proteinDatabases.Add(SAVProteinDBFlow.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
 
             else
