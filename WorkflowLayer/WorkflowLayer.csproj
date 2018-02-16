@@ -115,11 +115,16 @@
   <ItemGroup>
     <Compile Include="AlternateGeneModel2ProteinDBEngine.cs" />
     <Compile Include="CaptureOligoDesignFlow.cs" />
-    <Compile Include="GeneFusionTranscriptEngine.cs" />
-    <Compile Include="IndelTranscriptEngine.cs" />
-    <Compile Include="STAR2PassAlignFlow.cs" />
+    <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
+    <Compile Include="EventArgs\StringEventArgs.cs" />
+    <Compile Include="EventArgs\StringListEventArgs.cs" />
+    <Compile Include="EverythingRunnerEngine.cs" />
+    <Compile Include="Fastq2ProteinsFlow.cs" />
+    <Compile Include="LncRNADiscoveryFlow.cs" />
+    <Compile Include="Parameters\Parameters.cs" />
     <Compile Include="SAVProteinDBEngine.cs" />
-    <Compile Include="ManageToolsFlow.cs" />
+    <Compile Include="SpritzFlow.cs" />
+    <Compile Include="STAR2PassAlignFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TranscriptQuantificationFlow.cs" />
   </ItemGroup>

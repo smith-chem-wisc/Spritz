@@ -1,0 +1,28 @@
+﻿<Window x:Class="SpritzGUI.Fastq2ProteinsWFWindows"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SpritzGUI"
+        mc:Ignorable="d"
+        Title="Fastq2ProteinsWFWindows" Height="300" Width="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <DockPanel>
+                <GroupBox Header="Alignment Parameter" DockPanel.Dock="Top">
+                    <Expander>
+                        
+                    </Expander>
+                </GroupBox>
+            </DockPanel>
+        </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="5">
+            <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Workflow" Click="saveButton_Click"  FontSize="18" />
+        </StackPanel>
+    </Grid>
+</Window>
