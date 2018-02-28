@@ -11,7 +11,6 @@ namespace ToolWrapperLayer
     public class STARFusionWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -45,7 +44,6 @@ namespace ToolWrapperLayer
         {
             return null;
         }
-
 
         #endregion Installation Methods
 
@@ -105,6 +103,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Methods
-
     }
 }

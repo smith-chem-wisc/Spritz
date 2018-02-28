@@ -1,15 +1,13 @@
 ﻿using Bio;
 using Bio.IO.FastA;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using System;
+using System.Linq;
 
 namespace Proteogenomics
 {
     public class Genome
     {
-
         #region Public Properties
 
         /// <summary>
@@ -26,7 +24,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="genomeFastaLocation"></param>
         public Genome(string genomeFastaLocation)
-        {                
+        {
             Chromosomes = new FastAParser().Parse(genomeFastaLocation).Select(s => new Chromosome(s)).ToList();
         }
 
@@ -124,6 +122,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Method
-
     }
 }

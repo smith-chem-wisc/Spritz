@@ -10,7 +10,6 @@ namespace Proteogenomics
     public class Exon :
         Interval
     {
-
         #region Public Properties
 
         /// <summary>
@@ -146,6 +145,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

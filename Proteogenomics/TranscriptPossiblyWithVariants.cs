@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Bio;
+using System.Collections.Generic;
 using System.Linq;
-using Bio;
 
 namespace Proteogenomics
 {
     public class TranscriptPossiblyWithVariants
     {
-
         #region Public Properties
 
         public Transcript Transcript { get; set; }
@@ -24,7 +23,7 @@ namespace Proteogenomics
         public bool DerivedFromCodingDomainSequences { get; set; }
 
         public long ZeroBasedCodingStart { get; set; }
-        
+
         public List<Variant> Variants { get; set; }
 
         public string ProteinID { get; set; }
@@ -75,6 +74,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Method
-
     }
 }

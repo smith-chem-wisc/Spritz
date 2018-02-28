@@ -13,7 +13,6 @@ namespace ToolWrapperLayer
     public class GATKWrapper :
         IInstallable
     {
-
         #region Private Fields
 
         /// <summary>
@@ -254,7 +253,7 @@ namespace ToolWrapperLayer
         #region Variant Calling
 
         /// <summary>
-        /// Splits and trims reads splice junction reads with SplitNCigarReads. 
+        /// Splits and trims reads splice junction reads with SplitNCigarReads.
         /// Apparently cigars are genomic intervals, and splice junctions are represented by a bunch of N's (unkonwn nucleotide), HaplotypeCaller requires splitting them in the BAM file.
         ///
         /// It's tempting to want to run a few of these at the same time because it's not well parallelized. It's just not worth it. It uses quite a bit of RAM and racks the I/O at the beginning when reading the BAM files.
@@ -303,7 +302,6 @@ namespace ToolWrapperLayer
                 //" -U ALLOW_N_CIGAR_READS"
                 ;
 
-
             List<string> commands = new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
@@ -327,7 +325,7 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
-        /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually. 
+        /// HaplotypeCaller for calling variants on each RNA-Seq BAM file individually.
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <param name="threads"></param>
@@ -414,12 +412,12 @@ namespace ToolWrapperLayer
 
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + WrapperUtility.ConvertWindowsPath(readGroupedCheckfile),
-                
+
                 // group and sort (note, using picard-tools works, but picard.jar somehow is trucating the BAM files)
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ) && " +
                     " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) ]]; then " +
                     Gatk() +
-                    " AddOrReplaceReadGroups" + 
+                    " AddOrReplaceReadGroups" +
                     " -PU platform  -PL illumina -SM sample -LB library" +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
                     " -O " + WrapperUtility.ConvertWindowsPath(groupedBam) +
@@ -439,7 +437,6 @@ namespace ToolWrapperLayer
                     "; fi",
                 "if [[ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " && -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
                 "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
-
             };
             newBam = markedDuplicatesBam;
 
@@ -451,9 +448,9 @@ namespace ToolWrapperLayer
 
         /// <summary>
         /// Realigns indels for a given BAM file
-        /// 
+        ///
         /// This is no longer a required step for HaploytypeCaller, used for variant calling
-        /// 
+        ///
         /// Needs updating after switching to GATK 4.0 ... no longer called IndelRealigner, and it looks like the targetIntervals is gone
         /// </summary>
         /// <param name="binDirectory"></param>
@@ -496,7 +493,7 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
-        /// Creates recalibration table for base calls. 
+        /// Creates recalibration table for base calls.
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <param name="genomeFasta"></param>
@@ -557,14 +554,13 @@ namespace ToolWrapperLayer
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + " ]; then " + //rm " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + "; fi\n" +
                 Gatk() + // formerly picard
-                    " CreateSequenceDictionary" + 
-                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + 
+                    " CreateSequenceDictionary" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) +
                     " -O " + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
                     "; fi";
         }
 
         #endregion Private Methods
-
     }
 }
 

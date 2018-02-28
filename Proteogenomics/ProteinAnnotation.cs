@@ -9,7 +9,6 @@ namespace Proteogenomics
 {
     public static class ProteinAnnotation
     {
-
         #region Variant Annotation Labels
 
         public static string SynonymousVariantLabel = "variant:synonymous";
@@ -32,7 +31,8 @@ namespace Proteogenomics
         // or for indels use X#XXX or XXX#X where # is the start
         // get the SNV location 1:100000
         // get the codon change Gcc/Acc
-        static HashSet<string> accessions = new HashSet<string>();
+        private static HashSet<string> accessions = new HashSet<string>();
+
         public static List<Protein> OneFrameTranslationWithAnnotation(List<TranscriptPossiblyWithVariants> transcripts, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
             badProteinAccessions = badProteinAccessions != null ? badProteinAccessions : new HashSet<string>();
@@ -72,7 +72,7 @@ namespace Proteogenomics
                             v.Synonymous = originalAminoAcid == newAminoAcid;
                             v.Annotation = (v.Synonymous ? SynonymousVariantLabel : SingleAminoAcidVariantLabel) + " " +
                                 char.ToUpperInvariant((char)originalAminoAcid) + aminoAcidPosition.ToString() + char.ToUpperInvariant((char)newAminoAcid) + " " +
-                                v.Chr + ":" + 
+                                v.Chr + ":" +
                                 v.OneBasedStart + " " +
                                 new string(new char[] {
                                     char.ToUpperInvariant((char)t.ReferenceTranscriptSequence[refSeqIdx]),
@@ -230,6 +230,5 @@ namespace Proteogenomics
         }
 
         #endregion Private Methods
-
     }
 }

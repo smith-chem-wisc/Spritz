@@ -50,9 +50,9 @@ namespace ToolWrapperLayer
 
         /// <summary>
         /// Converts a gene model file (GTF or GFF2) to BED6, meaning the BED file has the minimum 6 columns.
-        /// 
+        ///
         /// See https://www.biostars.org/p/206342/ for the awk fix.
-        /// 
+        ///
         /// </summary>
         /// <param name="bin"></param>
         /// <param name="gtfOrGffPath"></param>
@@ -67,8 +67,8 @@ namespace ToolWrapperLayer
                 WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
                 {
                     "cd " + WrapperUtility.ConvertWindowsPath(bin),
-                     (extension == ".gtf" ? "awk '{ if ($0 ~ \"transcript_id\") print $0; else print $0\" transcript_id \\\"\\\";\"; }' " : "cat ") + WrapperUtility.ConvertWindowsPath(gtfOrGffPath) 
-                        + " | " + WrapperUtility.ConvertWindowsPath(Path.Combine(bin, "bedops", extension == ".gtf" ? "gtf2bed" : "gff2bed")) + 
+                     (extension == ".gtf" ? "awk '{ if ($0 ~ \"transcript_id\") print $0; else print $0\" transcript_id \\\"\\\";\"; }' " : "cat ") + WrapperUtility.ConvertWindowsPath(gtfOrGffPath)
+                        + " | " + WrapperUtility.ConvertWindowsPath(Path.Combine(bin, "bedops", extension == ".gtf" ? "gtf2bed" : "gff2bed")) +
                         " - > " + WrapperUtility.ConvertWindowsPath(bedPath),
                 }).WaitForExit();
             }
@@ -77,9 +77,9 @@ namespace ToolWrapperLayer
 
         /// <summary>
         /// Converts a gene model file (GTF or GFF2?) to a BED12 file with all 12 columns sometimes required of a BED file.
-        /// 
+        ///
         /// see https://gist.github.com/gireeshkbogu/f478ad8495dca56545746cd391615b93
-        /// 
+        ///
         /// </summary>
         /// <param name="bin"></param>
         /// <param name="gtf_path"></param>

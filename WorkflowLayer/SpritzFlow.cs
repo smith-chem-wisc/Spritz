@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 
 namespace WorkflowLayer
 {
@@ -13,6 +10,7 @@ namespace WorkflowLayer
         Fastaq2Proteins,
         LncRnaDiscovery
     }
+
     public abstract class SpritzFlow
     {
         protected SpritzFlow(MyWorkflow workflowType)
@@ -39,16 +37,10 @@ namespace WorkflowLayer
             }
             catch (Exception)
             {
-
                 throw;
             }
-            
-            
         }
 
         protected abstract void RunSpecific(string OutputFolder, List<string> genomeFastaList, List<string> geneSetList, List<string> rnaSeqFastqList);
-
     }
-
-    
 }

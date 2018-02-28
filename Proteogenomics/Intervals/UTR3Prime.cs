@@ -1,27 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class UTR3Prime
         : UTR
     {
-
         #region Constructors
 
-        public UTR3Prime(string chromID, string strand, long oneBasedStart, long oneBasedEnd) 
+        public UTR3Prime(string chromID, string strand, long oneBasedStart, long oneBasedEnd)
             : base(chromID, strand, oneBasedStart, oneBasedEnd)
         {
-
         }
 
-        public UTR3Prime(UTR3Prime utr) 
+        public UTR3Prime(UTR3Prime utr)
             : base(utr)
         {
-
         }
 
         #endregion Constructors
@@ -39,6 +30,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace ToolWrapperLayer
@@ -10,7 +9,6 @@ namespace ToolWrapperLayer
     public class SamtoolsWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -64,6 +62,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Methods
-
     }
 }

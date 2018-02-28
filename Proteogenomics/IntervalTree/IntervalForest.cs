@@ -5,9 +5,8 @@ namespace Proteogenomics
     /// <summary>
     /// A set of interval trees, e.g. one per chromosome, one per transcript, etc.
     /// </summary>
-    public class IntervalForest 
+    public class IntervalForest
     {
-
         #region Public Properties
 
         public string Name { get; set; }

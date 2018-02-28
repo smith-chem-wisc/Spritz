@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bio;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class Intergenic :
         Interval
     {
-
         #region Public Properties
 
         public Gene LeftGene { get; set; }
@@ -24,14 +16,12 @@ namespace Proteogenomics
         public Intergenic(string chromID, string strand, long oneBasedStart, long oneBasedEnd) :
             base(chromID, strand, oneBasedStart, oneBasedEnd)
         {
-
         }
 
         public Intergenic(Intergenic intergenic) : base(intergenic)
         {
-
         }
 
-        #endregion Cosntructors
+        #endregion Constructors
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
@@ -11,7 +10,6 @@ namespace WorkflowLayer
     /// </summary>
     public class STAR2PassAlignFlow
     {
-
         #region Public Method
 
         /// <summary>
@@ -103,7 +101,6 @@ namespace WorkflowLayer
                 if (!File.Exists(outPrefix + STARWrapper.SortedBamFileSuffix) || overwriteStarAlignment)
                 {
                     alignmentCommands.AddRange(STARWrapper.AlignRNASeqReadsForVariantCalling(bin, threads, secondPassGenomeDirectory, fq, outPrefix, strandSpecificities[fastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
-
                 }
                 sortedBamFiles.Add(outPrefix + STARWrapper.SortedBamFileSuffix);
                 dedupedBamFiles.Add(outPrefix + STARWrapper.DedupedBamFileSuffix);
@@ -115,6 +112,5 @@ namespace WorkflowLayer
         }
 
         #endregion Public Method
-
     }
 }

@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Globalization;
 
 namespace ToolWrapperLayer
 {
     /// <summary>
     /// SnpEff is a program for annotating variants, e.g. as missense or synonymous mutations.
-    /// 
+    ///
     /// Program citation: http://snpeff.sourceforge.net/SnpEff_paper.pdf
-    /// 
+    ///
     /// Note: SnpEff realigns indels to the 3-prime end, which isn't ideal based on the scalpel review.
     /// </summary>
     public class SnpEffWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -127,6 +126,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Methods
-
     }
 }

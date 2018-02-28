@@ -2,20 +2,19 @@
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proteogenomics
 {
     public class Gene :
         Interval
     {
-
         #region Private Properties
 
         private MetadataListItem<List<string>> Metadata { get; set; }
 
-        #endregion
+        #endregion Private Properties
 
         #region Public Properties
 
@@ -27,7 +26,7 @@ namespace Proteogenomics
 
         public IntervalTree TranscriptTree { get; set; }
 
-        #endregion
+        #endregion Public Properties
 
         #region Public Constructors
 
@@ -78,6 +77,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

@@ -8,7 +8,7 @@ namespace ToolWrapperLayer
     /// <summary>
     /// RSeQC is a tookit of quality control scripts.
     /// </summary>
-    public class RSeQCWrapper : 
+    public class RSeQCWrapper :
         IInstallable
     {
         #region Public Properties
@@ -91,7 +91,7 @@ namespace ToolWrapperLayer
             List<int> distances = new List<int>();
             foreach (string dline in distance_lines)
             {
-                if (int.TryParse(dline.Split('\t')[1], out int distance) 
+                if (int.TryParse(dline.Split('\t')[1], out int distance)
                     && distance < 250 && distance > -250) // default settings for infer_distance
                     distances.Add(distance);
             }
@@ -130,15 +130,14 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "python RSeQC-2.6.4/scripts/infer_experiment.py" + 
-                    " -r " + WrapperUtility.ConvertWindowsPath(geneModel) + 
-                    " -i " + WrapperUtility.ConvertWindowsPath(bamFile) + 
+                "python RSeQC-2.6.4/scripts/infer_experiment.py" +
+                    " -r " + WrapperUtility.ConvertWindowsPath(geneModel) +
+                    " -i " + WrapperUtility.ConvertWindowsPath(bamFile) +
                     " > " + WrapperUtility.ConvertWindowsPath(outFile),
                 WrapperUtility.EnsureClosedFileCommands(outFile)
             }).WaitForExit();
         }
 
         #endregion Private Methods
-
     }
 }

@@ -1,18 +1,17 @@
 ﻿using Bio;
 using Bio.Extensions;
+using Bio.VCF;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Bio.VCF;
 
 namespace Proteogenomics
 {
     public class Transcript
         : Interval
     {
-
         #region Public Properties
 
         /// <summary>
@@ -106,13 +105,12 @@ namespace Proteogenomics
         {
             base.ApplyVariant(variant);
             List<Transcript> result = new List<Transcript>();
-
         }
 
         /// <summary>
         /// Stores accessions for checking that they are unique.
         /// </summary>
-        static HashSet<string> accessions = new HashSet<string>();
+        private static HashSet<string> accessions = new HashSet<string>();
 
         /// <summary>
         /// Translates a transcript into full-length variant protein sequences using SnpEff annotations to modify protein sequences.
@@ -192,7 +190,7 @@ namespace Proteogenomics
                 {
                     accession = ProteinID + "_v" + arbitraryNumber++.ToString();
                 }
-               proteins.Add(new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, proteinSnpEffAnnotation, false, false, null, sequenceVariations));
+                proteins.Add(new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, proteinSnpEffAnnotation, false, false, null, sequenceVariations));
             }
             return proteins;
         }
@@ -218,7 +216,7 @@ namespace Proteogenomics
             for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
             {
                 if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromosomeID, Strand, i * indexBinSize), out List<Exon> exons))
-                    annotatedStarts.AddRange(exons.Where(x => 
+                    annotatedStarts.AddRange(exons.Where(x =>
                         Exons.Any(xx => xx.Includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
                             && xx.Includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
             }
@@ -410,6 +408,5 @@ namespace Proteogenomics
         }
 
         #endregion Create Interval Methods
-
     }
 }

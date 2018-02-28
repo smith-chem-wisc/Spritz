@@ -11,7 +11,6 @@ namespace ToolWrapperLayer
     public class TopHatWrapper :
         IInstallable
     {
-
         #region Public Properties
 
         /// <summary>
@@ -149,6 +148,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Methods
-
     }
 }

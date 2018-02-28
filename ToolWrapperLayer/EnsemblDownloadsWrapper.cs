@@ -13,7 +13,6 @@ namespace ToolWrapperLayer
     /// </summary>
     public class EnsemblDownloadsWrapper
     {
-
         #region Primary Assembly Genome Fasta URLs and Filenames
 
         /// <summary>

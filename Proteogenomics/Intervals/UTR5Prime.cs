@@ -1,26 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class UTR5Prime
         : UTR
     {
-
         #region Constructors
 
         public UTR5Prime(string chromID, string strand, long oneBasedStart, long oneBasedEnd) :
             base(chromID, strand, oneBasedStart, oneBasedEnd)
         {
-
         }
 
         public UTR5Prime(UTR5Prime utr) : base(utr)
         {
-
         }
 
         #endregion Constructors
@@ -38,6 +29,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ToolWrapperLayer
 {
@@ -13,7 +9,6 @@ namespace ToolWrapperLayer
     public class SlnckyWrapper :
         IInstallable
     {
-
         #region Private Fields
 
         private static string SlnckyAnnotationsLocation = @"https://www.dropbox.com/s/pq7wsjx61sp8ghm/annotations.tar.gz";
@@ -58,10 +53,8 @@ namespace ToolWrapperLayer
 
         public void run()
         {
-
         }
 
         #endregion Public Methods
-
     }
 }

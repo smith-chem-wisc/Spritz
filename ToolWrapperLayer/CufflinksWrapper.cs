@@ -11,7 +11,6 @@ namespace ToolWrapperLayer
     public class CufflinksWrapper :
         IInstallable
     {
-
         #region Public Properties
 
         /// <summary>
@@ -114,6 +113,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Method
-
     }
 }

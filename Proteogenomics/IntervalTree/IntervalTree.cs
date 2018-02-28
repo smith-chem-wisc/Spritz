@@ -4,7 +4,6 @@ namespace Proteogenomics
 {
     public class IntervalTree
     {
-
         #region Public Properties
 
         public IntervalNode Head { get; set; } = new IntervalNode();
@@ -79,6 +78,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

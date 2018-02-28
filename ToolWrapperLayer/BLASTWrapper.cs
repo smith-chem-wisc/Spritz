@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace ToolWrapperLayer
 {
     /// <summary>
     /// BLAST+ is a set of local alignment tools for nucleotide (blastn, etc.) and protein (blastp, etc.) sequences.
-    /// 
+    ///
     /// BLASTN USAGE (Nucleotide-Nucleotide BLAST 2.2.28+)
     ///  blastn[-h][-help][-import_search_strategy filename]
     ///    [-export_search_strategy filename][-task task_name][-db database_name]
@@ -31,7 +30,7 @@ namespace ToolWrapperLayer
     ///    [-outfmt format][-show_gis][-num_descriptions int_value]
     ///    [-num_alignments int_value][-html][-max_target_seqs num_sequences]
     ///    [-num_threads int_value][-remote][-version]
-    /// 
+    ///
     /// BLASTP USAGE (Protein-Protein BLAST 2.2.28+)
     ///  blastp[-h][-help][-import_search_strategy filename]
     ///    [-export_search_strategy filename][-task task_name][-db database_name]
@@ -56,7 +55,6 @@ namespace ToolWrapperLayer
     public class BLASTWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -90,6 +88,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Installation Methods
-
     }
 }

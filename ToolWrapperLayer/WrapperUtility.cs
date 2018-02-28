@@ -8,7 +8,6 @@ namespace ToolWrapperLayer
 {
     public static class WrapperUtility
     {
-        
         #region Private Fields
 
         private static Regex driveName = new Regex(@"([A-Z]:)");

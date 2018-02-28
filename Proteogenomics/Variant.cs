@@ -8,7 +8,6 @@ namespace Proteogenomics
     public class Variant
         : Interval
     {
-
         #region Public Enum
 
         public new enum VariantType
@@ -176,7 +175,7 @@ namespace Proteogenomics
                 OneBasedEnd = OneBasedStart;
             }
             else // if (isDel() || isMnp()) {
-            { 
+            {
                 // Update 'end' position
                 if (ReferenceAlleleString.Length > 1) OneBasedEnd = OneBasedStart + ReferenceAlleleString.Length - 1;
             }
@@ -255,6 +254,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

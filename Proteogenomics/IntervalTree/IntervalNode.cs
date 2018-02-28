@@ -5,7 +5,6 @@ namespace Proteogenomics
 {
     public class IntervalNode
     {
-
         #region Public Properties
 
         public long Center;
@@ -22,7 +21,6 @@ namespace Proteogenomics
 
         public IntervalNode()
         {
-
         }
 
         public IntervalNode(IEnumerable<Interval> intervals)
@@ -95,6 +93,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Methods
-
     }
 }

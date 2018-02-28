@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
 
 namespace ToolWrapperLayer
 {
@@ -13,7 +13,6 @@ namespace ToolWrapperLayer
     public class STARWrapper :
         IInstallable
     {
-
         #region Public Properties
 
         /// <summary>
@@ -187,7 +186,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) + " ]; then " +
-                    "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " + 
+                    "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " +
                     String.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " | grep -v 'MT' >> " +
                     WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) +
@@ -324,6 +323,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Methods
-
     }
 }

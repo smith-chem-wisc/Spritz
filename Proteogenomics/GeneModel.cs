@@ -1,13 +1,11 @@
 ﻿using Bio;
 using Bio.IO.Gff;
-using Bio.VCF;
 using Proteomics;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Proteogenomics
 {
@@ -16,7 +14,6 @@ namespace Proteogenomics
     /// </summary>
     public class GeneModel
     {
-
         #region Private Fields
 
         /// <summary>
@@ -116,7 +113,6 @@ namespace Proteogenomics
                         ProcessGff3Feature(feature, start, end, chromSeq, attributes);
                     else
                         ProcessGtfFeature(feature, start, end, chromSeq, attributes);
-
                 }
             }
             CreateUTRsAndIntergenicRegions();
@@ -285,7 +281,7 @@ namespace Proteogenomics
         #region Public Methods
 
         /// <summary>
-        /// Creates UTRs for transcripts and 
+        /// Creates UTRs for transcripts and
         /// </summary>
         public void CreateUTRsAndIntergenicRegions()
         {
@@ -338,7 +334,6 @@ namespace Proteogenomics
                 List<Variant> transcriptVariants = VariantTree.Query(t).OfType<Variant>().Reverse().ToList();
                 foreach (Variant v in transcriptVariants)
                 {
-                    
                 }
             }
         }
@@ -358,6 +353,5 @@ namespace Proteogenomics
         }
 
         #endregion Translation Methods
-
     }
 }

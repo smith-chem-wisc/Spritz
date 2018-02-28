@@ -5,7 +5,6 @@ namespace Proteogenomics
 {
     public class Interval
     {
-
         #region Public Properties
 
         /// <summary>
@@ -59,7 +58,6 @@ namespace Proteogenomics
         public Interval(Interval interval) :
             this(interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd)
         {
-
         }
 
         #endregion Constructor
@@ -356,6 +354,5 @@ namespace Proteogenomics
         }
 
         #endregion Public Static Method
-
     }
 }

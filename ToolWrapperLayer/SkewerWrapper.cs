@@ -83,6 +83,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Method
-
     }
 }

@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Proteogenomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,15 +7,13 @@ using System.Linq;
 using System.Reflection;
 using ToolWrapperLayer;
 using WorkflowLayer;
-using Proteogenomics;
 
 namespace CMD
 {
-    class Spritz
+    internal class Spritz
     {
         public static void Main(string[] args)
         {
-
             #region Setup
 
             if (args.Contains("setup"))
@@ -54,6 +53,7 @@ namespace CMD
             #endregion STAR Fusion Testing
 
             #region Proteoform Database Engine
+
             //lncRNA workflow
             if (options.Command.Equals("lncRNADiscovery", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -84,9 +84,9 @@ namespace CMD
             // finish setup of options
 
             EnsemblDownloadsWrapper.DownloadReferences(
-                options.BinDirectory, 
-                options.AnalysisDirectory, 
-                options.Reference, 
+                options.BinDirectory,
+                options.AnalysisDirectory,
+                options.Reference,
                 out string genomeFastaPath,
                 out string gtfGeneModelPath,
                 out string gff3GeneModelPath,
@@ -140,7 +140,6 @@ namespace CMD
                     options.ReferenceVcf,
                     out proteinDatabases);
             }
-
             else if (options.Fastq1 != null)
             {
                 // Parse comma-separated fastq lists
@@ -168,7 +167,6 @@ namespace CMD
                     options.ReferenceVcf,
                     out proteinDatabases);
             }
-
             else if (args.Contains("vcf2protein"))
             {
                 Genome genome = new Genome(options.GenomeFasta);
@@ -176,7 +174,6 @@ namespace CMD
                 GeneModel geneModel = new GeneModel(genome, options.GeneModelGtfOrGff);
                 proteinDatabases.Add(SAVProteinDBFlow.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, options.Reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
-
             else
             {
                 proteinDatabases = new List<string> { "Error: no fastq or sequence read archive (SRA) was provided." };
@@ -184,9 +181,8 @@ namespace CMD
 
             Console.WriteLine("output databases to " + String.Join(", and ", proteinDatabases));
             Console.ReadKey();
-            
-            #endregion Proteoform Database Engine
 
+            #endregion Proteoform Database Engine
         }
     }
 }

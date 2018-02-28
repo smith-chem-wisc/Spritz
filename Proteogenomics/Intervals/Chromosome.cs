@@ -6,7 +6,6 @@ namespace Proteogenomics
     public class Chromosome
         : Interval
     {
-
         #region Public Properties
 
         public ISequence Sequence { get; set; }

@@ -10,7 +10,6 @@ namespace Proteogenomics
 {
     public static class Translation
     {
-
         #region One-Frame Translation
 
         public static Protein OneFrameTranslation(TranscriptPossiblyWithVariants transcript)
@@ -45,6 +44,5 @@ namespace Proteogenomics
         }
 
         #endregion Three-Frame Translation
-
     }
 }
