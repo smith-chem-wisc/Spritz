@@ -54,16 +54,16 @@ namespace Proteogenomics
 
             foreach (Interval interval in intervals)
             {
-                if (interval.OneBasedEnd < Center) left.Add(interval);
-                if (interval.OneBasedStart > Center) right.Add(interval);
-                else intersecting.Add(interval);
+                if (interval.OneBasedEnd < Center) { left.Add(interval); }
+                if (interval.OneBasedStart > Center) { right.Add(interval); }
+                else { intersecting.Add(interval); }
             }
 
             IntervalsCenter = intersecting;
 
             // Recurse
-            if (left.Count > 0) LeftNode = new IntervalNode(left);
-            if (right.Count > 0) RightNode = new IntervalNode(right);
+            if (left.Count > 0) { LeftNode = new IntervalNode(left); }
+            if (right.Count > 0) { RightNode = new IntervalNode(right); }
         }
 
         /// <summary>
@@ -74,8 +74,8 @@ namespace Proteogenomics
         public List<Interval> Query(Interval queryInterval)
         {
             List<Interval> results = IntervalsCenter.Where(i => i.Overlaps(queryInterval)).ToList();
-            if (queryInterval.OneBasedStart < Center && LeftNode != null) results.AddRange(LeftNode.Query(queryInterval));
-            if (queryInterval.OneBasedStart > Center && RightNode != null) results.AddRange(RightNode.Query(queryInterval));
+            if (queryInterval.OneBasedStart < Center && LeftNode != null) { results.AddRange(LeftNode.Query(queryInterval)); }
+            if (queryInterval.OneBasedStart > Center && RightNode != null) { results.AddRange(RightNode.Query(queryInterval)); }
             return results;
         }
 
@@ -87,8 +87,8 @@ namespace Proteogenomics
         public List<Interval> Stab(long point)
         {
             List<Interval> results = IntervalsCenter.Where(i => i.Overlaps(point)).ToList();
-            if (point < Center && LeftNode != null) results.AddRange(LeftNode.Stab(point));
-            if (point > Center && RightNode != null) results.AddRange(RightNode.Stab(point));
+            if (point < Center && LeftNode != null) { results.AddRange(LeftNode.Stab(point)); }
+            if (point > Center && RightNode != null) { results.AddRange(RightNode.Stab(point)); }
             return results;
         }
 

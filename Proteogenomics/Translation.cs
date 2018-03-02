@@ -18,7 +18,7 @@ namespace Proteogenomics
             ISequence rnaSequence = Transcription.Transcribe(transcript.GetExonsUsedInDerivation()[0].Strand == "+" ? dnaSequence : dnaSequence.GetReverseComplementedSequence());
             ISequence proteinSequence = ProteinTranslation.Translate(rnaSequence);
             string proteinBases = SequenceExtensions.ConvertToString(proteinSequence).Split('*')[0];
-            return new Protein(proteinBases, transcript.ProteinID, null, null, null, transcript.ProteinAnnotation, transcript.ProteinAnnotation);
+            return new Protein(proteinBases, transcript.ProteinID, "Homo sapiens", null, null, null, transcript.ProteinAnnotation, transcript.ProteinAnnotation);
         }
 
         #endregion One-Frame Translation

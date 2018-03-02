@@ -15,7 +15,6 @@ namespace WorkflowLayer
     /// </summary>
     public class SAVProteinDBFlow
     {
-
         #region Runner Methods
 
         public static void GenerateSAVProteinsFromSra(string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
@@ -57,7 +56,7 @@ namespace WorkflowLayer
 
             // Generate databases
             GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
-            proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf => 
+            proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf =>
                 WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
         }
 
@@ -74,10 +73,10 @@ namespace WorkflowLayer
             }
             VCFParser vcf = new VCFParser(vcfPath);
             List<Protein> proteins = new List<Protein>();
-            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x)
+            List<Variant> singleNucleotideVariants = vcf.Select(x => x)
                 .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
-                .Select(v => new VariantSuperContext(v)).ToList();
-            geneModel.AmendTranscripts(singleNucleotideVariants, reference);
+                .Select(v => new Variant(v, v.Start)).ToList();
+            geneModel.ApplyVariants(singleNucleotideVariants);
             List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
             for (int i = 0; i < transcripts.Count; i++)
             {
@@ -158,6 +157,5 @@ namespace WorkflowLayer
         }
 
         #endregion Preparing Input Files
-
     }
 }

@@ -38,7 +38,7 @@ namespace Proteogenomics
         /// <summary>
         /// Forest of intervals by chromosome name
         /// </summary>
-        public IntervalForest Forest { get; set; } = new IntervalForest();
+        public IntervalForest GenomeForest { get; set; } = new IntervalForest();
 
         /// <summary>
         /// Genes represented
@@ -79,7 +79,7 @@ namespace Proteogenomics
 
             foreach (ISequence chromFeatures in geneFeatures)
             {
-                ISequence chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.ID.Split(' ')[0] == chromFeatures.ID);
+                ISequence chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID).Sequence;
                 if (chromSeq == null) continue;
 
                 chromFeatures.Metadata.TryGetValue("features", out object f);
@@ -117,7 +117,7 @@ namespace Proteogenomics
             }
             CreateUTRsAndIntergenicRegions();
             Parallel.ForEach(Genes, gene => gene.TranscriptTree.Build(gene.Transcripts));
-            Forest.Build();
+            GenomeForest.Build();
         }
 
         /// <summary>
@@ -141,14 +141,14 @@ namespace Proteogenomics
             {
                 currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
                 Genes.Add(currentGene);
-                Forest.Add(currentGene);
+                GenomeForest.Add(currentGene);
             }
 
             if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
                 currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
                 currentGene.Transcripts.Add(currentTranscript);
-                Forest.Add(currentTranscript);
+                GenomeForest.Add(currentTranscript);
             }
 
             if (hasExonId || hasProteinId)
@@ -199,12 +199,12 @@ namespace Proteogenomics
                 {
                     currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
-                    Forest.Add(currentGene);
+                    GenomeForest.Add(currentGene);
                 }
 
                 currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
                 currentGene.Transcripts.Add(currentTranscript);
-                Forest.Add(currentTranscript);
+                GenomeForest.Add(currentTranscript);
             }
 
             if (feature.Key == "exon" || feature.Key == "CDS")
@@ -213,14 +213,14 @@ namespace Proteogenomics
                 {
                     currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
-                    Forest.Add(currentGene);
+                    GenomeForest.Add(currentGene);
                 }
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
                     currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
                     currentGene.Transcripts.Add(currentTranscript);
-                    Forest.Add(currentTranscript);
+                    GenomeForest.Add(currentTranscript);
                 }
 
                 if (feature.Key == "exon")
@@ -285,7 +285,7 @@ namespace Proteogenomics
         /// </summary>
         public void CreateUTRsAndIntergenicRegions()
         {
-            foreach (IntervalTree it in Forest.Forest.Values)
+            foreach (IntervalTree it in GenomeForest.Forest.Values)
             {
                 Gene previousPositiveStrandGene = null;
                 Gene previousNegativeStrandGene = null;
@@ -295,19 +295,25 @@ namespace Proteogenomics
                     Intergenic intergenic = previous == null ? null : new Intergenic(gene.ChromosomeID, gene.Strand, (gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
 
                     if (gene.Strand == "+")
+                    {
                         previousPositiveStrandGene = gene;
+                    }
                     if (gene.Strand == "-")
+                    {
                         previousNegativeStrandGene = gene;
+                    }
 
                     if (intergenic != null && intergenic.Length() <= 0)
-                        Forest.Add(intergenic);
+                    {
+                        GenomeForest.Add(intergenic);
+                    }
 
                     Chromosome chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.ChromosomeID == gene.ChromosomeID);
                     foreach (Transcript t in gene.Transcripts)
                     {
-                        Forest.Add(t.CreateIntrons());
-                        Forest.Add(t.CreateUTRs());
-                        Forest.Add(t.CreateUpDown(chromSeq));
+                        GenomeForest.Add(t.CreateIntrons());
+                        GenomeForest.Add(t.CreateUTRs());
+                        GenomeForest.Add(t.CreateUpDown(chromSeq));
                     }
                 }
             }
@@ -319,11 +325,10 @@ namespace Proteogenomics
         /// <param name="variants"></param>
         public void ApplyVariants(List<Variant> variants)
         {
-            IntervalTree VariantTree = new IntervalTree(variants.OfType<Interval>());
-            VariantTree.Build();
-            foreach (Variant v in variants)
+            List<Transcript> resultingTranscripts = new List<Transcript>();
+            foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
             {
-                List<Interval> intervals = Forest.Forest[v.ChromosomeID].Stab(v.OneBasedStart);
+                List<Interval> intervals = GenomeForest.Forest[v.ChromosomeID].Stab(v.OneBasedStart);
                 foreach (Interval i in intervals)
                 {
                     i.ApplyVariant(v);
@@ -331,10 +336,8 @@ namespace Proteogenomics
             }
             foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
             {
-                List<Variant> transcriptVariants = VariantTree.Query(t).OfType<Variant>().Reverse().ToList();
-                foreach (Variant v in transcriptVariants)
-                {
-                }
+                List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
+                resultingTranscripts.AddRange(t.ApplyVariantsCombinitorially(transcriptVariants));
             }
         }
 

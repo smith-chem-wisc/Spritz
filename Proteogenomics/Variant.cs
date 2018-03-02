@@ -1,4 +1,6 @@
-﻿using Bio.VCF;
+﻿using Bio;
+using Bio.Extensions;
+using Bio.VCF;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -251,6 +253,40 @@ namespace Proteogenomics
 
             // Default to traditional apporach for imprecise and structural variants
             return OneBasedEnd - OneBasedStart;
+        }
+
+        public string NetChange(bool reverseStrand)
+        {
+            if (isDel())
+            {
+                return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, ReferenceAlleleString).GetReverseComplementedSequence()) : ReferenceAlleleString; // Deletion have empty 'alt'
+            }
+            return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, AlternateAlleleString).GetReverseComplementedSequence()) : AlternateAlleleString;
+        }
+
+        public string NetChange(Interval interval)
+        {
+            string netChange = AlternateAlleleString;
+            if (isDel()) netChange = ReferenceAlleleString; // In deletions 'alt' is empty
+
+            long removeBefore = interval.OneBasedStart - OneBasedStart;
+            if (removeBefore > 0)
+            {
+                if (removeBefore >= netChange.Length) return ""; // Nothing left
+            }
+            else removeBefore = 0;
+
+            long removeAfter = OneBasedEnd - interval.OneBasedEnd;
+            if (removeAfter > 0)
+            {
+                if ((removeBefore + removeAfter) >= netChange.Length) return ""; // Nothing left
+            }
+            else removeAfter = 0;
+
+            // Remove leading and trailing parts
+            netChange = netChange.Substring((int)removeBefore, netChange.Length - (int)removeAfter);
+
+            return netChange;
         }
 
         #endregion Public Methods

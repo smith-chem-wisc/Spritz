@@ -41,8 +41,8 @@ namespace Proteogenomics
         public void Add(Interval interval)
         {
             if (interval == null) return;
-            if (Forest.TryGetValue(Genome.GetFriendlyChromosomeName(interval.ChromosomeID), out IntervalTree tree)) tree.Add(interval);
-            else Forest.Add(Genome.GetFriendlyChromosomeName(interval.ChromosomeID), new IntervalTree(new List<Interval> { interval }));
+            if (Forest.TryGetValue(interval.ChromosomeID, out IntervalTree tree)) tree.Add(interval);
+            else Forest.Add(interval.ChromosomeID, new IntervalTree(new List<Interval> { interval }));
         }
 
         public void Build()

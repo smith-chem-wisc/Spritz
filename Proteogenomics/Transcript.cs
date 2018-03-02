@@ -101,10 +101,40 @@ namespace Proteogenomics
 
         #region Translate and Replace with SnpEff Annotated Variations Method
 
-        public override IEnumerable<Interval> ApplyToCodingSequences(List<Variant> variants)
+        /// <summary>
+        /// Apply this variant and adjust the start and stop indices
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <returns></returns>
+        public override Interval ApplyVariant(Variant variant)
         {
-            base.ApplyVariant(variant);
+            Interval i = base.ApplyVariant(variant);
+            return new Transcript(ID, Version, Gene, i.Strand, i.OneBasedStart, i.OneBasedEnd, ProteinID);
+        }
+
+        /// <summary>
+        /// Takes in list of variants to combinitorially apply to this transcript
+        /// </summary>
+        /// <param name="variantOrderedDescStart"></param>
+        /// <returns></returns>
+        public IEnumerable<Transcript> ApplyVariantsCombinitorially(List<Variant> variantOrderedDescStart)
+        {
             List<Transcript> result = new List<Transcript>();
+            for (int i = 0; i < variantOrderedDescStart.Count; i++)
+            {
+                Variant v = variantOrderedDescStart[i];
+                Transcript newTranscript = ApplyVariant(v) as Transcript;
+                if (variantOrderedDescStart.Count > 1)
+                {
+                    newTranscript.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(1, variantOrderedDescStart.Count - 1));
+                }
+                result.Add(newTranscript);
+                if (v.GenotypeType == GenotypeType.HETEROZYGOUS)
+                {
+                    result.Add(this);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -128,7 +158,9 @@ namespace Proteogenomics
             // don't process proteins that have CDS without discrete sequence or without actual start or stop, i.e. containing 'X' or '*'
             proteinSequences.TryGetValue(ProteinID, out string proteinSequence);
             if (proteinSequence == null || badProteinAccessions.Contains(ProteinID))
+            {
                 return new List<Protein>();
+            }
 
             // todo: allow depth filter here using "DP" column, especially for indels
             List<SnpEffAnnotation> synonymous = new List<SnpEffAnnotation>();
@@ -138,10 +170,10 @@ namespace Proteogenomics
             string id = reference.StartsWith("GRCh38") ? ID + "." + Version : ID;
             foreach (SnpEffAnnotation a in SnpEffVariants.Where(annotation => annotation.FeatureID == id))
             {
-                if (a.Synonymous) synonymous.Add(a);
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HOMOZYGOUS_ALT) homozygousMissense.Add(a);
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HETEROZYGOUS) heterozygousMissense.Add(a);
-                else other.Add(a);
+                if (a.Synonymous) { synonymous.Add(a); }
+                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HOMOZYGOUS_ALT) { homozygousMissense.Add(a); }
+                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HETEROZYGOUS) { heterozygousMissense.Add(a); }
+                else { other.Add(a); }
             }
 
             int maxCombosPerTranscript = 32;
@@ -167,7 +199,9 @@ namespace Proteogenomics
                     List<long> hapSites = hap.Select(v => v.Variant.OneBasedStart).ToList();
                     bool containsVariantsToFakePhase = variantSites.Any(vs => !hapSites.Contains(vs) && hap.Any(v => Math.Abs(v.Variant.OneBasedStart - vs) < range));
                     if (!containsVariantsToFakePhase)
+                    {
                         fakePhased.Add(hap);
+                    }
                 }
                 missenseCombinations = fakePhased;
                 range *= 2;
@@ -210,15 +244,17 @@ namespace Proteogenomics
             return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes, incompleteTranscriptAccessions, selenocysteineContaining);
         }
 
-        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
+        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
         {
-            List<Exon> annotatedStarts = new List<Exon>();
+            List<CDS> annotatedStarts = new List<CDS>();
             for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
             {
-                if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromosomeID, Strand, i * indexBinSize), out List<Exon> exons))
-                    annotatedStarts.AddRange(exons.Where(x =>
+                if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromosomeID, Strand, i * indexBinSize), out List<CDS> cds))
+                {
+                    annotatedStarts.AddRange(cds.Where(x =>
                         Exons.Any(xx => xx.Includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
                             && xx.Includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
+                }
             }
 
             char terminatingCharacter = ProteinAlphabet.Instance.GetFriendlyName(Alphabets.Protein.Ter)[0];
@@ -226,7 +262,7 @@ namespace Proteogenomics
             {
                 // gets the first annotated start that produces
                 Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
-                foreach (Exon annotatedStart in annotatedStarts)
+                foreach (CDS annotatedStart in annotatedStarts)
                 {
                     long startCodonStart = Strand == "+" ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
                     List<TranscriptPossiblyWithVariants> transcripts = CombineExonSequences(false, includeVariants, out bool success).Where(t => t.OkayToTranslate()).ToList();
@@ -249,7 +285,9 @@ namespace Proteogenomics
                         }
                         Protein p = ProteinAnnotation.OneFrameTranslationWithAnnotation(transcript);
                         if (p.BaseSequence.Length >= minLength && ProteinAnnotation.AddProteinIfLessComplex(proteinDictionary, p))
+                        {
                             yield return p;
+                        }
                     }
                 }
             }

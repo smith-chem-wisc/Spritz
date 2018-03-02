@@ -129,7 +129,7 @@ namespace Proteogenomics
                     accession = t.ProteinID + "_v" + arbitraryNumber++.ToString();
                 }
                 t.ProteinAnnotation = String.Join(" ", t.Variants.Select(v => v.Annotation)) + " OS=Homo sapiens GN=" + t.Transcript.Gene.ID;
-                List<SequenceVariation> sequenceVariations = variants.Select(v => new SequenceVariation(v.OneBasedStart, v.ReferenceAllele, v.AlternateAllele, v.Annotation)).ToList();
+                List<SequenceVariation> sequenceVariations = variants.Select(v => new SequenceVariation(v.OneBasedStart, v.ReferenceAllele, v.AlternateAllele, v.Annotation)).ToList(); // this should be amino acid positions
                 Protein newProtein = new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, t.ProteinAnnotation, false, false, null, sequenceVariations);
                 AddProteinIfLessComplex(proteinDictionary, newProtein);
                 accessions.Add(newProtein.Accession);

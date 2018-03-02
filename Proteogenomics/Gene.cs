@@ -57,13 +57,13 @@ namespace Proteogenomics
         public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool includeVariants, int min_length)
         {
             int indexBinSize = 100000;
-            Dictionary<Tuple<string, string, long>, List<Exon>> binnedCodingStarts = new Dictionary<Tuple<string, string, long>, List<Exon>>();
-            foreach (Exon x in genesWithCodingDomainSequences.Genes.SelectMany(g => g.Transcripts).Select(t => t.CodingDomainSequences.FirstOrDefault()).Where(x => x != null))
+            Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts = new Dictionary<Tuple<string, string, long>, List<CDS>>();
+            foreach (CDS x in genesWithCodingDomainSequences.Genes.SelectMany(g => g.Transcripts).Select(t => t.CodingDomainSequences.FirstOrDefault()).Where(x => x != null))
             {
                 Tuple<string, string, long> key = new Tuple<string, string, long>(x.ChromosomeID, x.Strand, x.OneBasedStart / indexBinSize * indexBinSize);
-                binnedCodingStarts.TryGetValue(key, out List<Exon> xs);
-                if (xs == null) binnedCodingStarts.Add(key, new List<Exon> { x });
-                else binnedCodingStarts[key].Add(x);
+                binnedCodingStarts.TryGetValue(key, out List<CDS> xs);
+                if (xs == null) { binnedCodingStarts.Add(key, new List<CDS> { x }); }
+                else { binnedCodingStarts[key].Add(x); }
             }
 
             List<Protein> proteins = new List<Protein>();
@@ -71,7 +71,9 @@ namespace Proteogenomics
             {
                 IEnumerable<Protein> p = t.TranslateUsingAnnotatedStartCodons(binnedCodingStarts, indexBinSize, min_length, includeVariants);
                 if (p != null)
+                {
                     lock (proteins) proteins.AddRange(p);
+                }
             });
             return proteins;
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Proteogenomics
@@ -45,7 +46,7 @@ namespace Proteogenomics
         /// <param name="oneBasedEnd"></param>
         public Interval(string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd)
         {
-            this.ChromosomeID = chromID;
+            this.ChromosomeID = chromosomeID;
             this.Strand = strand;
             this.OneBasedStart = oneBasedStart;
             this.OneBasedEnd = oneBasedEnd;
@@ -68,7 +69,7 @@ namespace Proteogenomics
         /// Do something with a variant within this interval
         /// </summary>
         /// <param name="variant"></param>
-        public virtual IEnumerable<Interval> ApplyVariant(Variant variant)
+        public virtual Interval ApplyVariant(Variant variant)
         {
             Variants.Add(variant);
 
@@ -82,15 +83,15 @@ namespace Proteogenomics
                     break;
 
                 case Variant.VariantType.INS:
-                    newInterval = applyIns(variant);
+                    newInterval = ApplyIns(variant);
                     break;
 
                 case Variant.VariantType.DEL:
-                    newInterval = applyDel(variant);
+                    newInterval = ApplyDel(variant);
                     break;
 
                 case Variant.VariantType.DUP:
-                    newInterval = applyDup(variant);
+                    newInterval = ApplyDup(variant);
                     break;
 
                 default:
@@ -100,8 +101,10 @@ namespace Proteogenomics
 
             // Always return a copy of the marker (if the variant is applied)
             if (newInterval == this)
-                return new List<Interval> { new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd) };
-            return new List<Interval> { newInterval };
+            {
+                return new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
+            }
+            return newInterval;
         }
 
         /// <summary>
@@ -109,7 +112,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
-        public Interval applyDel(Variant variant)
+        protected Interval ApplyDel(Variant variant)
         {
             Interval m = new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
 
@@ -171,7 +174,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
-        public Interval applyDup(Variant variant)
+        protected Interval ApplyDup(Variant variant)
         {
             Interval m = new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
 
@@ -212,7 +215,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
-        public Interval applyIns(Variant variant)
+        protected Interval ApplyIns(Variant variant)
         {
             Interval m = new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
 
@@ -325,6 +328,15 @@ namespace Proteogenomics
             return OneBasedEnd - OneBasedStart + 1;
         }
 
+        public Interval Intersect(Interval interval)
+        {
+            if (interval.ChromosomeID != ChromosomeID) { return null; }
+            long istart = Math.Max(OneBasedStart, interval.OneBasedStart);
+            long iend = Math.Min(OneBasedEnd, interval.OneBasedEnd);
+            if (iend < istart) { return null; }
+            return new Interval(ChromosomeID, Strand, istart, iend);
+        }
+
         public long IntersectSize(Interval other)
         {
             long start = Math.Max(this.OneBasedStart, other.OneBasedStart);
@@ -341,7 +353,7 @@ namespace Proteogenomics
         {
             // Add all start and end coordinates
             long i = 0;
-            long[] points = new long[2 * intervals.Count];
+            long[] points = new long[2 * intervals.Count()];
             foreach (Interval interval in intervals)
             {
                 points[i++] = interval.OneBasedStart;
