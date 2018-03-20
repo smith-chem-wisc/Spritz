@@ -35,6 +35,11 @@ namespace Proteogenomics
         public List<Exon> Exons { get; set; } = new List<Exon>();
 
         /// <summary>
+        /// Exons sorted by start position or by reverse end position if on reverse strand
+        /// </summary>
+        public List<Exon> ExonsSortedStrand { get { return SortedStrand(); } }
+
+        /// <summary>
         /// List of the untranslated regions
         /// </summary>
         public List<UTR> UTRs { get; set; } = new List<UTR>();
@@ -55,9 +60,14 @@ namespace Proteogenomics
         public List<Intron> Introns { get; set; }
 
         /// <summary>
-        /// A list of coding domain sequences (CDS), which are represented as Exons.
+        /// Coding domain sequence (CDS) information
         /// </summary>
         public List<CDS> CodingDomainSequences { get; set; } = new List<CDS>();
+
+        /// <summary>
+        /// Coding sequence
+        /// </summary>
+        public ISequence CodingSequence { get; set; }
 
         /// <summary>
         /// Variants annotated for this transcript using SnpEff.
@@ -68,6 +78,11 @@ namespace Proteogenomics
         /// The protein ID derived from coding transcripts; this is imported from the GFF3 file if available.
         /// </summary>
         public string ProteinID { get; set; }
+
+        /// <summary>
+        /// Annotations for the variants applied to this transcript
+        /// </summary>
+        public List<string> VariantAnnotations { get; set; } = new List<string>();
 
         #endregion Public Properties
 
@@ -108,8 +123,31 @@ namespace Proteogenomics
         /// <returns></returns>
         public override Interval ApplyVariant(Variant variant)
         {
-            Interval i = base.ApplyVariant(variant);
-            return new Transcript(ID, Version, Gene, i.Strand, i.OneBasedStart, i.OneBasedEnd, ProteinID);
+            Interval interval = base.ApplyVariant(variant);
+            Transcript transcript = new Transcript(ID, Version, Gene, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd, ProteinID);
+            for (int i = 0; i < CodingDomainSequences.Count; i++)
+            {
+                if (CodingDomainSequences[i].Includes(variant))
+                {
+                    transcript.CodingDomainSequences.Add(CodingDomainSequences[i].ApplyVariant(variant) as CDS);
+                }
+                transcript.CodingDomainSequences.Add(CodingDomainSequences[i]);
+            }
+            for (int i = 0; i < Exons.Count; i++)
+            {
+                if (Exons[i].Includes(variant))
+                {
+                    transcript.Exons.Add(Exons[i].ApplyVariant(variant) as Exon); // applies variant to sequence
+                }
+                transcript.Exons.Add(Exons[i]);
+            }
+
+            transcript.VariantAnnotations = new List<string>(VariantAnnotations);
+            transcript.VariantAnnotations.Add(transcript.AnnotateVariant(variant);
+            transcript.CreateIntrons();
+            transcript.CreateUTRs();
+            transcript.CreateUpDown(Gene.Chromosome);
+            return transcript;
         }
 
         /// <summary>
@@ -124,17 +162,53 @@ namespace Proteogenomics
             {
                 Variant v = variantOrderedDescStart[i];
                 Transcript newTranscript = ApplyVariant(v) as Transcript;
-                if (variantOrderedDescStart.Count > 1)
-                {
-                    newTranscript.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(1, variantOrderedDescStart.Count - 1));
-                }
                 result.Add(newTranscript);
+                if (variantOrderedDescStart.Count - i > 1)
+                {
+                    result.AddRange(newTranscript.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
+                }
                 if (v.GenotypeType == GenotypeType.HETEROZYGOUS)
                 {
                     result.Add(this);
                 }
+                if (v.GenotypeType == GenotypeType.HETEROZYGOUS && variantOrderedDescStart.Count - i > 1)
+                {
+                    result.AddRange(this.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
+                }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Gets a string representing a variant applied to this transcript 
+        /// </summary>
+        /// <param name="variant"></param>
+        public string AnnotateVariant(Variant variant)
+        {
+            // Leaving off here for 180319
+            // Figure out the codon change from the information in this transcript (port from SnpEff CodonChange)
+            // Figure out the VariantEffect for the change, and note the high/medium/low/modifier status of the change
+            return "variant:"; // frameshift or something SPACE notations about what changes were made to the sequence
+
+            // Then in translation, make a simple method to look up the bad accessions
+            //      (could also try to assess this from the sequence itself using the warnings and errors)
+            //      (namely, does it have stop codons in it, does it have a start codon)
+            //      (but will have to do this anyway to find the selenocysteine sequences, so might as well just keep that code)
+            // Put together coding sequences based on the UTRs, now that they're being fixed in the ApplyVariants method
+            // Translate the thing
+            //      Keep the accessions to look up and increment accessions to make them unique during translation
+
+            // Delete all the ProteinAnnotation code and Transcript and TranscriptPossiblyWithVariants code that isn't being used
+            //     Don't need to prepare for translation anymore
+            //     Don't need to step through translation anymore (but keep the formatting of variants from ProteinAnnotation)
+            //  - space delimited with variant annotations: "variant:type originalSequence###alteredSequence chr:oneBasedStart"
+            //     Don't need to TranslateFromSnpEff 
+
+            // Test
+            //   1. UTR ranges get change
+            //   2. Correct UTR gets changed (5' or 3')
+            //   3. Variants get applied correctly
+            //   Uh, lots more.
         }
 
         /// <summary>
@@ -170,10 +244,22 @@ namespace Proteogenomics
             string id = reference.StartsWith("GRCh38") ? ID + "." + Version : ID;
             foreach (SnpEffAnnotation a in SnpEffVariants.Where(annotation => annotation.FeatureID == id))
             {
-                if (a.Synonymous) { synonymous.Add(a); }
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HOMOZYGOUS_ALT) { homozygousMissense.Add(a); }
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HETEROZYGOUS) { heterozygousMissense.Add(a); }
-                else { other.Add(a); }
+                if (a.Synonymous)
+                {
+                    synonymous.Add(a);
+                }
+                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HOMOZYGOUS_ALT)
+                {
+                    homozygousMissense.Add(a);
+                }
+                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HETEROZYGOUS)
+                {
+                    heterozygousMissense.Add(a);
+                }
+                else
+                {
+                    other.Add(a);
+                }
             }
 
             int maxCombosPerTranscript = 32;
@@ -232,6 +318,83 @@ namespace Proteogenomics
         #endregion Translate and Replace with SnpEff Annotated Variations Method
 
         #region Translate from Variant Nucleotide Sequences Methods
+
+        /// <summary>
+        /// Get the coding sequence for this transcript.
+        /// SnpEff keeps track of the UTRs to figure this out. I suppose that will work, now that I'm using the interval tree to dive down to change those ranges.
+        /// </summary>
+        /// <returns></returns>
+        public ISequence RetrieveCodingSequence()
+        {
+            if (CodingSequence != null)
+            {
+                return CodingSequence;
+            }
+
+            // Concatenate all exons
+            List<Exon> exons = ExonsSortedStrand;
+            StringBuilder sequence = new StringBuilder();
+            int utr5len = 0, utr3len = 0;
+
+            // 5 prime UTR length
+            foreach (UTR utr in UTRs.OfType<UTR5Prime>())
+            {
+                utr5len += (int)utr.Length();
+            }
+
+            // Append all exon sequences
+            IAlphabet alphabet = null;
+            bool missingSequence = false;
+            foreach (Exon exon in exons)
+            {
+                missingSequence |= exon.Sequence != null; // If there is no sequence, we are in trouble
+                sequence.Append(Strand == "+" ? exon.Sequence : exon.Sequence.GetReverseComplementedSequence());
+                alphabet = alphabet == null || alphabet.HasAmbiguity && !exon.Sequence.Alphabet.HasAmbiguity ? // keep the alphabet with the most characters
+                    alphabet :
+                    exon.Sequence.Alphabet;
+            }
+
+            if (missingSequence)
+            {
+                CodingSequence = new Sequence(Alphabets.DNA, ""); // One or more exons does not have sequence. Nothing to do
+            }
+            else
+            {
+                // OK, all exons have sequences
+
+                // 3 prime UTR length
+                foreach (UTR utr in UTRs.OfType<UTR3Prime>())
+                {
+                    utr3len += (int)utr.Length();
+                }
+
+                // Cut 5 prime UTR and 3 prime UTR points
+                int subEnd = sequence.Length - utr3len;
+
+                if (utr5len > subEnd)
+                {
+                    CodingSequence = new Sequence(Alphabets.DNA, "");
+                }
+                else
+                {
+                    CodingSequence = new Sequence(alphabet, sequence.ToString().Substring(utr5len, subEnd));
+                }
+            }
+            return CodingSequence;
+        }
+
+        /// <summary>
+        /// Get strands sorted by start (forward) or end and in reverse (reverse strand)
+        /// </summary>
+        /// <returns></returns>
+        private List<Exon> SortedStrand()
+        {
+            return ExonsSortedStrand != null ?
+                ExonsSortedStrand :
+                Strand == "+" ?
+                    Exons.OrderBy(x => x.OneBasedStart).ToList() :
+                    Exons.OrderByDescending(x => x.OneBasedEnd).ToList();
+        }
 
         public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
@@ -292,80 +455,6 @@ namespace Proteogenomics
                 }
             }
             //return Translation.ThreeFrameTranslation(Exons, ProteinID);
-        }
-
-        /// <summary>
-        /// Gets the possible exon haplotypes and combines them in all possible ways.
-        /// </summary>
-        /// <param name="exons"></param>
-        /// <param name="includeVariants"></param>
-        /// <returns></returns>
-        public IEnumerable<TranscriptPossiblyWithVariants> CombineExonSequences(bool translateCodingDomains, bool includeVariants, out bool success, int maxCombosPerTranscript = 32)
-        {
-            int maxCombos = (int)Math.Log(maxCombosPerTranscript, 2) + 1;
-            List<Exon> exons = translateCodingDomains ? CodingDomainSequences : Exons;
-
-            // keep pruning until we get a reasonable amount of branching
-            List<List<Exon>> exonSequences = null;
-            int totalBranches = -1;
-            int maxCombosForExons = maxCombos;
-            while (totalBranches < 0 || totalBranches > maxCombosPerTranscript)
-            {
-                if (exons.Any(x => x.Variants.Sum(v => Variant.ParseVariantContext(v).Count(vv => vv.AlleleFrequency < 0.9)) > maxCombos))
-                {
-                    success = false;
-                    return new List<TranscriptPossiblyWithVariants>();
-                }
-                exonSequences = exons.Select(x => x.GetExonSequences(maxCombosForExons, includeVariants, 0.9, false, 101)).ToList();
-                totalBranches = (int)Math.Pow(2, exonSequences.Sum(possibleExons => possibleExons.Count - 1)) - Convert.ToInt32(exonSequences.Count == 0);
-                maxCombosForExons = (int)Math.Ceiling((double)maxCombosForExons / (double)2);
-                if (maxCombosForExons == 1 && totalBranches > maxCombosPerTranscript)
-                {
-                    // too hard of a problem for now without long-read sequencing data
-                    success = false;
-                    return new List<TranscriptPossiblyWithVariants>();
-                }
-            }
-            totalBranches = (int)Math.Pow(2, exonSequences.Sum(possibleExons => possibleExons.Count - 1)) - Convert.ToInt32(exonSequences.Count == 0);
-            TranscriptPossiblyWithVariants[] haplotypicSequences = new TranscriptPossiblyWithVariants[totalBranches];
-            byte nByte = Encoding.UTF8.GetBytes("N".ToArray()).First();
-            if (Strand != "+")
-                exonSequences.Reverse();
-            foreach (List<Exon> branchedExons in exonSequences)
-            {
-                for (int branch = 0; branch < branchedExons.Count; branch++)
-                {
-                    // using byte arrays for intermediate data structures greatly improves performance because of copying and storage efficiency over strings
-                    Sequence sequence = Strand == "+" ? branchedExons[branch].Sequence as Sequence : branchedExons[branch].Sequence.GetReverseComplementedSequence() as Sequence;
-                    byte[] branchedExonBytes = new byte[branchedExons[branch].Sequence.Count];
-                    sequence.CopyTo(branchedExonBytes, 0, branchedExonBytes.Length);
-                    string seq = new string(branchedExonBytes.Select(b => char.ToUpperInvariant((char)b)).ToArray()); // debugging
-
-                    int partitionLength = haplotypicSequences.Length / branchedExons.Count;
-                    int startIdx = branch * partitionLength;
-                    int endIdx = startIdx + partitionLength;
-                    for (int j = startIdx; j < endIdx; j++)
-                    {
-                        if (haplotypicSequences[j] == null)
-                        {
-                            haplotypicSequences[j] = new TranscriptPossiblyWithVariants(this,
-                                translateCodingDomains,
-                                sequence,
-                                branchedExons[branch].Sequence.Contains(nByte),
-                                branchedExons[branch].Variants.OfType<Variant>().ToList());
-                        }
-                        else
-                        {
-                            byte[] newSeq = new byte[haplotypicSequences[j].VariantTranscriptSequence.Count + branchedExonBytes.Length];
-                            (haplotypicSequences[j].VariantTranscriptSequence as Sequence).CopyTo(newSeq, 0, haplotypicSequences[j].VariantTranscriptSequence.Count);
-                            Array.Copy(branchedExonBytes, 0, newSeq, haplotypicSequences[j].VariantTranscriptSequence.Count, branchedExonBytes.Length);
-                            haplotypicSequences[j].VariantTranscriptSequence = new Sequence(haplotypicSequences[j].VariantTranscriptSequence.Alphabet, newSeq);
-                        }
-                    }
-                }
-            }
-            success = true;
-            return haplotypicSequences;
         }
 
         #endregion Translate from Variant Nucleotide Sequences Methods
@@ -446,5 +535,81 @@ namespace Proteogenomics
         }
 
         #endregion Create Interval Methods
+
+        #region Warning Methods
+
+        /// <summary>
+        /// Check if coding length is multiple of 3 in protein coding transcripts
+        /// </summary>
+        /// <returns></returns>
+        public bool isErrorProteinLength(bool treatAllAsProteinCoding)
+        {
+            if (!treatAllAsProteinCoding && !isProteinCoding()) return false;
+            return (cds().length() % 3) != 0;
+        }
+
+        /// <summary>
+        /// Is the first codon a START codon?
+        /// </summary>
+        /// <returns></returns>
+        public bool isErrorStartCodon()
+        {
+            if (!Config.get().isTreatAllAsProteinCoding() && !isProteinCoding()) return false;
+
+            // Not even one codon in this protein? Error
+            string cds = cds();
+            if (cds.length() < 3) return true;
+
+            string codon = cds.substring(0, 3);
+            return !codonTable().isStart(codon);
+        }
+
+        /// <summary>
+        /// Check if protein sequence has STOP codons in the middle of the coding sequence
+        /// </summary>
+        /// <returns></returns>
+        public bool isErrorStopCodonsInCds()
+        {
+            //if (!Config.get().isTreatAllAsProteinCoding() && !isProteinCoding()) return false;
+
+            // Get protein sequence
+            string prot = protein();
+            if (prot == null) return false;
+
+            // Any STOP codon before the end?
+            char bases[] = prot.toCharArray();
+            int max = bases.length - 1;
+            int countErrs = 0;
+            for (int i = 0; i < max; i++)
+                if (bases[i] == '*')
+                {
+                    countErrs++;
+                    // We allow up to one STOP codon because it can be a RARE_AMINO_ACID which is coded as a STOP codon.
+                    // More than one STOP codon is not "normal", so it's probably an error in the genomic annotations (e.g. ENSEMBL or UCSC)
+                    if (countErrs > 1) return true;
+                }
+
+            // OK
+            return false;
+        }
+
+        /// <summary>
+        /// Is the last codon a STOP codon?
+        /// </summary>
+        /// <returns></returns>
+        public bool isWarningStopCodon()
+        {
+            if (!Config.get().isTreatAllAsProteinCoding() && !isProteinCoding()) return false;
+
+            // Not even one codon in this protein? Error
+            string cds = cds();
+            if (cds.length() < 3) return true;
+
+            string codon = cds.substring(cds.length() - 3);
+            return !codonTable().isStop(codon);
+        }
+
+
+        #endregion
     }
 }

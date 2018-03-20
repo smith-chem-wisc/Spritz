@@ -20,7 +20,7 @@ namespace Proteogenomics
 
         public string ID { get; set; }
 
-        public ISequence Chromosome { get; set; }
+        public Chromosome Chromosome { get; set; }
 
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
 
@@ -30,8 +30,8 @@ namespace Proteogenomics
 
         #region Public Constructors
 
-        public Gene(string ID, ISequence chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
-            : base(chromosome.ID, strand, oneBasedStart, oneBasedEnd)
+        public Gene(string ID, Chromosome chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
+            : base(chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd)
         {
             this.ID = ID;
             this.Chromosome = chromosome;

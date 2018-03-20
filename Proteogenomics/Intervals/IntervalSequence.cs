@@ -6,7 +6,7 @@ using System.Text;
 namespace Proteogenomics
 {
     public class IntervalSequence
-        : Interval
+     : Interval
     {
         #region Public Constructors
 
@@ -39,7 +39,7 @@ namespace Proteogenomics
         {
             Variants.Add(variant);
 
-            IntervalSequence newIntervalSeq = new IntervalSequence(base.ApplyVariant(variant), Sequence);
+            IntervalSequence newIntervalSeq = new IntervalSequence(base.ApplyVariant(variant), new Sequence(Sequence));
             if (variant.Overlaps(this) && Sequence != null && !(Sequence.Count == 0))
             {
                 switch (variant.VarType)

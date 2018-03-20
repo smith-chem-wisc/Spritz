@@ -12,7 +12,7 @@ namespace Proteogenomics
     {
         #region Public Enum
 
-        public new enum VariantType
+        public enum VariantType
         {
             SNV // Single nucleotide variant (i.e. 1 base is changed)
             , MNP // Multiple nucleotide polymorphism (i.e. several bases are changed)

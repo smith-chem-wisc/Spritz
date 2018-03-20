@@ -12,6 +12,8 @@ namespace Proteogenomics
 
         public string FriendlyName { get; set; }
 
+        public bool Mitochondrial { get; set; }
+
         #endregion Public Properties
 
         #region Constructor
@@ -21,6 +23,7 @@ namespace Proteogenomics
         {
             Sequence = sequence;
             FriendlyName = GetFriendlyChromosomeName(ChromosomeID);
+            Mitochondrial = FriendlyName.StartsWith("M") || FriendlyName.StartsWith("chrM");
         }
 
         #endregion Constructor

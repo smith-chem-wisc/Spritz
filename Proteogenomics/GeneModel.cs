@@ -79,8 +79,8 @@ namespace Proteogenomics
 
             foreach (ISequence chromFeatures in geneFeatures)
             {
-                ISequence chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID).Sequence;
-                if (chromSeq == null) continue;
+                Chromosome chrom = Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID);
+                if (chrom == null) continue;
 
                 chromFeatures.Metadata.TryGetValue("features", out object f);
                 List<MetadataListItem<List<string>>> features = f as List<MetadataListItem<List<string>>>;
@@ -110,9 +110,9 @@ namespace Proteogenomics
                     }
 
                     if (feature.FreeText.Contains('='))
-                        ProcessGff3Feature(feature, start, end, chromSeq, attributes);
+                        ProcessGff3Feature(feature, start, end, chrom, attributes);
                     else
-                        ProcessGtfFeature(feature, start, end, chromSeq, attributes);
+                        ProcessGtfFeature(feature, start, end, chrom, attributes);
                 }
             }
             CreateUTRsAndIntergenicRegions();
@@ -126,9 +126,9 @@ namespace Proteogenomics
         /// <param name="feature"></param>
         /// <param name="oneBasedStart"></param>
         /// <param name="oneBasedEnd"></param>
-        /// <param name="chromSeq"></param>
+        /// <param name="chrom"></param>
         /// <param name="attributes"></param>
-        public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long oneBasedStart, long oneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
+        public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long oneBasedStart, long oneBasedEnd, Chromosome chrom, Dictionary<string, string> attributes)
         {
             bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
             bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcriptId);
@@ -139,7 +139,7 @@ namespace Proteogenomics
 
             if (hasGeneId && (currentGene == null || hasGeneId && geneId != currentGene.ID))
             {
-                currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
+                currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
                 Genes.Add(currentGene);
                 GenomeForest.Add(currentGene);
             }
@@ -155,13 +155,13 @@ namespace Proteogenomics
             {
                 if (hasExonId)
                 {
-                    ISequence exon_dna = chromSeq.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chromSeq.ID, strand);
+                    ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chrom.ID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (hasProteinId)
                 {
-                    CDS cds = new CDS(chromSeq.ID, strand, oneBasedStart, oneBasedEnd);
+                    CDS cds = new CDS(chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
                     currentTranscript.CodingDomainSequences.Add(cds);
                     currentTranscript.ProteinID = proteinId;
                 }
@@ -174,9 +174,9 @@ namespace Proteogenomics
         /// <param name="feature"></param>
         /// <param name="oneBasedStart"></param>
         /// <param name="oneBasedEnd"></param>
-        /// <param name="chromSeq"></param>
+        /// <param name="chrom"></param>
         /// <param name="attributes"></param>
-        public void ProcessGtfFeature(MetadataListItem<List<string>> feature, long oneBasedStart, long oneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
+        public void ProcessGtfFeature(MetadataListItem<List<string>> feature, long oneBasedStart, long oneBasedEnd, Chromosome chrom, Dictionary<string, string> attributes)
         {
             bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
             bool hasGeneName = attributes.TryGetValue("gene_name", out string geneName);
@@ -197,7 +197,7 @@ namespace Proteogenomics
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
+                    currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
                     GenomeForest.Add(currentGene);
                 }
@@ -211,7 +211,7 @@ namespace Proteogenomics
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq, strand, oneBasedStart, oneBasedEnd, feature);
+                    currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
                     GenomeForest.Add(currentGene);
                 }
@@ -225,13 +225,13 @@ namespace Proteogenomics
 
                 if (feature.Key == "exon")
                 {
-                    ISequence exon_dna = chromSeq.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chromSeq.ID, strand);
+                    ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    CDS cds = new CDS(chromSeq.ID, strand, oneBasedStart, oneBasedEnd);
+                    CDS cds = new CDS(chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
                     currentTranscript.CodingDomainSequences.Add(cds);
                 }
             }

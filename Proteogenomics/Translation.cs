@@ -10,8 +10,6 @@ namespace Proteogenomics
 {
     public static class Translation
     {
-        #region One-Frame Translation
-
         public static Protein OneFrameTranslation(TranscriptPossiblyWithVariants transcript)
         {
             ISequence dnaSequence = transcript.VariantTranscriptSequence;
@@ -20,10 +18,6 @@ namespace Proteogenomics
             string proteinBases = SequenceExtensions.ConvertToString(proteinSequence).Split('*')[0];
             return new Protein(proteinBases, transcript.ProteinID, "Homo sapiens", null, null, null, transcript.ProteinAnnotation, transcript.ProteinAnnotation);
         }
-
-        #endregion One-Frame Translation
-
-        #region Three-Frame Translation
 
         /// <summary>
         /// Not used or tested right now...
@@ -42,7 +36,5 @@ namespace Proteogenomics
             //return the protein sequence corresponding to the longest ORF
             return new Protein(prot_seq.SelectMany(s => SequenceExtensions.ConvertToString(s).Split('*')).OrderByDescending(s => s.Length).FirstOrDefault(), proteinID);
         }
-
-        #endregion Three-Frame Translation
     }
 }

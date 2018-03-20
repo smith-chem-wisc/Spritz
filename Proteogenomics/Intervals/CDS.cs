@@ -3,18 +3,15 @@
     public class CDS :
         Interval
     {
-        #region Constructors
-
         public CDS(string chromID, string strand, long oneBasedStart, long oneBasedEnd)
             : base(chromID, strand, oneBasedStart, oneBasedEnd)
         {
         }
 
-        public CDS(CDS cds)
-            : base(cds)
+        public override Interval ApplyVariant(Variant variant)
         {
+            IntervalSequence i = base.ApplyVariant(variant) as IntervalSequence;
+            return new CDS(i.ChromosomeID, i.Strand, i.OneBasedStart, i.OneBasedEnd);
         }
-
-        #endregion Constructors
     }
 }
