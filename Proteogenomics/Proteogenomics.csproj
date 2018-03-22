@@ -150,6 +150,7 @@
     <Compile Include="CodonChange\EffectType.cs" />
     <Compile Include="CodonChange\ErrorWarningType.cs" />
     <Compile Include="CodonChange\FunctionalClass.cs" />
+    <Compile Include="CodonExtensions.cs" />
     <Compile Include="Intervals\CDS.cs" />
     <Compile Include="Intervals\Chromosome.cs" />
     <Compile Include="Intervals\Downstream.cs" />
@@ -178,7 +179,8 @@
     <Compile Include="Variant.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
     <Compile Include="CodonChange\VariantEffect.cs" />
-    <Compile Include="VertebrateMitochondrialCodons.cs" />
+    <Compile Include="CodonsStandard.cs" />
+    <Compile Include="CodonsVertebrateMitochondrial.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

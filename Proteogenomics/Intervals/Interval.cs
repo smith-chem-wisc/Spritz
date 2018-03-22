@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Proteogenomics
 {
@@ -242,6 +242,24 @@ namespace Proteogenomics
         #endregion Variant Application Methods
 
         #region Public Methods
+
+        /// <summary>
+        /// Is this interval on the forward strand?
+        /// </summary>
+        /// <returns></returns>
+        public bool isStrandPlus()
+        {
+            return Strand == "+";
+        }
+
+        /// <summary>
+        /// Is this interval on the reverse strand?
+        /// </summary>
+        /// <returns></returns>
+        public bool isStrandMinus()
+        {
+            return Strand != "+";
+        }
 
         /// <summary>
         /// Determines whether this interval is before the queried interval

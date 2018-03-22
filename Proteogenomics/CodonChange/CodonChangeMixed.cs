@@ -24,18 +24,18 @@ namespace Proteogenomics
             RequireNetCdsChange = false;
 
             // Decompose mixed variant into 'SNP/MNP' + 'INS/DEL'
-            int minLen = Math.Min(variant.getReference().length(), variant.getAlt().length());
+            int minLen = Math.Min(variant.ReferenceAlleleString.Length, variant.AlternateAlleleString.Length);
 
-            string reff = variant.getReference();
+            string reff = variant.ReferenceAlleleString;
             string refMnp = reff.Substring(0, minLen);
             string refIndel = reff.Substring(minLen);
 
-            string alt = variant.getAlt();
+            string alt = variant.AlternateAlleleString;
             string altMnp = alt.Substring(0, minLen);
             string altIndel = alt.Substring(minLen);
 
-            mnp = new Variant(variant.getChromosome(), variant.getStart(), refMnp, altMnp, variant.getId());
-            indel = new Variant(variant.getChromosome(), variant.getStart() + minLen, refIndel, altIndel, variant.getId());
+            mnp = new Variant(variant.getChromosome(), variant.OneBasedStart, refMnp, altMnp, variant.getId());
+            indel = new Variant(variant.getChromosome(), variant.OneBasedStart + minLen, refIndel, altIndel, variant.getId());
 
             // Create codon changes
             variantEffectsOri = variantEffects;

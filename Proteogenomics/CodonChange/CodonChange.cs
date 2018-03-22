@@ -8,17 +8,18 @@ namespace Proteogenomics
 {
     public class CodonChange
     {
+        public HashSet<string> StartCodons = new HashSet<string> { "ATG" };
         public static bool ShowCodonChange = true; // This is disabled in some specific test cases
         public static readonly int CODON_SIZE = 3; // I'll be extremely surprised if you ever need to change this parameter...
 
+        public int CodonStartNumber { get; set; } = -1;
+        public int CodonStartIndex { get; set; } = -1;
         protected bool ReturnNow { get; set; } = false; // Can we return immediately after calculating the first 'codonChangeSingle()'?
         protected bool RequireNetCdsChange { get; set; } = false;
         protected Variant Variant { get; set; }
         protected Transcript Transcript { get; set; }
         protected Exon Exon { get; set; }
         protected List<VariantEffect> VariantEffects { get; set; }
-        protected int CodonStartNumber { get; set; } = -1;
-        protected int CodonStartIndex { get; set; } = -1;
         protected string CodonsReference { get; set; } = ""; // REF codons (without variant)
         protected string CodonsAlternate { get; set; } = ""; // ALT codons (after variant is applied)
         protected string NetCodingSequenceChange { get; set; } = "";
@@ -84,24 +85,33 @@ namespace Proteogenomics
         {
             EffectType newEffectType = EffectType.NONE;
 
-            CodonTable codonTable = Transcript.codonTable();
+            bool hasOldAa = CodonExtensions.TryTranslateCodon(Transcript.Gene.Chromosome.Mitochondrial, codonsOld, out byte oldAA);
+            bool hasNewAa = CodonExtensions.TryTranslateCodon(Transcript.Gene.Chromosome.Mitochondrial, codonsNew, out byte newAA);
+            bool isStartNew = Transcript.Gene.Chromosome.Mitochondrial ?
+                CodonsVertebrateMitochondrial.START_CODONS.Contains(codonsNew.ToUpper()) :
+                CodonsStandard.START_CODONS.Contains(codonsNew.ToUpper());
+            bool isStartOld = Transcript.Gene.Chromosome.Mitochondrial ?
+                CodonsVertebrateMitochondrial.START_CODONS.Contains(codonsOld.ToUpper()) :
+                CodonsStandard.START_CODONS.Contains(codonsOld.ToUpper());
+            bool isStopNew = newAA == Alphabets.Protein.Ter;
+            bool isStopOld = oldAA == Alphabets.Protein.Ter;
 
-            if (Variant.isSnp() || Variant.isMnp())
+            if (Variant.isSnv() || Variant.isMnv())
             {
                 // SNM and MNP effects
                 if (aaOld.Equals(aaNew))
                 {
                     // Same AA: Synonymous coding
-                    if ((codonNum == 0) && codonTable.isStartFirst(codonsOld))
+                    if (codonNum == 0 && isStartOld)
                     {
                         // It is in the first codon (which also is a start codon)
-                        if (codonTable.isStartFirst(codonsNew)) newEffectType = EffectType.SYNONYMOUS_START; // The new codon is also a start codon => SYNONYMOUS_START
+                        if (isStartNew) newEffectType = EffectType.SYNONYMOUS_START; // The new codon is also a start codon => SYNONYMOUS_START
                         else newEffectType = EffectType.START_LOST; // The AA is the same, but the codon is not a start codon => start lost
                     }
-                    else if (codonTable.isStop(codonsOld))
+                    else if (isStopOld)
                     {
                         // Stop codon
-                        if (codonTable.isStop(codonsNew)) newEffectType = EffectType.SYNONYMOUS_STOP; // New codon is also a stop => SYNONYMOUS_STOP
+                        if (isStopNew) newEffectType = EffectType.SYNONYMOUS_STOP; // New codon is also a stop => SYNONYMOUS_STOP
                         else newEffectType = EffectType.STOP_LOST; // New codon is not a stop, the we've lost a stop
                     }
                     else newEffectType = EffectType.SYNONYMOUS_CODING; // All other cases are just SYNONYMOUS_CODING
@@ -109,28 +119,43 @@ namespace Proteogenomics
                 else
                 {
                     // Different AA: Non-synonymous coding
-                    if ((codonNum == 0) && codonTable.isStartFirst(codonsOld))
+                    if ((codonNum == 0) && isStartOld)
                     {
                         // It is in the first codon (which also is a start codon)
-                        if (codonTable.isStartFirst(codonsNew)) newEffectType = EffectType.NON_SYNONYMOUS_START; // Non-synonymous mutation on first codon => start lost
+                        if (isStartNew) newEffectType = EffectType.NON_SYNONYMOUS_START; // Non-synonymous mutation on first codon => start lost
                         else newEffectType = EffectType.START_LOST; // Non-synonymous mutation on first codon => start lost
                     }
-                    else if (codonTable.isStop(codonsOld))
+                    else if (isStopOld)
                     {
                         // Stop codon
-                        if (codonTable.isStop(codonsNew)) newEffectType = EffectType.NON_SYNONYMOUS_STOP; // Notice: This should never happen for SNPs! (for some reason I removed this comment at some point and that create some confusion): http://www.biostars.org/post/show/51352/in-snpeff-impact-what-is-difference-between-stop_gained-and-non-synonymous_stop/
+                        if (isStopNew) newEffectType = EffectType.NON_SYNONYMOUS_STOP; // Notice: This should never happen for SNPs! (for some reason I removed this comment at some point and that create some confusion): http://www.biostars.org/post/show/51352/in-snpeff-impact-what-is-difference-between-stop_gained-and-non-synonymous_stop/
                         else newEffectType = EffectType.STOP_LOST;
                     }
-                    else if (codonTable.isStop(codonsNew)) newEffectType = EffectType.STOP_GAINED;
-                    else newEffectType = EffectType.NON_SYNONYMOUS_CODING; // All other cases are just NON_SYN
+                    else if (isStopNew)
+                    {
+                        newEffectType = EffectType.STOP_GAINED;
+                    }
+                    else
+                    {
+                        newEffectType = EffectType.NON_SYNONYMOUS_CODING; // All other cases are just NON_SYN
+                    }
                 }
             }
             else
             {
                 // Add a new effect in some cases
-                if ((codonNum == 0) && codonTable.isStartFirst(codonsOld) && !codonTable.isStartFirst(codonsNew)) newEffectType = EffectType.START_LOST;
-                else if (codonTable.isStop(codonsOld) && !codonTable.isStop(codonsNew)) newEffectType = EffectType.STOP_LOST;
-                else if (!codonTable.isStop(codonsOld) && codonTable.isStop(codonsNew)) newEffectType = EffectType.STOP_GAINED;
+                if ((codonNum == 0) && isStartOld && !isStartNew)
+                {
+                    newEffectType = EffectType.START_LOST;
+                }
+                else if (isStopOld && !isStopNew)
+                {
+                    newEffectType = EffectType.STOP_LOST;
+                }
+                else if (!isStopOld && isStopNew)
+                {
+                    newEffectType = EffectType.STOP_GAINED;
+                }
             }
 
             return newEffectType;
@@ -143,13 +168,13 @@ namespace Proteogenomics
         /// <returns></returns>
         protected long CdsBaseNumber(long pos)
         {
-            int cdsbn = Transcript.baseNumberCds(pos, true);
+            long cdsbn = Transcript.baseNumberCds(pos, true);
 
             // Does not intersect the transcript?
             if (cdsbn < 0)
             {
                 // 'pos' before transcript start
-                if (pos <= Transcript.getCdsStart())
+                if (pos <= Transcript.cdsStart)
                 {
                     if (Transcript.Strand == "+") return 0;
                     return Transcript.RetrieveCodingSequence().Count;
@@ -171,7 +196,7 @@ namespace Proteogenomics
             if (!Transcript.Intersects(Variant)) return;
 
             // Get coding start (after 5 prime UTR)
-            int cdsStart = Transcript.getCdsStart();
+            long cdsStart = Transcript.cdsStart;
 
             // We may have to calculate 'netCdsChange', which is the effect on the CDS
             NetCodingSequenceChange = NetCdsChange();
@@ -306,7 +331,7 @@ namespace Proteogenomics
         private VariantEffect Effect(Interval marker, EffectType effectType, EffectImpact effectImpact, string codonsOld, string codonsNew, int codonNum, int codonIndex, bool allowReplace)
         {
             // Create and add variant affect
-            int cDnaPos = Transcript.baseNumber2MRnaPos(Variant.OneBasedStart);
+            long cDnaPos = Transcript.baseNumber2MRnaPos(Variant.OneBasedStart);
             VariantEffect varEff = new VariantEffect(Variant, marker, effectType, effectImpact, codonsOld, codonsNew, codonNum, codonIndex, cDnaPos);
             VariantEffects.Add(varEff);
 
@@ -356,11 +381,11 @@ namespace Proteogenomics
         }
 
         /// <summary>
-        /// We may have to calculate 'netCdsChange', which is the effect on the CDS. 
+        /// We may have to calculate 'netCdsChange', which is the effect on the CDS.
         /// Note: A deletion or a MNP might affect several exons
         /// </summary>
         /// <returns></returns>
-        protected string NetCdsChange()
+        protected virtual string NetCdsChange()
         {
             if (!RequireNetCdsChange) return "";
 

@@ -1,4 +1,5 @@
-﻿using Bio.Extensions;
+﻿using Bio;
+using Bio.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,8 +21,14 @@ namespace Proteogenomics
 
         private long cdsBaseNumber(long pos, bool usePrevBaseIntron)
         {
-            if (pos < cdsStart) return Transcript.Strand == "+" ? 0 : Transcript.RetrieveCodingSequence().Count - 1;
-            if (pos > cdsEnd) return Transcript.Strand == "+" ? Transcript.RetrieveCodingSequence().Count - 1 : 0;
+            if (pos < cdsStart)
+            {
+                return Transcript.Strand == "+" ? 0 : Transcript.RetrieveCodingSequence().Count - 1;
+            }
+            if (pos > cdsEnd)
+            {
+                return Transcript.Strand == "+" ? Transcript.RetrieveCodingSequence().Count - 1 : 0;
+            }
             return Transcript.baseNumberCds(pos, usePrevBaseIntron);
         }
 
@@ -43,15 +50,15 @@ namespace Proteogenomics
         /// </summary>
         protected void codonOldNew()
         {
-            if (!Transcript.Intersects(Variant)) return;
+            if (!Transcript.Intersects(Variant)) { return; }
 
             // CDS coordinates
-            cdsStart = Transcript.Strand == "+" ? Transcript.getCdsStart() : Transcript.getCdsEnd();
-            cdsEnd = Transcript.Strand == "+" ? Transcript.getCdsEnd() : Transcript.getCdsStart();
+            cdsStart = Transcript.Strand == "+" ? Transcript.cdsStart : Transcript.cdsEnd;
+            cdsEnd = Transcript.Strand == "+" ? Transcript.cdsEnd : Transcript.cdsStart;
 
             // Does it intersect CDS?
-            if (cdsStart > Variant.OneBasedEnd) return;
-            if (cdsEnd < Variant.OneBasedStart) return;
+            if (cdsStart > Variant.OneBasedEnd) { return; }
+            if (cdsEnd < Variant.OneBasedStart) { return; }
 
             // Base number relative to CDS start
             long scStart, scEnd;
@@ -164,7 +171,7 @@ namespace Proteogenomics
                 foreach (Exon exon in Transcript.ExonsSortedStrand)
                 {
                     string seq = Variant.NetChange(exon);
-                    sb.Append(exon.Strand == "+" ? seq : GprSeq.reverseWc(seq));
+                    sb.Append(exon.Strand == "+" ? seq : SequenceExtensions.ConvertToString(new Sequence(Alphabets.AmbiguousDNA, seq).GetReverseComplementedSequence()));
                 }
                 return sb.ToString();
             }
@@ -176,11 +183,17 @@ namespace Proteogenomics
         {
             if (end)
             {
-                if (num % 3 == 2) return num;
+                if (num % 3 == 2)
+                {
+                    return num;
+                }
                 return (num / 3) * 3 + 2;
             }
 
-            if (num % 3 == 0) return num;
+            if (num % 3 == 0)
+            {
+                return num;
+            }
             return (num / 3) * 3;
         }
     }

@@ -213,7 +213,7 @@ namespace Proteogenomics
         {
             if (mitochondrial)
             {
-                return VertebrateMitochondrialCodons.TryLookup(
+                return CodonsVertebrateMitochondrial.TryLookup(
                     Transcription.GetRnaComplement(base1),
                     Transcription.GetRnaComplement(base2),
                     Transcription.GetRnaComplement(base3),

@@ -17,7 +17,7 @@ namespace Proteogenomics
         public CodonChangeStructural(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
             : base(variant, transcript, variantEffects)
         {
-            coding = transcript.isProteinCoding() || Config.get().isTreatAllAsProteinCoding();
+            coding = transcript.isProteinCoding(); // || Config.get().isTreatAllAsProteinCoding();
             CountAffectedExons();
         }
 
@@ -72,8 +72,8 @@ namespace Proteogenomics
             else
             {
                 // Does the variant affect any exons?
-                if ((exonFull > 0 || exonPartial > 0)) Exons();
-                else Intron();
+                if (exonFull > 0 || exonPartial > 0) { Exons(); }
+                else { Intron(); }
             }
         }
 
@@ -87,7 +87,7 @@ namespace Proteogenomics
             for (int h = 0, i = 3 * codonNumRef, j = 3 * codonNumAlt; h < 3; i++, j++, h++)
             {
                 // Premature end of sequence? (i.e. sequence ends before codon end)
-                if ((i >= cdsRef.Length) || (j >= cdsAlt.Length)) return h;
+                if (i >= cdsRef.Length || j >= cdsAlt.Length) return h;
 
                 // Different base? Return index
                 if (cdsRef[i] != cdsAlt[j]) return h;
@@ -108,11 +108,16 @@ namespace Proteogenomics
         {
             for (int h = 0, i = 3 * codonNumRef, j = 3 * codonNumAlt; h < 3; i++, j++, h++)
             {
-                if ((i >= cdsRef.Length) || (j >= cdsAlt.Length)) // Premature end of sequence? (i.e. sequence ends before codon end)
-                    return (i >= cdsRef.Length) && (j >= cdsAlt.Length); // We consider them equal only if both sequences reached the end at the same time
+                if (i >= cdsRef.Length || j >= cdsAlt.Length) // Premature end of sequence? (i.e. sequence ends before codon end)
+                {
+                    return i >= cdsRef.Length && j >= cdsAlt.Length; // We consider them equal only if both sequences reached the end at the same time
+                }
 
                 // Same base?
-                if (cdsRef[i] != cdsAlt[j]) return false;
+                if (cdsRef[i] != cdsAlt[j])
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -127,7 +132,7 @@ namespace Proteogenomics
         /// <returns></returns>
         private string Codons(string cds, int codonNumStart, int codonNumEnd)
         {
-            if (codonNumEnd >= 0 && codonNumEnd < codonNumStart) return "";
+            if (codonNumEnd >= 0 && codonNumEnd < codonNumStart) { return ""; }
             int endBase = codonNumEnd < 0 ? cds.Length : 3 * (codonNumEnd + 1);
             endBase = Math.Min(cds.Length, endBase);
             int startBase = Math.Max(0, 3 * codonNumStart);

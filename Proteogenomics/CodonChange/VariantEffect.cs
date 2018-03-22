@@ -136,23 +136,23 @@ namespace Proteogenomics
             this.cDnaPos = cDnaPos;
         }
 
-        //public void addEffect(EffectType effectType)
-        //{
-        //    addEffectType(effectType);
-        //    addEffectImpact(EffectDictionary[effectType]);
-        //}
+        public void addEffect(EffectType effectType)
+        {
+            addEffectType(effectType);
+            addEffectImpact(EffectDictionary[effectType]);
+        }
 
-        //public void addEffectImpact(EffectImpact effectImpact)
-        //{
-        //    effectImpacts.Add(effectImpact);
-        //    this.effectImpact = ;
-        //}
+        public void addEffectImpact(EffectImpact effectImpact)
+        {
+            effectImpacts.Add(effectImpact);
+            this.effectImpact = EffectImpact.MODIFIER;
+        }
 
-        //public void addEffectType(EffectType effectType)
-        //{
-        //    effectTypes.Add(effectType);
-        //    this.effectType = null;
-        //}
+        public void addEffectType(EffectType effectType)
+        {
+            effectTypes.Add(effectType);
+            this.effectType = EffectType.NONE;
+        }
 
         /// <summary>
         /// Create a string for codon effect
@@ -487,7 +487,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public FunctionalClass getFunctionalClass()
         {
-            if (variant.isSnp())
+            if (variant.isSnv())
             {
                 if (!aaAlt.Equals(aaRef))
                 {

@@ -223,12 +223,12 @@ namespace Proteogenomics
             return VarType == VariantType.MIXED;
         }
 
-        public bool isMnp()
+        public bool isMnv()
         {
             return VarType == VariantType.MNP;
         }
 
-        public bool isSnp()
+        public bool isSnv()
         {
             return VarType == VariantType.SNV;
         }
@@ -244,7 +244,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public long LengthChange()
         {
-            if (isSnp() || isMnp())
+            if (isSnv() || isMnv())
                 return 0;
 
             // This is a length changing Variant (i.e. Insertions, deletion, or mixed change)

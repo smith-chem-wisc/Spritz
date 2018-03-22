@@ -5,8 +5,18 @@ using System.Collections.Generic;
 
 namespace Proteogenomics
 {
-    public static class VertebrateMitochondrialCodons
+    public static class CodonsVertebrateMitochondrial
     {
+        /// <summary>
+        /// All start codons are translated as "M", even if alternative start codons, since an different tRNA is used. https://en.wikipedia.org/wiki/Start_codon
+        /// </summary>
+        public static readonly string DEFAULT_START_AA = "M";
+
+        /// <summary>
+        /// Start codons for the vertebral mitochondrial genetic code.
+        /// </summary>
+        public static readonly HashSet<string> START_CODONS = new HashSet<string> { "ATT", "ATC", "ATA", "ATG", "GTG" };
+
         /// <summary>
         /// The mapping dictionary.
         /// </summary>
@@ -82,7 +92,7 @@ namespace Proteogenomics
         /// <summary>
         /// Initializes the Codon map dictionary.
         /// </summary>
-        static VertebrateMitochondrialCodons()
+        static CodonsVertebrateMitochondrial()
         {
             string[] codons = "TTT/F,TTC/F,TTA/L,TTG/L,TCT/S,TCC/S,TCA/S,TCG/S,TAT/Y,TAC/Y,TAA/*,TAG/*,TGT/C,TGC/C,TGA/W,TGG/W,CTT/L,CTC/L,CTA/L,CTG/L,CCT/P,CCC/P,CCA/P,CCG/P,CAT/H,CAC/H,CAA/Q,CAG/Q,CGT/R,CGC/R,CGA/R,CGG/R,ATT/I+,ATC/I+,ATA/M+,ATG/M+,ACT/T,ACC/T,ACA/T,ACG/T,AAT/N,AAC/N,AAA/K,AAG/K,AGT/S,AGC/S,AGA/*,AGG/*,GTT/V,GTC/V,GTA/V,GTG/V+,GCT/A,GCC/A,GCA/A,GCG/A,GAT/D,GAC/D,GAA/E,GAG/E,GGT/G,GGC/G,GGA/G,GGG/G"
                 .Split(',');

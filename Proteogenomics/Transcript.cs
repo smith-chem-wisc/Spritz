@@ -69,6 +69,11 @@ namespace Proteogenomics
         /// </summary>
         public ISequence CodingSequence { get; set; }
 
+        public long cdsStart { get; set; }
+        public long cdsEnd { get; set; }
+        public long[] cds2pos { get; set; }
+        public long[] aa2pos { get; set; }
+
         /// <summary>
         /// Variants annotated for this transcript using SnpEff.
         /// </summary>
@@ -160,7 +165,7 @@ namespace Proteogenomics
             for (int i = 0; i < variantOrderedDescStart.Count; i++)
             {
                 Variant v = variantOrderedDescStart[i];
-                VariantEffect variantEffect = AnnotateVariant(v);
+                CodonChange variantEffect = AnnotateVariant(v);
                 if (variantEffect == null)
                 {
                     continue;
@@ -188,14 +193,14 @@ namespace Proteogenomics
         /// Gets a string representing a variant applied to this transcript 
         /// </summary>
         /// <param name="variant"></param>
-        public VariantEffect AnnotateVariant(Variant variant)
+        public CodonChange AnnotateVariant(Variant variant)
         {
             // Leaving off here for 180319
 
 
             // >> Figure out the codon change from the information in this transcript (port from SnpEff CodonChange)
             // >> Figure out the VariantEffect for the change, and note the high/medium/low/modifier status of the change
-            // Translate the codons like I was doing in ProteinAnnotation, making that byte array to stick into translate. There are places in CodonChange and VariantEffect that need this
+            // >> Translate the codons like I was doing in ProteinAnnotation, making that byte array to stick into translate. There are places in CodonChange and VariantEffect that need this
 
             //return "variant:"; // frameshift or something SPACE notations about what changes were made to the sequence
 
@@ -206,6 +211,7 @@ namespace Proteogenomics
             // Put together coding sequences based on the UTRs, now that they're being fixed in the ApplyVariants method
             // Translate the thing
             //      Keep the accessions to look up and increment accessions to make them unique during translation
+            //      Replace the selenocysteine sites like before
 
             // Delete all the ProteinAnnotation code and Transcript and TranscriptPossiblyWithVariants code that isn't being used
             //     Don't need to prepare for translation anymore
@@ -227,13 +233,13 @@ namespace Proteogenomics
             {
                 CodonChange codonChange = CodonChange.Factory(variant, this, variantEffects);
                 codonChange.ChangeCodon();
-                return true;
+                return codonChange;
             }
 
             //---
             // Structural variants may affect more than one exon
             //---
-            bool mayAffectSeveralExons = variant.isStructural() || variant.isMixed() || variant.isMnp();
+            bool mayAffectSeveralExons = variant.isStructural() || variant.isMixed() || variant.isMnv();
             if (mayAffectSeveralExons)
             {
                 int countExon = 0;
@@ -272,13 +278,13 @@ namespace Proteogenomics
             // Hits a UTR region?
             //---
             bool included = false;
-            for (Utr utr : utrs)
+            foreach (UTR utr in UTRs)
             {
-                if (utr.intersects(variant))
+                if (utr.Intersects(variant))
                 {
                     // Calculate the effect
                     utr.variantEffect(variant, variantEffects);
-                    included |= utr.includes(variant); // Is this variant fully included in the UTR?
+                    included |= utr.Includes(variant); // Is this variant fully included in the UTR?
                 }
             }
             if (included)
@@ -312,6 +318,290 @@ namespace Proteogenomics
             }
 
             return exonAnnotated;
+        }
+
+        /// <summary>
+        /// Find base at genomic coordinate 'pos'
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        public ISequence baseAt(int pos)
+        {
+            calcCdsStartEnd();
+            Exon ex = findExon(pos);
+            if (ex == null) return null;
+            return ex.basesAt(pos - ex.OneBasedStart, 1);
+        }
+
+        /// <summary>
+        /// Calculate distance from transcript start to a position
+        /// mRNA is roughly the same than cDNA.Strictly speaking mRNA
+        /// has a poly-A tail and 5'cap.
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        public long baseNumber2MRnaPos(long pos)
+        {
+            long count = 0;
+            foreach (Exon eint in ExonsSortedStrand)
+            {
+                if (eint.Intersects(pos))
+                {
+                    // Intersect this exon? Calculate the number of bases from the beginning
+                    long dist = 0;
+                    if (Strand == "+") dist = pos - eint.OneBasedStart;
+                    else dist = eint.OneBasedEnd - pos;
+
+                    // Sanity check
+                    if (dist < 0) throw new Exception("Negative distance for position " + pos + ". This should never happen!\n" + this);
+
+                    return count + dist;
+                }
+
+                count += eint.Length();
+            }
+            return -1;
+        }
+
+        /**
+         * Calculate base number in a CDS where 'pos' maps
+         *
+         * @param usePrevBaseIntron: When 'pos' is intronic this method returns:
+         * 			- if( usePrevBaseIntron== false)  => The first base in the exon after 'pos' (i.e. first coding base after intron)
+         * 			- if( usePrevBaseIntron== true)   => The last base in the  exon before 'pos'  (i.e. last coding base before intron)
+         *
+         * @returns Base number or '-1' if it does not map to a coding base
+         */
+        public long baseNumberCds(long pos, bool usePrevBaseIntron)
+        {
+            // Doesn't hit this transcript?
+            if (!Intersects(pos)) return -1;
+
+            // Is it in UTR instead of CDS?
+            if (UTRs.Any(utr => utr.Intersects(pos))) return -1;
+
+            // Calculate cdsStart and cdsEnd (if not already done)
+            calcCdsStartEnd();
+
+            // All exons..
+            long firstCdsBaseInExon = 0; // Where the exon maps to the CDS (i.e. which CDS base number does the first base in this exon maps to).
+            foreach (Exon eint in ExonsSortedStrand)
+            {
+                if (eint.Intersects(pos))
+                {
+                    long cdsBaseInExon; // cdsBaseInExon: base number relative to the beginning of the coding part of this exon (i.e. excluding 5'UTRs)
+                    if (isStrandPlus()) cdsBaseInExon = pos - Math.Max(eint.OneBasedStart, cdsStart);
+                    else cdsBaseInExon = Math.Min(eint.OneBasedEnd, cdsStart) - pos;
+
+                    cdsBaseInExon = Math.Max(0, cdsBaseInExon);
+
+                    return firstCdsBaseInExon + cdsBaseInExon;
+                }
+                else
+                {
+                    // Before exon begins?
+                    if ((isStrandPlus() && (pos < eint.OneBasedStart)) // Before exon begins (positive strand)?
+                            || (isStrandMinus() && (pos > eint.OneBasedEnd))) // Before exon begins (negative strand)?
+                        return firstCdsBaseInExon - (usePrevBaseIntron ? 1 : 0);
+                }
+
+                if (isStrandPlus()) firstCdsBaseInExon += Math.Max(0, eint.OneBasedEnd - Math.Max(eint.OneBasedStart, cdsStart) + 1);
+                else firstCdsBaseInExon += Math.Max(0, Math.Min(cdsStart, eint.OneBasedEnd) - eint.OneBasedStart + 1);
+            }
+
+            return firstCdsBaseInExon - 1;
+        }
+
+        /// <summary>
+        /// Return a codon that includes 'cdsBaseNumber'
+        /// </summary>
+        /// <param name="cdsBaseNumber"></param>
+        /// <returns></returns>
+        public string baseNumberCds2Codon(int cdsBaseNumber)
+        {
+            int codonNum = cdsBaseNumber / CodonChange.CODON_SIZE;
+            int min = codonNum * CodonChange.CODON_SIZE;
+            int max = codonNum * CodonChange.CODON_SIZE + CodonChange.CODON_SIZE;
+            if (min >= 0 && max <= RetrieveCodingSequence().Count)
+            {
+                return SequenceExtensions.ConvertToString(RetrieveCodingSequence().GetSubSequence(min, max)).ToUpper();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Calculate chromosome position as function of CDS number
+        /// </summary>
+        /// <returns>An array mapping 'cds2pos[cdsBaseNumber] = chromosmalPos'</returns>
+        public long[] baseNumberCds2Pos()
+        {
+            if (cds2pos != null) return cds2pos;
+
+            calcCdsStartEnd();
+
+            cds2pos = new long[RetrieveCodingSequence().Count];
+            for (int i = 0; i < cds2pos.Length; i++)
+            {
+                cds2pos[i] = -1;
+            }
+
+            long cdsMin = Math.Min(cdsStart, cdsEnd);
+            long cdsMax = Math.Max(cdsStart, cdsEnd);
+
+            // For each exon, add CDS position to array
+            int cdsBaseNum = 0;
+            foreach (Exon exon in ExonsSortedStrand)
+            {
+                long min = isStrandPlus() ? exon.OneBasedStart : exon.OneBasedEnd;
+                int step = isStrandPlus() ? 1 : -1;
+                for (long pos = min; exon.Intersects(pos) && cdsBaseNum < cds2pos.Length; pos += step)
+                {
+                    if ((cdsMin <= pos) && (pos <= cdsMax))
+                    {
+                        cds2pos[cdsBaseNum++] = pos;
+                    }
+                }
+            }
+
+            return cds2pos;
+        }
+
+
+
+        /// <summary>
+        /// Calculate CDS start and CDS end
+        /// </summary>
+        private void calcCdsStartEnd()
+        {
+            // Do we need to calculate these values?
+            // Note: In circular genomes, one of cdsStart / cdsEnd might be less
+            //       than zero (we must check both)
+            if (cdsStart < 0 && cdsEnd < 0)
+            {
+                // Calculate coding start (after 5 prime UTR)
+
+                if (UTRs.Count == 0)
+                {
+                    // No UTRs => Use all exons
+                    cdsStart = (isStrandPlus() ? OneBasedEnd : OneBasedStart); // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
+                    cdsEnd = (isStrandPlus() ? OneBasedStart : OneBasedEnd); // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
+
+                    foreach (Exon ex in Exons)
+                    {
+                        if (isStrandPlus())
+                        {
+                            cdsStart = Math.Min(cdsStart, ex.OneBasedStart);
+                            cdsEnd = Math.Max(cdsEnd, ex.OneBasedEnd);
+                        }
+                        else
+                        {
+                            cdsStart = Math.Max(cdsStart, ex.OneBasedEnd);
+                            cdsEnd = Math.Min(cdsEnd, ex.OneBasedStart);
+                        }
+                    }
+                }
+                else
+                {
+                    // We have to take into account UTRs
+                    cdsStart = (isStrandPlus() ? OneBasedStart : OneBasedEnd); // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
+                    cdsEnd = (isStrandPlus() ? OneBasedEnd : OneBasedStart); // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
+                    long cdsStartNotExon = cdsStart;
+
+                    foreach (UTR utr in UTRs)
+                    {
+                        if (utr is UTR5Prime)
+                        {
+                            if (isStrandPlus()) cdsStart = Math.Max(cdsStart, utr.OneBasedEnd + 1);
+                            else cdsStart = Math.Min(cdsStart, utr.OneBasedStart - 1);
+                        }
+                        else if (utr is UTR3Prime)
+                        {
+                            if (isStrandPlus()) cdsEnd = Math.Min(cdsEnd, utr.OneBasedStart - 1);
+                            else cdsEnd = Math.Max(cdsEnd, utr.OneBasedEnd + 1);
+                        }
+                    }
+
+                    // Make sure cdsStart and cdsEnd lie within an exon
+                    if (isStrandPlus())
+                    {
+                        cdsStart = firstExonPositionAfter(cdsStart);
+                        cdsEnd = lastExonPositionBefore(cdsEnd);
+                    }
+                    else
+                    {
+                        cdsStart = lastExonPositionBefore(cdsStart);
+                        cdsEnd = firstExonPositionAfter(cdsEnd);
+                    }
+
+                    // We were not able to find cdsStart & cdsEnd within exon limits.
+                    // Probably there is something wrong with the database and the transcript does
+                    // not have a single coding base (e.g. all of it is UTR).
+                    if (cdsStart < 0 || cdsEnd < 0) cdsStart = cdsEnd = cdsStartNotExon;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create a marker of the coding region in this transcript
+        /// </summary>
+        /// <returns></returns>
+        public Interval cdsMarker()
+        {
+            Interval interval = new Interval(this);
+            interval.OneBasedStart = isStrandPlus() ? cdsStart : cdsEnd;
+            interval.OneBasedEnd = isStrandPlus() ? cdsEnd  : cdsStart;
+            return interval;
+        }
+
+        /// <summary>
+        /// Find the first position after 'pos' within an exon
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        private long firstExonPositionAfter(long pos)
+        {
+            foreach (Exon ex in Exons.OrderBy(x => x.OneBasedStart))
+            {
+                if (pos <= ex.OneBasedStart) { return ex.OneBasedStart; }
+                if (pos <= ex.OneBasedEnd) { return pos; }
+            }
+
+            Console.WriteLine("WARNING: Cannot find first exonic position after " + pos + " for transcript '" + ID + "'");
+            return -1;
+        }
+
+        /// <summary>
+        /// Find the last position before 'pos' within an exon
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        private long lastExonPositionBefore(long pos)
+        {
+            long last = -1;
+            foreach (Exon ex in Exons.OrderBy(x => x.OneBasedStart))
+            {
+                if (pos < ex.OneBasedStart)
+                {
+                    // Nothing found?
+                    if (last < 0)
+                    {
+                        Console.WriteLine("WARNING: Cannot find last exonic position before " + pos + " for transcript '" + ID + "'");
+                        return -1;
+                    }
+                    return last;
+                }
+                else if (pos <= ex.OneBasedEnd)
+                {
+                    return pos;
+                }
+                last = ex.OneBasedEnd;
+            }
+
+            if (last < 0)
+            {
+                Console.WriteLine("WARNING: Cannot find last exonic position before " + pos + " for transcript '" + ID + "'");
+            }
+            return pos;
         }
 
         /// <summary>
@@ -653,7 +943,7 @@ namespace Proteogenomics
         public bool isErrorProteinLength(bool treatAllAsProteinCoding)
         {
             if (!treatAllAsProteinCoding && !isProteinCoding()) return false;
-            return (cds().length() % 3) != 0;
+            return (RetrieveCodingSequence().Count % 3) != 0;
         }
 
         /// <summary>
@@ -662,14 +952,19 @@ namespace Proteogenomics
         /// <returns></returns>
         public bool isErrorStartCodon()
         {
-            if (!Config.get().isTreatAllAsProteinCoding() && !isProteinCoding()) return false;
+            if (
+                //!Config.get().isTreatAllAsProteinCoding() && 
+                !isProteinCoding())
+            {
+                return false;
+            }
 
             // Not even one codon in this protein? Error
-            string cds = cds();
-            if (cds.length() < 3) return true;
+            ISequence cds = RetrieveCodingSequence();
+            if (cds.Count < 3) return true;
 
-            string codon = cds.substring(0, 3);
-            return !codonTable().isStart(codon);
+            string codon = SequenceExtensions.ConvertToString(cds.GetSubSequence(0, 3)).ToUpper();
+            return !(Gene.Chromosome.Mitochondrial ? CodonsVertebrateMitochondrial.START_CODONS.Contains(codon) : CodonsStandard.START_CODONS.Contains(codon));
         }
 
         /// <summary>

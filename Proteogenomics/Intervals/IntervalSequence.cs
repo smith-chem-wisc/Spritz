@@ -185,6 +185,36 @@ namespace Proteogenomics
 
         #region Other Methods
 
+        /// <summary>
+        /// ase in this marker at position 'index' (relative to marker start)
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public ISequence basesAt(long index, long len)
+        {
+            if (isStrandMinus())
+            {
+                long idx = Sequence.Count - index - len;
+                return Sequence.GetSubSequence(idx, len).GetReverseComplementedSequence(); // Minus strand => Sequence has been reversed and WC-complemented
+            }
+
+            return Sequence.GetSubSequence(index, len);
+        }
+
+        /// <summary>
+        /// Base at position 'pos' (genomic coordinates)
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public ISequence basesAtPos(int pos, int len)
+        {
+            long index = pos - OneBasedEnd;
+            if (index < 0) return new Sequence(Alphabets.DNA, "");
+            return basesAt(index, len);
+        }
+
         public ISequence GetSequence(Interval interval)
         {
             if (!Intersects(interval)) { return null; }

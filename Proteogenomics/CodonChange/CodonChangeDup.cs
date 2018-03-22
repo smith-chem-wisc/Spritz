@@ -8,7 +8,7 @@ namespace Proteogenomics
         public CodonChangeDup(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
             : base(variant, transcript, variantEffects)
         {
-            coding = transcript.isProteinCoding() || Config.get().isTreatAllAsProteinCoding();
+            coding = transcript.isProteinCoding();// || Config.get().isTreatAllAsProteinCoding();
         }
 
         /**
@@ -50,8 +50,8 @@ namespace Proteogenomics
         {
             if (coding)
             {
-                if (Transcript.Strand == "+") return Variant.OneBasedEnd > Transcript.getCdsEnd();
-                return Variant.OneBasedEnd > Transcript.getCdsStart();
+                if (Transcript.Strand == "+") return Variant.OneBasedEnd > Transcript.cdsEnd;
+                return Variant.OneBasedEnd > Transcript.cdsStart;
             }
 
             return Variant.OneBasedEnd > Transcript.OneBasedEnd;
