@@ -73,7 +73,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public List<Interval> Query(Interval queryInterval)
         {
-            List<Interval> results = IntervalsCenter.Where(i => i.Overlaps(queryInterval)).ToList();
+            List<Interval> results = IntervalsCenter.Where(i => i.Intersects(queryInterval)).ToList();
             if (queryInterval.OneBasedStart < Center && LeftNode != null) { results.AddRange(LeftNode.Query(queryInterval)); }
             if (queryInterval.OneBasedStart > Center && RightNode != null) { results.AddRange(RightNode.Query(queryInterval)); }
             return results;
@@ -86,7 +86,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public List<Interval> Stab(long point)
         {
-            List<Interval> results = IntervalsCenter.Where(i => i.Overlaps(point)).ToList();
+            List<Interval> results = IntervalsCenter.Where(i => i.Intersects(point)).ToList();
             if (point < Center && LeftNode != null) { results.AddRange(LeftNode.Stab(point)); }
             if (point > Center && RightNode != null) { results.AddRange(RightNode.Stab(point)); }
             return results;

@@ -40,7 +40,7 @@ namespace Proteogenomics
             Variants.Add(variant);
 
             IntervalSequence newIntervalSeq = new IntervalSequence(base.ApplyVariant(variant), new Sequence(Sequence));
-            if (variant.Overlaps(this) && Sequence != null && !(Sequence.Count == 0))
+            if (variant.Intersects(this) && Sequence != null && !(Sequence.Count == 0))
             {
                 switch (variant.VarType)
                 {
@@ -187,7 +187,7 @@ namespace Proteogenomics
 
         public ISequence GetSequence(Interval interval)
         {
-            if (!Overlaps(interval)) { return null; }
+            if (!Intersects(interval)) { return null; }
             return Sequence.GetSubSequence(interval.OneBasedStart, interval.Length());
         }
 

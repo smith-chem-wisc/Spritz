@@ -135,11 +135,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Effect\Coding.cs" />
-    <Compile Include="Effect\EffectImpact.cs" />
-    <Compile Include="Effect\EffectType.cs" />
-    <Compile Include="Effect\ErrorWarningType.cs" />
-    <Compile Include="Effect\FunctionalClass.cs" />
+    <Compile Include="CodonChange\CodonChangeDel.cs" />
+    <Compile Include="CodonChange\CodonChangeDup.cs" />
+    <Compile Include="CodonChange\CodonChangeIns.cs" />
+    <Compile Include="CodonChange\CodonChangeInterval.cs" />
+    <Compile Include="CodonChange\CodonChangeInv.cs" />
+    <Compile Include="CodonChange\CodonChangeMixed.cs" />
+    <Compile Include="CodonChange\CodonChangeMnv.cs" />
+    <Compile Include="CodonChange\CodonChangeStructural.cs" />
+    <Compile Include="CodonChange\CodonChangeSnv.cs" />
+    <Compile Include="CodonChange\CodonChange.cs" />
+    <Compile Include="CodonChange\Coding.cs" />
+    <Compile Include="CodonChange\EffectImpact.cs" />
+    <Compile Include="CodonChange\EffectType.cs" />
+    <Compile Include="CodonChange\ErrorWarningType.cs" />
+    <Compile Include="CodonChange\FunctionalClass.cs" />
     <Compile Include="Intervals\CDS.cs" />
     <Compile Include="Intervals\Chromosome.cs" />
     <Compile Include="Intervals\Downstream.cs" />
@@ -167,7 +177,7 @@
     <Compile Include="Intervals\UTR5Prime.cs" />
     <Compile Include="Variant.cs" />
     <Compile Include="TranscriptPossiblyWithVariants.cs" />
-    <Compile Include="Effect\VariantEffect.cs" />
+    <Compile Include="CodonChange\VariantEffect.cs" />
     <Compile Include="VertebrateMitochondrialCodons.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -143,7 +143,6 @@ namespace Proteogenomics
             }
 
             transcript.VariantAnnotations = new List<string>(VariantAnnotations);
-            transcript.VariantAnnotations.Add(transcript.AnnotateVariant(variant);
             transcript.CreateIntrons();
             transcript.CreateUTRs();
             transcript.CreateUpDown(Gene.Chromosome);
@@ -161,7 +160,13 @@ namespace Proteogenomics
             for (int i = 0; i < variantOrderedDescStart.Count; i++)
             {
                 Variant v = variantOrderedDescStart[i];
+                VariantEffect variantEffect = AnnotateVariant(v);
+                if (variantEffect == null)
+                {
+                    continue;
+                }
                 Transcript newTranscript = ApplyVariant(v) as Transcript;
+                newTranscript.VariantAnnotations.Add(variantEffect.ToString());
                 result.Add(newTranscript);
                 if (variantOrderedDescStart.Count - i > 1)
                 {
@@ -183,12 +188,16 @@ namespace Proteogenomics
         /// Gets a string representing a variant applied to this transcript 
         /// </summary>
         /// <param name="variant"></param>
-        public string AnnotateVariant(Variant variant)
+        public VariantEffect AnnotateVariant(Variant variant)
         {
             // Leaving off here for 180319
-            // Figure out the codon change from the information in this transcript (port from SnpEff CodonChange)
-            // Figure out the VariantEffect for the change, and note the high/medium/low/modifier status of the change
-            return "variant:"; // frameshift or something SPACE notations about what changes were made to the sequence
+
+
+            // >> Figure out the codon change from the information in this transcript (port from SnpEff CodonChange)
+            // >> Figure out the VariantEffect for the change, and note the high/medium/low/modifier status of the change
+            // Translate the codons like I was doing in ProteinAnnotation, making that byte array to stick into translate. There are places in CodonChange and VariantEffect that need this
+
+            //return "variant:"; // frameshift or something SPACE notations about what changes were made to the sequence
 
             // Then in translation, make a simple method to look up the bad accessions
             //      (could also try to assess this from the sequence itself using the warnings and errors)
@@ -209,6 +218,100 @@ namespace Proteogenomics
             //   2. Correct UTR gets changed (5' or 3')
             //   3. Variants get applied correctly
             //   Uh, lots more.
+
+
+            if (!Intersects(variant)) return null; // Sanity check
+
+            // Large structural variant including the whole transcript?
+            if (variant.Includes(this) && variant.isStructural())
+            {
+                CodonChange codonChange = CodonChange.Factory(variant, this, variantEffects);
+                codonChange.ChangeCodon();
+                return true;
+            }
+
+            //---
+            // Structural variants may affect more than one exon
+            //---
+            bool mayAffectSeveralExons = variant.isStructural() || variant.isMixed() || variant.isMnp();
+            if (mayAffectSeveralExons)
+            {
+                int countExon = 0;
+                foreach (Exon ex in Exons)
+                {
+                    if (ex.Intersects(variant))
+                    {
+                        countExon++;
+                    }
+                }
+
+                // More than one exon?
+                if (countExon > 1)
+                {
+                    CodonChange codonChange = CodonChange.Factory(variant, this, variantEffects);
+                    codonChange.ChangeCodon();
+                    return true;
+                }
+            }
+
+            //---
+            // Does it hit an exon?
+            // Note: This only adds spliceSites effects, for detailed codon
+            //       changes effects we use 'CodonChange' class
+            //---
+            bool exonAnnotated = false;
+            foreach (Exon ex in Exons)
+            {
+                if (ex.Intersects(variant))
+                {
+                    exonAnnotated |= ex.variantEffect(variant, variantEffects);
+                }
+            }
+
+            //---
+            // Hits a UTR region?
+            //---
+            bool included = false;
+            for (Utr utr : utrs)
+            {
+                if (utr.intersects(variant))
+                {
+                    // Calculate the effect
+                    utr.variantEffect(variant, variantEffects);
+                    included |= utr.includes(variant); // Is this variant fully included in the UTR?
+                }
+            }
+            if (included)
+            {
+                return true; // Variant fully included in the UTR? => We are done.
+            }
+
+            //---
+            // Does it hit an intron?
+            //---
+            foreach (Intron intron in Introns)
+            {
+                if (intron.Intersects(variant))
+                {
+                    intron.variantEffect(variant, variantEffects);
+                    included |= intron.Includes(variant); // Is this variant fully included in this intron?
+                }
+            }
+            if (included)
+            {
+                return true; // Variant fully included? => We are done.
+            }
+
+            //---
+            // No annotations from exons? => Add transcript
+            //---
+            if (!exonAnnotated)
+            {
+                variantEffects.Add(variant, this, EffectType.TRANSCRIPT, "");
+                return true;
+            }
+
+            return exonAnnotated;
         }
 
         /// <summary>
@@ -455,6 +558,11 @@ namespace Proteogenomics
                 }
             }
             //return Translation.ThreeFrameTranslation(Exons, ProteinID);
+        }
+
+        public bool isProteinCoding()
+        {
+            return CodingDomainSequences.Count > 0;
         }
 
         #endregion Translate from Variant Nucleotide Sequences Methods

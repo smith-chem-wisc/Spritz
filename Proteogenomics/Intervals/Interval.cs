@@ -197,7 +197,7 @@ namespace Proteogenomics
                 // Duplication included in marker? => Adjust end coordinate
                 m.OneBasedEnd += variant.LengthChange();
             }
-            else if (variant.Overlaps(m))
+            else if (variant.Intersects(m))
             {
                 // Duplication includes part of marker? => Adjust end
                 m.OneBasedEnd += variant.IntersectSize(m);
@@ -268,7 +268,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="segment"></param>
         /// <returns></returns>
-        public bool Overlaps(Interval segment)
+        public bool Intersects(Interval segment)
         {
             return !IsBefore(segment) && !IsAfter(segment);
         }
@@ -308,7 +308,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        public bool Overlaps(long pos)
+        public bool Intersects(long pos)
         {
             return !IsBefore(pos) && !IsAfter(pos);
         }

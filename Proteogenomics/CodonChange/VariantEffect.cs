@@ -1,17 +1,15 @@
-﻿using System;
+﻿using Bio.VCF;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Proteogenomics
 {
     public class VariantEffect
     {
-
         // Don't show codon change sequences that are too long
         public static readonly int MAX_CODON_SEQUENCE_LEN = 100;
-
 
         public static readonly Dictionary<EffectType, EffectImpact> EffectDictionary = new Dictionary<EffectType, EffectImpact>
         {
@@ -138,23 +136,23 @@ namespace Proteogenomics
             this.cDnaPos = cDnaPos;
         }
 
-        public void addEffect(EffectType effectType)
-        {
-            addEffectType(effectType);
-            addEffectImpact(effectType.effectImpact());
-        }
+        //public void addEffect(EffectType effectType)
+        //{
+        //    addEffectType(effectType);
+        //    addEffectImpact(EffectDictionary[effectType]);
+        //}
 
-        public void addEffectImpact(EffectImpact effectImpact)
-        {
-            effectImpacts.Add(effectImpact);
-            this.effectImpact = null;
-        }
+        //public void addEffectImpact(EffectImpact effectImpact)
+        //{
+        //    effectImpacts.Add(effectImpact);
+        //    this.effectImpact = ;
+        //}
 
-        public void addEffectType(EffectType effectType)
-        {
-            effectTypes.Add(effectType);
-            this.effectType = null;
-        }
+        //public void addEffectType(EffectType effectType)
+        //{
+        //    effectTypes.Add(effectType);
+        //    this.effectType = null;
+        //}
 
         /// <summary>
         /// Create a string for codon effect
@@ -165,11 +163,11 @@ namespace Proteogenomics
         /// <param name="useSeqOntology"></param>
         /// <param name="useFirstEffect"></param>
         /// <returns></returns>
-        string codonEffect(bool showAaChange, bool showBioType, bool useSeqOntology, bool useFirstEffect)
+        private string codonEffect(bool showAaChange, bool showBioType, bool useSeqOntology, bool useFirstEffect)
         {
-            if ((marker == null) || (codonNum < 0)) return "";
+            if ((marker == null) || (codonNum < 0)) { return ""; }
 
-            if (!showAaChange) return getEffectTypestring(useSeqOntology, useFirstEffect);
+            if (!showAaChange) { return getEffectTypestring(useSeqOntology, useFirstEffect); }
 
             StringBuilder sb = new StringBuilder();
             sb.Append(getEffectTypestring(useSeqOntology, useFirstEffect));
@@ -177,7 +175,7 @@ namespace Proteogenomics
             sb.Append(getAaChange());
             sb.Append(")");
 
-            return sb.Tostring();
+            return sb.ToString();
         }
 
         /// <summary>
@@ -192,28 +190,28 @@ namespace Proteogenomics
         public string effect(bool shortFormat, bool showAaChange, bool showBioType, bool useSeqOntology, bool useFirstEffect)
         {
             string e = "";
-            string codonEffect = codonEffect(showAaChange, showBioType, useSeqOntology, useFirstEffect); // Codon effect
+            string codonEffect = this.codonEffect(showAaChange, showBioType, useSeqOntology, useFirstEffect); // Codon effect
 
             // Create effect string
-            if (!codonEffect.isEmpty()) e = codonEffect;
-            else if (isRegulation()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + ((Regulation)marker).getName() + "]";
-            else if (isNextProt()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + VcfEffect.vcfEffSafe(((NextProt)marker).getId()) + "]"; // Make sure this 'id' is not dangerous in a VCF 'EFF' field
-            else if (isMotif()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + ((Motif)marker).getPwmId() + ":" + ((Motif)marker).getPwmName() + "]";
-            else if (isCustom())
-            {
-                // Custom interval
-                string label = ((Custom)marker).getLabel();
-                double score = ((Custom)marker).getScore();
-                if (!Double.isNaN(score)) label = label + ":" + score;
-                if (!label.isEmpty()) label = "[" + label + "]";
-                return getEffectTypestring(useSeqOntology, useFirstEffect) + label;
-            }
-            else if (isIntergenic() || isIntron() || isSpliceSite()) e = getEffectTypestring(useSeqOntology, useFirstEffect);
-            else if (!message.isEmpty()) e = getEffectTypestring(useSeqOntology, useFirstEffect) + ": " + message;
-            else if (marker == null) e = getEffectTypestring(useSeqOntology, useFirstEffect); // There are cases when no marker is associated (e.g. "Out of chromosome", "No such chromosome", etc.)
-            else e = getEffectTypestring(useSeqOntology, useFirstEffect) + ": " + marker.getId();
+            if (codonEffect != "") e = codonEffect;
+            //else if (isRegulation()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + ((Regulation)marker).getName() + "]";
+            //else if (isNextProt()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + VcfEffect.vcfEffSafe(((NextProt)marker).getId()) + "]"; // Make sure this 'id' is not dangerous in a VCF 'EFF' field
+            //else if (isMotif()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + ((Motif)marker).getPwmId() + ":" + ((Motif)marker).getPwmName() + "]";
+            //else if (isCustom())
+            //{
+            //    // Custom interval
+            //    string label = ((Custom)marker).getLabel();
+            //    double score = ((Custom)marker).getScore();
+            //    if (score != double.NaN) label = label + ":" + score;
+            //    if (label != "") label = "[" + label + "]";
+            //    return getEffectTypestring(useSeqOntology, useFirstEffect) + label;
+            //}
+            else if (isIntergenic() || isIntron() || isSpliceSite()) { e = getEffectTypestring(useSeqOntology, useFirstEffect); }
+            else if (message != "") { e = getEffectTypestring(useSeqOntology, useFirstEffect) + ": " + message; }
+            else if (marker == null) { e = getEffectTypestring(useSeqOntology, useFirstEffect); }// There are cases when no marker is associated (e.g. "Out of chromosome", "No such chromosome", etc.)
+            else { e = getEffectTypestring(useSeqOntology, useFirstEffect); }// + ": " + marker.getId();
 
-            if (shortFormat) e = e.split(":")[0];
+            if (shortFormat) { e = e.Split(':')[0]; }
 
             return e;
         }
@@ -223,29 +221,31 @@ namespace Proteogenomics
             return aaAlt;
         }
 
-        /**
-         * Amino acid change string (HGVS style)
-         */
+        /// <summary>
+        /// Amino acid change string (HGVS style)
+        /// </summary>
+        /// <returns></returns>
         public string getAaChange()
         {
-            if (aaRef.isEmpty() && aaAlt.isEmpty())
+            if (aaRef == "" && aaAlt == "")
             {
-                if (codonNum >= 0) return "" + (codonNum + 1);
+                if (codonNum >= 0) { return "" + (codonNum + 1); }
                 return "";
             }
 
-            if (aaRef.equals(aaAlt)) return aaAlt + (codonNum + 1);
+            if (aaRef.Equals(aaAlt)) { return aaAlt + (codonNum + 1); }
             return aaRef + (codonNum + 1) + aaAlt;
         }
 
-        /**
-         * Amino acid change string (old style)
-         */
+        /// <summary>
+        /// Amino acid change string (old style)
+        /// </summary>
+        /// <returns></returns>
         public string getAaChangeOld()
         {
-            if (aaRef.isEmpty() && aaAlt.isEmpty()) return "";
-            if (aaRef.equals(aaAlt)) return aaAlt;
-            return (aaRef.isEmpty() ? "-" : aaRef) + "/" + (aaAlt.isEmpty() ? "-" : aaAlt);
+            if (aaRef == "" && aaAlt == "") { return ""; }
+            if (aaRef.Equals(aaAlt)) { return aaAlt; }
+            return (aaRef == "" ? "-" : aaRef) + "/" + (aaAlt == "" ? "-" : aaAlt);
         }
 
         /// <summary>
@@ -255,10 +255,10 @@ namespace Proteogenomics
         /// <returns></returns>
         public int getAaLength()
         {
-            int cdsLen = getCdsLength();
+            int cdsLen = (int)getCdsLength();
             if (cdsLen < 0) return -1;
 
-            int lenNoStop = Math.max(0, cdsLen - 3); // Do not include the STOP codon
+            int lenNoStop = Math.Max(0, cdsLen - 3); // Do not include the STOP codon
             return lenNoStop / 3;
         }
 
@@ -268,19 +268,19 @@ namespace Proteogenomics
         /// <returns></returns>
         public string getAaNetChange()
         {
-            string aaShort = getAaRef().toUpperCase();
-            string aaLong = getAaAlt().toUpperCase();
+            string aaShort = getAaRef().ToUpper();
+            string aaLong = getAaAlt().ToUpper();
 
-            if (aaLong.length() < aaShort.length())
+            if (aaLong.Length < aaShort.Length)
             {
                 string tmp = aaShort;
                 aaShort = aaLong;
                 aaLong = tmp;
             }
 
-            if (aaLong.startsWith(aaShort)) return aaLong.substring(aaShort.length());
-            if (aaLong.endsWith(aaLong)) return aaLong.substring(0, aaLong.length() - aaShort.length());
-            if (aaShort.isEmpty()) return aaLong;
+            if (aaLong.StartsWith(aaShort)) { return aaLong.Substring(aaShort.Length); }
+            if (aaLong.EndsWith(aaLong)) { return aaLong.Substring(0, aaLong.Length - aaShort.Length); }
+            if (aaShort == "") { return aaLong; }
 
             // Assumptions broken (may be this is not an InDel).
             return null;
@@ -291,20 +291,21 @@ namespace Proteogenomics
             return aaRef;
         }
 
-        /**
-         * Get biotype
-         */
-        public BioType getBiotype()
-        {
-            Gene gene = getGene();
-            if (gene == null) return null;
+        /// <summary>
+        /// Get biotype
+        /// </summary>
+        /// <returns></returns>
+        //public BioType getBiotype()
+        //{
+        //    Gene gene = getGene();
+        //    if (gene == null) return null;
 
-            Transcript tr = getTranscript();
-            if (tr != null) return tr.getBioType();
-            else if (gene.getGenome().hasCodingInfo()) return BioType.coding(gene.isProteinCoding());
+        //    Transcript tr = getTranscript();
+        //    if (tr != null) return tr.getBioType();
+        //    else if (gene.getGenome().hasCodingInfo()) return BioType.coding(gene.isProteinCoding());
 
-            return null;
-        }
+        //    return null;
+        //}
 
         public int getcDnaPos()
         {
@@ -315,11 +316,11 @@ namespace Proteogenomics
         /// CDS length (negative if there is none)
         /// </summary>
         /// <returns></returns>
-        public int getCdsLength()
+        public long getCdsLength()
         {
             // CDS size info
             Transcript tr = getTranscript();
-            if ((tr != null) && tr.isProteinCoding()) return tr.cds().length();
+            if ((tr != null) && tr.isProteinCoding()) { return tr.RetrieveCodingSequence().Count; }
             return -1;
         }
 
@@ -329,7 +330,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public string getCodonChange()
         {
-            if (codonsRef.isEmpty() && codonsAlt.isEmpty()) return "";
+            if (codonsRef == "" && codonsAlt == "") { return ""; }
             return codonsRef + "/" + codonsAlt;
         }
 
@@ -339,8 +340,8 @@ namespace Proteogenomics
         /// <returns></returns>
         public string getCodonChangeMax()
         {
-            if (variant.Length > MAX_CODON_SEQUENCE_LEN) return ""; // Cap length in order not to make VCF files grow too much
-            if (codonsRef.isEmpty() && codonsAlt.isEmpty()) return "";
+            if (variant.Length() > MAX_CODON_SEQUENCE_LEN) { return ""; }// Cap length in order not to make VCF files grow too much
+            if (codonsRef == "" && codonsAlt == "") { return ""; }
             return codonsRef + "/" + codonsAlt;
         }
 
@@ -369,49 +370,44 @@ namespace Proteogenomics
             return distance;
         }
 
-        /**
-         * Return impact of this effect
-         */
+        /// <summary>
+        /// Return impact of this effect
+        /// </summary>
+        /// <returns></returns>
         public EffectImpact getEffectImpact()
         {
-            if (effectImpact == null)
-            {
-                if ((variant != null) && (!variant.isVariant()))
-                {
-                    // Not a change? => Modifier
-                    effectImpact = EffectImpact.MODIFIER;
-                }
-                else
-                {
-                    // Get efefct's type highest impact
-                    effectImpact = EffectImpact.MODIFIER;
-                    for (EffectImpact eimp : effectImpacts)
-                        if (eimp.compareTo(effectImpact) < 0) effectImpact = eimp;
-                }
-            }
-
-            return effectImpact;
+            //if ((variant != null) && (!variant.VarType == Variant.VariantType.()))
+            //{
+            //    // Not a change? => Modifier
+            //    return EffectImpact.MODIFIER;
+            //}
+            return effectImpacts.Min(); // Get effect's type highest impact
         }
 
-        /**
-         * Highest effect type
-         */
+        /// <summary>
+        /// Highest effect type
+        /// </summary>
+        /// <returns></returns>
         public EffectType getEffectType()
         {
-            if (effectType != null) return effectType;
-            if (effectTypes == null || effectTypes.isEmpty()) return EffectType.NONE;
+            if (effectType != EffectType.NONE)
+            {
+                return effectType;
+            }
+            if (effectTypes == null)
+            {
+                return EffectType.NONE;
+            }
 
             // Pick highest effect type
             effectType = EffectType.NONE;
-            for (EffectType et : effectTypes)
-                if (et.compareTo(effectType) < 0) effectType = et;
-
-            return effectType;
+            return effectTypes.Min();
         }
 
-        /**
-         * Highest effect type
-         */
+        /// <summary>
+        /// Highest effect type
+        /// </summary>
+        /// <returns></returns>
         public List<EffectType> getEffectTypes()
         {
             return effectTypes;
@@ -419,45 +415,48 @@ namespace Proteogenomics
 
         public string getEffectTypestring(bool useSeqOntology)
         {
-            return getEffectTypestring(useSeqOntology, false, EffFormatVersion.FORMAT_EFF_4);
+            return getEffectTypestring(useSeqOntology, false); //, EffFormatVersion.FORMAT_EFF_4);
         }
 
-        public string getEffectTypestring(bool useSeqOntology, bool useFirstEffect)
-        {
-            return getEffectTypestring(useSeqOntology, useFirstEffect, EffFormatVersion.FORMAT_EFF_4);
-        }
+        //public string getEffectTypestring(bool useSeqOntology, bool useFirstEffect)
+        //{
+        //    return getEffectTypestring(useSeqOntology, useFirstEffect); //, EffFormatVersion.FORMAT_EFF_4);
+        //}
 
-        /**
-         * Get Effect Type as a string
-         */
-        public string getEffectTypestring(bool useSeqOntology, bool useFirstEffect, EffFormatVersion formatVersion)
+        /// <summary>
+        /// Get Effect Type as a string
+        /// </summary>
+        /// <param name="useSeqOntology"></param>
+        /// <param name="useFirstEffect"></param>
+        /// <returns></returns>
+        public string getEffectTypestring(bool useSeqOntology, bool useFirstEffect) //, EffFormatVersion formatVersion)
         {
             if (effectTypes == null) return "";
 
             // Show all effects
             StringBuilder sb = new StringBuilder();
-            Collections.sort(effectTypes);
+            effectTypes.Sort();
 
             // More than one effect? Check for repeats
-            Set<string> added = ((effectTypes.size() > 1) && (!useFirstEffect) ? new HashSet<string>() : null);
+            HashSet<string> added = ((effectTypes.Count > 1) && (!useFirstEffect) ? new HashSet<string>() : null);
 
             // Create string
-            for (EffectType et : effectTypes)
+            foreach (EffectType et in effectTypes)
             {
-                string eff = (useSeqOntology ? et.toSequenceOntology(formatVersion, variant) : et.tostring());
+                string eff = useSeqOntology ? et.toSequenceOntology(formatVersion, variant) : et.ToString();
 
                 // Make sure we don't add the same effect twice
-                if (added == null || added.add(eff))
+                if (added == null || added.Add(eff))
                 {
-                    if (sb.length() > 0) sb.append(formatVersion.separator());
-                    sb.append(eff);
+                    if (sb.Length > 0) sb.Append(formatVersion.separator());
+                    sb.Append(eff);
                 }
 
                 // Only use first effect?
-                if (useFirstEffect) return sb.tostring();
+                if (useFirstEffect) return sb.ToString();
             }
 
-            return sb.tostring();
+            return sb.ToString();
         }
 
         public string getError()
@@ -465,9 +464,10 @@ namespace Proteogenomics
             return error;
         }
 
-        /**
-         * Get exon (if any)
-         */
+        /// <summary>
+        /// Get exon (if any)
+        /// </summary>
+        /// <returns></returns>
         public Exon getExon()
         {
             if (marker != null)
@@ -478,24 +478,25 @@ namespace Proteogenomics
                 }
                 return (Exon)marker.findParent(Exon);
             }
-		    return null;
+            return null;
         }
 
-        /**
-         * Return functional class of this effect (i.e.  NONSENSE, MISSENSE, SILENT or NONE)
-         */
+        /// <summary>
+        /// Return functional class of this effect (i.e.  NONSENSE, MISSENSE, SILENT or NONE)
+        /// </summary>
+        /// <returns></returns>
         public FunctionalClass getFunctionalClass()
         {
             if (variant.isSnp())
             {
-                if (!aaAlt.equals(aaRef))
+                if (!aaAlt.Equals(aaRef))
                 {
                     CodonTable codonTable = marker.codonTable();
                     if (codonTable.isStop(codonsAlt)) return FunctionalClass.NONSENSE;
 
                     return FunctionalClass.MISSENSE;
                 }
-                if (!codonsAlt.equals(codonsRef)) return FunctionalClass.SILENT;
+                if (!codonsAlt.Equals(codonsRef)) return FunctionalClass.SILENT;
             }
 
             return FunctionalClass.NONE;
@@ -505,17 +506,17 @@ namespace Proteogenomics
         {
             if (marker != null)
             {
-                if (marker instanceof Gene) return (Gene)marker;
-                return (Gene)marker.findParent(Gene.class);
-		        }
-		        return null;
-	        }
+                if (marker is Gene) return (Gene)marker;
+                return (Gene)marker.findParent(typeof(Gene));
+            }
+            return null;
+        }
 
-	        public string getGeneRegion()
+        public string getGeneRegion()
         {
             EffectType eff = getEffectType().getGeneRegion();
             if (eff == EffectType.TRANSCRIPT && isExon()) eff = EffectType.EXON;
-            return eff.tostring();
+            return eff.ToString();
         }
 
         public List<Gene> getGenes()
@@ -523,76 +524,77 @@ namespace Proteogenomics
             return null;
         }
 
-        /**
-         * Get genotype string
-         */
-        public string getGenotype()
+        /// <summary>
+        /// Get genotype string
+        /// </summary>
+        /// <returns></returns>
+        public Genotype getGenotype()
         {
-            if (variant == null) return "";
-            return variant.getGenotype();
+            return variant.Genotype;
         }
 
-        /**
-         * Change in HGVS notation
-         */
-        public string getHgvs()
-        {
-            if (!Config.get().isHgvs()) return "";
+        ///**
+        // * Change in HGVS notation
+        // */
+        //public string getHgvs()
+        //{
+        //    if (!Config.get().isHgvs()) return "";
 
-            // Calculate protein level and dna level changes
-            string hgvsProt = getHgvsProt();
-            string hgvsDna = getHgvsDna();
+        //    // Calculate protein level and dna level changes
+        //    string hgvsProt = getHgvsProt();
+        //    string hgvsDna = getHgvsDna();
 
-            // Build output
-            StringBuilder hgvs = new StringBuilder();
-            if (hgvsProt != null) hgvs.append(hgvsProt);
-            if (hgvsDna != null)
-            {
-                if (hgvs.length() > 0) hgvs.append('/');
-                hgvs.append(hgvsDna);
-            }
+        //    // Build output
+        //    StringBuilder hgvs = new StringBuilder();
+        //    if (hgvsProt != null) hgvs.Append(hgvsProt);
+        //    if (hgvsDna != null)
+        //    {
+        //        if (hgvs.Length > 0) hgvs.Append('/');
+        //        hgvs.Append(hgvsDna);
+        //    }
 
-            return hgvs.tostring();
-        }
+        //    return hgvs.ToString();
+        //}
 
-        /**
-         * Change in HGVS (Dna) notation
-         */
-        public string getHgvsDna()
-        {
-            if (!Config.get().isHgvs()) return "";
+        ///**
+        // * Change in HGVS (Dna) notation
+        // */
+        //public string getHgvsDna()
+        //{
+        //    if (!Config.get().isHgvs()) return "";
 
-            HgvsDna hgvsDna = new HgvsDna(this);
-            string hgvs = hgvsDna.tostring();
-            return hgvs != null ? hgvs : "";
-        }
+        //    HgvsDna hgvsDna = new HgvsDna(this);
+        //    string hgvs = hgvsDna.ToString();
+        //    return hgvs != null ? hgvs : "";
+        //}
 
-        /**
-         * Change in HGVS (Protein) notation
-         */
-        public string getHgvsProt()
-        {
-            if (!Config.get().isHgvs()) return "";
+        ///**
+        // * Change in HGVS (Protein) notation
+        // */
+        //public string getHgvsProt()
+        //{
+        //    if (!Config.get().isHgvs()) return "";
 
-            HgvsProtein hgvsProtein = new HgvsProtein(this);
-            string hgvs = hgvsProtein.tostring();
-            return hgvs != null ? hgvs : "";
-        }
+        //    HgvsProtein hgvsProtein = new HgvsProtein(this);
+        //    string hgvs = hgvsProtein.ToString();
+        //    return hgvs != null ? hgvs : "";
+        //}
 
         /**
          * Get intron (if any)
          */
+
         public Intron getIntron()
         {
             if (marker != null)
             {
-                if (marker instanceof Intron) return (Intron)marker;
-                return (Intron)marker.findParent(Intron.class);
-		        }
-		        return null;
-	        }
+                if (marker is Intron) return (Intron)marker;
+                return (Intron)marker.findParent(typeof(Intron));
+            }
+            return null;
+        }
 
-	        public Marker getMarker()
+        public Interval getMarker()
         {
             return marker;
         }
@@ -601,13 +603,13 @@ namespace Proteogenomics
         {
             if (marker != null)
             {
-                if (marker instanceof Transcript) return (Transcript)marker;
-                return (Transcript)marker.findParent(Transcript.class);
-		        }
-		        return null;
-	        }
+                if (marker is Transcript) return (Transcript)marker;
+                return (Transcript)marker.findParent(typeof(Transcript));
+            }
+            return null;
+        }
 
-	        public Variant getVariant()
+        public Variant getVariant()
         {
             return variant;
         }
@@ -617,40 +619,44 @@ namespace Proteogenomics
             return warning;
         }
 
-        /**
-         * Do we have an associated marker with additional annotations?
-         */
+        /// <summary>
+        /// Do we have an associated marker with additional annotations?
+        /// </summary>
+        /// <returns></returns>
         public bool hasAdditionalAnnotations()
         {
-            return getMarker() != null // Do we have a marker?
-                    && (getMarker() instanceof Custom) // Is it 'custom'?
-
-                        && ((Custom)getMarker()).hasAnnotations() // Does it have additional annotations?
-                ;
+            //return getMarker() != null // Do we have a marker?
+            //        && (getMarker() is Custom) // Is it 'custom'?
+            //            && ((Custom)getMarker()).hasAnnotations(); // Does it have additional annotations?
+            return false;
         }
 
         public bool hasEffectImpact(EffectImpact effectImpact)
         {
-            for (EffectImpact effImp : effectImpacts)
+            foreach (EffectImpact effImp in effectImpacts)
+            {
                 if (effImp == effectImpact) return true;
+            }
             return false;
         }
 
         public bool hasEffectType(EffectType effectType)
         {
-            for (EffectType effType : effectTypes)
+            foreach (EffectType effType in effectTypes)
+            {
                 if (effType == effectType) return true;
+            }
             return false;
         }
 
         public bool hasError()
         {
-            return (error != null) && (!error.isEmpty());
+            return error != null && error != "";
         }
 
         public bool hasWarning()
         {
-            return (warning != null) && (!warning.isEmpty());
+            return warning != null && warning != "";
         }
 
         public bool isCustom()
@@ -660,7 +666,7 @@ namespace Proteogenomics
 
         public bool isExon()
         {
-            return (marker instanceof Exon) || hasEffectType(EffectType.EXON_DELETED);
+            return marker is Exon || hasEffectType(EffectType.EXON_DELETED);
         }
 
         public bool isIntergenic()
@@ -699,15 +705,13 @@ namespace Proteogenomics
                     || hasEffectType(EffectType.SPLICE_SITE_ACCEPTOR) //
                     || hasEffectType(EffectType.SPLICE_SITE_REGION) //
                     || hasEffectType(EffectType.SPLICE_SITE_BRANCH) //
-                    || hasEffectType(EffectType.SPLICE_SITE_BRANCH_U12) //
-            ;
+                    || hasEffectType(EffectType.SPLICE_SITE_BRANCH_U12); //
         }
 
         public bool isSpliceSiteCore()
         {
             return hasEffectType(EffectType.SPLICE_SITE_DONOR) //
-                    || hasEffectType(EffectType.SPLICE_SITE_ACCEPTOR) //
-            ;
+                    || hasEffectType(EffectType.SPLICE_SITE_ACCEPTOR); //
         }
 
         public bool isSpliceSiteRegion()
@@ -725,7 +729,7 @@ namespace Proteogenomics
             return hasEffectType(EffectType.UTR_5_PRIME) || hasEffectType(EffectType.UTR_5_DELETED);
         }
 
-        public void set(Marker marker, EffectType effectType, EffectImpact effectImpact, string message)
+        public void set(Interval marker, EffectType effectType, EffectImpact effectImpact, string message)
         {
             setMarker(marker); // Use setter because it takes care of warnings
             setEffectType(effectType);
@@ -733,9 +737,13 @@ namespace Proteogenomics
             this.message = message;
         }
 
-        /**
-         * Set codon change. Calculate effect type based on codon changes (for SNPs & MNPs)
-         */
+        /// <summary>
+        /// Set codon change. Calculate effect type based on codon changes (for SNPs & MNPs)
+        /// </summary>
+        /// <param name="codonsOld"></param>
+        /// <param name="codonsNew"></param>
+        /// <param name="codonNum"></param>
+        /// <param name="codonIndex"></param>
         public void setCodons(string codonsOld, string codonsNew, int codonNum, int codonIndex)
         {
             codonsRef = codonsOld;
@@ -746,31 +754,33 @@ namespace Proteogenomics
             CodonTable codonTable = marker.codonTable();
 
             // Calculate amino acids
-            if (codonsOld.isEmpty()) aaRef = "";
+            if (codonsOld == "") aaRef = "";
             else
             {
                 aaRef = codonTable.aa(codonsOld);
                 codonDegeneracy = codonTable.degenerate(codonsOld, codonIndex); // Calculate codon degeneracy
             }
 
-            if (codonsNew.isEmpty()) aaAlt = "";
+            if (codonsNew == "") aaAlt = "";
             else aaAlt = codonTable.aa(codonsNew);
         }
 
-        /**
-         * Set values for codons around change.
-         */
+        /// <summary>
+        /// Set values for codons around change.
+        /// </summary>
+        /// <param name="codonsLeft"></param>
+        /// <param name="codonsRight"></param>
         public void setCodonsAround(string codonsLeft, string codonsRight)
         {
-            codonsAroundOld = codonsLeft.toLowerCase() + codonsRef.toUpperCase() + codonsRight.toLowerCase();
-            codonsAroundNew = codonsLeft.toLowerCase() + codonsAlt.toUpperCase() + codonsRight.toLowerCase();
+            codonsAroundOld = codonsLeft.ToLower() + codonsRef.ToUpper() + codonsRight.ToLower();
+            codonsAroundNew = codonsLeft.ToLower() + codonsAlt.ToUpper() + codonsRight.ToLower();
 
             // Amino acids surrounding the ones changed
             CodonTable codonTable = marker.codonTable();
             string aasLeft = codonTable.aa(codonsLeft);
             string aasRigt = codonTable.aa(codonsRight);
-            aasAroundOld = aasLeft.toLowerCase() + aaRef.toUpperCase() + aasRigt.toLowerCase();
-            aasAroundNew = aasLeft.toLowerCase() + aaAlt.toUpperCase() + aasRigt.toLowerCase();
+            aasAroundOld = aasLeft.ToLower() + aaRef.ToUpper() + aasRigt.ToLower();
+            aasAroundNew = aasLeft.ToLower() + aaAlt.ToUpper() + aasRigt.ToLower();
         }
 
         public void setDistance(int distance)
@@ -778,33 +788,35 @@ namespace Proteogenomics
             this.distance = distance;
         }
 
-        /**
-         * Set effect using default impact
-         */
+        /// <summary>
+        /// Set effect using default impact
+        /// </summary>
+        /// <param name="effectType"></param>
         public void setEffect(EffectType effectType)
         {
             setEffectType(effectType);
-            setEffectImpact(effectType.effectImpact());
+            setEffectImpact(EffectDictionary[effectType]);
         }
 
         public void setEffectImpact(EffectImpact effectImpact)
         {
-            effectImpacts.clear();
-            effectImpacts.add(effectImpact);
-            this.effectImpact = null;
+            effectImpacts.Clear();
+            effectImpacts.Add(effectImpact);
+            this.effectImpact = EffectImpact.MODIFIER;
         }
 
         public void setEffectType(EffectType effectType)
         {
-            effectTypes.clear();
-            effectTypes.add(effectType);
-            this.effectType = null;
+            effectTypes.Clear();
+            effectTypes.Add(effectType);
+            this.effectType = EffectType.NONE;
         }
 
-        /**
-         * Set marker. Add some warnings if the marker relates to incomplete transcripts
-         */
-        public void setMarker(Marker marker)
+        /// <summary>
+        /// Set marker. Add some warnings if the marker relates to incomplete transcripts
+        /// </summary>
+        /// <param name="marker"></param>
+        public void setMarker(Interval marker)
         {
             this.marker = marker;
 
@@ -823,28 +835,27 @@ namespace Proteogenomics
         public string toStr()
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("Variant             : " + variant.toStr());
-            sb.append("\n\tEffectTypes     : " + effectTypes);
-            sb.append("\n\tEffectImpacts   : " + effectImpacts);
-            if (marker != null) sb.append("\n\tMarker          : " + marker.toStr());
-            if (!codonsRef.isEmpty() || !codonsAlt.isEmpty()) sb.append("\n\tCodons Ref/Alt  : " + codonsRef + " / " + codonsAlt);
-            if (!aaRef.isEmpty() || !aaAlt.isEmpty()) sb.append("\n\tAA Ref/Alt      : " + aaRef + " / " + aaAlt);
-            if (cDnaPos >= 0) sb.append("\n\tcDnaPos         : " + cDnaPos);
-            if (codonNum >= 0) sb.append("\n\tcodon num/index : " + codonNum + " / " + codonIndex);
-            if (!error.isEmpty()) sb.append("\n\tError           : " + error);
-            if (!warning.isEmpty()) sb.append("\n\tWarning         : " + warning);
-            if (!message.isEmpty()) sb.append("\n\tMessage         : " + message);
+            sb.Append("Variant             : " + variant.ToString());
+            sb.Append("\n\tEffectTypes     : " + effectTypes);
+            sb.Append("\n\tEffectImpacts   : " + effectImpacts);
+            if (marker != null) sb.Append("\n\tMarker          : " + marker.ToString());
+            if (codonsRef != "" || codonsAlt != "") sb.Append("\n\tCodons Ref/Alt  : " + codonsRef + " / " + codonsAlt);
+            if (aaRef != "" || aaAlt != "") sb.Append("\n\tAA Ref/Alt      : " + aaRef + " / " + aaAlt);
+            if (cDnaPos >= 0) sb.Append("\n\tcDnaPos         : " + cDnaPos);
+            if (codonNum >= 0) sb.Append("\n\tcodon num/index : " + codonNum + " / " + codonIndex);
+            if (error != "") sb.Append("\n\tError           : " + error);
+            if (warning != "") sb.Append("\n\tWarning         : " + warning);
+            if (message != "") sb.Append("\n\tMessage         : " + message);
 
-            return sb.tostring();
+            return sb.ToString();
         }
 
-        @Override
-            public string tostring()
+        public override string ToString()
         {
-            return tostring(false, false);
+            return ToString(false, false);
         }
 
-        public string tostring(bool useSeqOntology, bool useHgvs)
+        public string ToString(bool useSeqOntology, bool useHgvs)
         {
             // Get data to show
             string geneId = "", geneName = "", transcriptId = "", exonId = "", customId = "";
@@ -860,19 +871,19 @@ namespace Proteogenomics
                 // CDS size info
                 if (gene != null)
                 {
-                    geneId = gene.getId();
+                    geneId = gene.ID;
                     geneName = gene.getGeneName();
-                    bioType = (getBiotype() == null ? "" : getBiotype().tostring());
+                    //bioType = (getBiotype() == null ? "" : getBiotype().ToString());
                 }
 
                 // Update trId
-                if (tr != null) transcriptId = tr.getId();
+                if (tr != null) transcriptId = tr.ID;
 
                 // Exon rank information
                 Exon exon = getExon();
                 if (exon != null)
                 {
-                    exonId = exon.getId();
+                    exonId = exon.ID;
                     exonRank = exon.getRank();
                 }
 
@@ -881,19 +892,20 @@ namespace Proteogenomics
             }
 
             // Add seqChage's ID
-            if (!variant.getId().isEmpty()) customId += variant.getId();
+            if (!variant.getId() == "") customId += variant.getId();
 
             // Add custom markers
-            if ((marker != null) && (marker instanceof Custom)) customId += (customId.isEmpty() ? "" : ";") + marker.getId();
+            //if (marker != null && marker is Custom) customId += (customId == "" ? "" : ";") + marker.getId();
 
             // CDS length
-            int cdsSize = getCdsLength();
+            long cdsSize = getCdsLength();
 
-            string errWarn = error + (error.isEmpty() ? "" : "|") + warning;
+            string errWarn = error + (error == "" ? "" : "|") + warning;
 
             string aaChange = "";
-            if (useHgvs) aaChange = getHgvs();
-            else aaChange = ((aaRef.length() + aaAlt.length()) > 0 ? aaRef + "/" + aaAlt : "");
+
+            //if (useHgvs) aaChange = getHgvs();
+            else aaChange = ((aaRef.Length + aaAlt.Length) > 0 ? aaRef + "/" + aaAlt : "");
 
             return errWarn //
                     + "\t" + geneId //
@@ -901,36 +913,38 @@ namespace Proteogenomics
                     + "\t" + bioType //
                     + "\t" + transcriptId //
                     + "\t" + exonId //
-                    + "\t" + (exonRank >= 0 ? exonRank : "") //
+                    + "\t" + (exonRank >= 0 ? exonRank.ToString() : "") //
                     + "\t" + effect(false, false, false, useSeqOntology, false) //
                     + "\t" + aaChange //
-                    + "\t" + ((codonsRef.length() + codonsAlt.length()) > 0 ? codonsRef + "/" + codonsAlt : "") //
-                    + "\t" + (codonNum >= 0 ? (codonNum + 1) : "") //
+                    + "\t" + ((codonsRef.Length + codonsAlt.Length) > 0 ? codonsRef + "/" + codonsAlt : "") //
+                    + "\t" + (codonNum >= 0 ? (codonNum + 1).ToString() : "") //
                     + "\t" + (codonDegeneracy >= 0 ? codonDegeneracy + "" : "") //
-                    + "\t" + (cdsSize >= 0 ? cdsSize : "") //
-                    + "\t" + (codonsAroundOld.length() > 0 ? codonsAroundOld + " / " + codonsAroundNew : "") //
-                    + "\t" + (aasAroundOld.length() > 0 ? aasAroundOld + " / " + aasAroundNew : "") //
+                    + "\t" + (cdsSize >= 0 ? cdsSize.ToString() : "") //
+                    + "\t" + (codonsAroundOld.Length > 0 ? codonsAroundOld + " / " + codonsAroundNew : "") //
+                    + "\t" + (aasAroundOld.Length > 0 ? aasAroundOld + " / " + aasAroundNew : "") //
                     + "\t" + customId //
             ;
         }
 
-        /**
-         * Get the simplest string describing the effect (this is mostly used for testcases)
-         */
-        public string tostringSimple(bool shortFormat)
+        /// <summary>
+        /// Get the simplest string describing the effect (this is mostly used for testcases)
+        /// </summary>
+        /// <param name="shortFormat"></param>
+        /// <returns></returns>
+        public string ToStringSimple(bool shortFormat)
         {
             string transcriptId = "";
             Transcript tr = getTranscript();
-            if (tr != null) transcriptId = tr.getId();
+            if (tr != null) transcriptId = tr.ID;
 
             string exonId = "";
             Exon exon = getExon();
             if (exon != null) exonId = exon.getId();
 
             string eff = effect(shortFormat, true, true, false, false);
-            if (!eff.isEmpty()) return eff;
-            if (!exonId.isEmpty()) return exonId;
-            if (!transcriptId.isEmpty()) return transcriptId;
+            if (eff != "") return eff;
+            if (exonId != "") return exonId;
+            if (transcriptId != "") return transcriptId;
 
             return "NO EFFECT";
         }
