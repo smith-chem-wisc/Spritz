@@ -1,7 +1,6 @@
 ﻿using Bio;
 using Bio.Extensions;
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Proteogenomics
@@ -12,7 +11,7 @@ namespace Proteogenomics
         private long cdsStart;
         private long cdsEnd;
 
-        public CodonChangeMnv(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeMnv(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             ReturnNow = false;

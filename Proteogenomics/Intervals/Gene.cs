@@ -10,37 +10,20 @@ namespace Proteogenomics
     public class Gene :
         Interval
     {
-        #region Private Properties
-
         private MetadataListItem<List<string>> Metadata { get; set; }
 
-        #endregion Private Properties
-
-        #region Public Properties
-
         public string ID { get; set; }
-
         public Chromosome Chromosome { get; set; }
-
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
-
         public IntervalTree TranscriptTree { get; set; }
 
-        #endregion Public Properties
-
-        #region Public Constructors
-
         public Gene(string ID, Chromosome chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
-            : base(chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd)
+            : base(chromosome, chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd)
         {
             this.ID = ID;
             this.Chromosome = chromosome;
             this.Metadata = metadata;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public List<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
@@ -77,7 +60,5 @@ namespace Proteogenomics
             });
             return proteins;
         }
-
-        #endregion Public Methods
     }
 }

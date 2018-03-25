@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class CodonChangeDup
         : CodonChangeStructural
     {
-        public CodonChangeDup(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeDup(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             coding = transcript.isProteinCoding();// || Config.get().isTreatAllAsProteinCoding();
@@ -46,6 +44,7 @@ namespace Proteogenomics
          *
          * @return true if the duplication is beyond transcript's end
          */
+
         private bool BeyondTranscript()
         {
             if (coding)

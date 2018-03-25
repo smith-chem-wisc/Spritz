@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class CodonChangeInv
         : CodonChange
     {
-        public CodonChangeInv(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeInv(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
         }

@@ -15,8 +15,8 @@ namespace Proteogenomics
         /// </summary>
         public ISequence Sequence { get; set; }
 
-        public IntervalSequence(string chromID, string strand, long oneBasedStart, long oneBasedEnd, ISequence sequence)
-            : base(chromID, strand, oneBasedStart, oneBasedEnd)
+        public IntervalSequence(Interval parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, ISequence sequence)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
         {
             Sequence = sequence;
         }
@@ -60,7 +60,7 @@ namespace Proteogenomics
                         ApplyDup(variant, newIntervalSeq);
                         break;
 
-                    case Variant.VariantType.MNP:
+                    case Variant.VariantType.MNV:
                         ApplyMnp(variant, newIntervalSeq);
                         break;
 

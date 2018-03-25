@@ -116,6 +116,7 @@ namespace Proteogenomics
                 }
             }
             CreateUTRsAndIntergenicRegions();
+            // possibly check transcript sanity here with Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t => t.SanityCheck());
             Parallel.ForEach(Genes, gene => gene.TranscriptTree.Build(gene.Transcripts));
             GenomeForest.Build();
         }
@@ -156,12 +157,12 @@ namespace Proteogenomics
                 if (hasExonId)
                 {
                     ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chrom.ID, strand);
+                    Exon exon = new Exon(currentTranscript, exon_dna, oneBasedStart, oneBasedEnd, chrom.ChromosomeID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (hasProteinId)
                 {
-                    CDS cds = new CDS(chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
+                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
                     currentTranscript.CodingDomainSequences.Add(cds);
                     currentTranscript.ProteinID = proteinId;
                 }
@@ -226,12 +227,12 @@ namespace Proteogenomics
                 if (feature.Key == "exon")
                 {
                     ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(exon_dna, oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand);
+                    Exon exon = new Exon(currentTranscript, exon_dna, oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    CDS cds = new CDS(chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
+                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
                     currentTranscript.CodingDomainSequences.Add(cds);
                 }
             }
@@ -292,7 +293,7 @@ namespace Proteogenomics
                 foreach (Gene gene in it.Intervals.OfType<Gene>().OrderBy(g => g.OneBasedStart))
                 {
                     Gene previous = gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene;
-                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.ChromosomeID, gene.Strand, (gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
+                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.Chromosome, gene.ChromosomeID, gene.Strand, (gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
 
                     if (gene.Strand == "+")
                     {

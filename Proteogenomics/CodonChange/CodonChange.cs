@@ -19,7 +19,7 @@ namespace Proteogenomics
         protected Variant Variant { get; set; }
         protected Transcript Transcript { get; set; }
         protected Exon Exon { get; set; }
-        protected List<VariantEffect> VariantEffects { get; set; }
+        protected VariantEffects VariantEffects { get; set; }
         protected string CodonsReference { get; set; } = ""; // REF codons (without variant)
         protected string CodonsAlternate { get; set; } = ""; // ALT codons (after variant is applied)
         protected string NetCodingSequenceChange { get; set; } = "";
@@ -31,7 +31,7 @@ namespace Proteogenomics
         /// <param name="transcript"></param>
         /// <param name="variantEffects"></param>
         /// <returns></returns>
-        public static CodonChange Factory(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public static CodonChange Factory(Variant variant, Transcript transcript, VariantEffects variantEffects)
         {
             switch (variant.VarType)
             {
@@ -44,7 +44,7 @@ namespace Proteogenomics
                 case Variant.VariantType.DEL:
                     return new CodonChangeDel(variant, transcript, variantEffects);
 
-                case Variant.VariantType.MNP:
+                case Variant.VariantType.MNV:
                     return new CodonChangeMnv(variant, transcript, variantEffects);
 
                 case Variant.VariantType.MIXED:
@@ -64,7 +64,7 @@ namespace Proteogenomics
             }
         }
 
-        protected CodonChange(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        protected CodonChange(Variant variant, Transcript transcript, VariantEffects variantEffects)
         {
             Transcript = transcript;
             VariantEffects = variantEffects;
@@ -243,7 +243,7 @@ namespace Proteogenomics
                     hasChanged = ChangeCodon(exon);
 
                     // Any change? => Add change to list
-                    if (hasChanged && !VariantEffects.hasMarker()) VariantEffects.setMarker(exon); // It is affecting this exon, so we set the marker
+                    //if (hasChanged && !VariantEffects.hasMarker()) VariantEffects.setMarker(exon); // It is affecting this exon, so we set the marker
 
                     // Can we finish after effect of first exon is added?
                     if (ReturnNow) return;
@@ -333,7 +333,7 @@ namespace Proteogenomics
             // Create and add variant affect
             long cDnaPos = Transcript.baseNumber2MRnaPos(Variant.OneBasedStart);
             VariantEffect varEff = new VariantEffect(Variant, marker, effectType, effectImpact, codonsOld, codonsNew, codonNum, codonIndex, cDnaPos);
-            VariantEffects.Add(varEff);
+            VariantEffects.add(varEff);
 
             // Are there any additional effects? Sometimes a new effect arises from setting codons (e.g. FRAME_SHIFT disrupts a STOP codon)
             EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex, varEff.getAaRef(), varEff.getAaAlt());
@@ -410,7 +410,7 @@ namespace Proteogenomics
             sb.Append("Variant    : " + Variant + "\n");
             sb.Append("Codons     : " + CodonsReference + "/" + CodonsAlternate + "\tnum: " + CodonStartNumber + "\tidx: " + CodonStartIndex + "\n");
             sb.Append("Effects    :\n");
-            foreach (VariantEffect veff in VariantEffects)
+            foreach (VariantEffect veff in VariantEffects.Effects)
             {
                 sb.Append("\t" + veff.getEffectTypeString(false) + "\t" + veff.getCodonsRef() + "/" + veff.getCodonsAlt() + "\t" + veff.getAaRef() + "/" + veff.getAaAlt() + "\n");
             }

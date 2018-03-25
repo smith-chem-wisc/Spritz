@@ -29,6 +29,16 @@ namespace Proteogenomics
         public long OneBasedEnd { get; set; } = -1;
 
         /// <summary>
+        /// Parent of this interval
+        /// </summary>
+        public Interval Parent { get; set; }
+
+        /// <summary>
+        /// Type of interval
+        /// </summary>
+        public EffectType IntervalType { get; set; }
+
+        /// <summary>
         /// Variants contained in this interval
         /// </summary>
         public List<Variant> Variants { get; set; } = new List<Variant>();
@@ -44,7 +54,7 @@ namespace Proteogenomics
         /// <param name="strand"></param>
         /// <param name="oneBasedStart"></param>
         /// <param name="oneBasedEnd"></param>
-        public Interval(string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd)
+        public Interval(Interval parent, string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd)
         {
             this.ChromosomeID = chromosomeID;
             this.Strand = strand;
@@ -57,7 +67,11 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="interval"></param>
         public Interval(Interval interval) :
-            this(interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd)
+            this(interval.Parent, interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd)
+        {
+        }
+
+        public Interval()
         {
         }
 
@@ -77,7 +91,7 @@ namespace Proteogenomics
             switch (variant.VarType)
             {
                 case Variant.VariantType.SNV:
-                case Variant.VariantType.MNP:
+                case Variant.VariantType.MNV:
                     // Variant does not change length. No effect when applying (all coordinates remain the same)
                     newInterval = this;
                     break;
@@ -102,7 +116,7 @@ namespace Proteogenomics
             // Always return a copy of the marker (if the variant is applied)
             if (newInterval == this)
             {
-                return new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
+                return new Interval(this);
             }
             return newInterval;
         }
@@ -114,7 +128,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected Interval ApplyDel(Variant variant)
         {
-            Interval m = new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
+            Interval m = new Interval(this);
 
             if (variant.OneBasedEnd < m.OneBasedStart)
             {
@@ -176,7 +190,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected Interval ApplyDup(Variant variant)
         {
-            Interval m = new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
+            Interval m = new Interval(this);
 
             if (variant.OneBasedEnd < m.OneBasedStart)
             {
@@ -217,7 +231,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected Interval ApplyIns(Variant variant)
         {
-            Interval m = new Interval(ChromosomeID, Strand, OneBasedStart, OneBasedEnd);
+            Interval m = new Interval(this);
 
             if (variant.OneBasedStart < m.OneBasedStart)
             {
@@ -239,9 +253,81 @@ namespace Proteogenomics
             return m;
         }
 
+        /// <summary>
+        /// Calculate the effect of this variant
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <param name="variantEffects"></param>
+        /// <returns></returns>
+        public virtual bool variantEffect(Variant variant, VariantEffects variantEffects)
+        {
+            if (!Intersects(variant)) return false;
+            variantEffects.add(variant, this, IntervalType, "");
+            return true;
+        }
+
+        /// <summary>
+        /// Distance from the beginning/end of a list of intervals, until this SNP It count the number of bases in 'markers'
+        /// </summary>
+        /// <param name="markers"></param>
+        /// <param name="fromEnd"></param>
+        /// <returns></returns>
+        public long distanceBases(List<Interval> markers, bool fromEnd)
+        {
+            // Create a new list of sorted intervals
+            List<Interval> markersSort = fromEnd ?
+                new List<Interval>(markers).OrderBy(m => m.OneBasedEnd).ToList() :
+                new List<Interval>(markers).OrderBy(m => m.OneBasedStart).ToList();
+
+            // Calculate distance
+            long len = 0, latest = -1;
+            foreach (Interval m in markersSort)
+            {
+                // Initialize
+                if (latest < 0)
+                {
+                    latest = fromEnd ? m.OneBasedEnd + 1 : m.OneBasedStart - 1;
+                }
+
+                if (fromEnd)
+                {
+                    if (Intersects(m)) { return len + (m.OneBasedEnd - OneBasedStart); }
+                    else if (OneBasedStart > m.OneBasedEnd) { return len - 1 + (latest - OneBasedStart); }
+
+                    latest = m.OneBasedStart;
+                }
+                else
+                {
+                    if (Intersects(m)) { return len + (OneBasedStart - m.OneBasedStart); }
+                    else if (OneBasedStart < m.OneBasedStart) { return len - 1 + (OneBasedStart - latest); }
+
+                    latest = m.OneBasedEnd;
+                }
+
+                len += m.Length();
+            }
+
+            return fromEnd ?
+                len - 1 + (latest - OneBasedStart) :
+                len - 1 + (OneBasedStart - latest);
+        }
+
         #endregion Variant Application Methods
 
         #region Public Methods
+
+        public Interval findParent(Type type)
+        {
+            if (GetType().Equals(type))
+            {
+                return this;
+            }
+            if (Parent != null && Parent.GetType().Equals(type))
+            {
+                return Parent.findParent(type);
+            }
+            return null;
+        }
 
         /// <summary>
         /// Is this interval on the forward strand?
@@ -352,7 +438,7 @@ namespace Proteogenomics
             long istart = Math.Max(OneBasedStart, interval.OneBasedStart);
             long iend = Math.Min(OneBasedEnd, interval.OneBasedEnd);
             if (iend < istart) { return null; }
-            return new Interval(ChromosomeID, Strand, istart, iend);
+            return new Interval(this);
         }
 
         public long IntersectSize(Interval other)

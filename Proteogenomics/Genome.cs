@@ -7,6 +7,7 @@ using System.Linq;
 namespace Proteogenomics
 {
     public class Genome
+        : Interval
     {
         #region Public Properties
 
@@ -24,8 +25,9 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="genomeFastaLocation"></param>
         public Genome(string genomeFastaLocation)
+            : base()
         {
-            Chromosomes = new FastAParser().Parse(genomeFastaLocation).Select(s => new Chromosome(s)).ToList();
+            Chromosomes = new FastAParser().Parse(genomeFastaLocation).Select(s => new Chromosome(s, this)).ToList();
         }
 
         #endregion Public Constructor

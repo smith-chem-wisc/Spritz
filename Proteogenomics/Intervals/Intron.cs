@@ -3,10 +3,8 @@
     public class Intron
         : Interval
     {
-        #region Constructors
-
-        public Intron(string chromID, string strand, long oneBasedStart, long oneBasedEnd)
-            : base(chromID, strand, oneBasedStart, oneBasedEnd)
+        public Intron(Transcript parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
         {
         }
 
@@ -14,7 +12,5 @@
             : base(intron)
         {
         }
-
-        #endregion Constructors
     }
 }

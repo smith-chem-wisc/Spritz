@@ -150,12 +150,13 @@
     <Compile Include="CodonChange\EffectType.cs" />
     <Compile Include="CodonChange\ErrorWarningType.cs" />
     <Compile Include="CodonChange\FunctionalClass.cs" />
+    <Compile Include="CodonChange\VariantEffects.cs" />
     <Compile Include="CodonExtensions.cs" />
     <Compile Include="Intervals\CDS.cs" />
     <Compile Include="Intervals\Chromosome.cs" />
     <Compile Include="Intervals\Downstream.cs" />
     <Compile Include="Intervals\Exon.cs" />
-    <Compile Include="Gene.cs" />
+    <Compile Include="Intervals\Gene.cs" />
     <Compile Include="GeneModel.cs" />
     <Compile Include="Genome.cs" />
     <Compile Include="Intervals\Intergenic.cs" />

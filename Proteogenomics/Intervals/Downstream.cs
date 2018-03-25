@@ -3,10 +3,8 @@
     public class Downstream
         : Interval
     {
-        #region Constructors
-
-        public Downstream(string chromID, string strand, long oneBasedStart, long oneBasedEnd)
-            : base(chromID, strand, oneBasedStart, oneBasedEnd)
+        public Downstream(Transcript parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
         {
         }
 
@@ -14,7 +12,5 @@
             : base(downstream)
         {
         }
-
-        #endregion Constructors
     }
 }

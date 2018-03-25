@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class CodonChangeIns
         : CodonChange
     {
-        public CodonChangeIns(Variant seqChange, Transcript transcript, List<VariantEffect> changeEffects)
+        public CodonChangeIns(Variant seqChange, Transcript transcript, VariantEffects changeEffects)
             : base(seqChange, transcript, changeEffects)
         {
             ReturnNow = true; // An insertion can only affect one exon

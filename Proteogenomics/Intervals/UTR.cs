@@ -3,10 +3,8 @@
     public abstract class UTR :
         Interval
     {
-        #region Constructors
-
-        public UTR(string chromID, string strand, long oneBasedStart, long oneBasedEnd)
-            : base(chromID, strand, oneBasedStart, oneBasedEnd)
+        public UTR(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
         {
         }
 
@@ -15,14 +13,10 @@
         {
         }
 
-        #endregion Constructors
-
-        #region Public Methods
-
         public abstract bool is3Prime();
 
         public abstract bool is5Prime();
 
-        #endregion Public Methods
+        public abstract override bool variantEffect(Variant variant, VariantEffects variantEffects);
     }
 }

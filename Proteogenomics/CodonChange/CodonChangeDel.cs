@@ -1,13 +1,12 @@
 ﻿using Bio.Extensions;
 using System;
-using System.Collections.Generic;
 
 namespace Proteogenomics
 {
     public class CodonChangeDel
         : CodonChangeStructural
     {
-        public CodonChangeDel(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeDel(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             ReturnNow = false;

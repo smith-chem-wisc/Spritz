@@ -1,4 +1,5 @@
 ﻿using Bio;
+using Bio.Algorithms.Translation;
 using Bio.Extensions;
 using Bio.VCF;
 using Proteomics;
@@ -109,7 +110,7 @@ namespace Proteogenomics
         /// <param name="metadata"></param>
         /// <param name="ProteinID"></param>
         public Transcript(string id, string version, Gene gene, string strand, long oneBasedStart, long oneBasedEnd, string ProteinID = null)
-            : base(gene.ChromosomeID, strand, oneBasedStart, oneBasedEnd)
+            : base(gene, gene.ChromosomeID, strand, oneBasedStart, oneBasedEnd)
         {
             this.ID = id;
             this.Version = version;
@@ -165,7 +166,7 @@ namespace Proteogenomics
             for (int i = 0; i < variantOrderedDescStart.Count; i++)
             {
                 Variant v = variantOrderedDescStart[i];
-                CodonChange variantEffect = AnnotateVariant(v);
+                VariantEffects variantEffect = AnnotateVariant(v);
                 if (variantEffect == null)
                 {
                     continue;
@@ -190,19 +191,20 @@ namespace Proteogenomics
         }
 
         /// <summary>
-        /// Gets a string representing a variant applied to this transcript 
+        /// Gets a string representing a variant applied to this transcript
         /// </summary>
         /// <param name="variant"></param>
-        public CodonChange AnnotateVariant(Variant variant)
+        public VariantEffects AnnotateVariant(Variant variant)
         {
             // Leaving off here for 180319
-
 
             // >> Figure out the codon change from the information in this transcript (port from SnpEff CodonChange)
             // >> Figure out the VariantEffect for the change, and note the high/medium/low/modifier status of the change
             // >> Translate the codons like I was doing in ProteinAnnotation, making that byte array to stick into translate. There are places in CodonChange and VariantEffect that need this
 
             //return "variant:"; // frameshift or something SPACE notations about what changes were made to the sequence
+            //      This is challenging because annotating transcripts is different than annotating variants
+            //      Make this more transcript-centric, perhaps. Just one codon-change per transcrpit per variant.
 
             // Then in translation, make a simple method to look up the bad accessions
             //      (could also try to assess this from the sequence itself using the warnings and errors)
@@ -217,7 +219,7 @@ namespace Proteogenomics
             //     Don't need to prepare for translation anymore
             //     Don't need to step through translation anymore (but keep the formatting of variants from ProteinAnnotation)
             //  - space delimited with variant annotations: "variant:type originalSequence###alteredSequence chr:oneBasedStart"
-            //     Don't need to TranslateFromSnpEff 
+            //     Don't need to TranslateFromSnpEff
 
             // Test
             //   1. UTR ranges get change
@@ -225,15 +227,16 @@ namespace Proteogenomics
             //   3. Variants get applied correctly
             //   Uh, lots more.
 
-
             if (!Intersects(variant)) return null; // Sanity check
+
+            VariantEffects variantEffects = new VariantEffects();
 
             // Large structural variant including the whole transcript?
             if (variant.Includes(this) && variant.isStructural())
             {
                 CodonChange codonChange = CodonChange.Factory(variant, this, variantEffects);
                 codonChange.ChangeCodon();
-                return codonChange;
+                return variantEffects;
             }
 
             //---
@@ -256,7 +259,7 @@ namespace Proteogenomics
                 {
                     CodonChange codonChange = CodonChange.Factory(variant, this, variantEffects);
                     codonChange.ChangeCodon();
-                    return true;
+                    return variantEffects;
                 }
             }
 
@@ -289,7 +292,7 @@ namespace Proteogenomics
             }
             if (included)
             {
-                return true; // Variant fully included in the UTR? => We are done.
+                return variantEffects; // Variant fully included in the UTR? => We are done.
             }
 
             //---
@@ -305,7 +308,7 @@ namespace Proteogenomics
             }
             if (included)
             {
-                return true; // Variant fully included? => We are done.
+                return variantEffects; // Variant fully included? => We are done.
             }
 
             //---
@@ -313,11 +316,25 @@ namespace Proteogenomics
             //---
             if (!exonAnnotated)
             {
-                variantEffects.Add(variant, this, EffectType.TRANSCRIPT, "");
-                return true;
+                variantEffects.add(SetEffect(variant, EffectType.TRANSCRIPT));
+                return variantEffects;
             }
 
-            return exonAnnotated;
+            return variantEffects;
+        }
+
+        private VariantEffect SetEffect(Variant variant, EffectType type)
+        {
+            VariantEffect ve = new VariantEffect(variant);
+            ve.addErrorWarningInfo(sanityCheck(variant));
+            Exon x = findExon(variant);
+            if (x != null)
+            {
+                ve.addErrorWarningInfo(x.sanityCheck(variant));
+            }
+            ve.setEffectType(type);
+            ve.setEffectImpact(VariantEffect.EffectDictionary[type]);
+            return ve;
         }
 
         /// <summary>
@@ -372,6 +389,7 @@ namespace Proteogenomics
          *
          * @returns Base number or '-1' if it does not map to a coding base
          */
+
         public long baseNumberCds(long pos, bool usePrevBaseIntron)
         {
             // Doesn't hit this transcript?
@@ -466,8 +484,6 @@ namespace Proteogenomics
             return cds2pos;
         }
 
-
-
         /// <summary>
         /// Calculate CDS start and CDS end
         /// </summary>
@@ -549,8 +565,38 @@ namespace Proteogenomics
         {
             Interval interval = new Interval(this);
             interval.OneBasedStart = isStrandPlus() ? cdsStart : cdsEnd;
-            interval.OneBasedEnd = isStrandPlus() ? cdsEnd  : cdsStart;
+            interval.OneBasedEnd = isStrandPlus() ? cdsEnd : cdsStart;
             return interval;
+        }
+
+        /// <summary>
+        /// Find a CDS that matches exactly the exon
+        /// </summary>
+        /// <param name="exon"></param>
+        /// <returns></returns>
+        public CDS findCds(Exon exon)
+        {
+            return CodingDomainSequences.FirstOrDefault(c => exon.Includes(c));
+        }
+
+        /// <summary>
+        /// Return the an exon that intersects 'pos'
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        public Exon findExon(int pos)
+        {
+            return Exons.FirstOrDefault(x => x.Includes(pos));
+        }
+
+        /// <summary>
+        /// Return an exon intersecting 'marker' (first exon found)
+        /// </summary>
+        /// <param name="marker"></param>
+        /// <returns></returns>
+        public Exon findExon(Interval marker)
+        {
+            return Exons.FirstOrDefault(x => x.Intersects(marker));
         }
 
         /// <summary>
@@ -875,12 +921,12 @@ namespace Proteogenomics
                 if (x.OneBasedStart < codingLeft)
                 {
                     long end = x.OneBasedEnd < codingLeft ? x.OneBasedEnd : codingLeft;
-                    UTRs.Add(Strand == "+" ? new UTR5Prime(ChromosomeID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(ChromosomeID, Strand, x.OneBasedStart, end) as UTR);
+                    UTRs.Add(Strand == "+" ? new UTR5Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR);
                 }
                 if (x.OneBasedEnd > CodingDomainSequences.Last().OneBasedEnd)
                 {
                     long start = x.OneBasedStart < codingRight ? x.OneBasedStart : codingRight;
-                    UTRs.Add(Strand == "+" ? new UTR3Prime(ChromosomeID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(ChromosomeID, Strand, start, x.OneBasedEnd) as UTR);
+                    UTRs.Add(Strand == "+" ? new UTR3Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR);
                 }
             }
             return UTRs;
@@ -903,13 +949,13 @@ namespace Proteogenomics
 
             if (Strand == "+")
             {
-                if (beforeStart < beforeEnd) Upstream = new Upstream(chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
-                if (afterStart < afterEnd) Downstream = new Downstream(chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
+                if (beforeStart < beforeEnd) Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
+                if (afterStart < afterEnd) Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
             }
             else
             {
-                if (afterStart < afterEnd) Upstream = new Upstream(chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
-                if (beforeStart < beforeEnd) Downstream = new Downstream(chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
+                if (afterStart < afterEnd) Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
+                if (beforeStart < beforeEnd) Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
             }
 
             return new List<Interval> { Upstream, Downstream };
@@ -925,7 +971,7 @@ namespace Proteogenomics
                     previous = x;
                     continue;
                 }
-                Intron intron = new Intron(x.ChromosomeID, x.Strand, previous.OneBasedEnd + 1, x.OneBasedStart - 1);
+                Intron intron = new Intron(this, x.ChromosomeID, x.Strand, previous.OneBasedEnd + 1, x.OneBasedStart - 1);
                 if (intron.Length() > 0)
                     Introns.Add(intron);
             }
@@ -937,12 +983,26 @@ namespace Proteogenomics
         #region Warning Methods
 
         /// <summary>
+        /// Perfom some baseic chekcs, return error type, if any
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <returns></returns>
+        public ErrorWarningType sanityCheck(Variant variant)
+        {
+            if (isErrorStopCodonsInCds()) return ErrorWarningType.WARNING_TRANSCRIPT_MULTIPLE_STOP_CODONS;
+            if (isErrorProteinLength()) return ErrorWarningType.WARNING_TRANSCRIPT_INCOMPLETE;
+            if (isErrorStartCodon()) return ErrorWarningType.WARNING_TRANSCRIPT_NO_START_CODON;
+            if (isWarningStopCodon()) return ErrorWarningType.WARNING_TRANSCRIPT_NO_STOP_CODON;
+            return ErrorWarningType.NONE;
+        }
+
+        /// <summary>
         /// Check if coding length is multiple of 3 in protein coding transcripts
         /// </summary>
         /// <returns></returns>
-        public bool isErrorProteinLength(bool treatAllAsProteinCoding)
+        public bool isErrorProteinLength()
         {
-            if (!treatAllAsProteinCoding && !isProteinCoding()) return false;
+            if (!isProteinCoding()) return false; //!Config.get().isTreatAllAsProteinCoding() &&
             return (RetrieveCodingSequence().Count % 3) != 0;
         }
 
@@ -953,7 +1013,7 @@ namespace Proteogenomics
         public bool isErrorStartCodon()
         {
             if (
-                //!Config.get().isTreatAllAsProteinCoding() && 
+                //!Config.get().isTreatAllAsProteinCoding() &&
                 !isProteinCoding())
             {
                 return false;
@@ -980,8 +1040,8 @@ namespace Proteogenomics
             if (prot == null) return false;
 
             // Any STOP codon before the end?
-            char bases[] = prot.toCharArray();
-            int max = bases.length - 1;
+            char[] bases = prot.ToCharArray();
+            int max = bases.Length - 1;
             int countErrs = 0;
             for (int i = 0; i < max; i++)
                 if (bases[i] == '*')
@@ -1002,17 +1062,17 @@ namespace Proteogenomics
         /// <returns></returns>
         public bool isWarningStopCodon()
         {
-            if (!Config.get().isTreatAllAsProteinCoding() && !isProteinCoding()) return false;
+            if (isProteinCoding()) return false; //!Config.get().isTreatAllAsProteinCoding() &&
 
             // Not even one codon in this protein? Error
-            string cds = cds();
-            if (cds.length() < 3) return true;
+            ISequence cds = RetrieveCodingSequence();
+            if (cds.Count < 3) return true;
 
-            string codon = cds.substring(cds.length() - 3);
-            return !codonTable().isStop(codon);
+            ISequence codon = cds.GetSubSequence(cds.Count - CodonChange.CODON_SIZE, CodonChange.CODON_SIZE);
+            return Codons.TryLookup(codon[0], codon[1], codon[2], out byte aa)
+                && aa == Alphabets.Protein.Ter;
         }
 
-
-        #endregion
+        #endregion Warning Methods
     }
 }

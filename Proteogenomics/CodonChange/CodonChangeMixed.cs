@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Proteogenomics
 {
@@ -15,9 +16,9 @@ namespace Proteogenomics
         private Variant indel;
         private CodonChange codonChangeMnp;
         private CodonChange codonChangeIndel;
-        private List<VariantEffect> variantEffectsOri;
+        private VariantEffects variantEffectsOri;
 
-        public CodonChangeMixed(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeMixed(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             ReturnNow = false;
@@ -34,12 +35,12 @@ namespace Proteogenomics
             string altMnp = alt.Substring(0, minLen);
             string altIndel = alt.Substring(minLen);
 
-            mnp = new Variant(variant.getChromosome(), variant.OneBasedStart, refMnp, altMnp, variant.getId());
-            indel = new Variant(variant.getChromosome(), variant.OneBasedStart + minLen, refIndel, altIndel, variant.getId());
+            mnp = new Variant(variant.VariantContext, variant.Chromosome, variant.VariantContext.AlternateAlleles.IndexOf(variant.VariantContext.AlternateAlleles.FirstOrDefault(a => a.BaseString == variant.AlternateAlleleString)));
+            indel = new Variant(variant.Chromosome, variant.OneBasedStart + minLen, refIndel, altIndel, variant.getId());
 
             // Create codon changes
             variantEffectsOri = variantEffects;
-            this.VariantEffects = new List<VariantEffect>();
+            VariantEffects = new VariantEffects();
             codonChangeMnp = Factory(mnp, transcript, this.VariantEffects);
             codonChangeIndel = Factory(indel, transcript, this.VariantEffects);
         }
@@ -52,18 +53,18 @@ namespace Proteogenomics
             codonChangeIndel.ChangeCodon();
 
             // Set highest impact variant effect
-            if (VariantEffects.Count == 0 || VariantEffects.Count == 0) return; // Nothing to do
+            if (VariantEffects.Effects.Count == 0 || VariantEffects.Effects.Count == 0) return; // Nothing to do
 
-            VariantEffects.Sort();
-            VariantEffect varEff = VariantEffects[0];
+            VariantEffects.Effects.Sort();
+            VariantEffect varEff = VariantEffects.Effects[0];
 
             // Add main effect
             varEff = Effect(varEff.getMarker(), varEff.getEffectType(), false);
 
             // Add 'additional' effects
-            for (int i = 0; i < VariantEffects.Count; i++)
+            for (int i = 0; i < VariantEffects.Effects.Count; i++)
             {
-                List<EffectType> effTypes = VariantEffects[i].getEffectTypes();
+                List<EffectType> effTypes = VariantEffects.Effects[i].getEffectTypes();
                 for (int j = 0; j < effTypes.Count; j++)
                 {
                     EffectType effType = effTypes[j];
@@ -71,7 +72,7 @@ namespace Proteogenomics
                 }
             }
 
-            variantEffectsOri.Add(varEff);
+            variantEffectsOri.add(varEff);
         }
 
         private void codonNum()

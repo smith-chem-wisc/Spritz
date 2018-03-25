@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Proteogenomics
+﻿namespace Proteogenomics
 {
     public class CodonChangeInterval
         : CodonChange
     {
-        public CodonChangeInterval(Variant seqChange, Transcript transcript, List<VariantEffect> changeEffects)
+        public CodonChangeInterval(Variant seqChange, Transcript transcript, VariantEffects changeEffects)
             : base(seqChange, transcript, changeEffects)
         {
             ReturnNow = false; // An interval may affect more than one exon

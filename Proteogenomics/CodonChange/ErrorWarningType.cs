@@ -13,5 +13,6 @@
         , ERROR_OUT_OF_CHROMOSOME_RANGE // Variant is outside chromosome
         , ERROR_OUT_OF_EXON //
         , ERROR_MISSING_CDS_SEQUENCE // Missing coding sequence information
+        , NONE
     }
 }

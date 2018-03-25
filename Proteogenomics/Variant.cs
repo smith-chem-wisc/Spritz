@@ -15,7 +15,7 @@ namespace Proteogenomics
         public enum VariantType
         {
             SNV // Single nucleotide variant (i.e. 1 base is changed)
-            , MNP // Multiple nucleotide polymorphism (i.e. several bases are changed)
+            , MNV // Multiple nucleotide polymorphism (i.e. several bases are changed)
             , INS // Insertion (i.e. some bases added)
             , DEL // Deletion (some bases removed)
             , MIXED // A mixture of insertion, deletions, SNPs and or MNPs (a.k.a. substitution)
@@ -33,6 +33,11 @@ namespace Proteogenomics
         /// Original variant context
         /// </summary>
         public VariantContext VariantContext { get; set; }
+
+        /// <summary>
+        /// Chromosme for this variant
+        /// </summary>
+        public Chromosome Chromosome { get; set; }
 
         /// <summary>
         /// Type of this variant
@@ -98,9 +103,15 @@ namespace Proteogenomics
 
         #region Public Constructor
 
-        public Variant(VariantContext variant, int zeroBasedAlleleIndex)
-            : base(variant.Chr, "+", variant.Start, variant.End)
+        public Variant(Interval parent, VariantContext variant, Genome genome, int zeroBasedAlleleIndex)
+            : this(parent, variant, genome.Chromosomes.FirstOrDefault(c => c.FriendlyName == variant.Chr), zeroBasedAlleleIndex)
         {
+        }
+
+        public Variant(Interval parent, VariantContext variant, Chromosome chromosome, int zeroBasedAlleleIndex)
+            : base(parent, variant.Chr, "+", variant.Start, variant.End)
+        {
+            Chromosome = chromosome;
             ReferenceAllele = variant.Reference;
             ReferenceAlleleString = variant.Reference.BaseString;
             Genotype = variant.Genotypes.First(); // assumes just one sample
@@ -158,7 +169,7 @@ namespace Proteogenomics
             else if (ReferenceAlleleString.Length == 1 && AlternateAlleleString.Length == 1)
                 this.VarType = VariantType.SNV;
             else if (ReferenceAlleleString.Length == AlternateAlleleString.Length)
-                this.VarType = VariantType.MNP;
+                this.VarType = VariantType.MNV;
             else if (ReferenceAlleleString.Length < AlternateAlleleString.Length && AlternateAlleleString.StartsWith(ReferenceAlleleString))
                 this.VarType = VariantType.INS;
             else if (ReferenceAlleleString.Length > AlternateAlleleString.Length && ReferenceAlleleString.StartsWith(AlternateAlleleString))
@@ -225,7 +236,7 @@ namespace Proteogenomics
 
         public bool isMnv()
         {
-            return VarType == VariantType.MNP;
+            return VarType == VariantType.MNV;
         }
 
         public bool isSnv()

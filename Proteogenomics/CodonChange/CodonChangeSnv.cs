@@ -1,14 +1,13 @@
 ﻿using Bio;
 using Bio.Extensions;
 using System;
-using System.Collections.Generic;
 
 namespace Proteogenomics
 {
     public class CodonChangeSnv
         : CodonChange
     {
-        public CodonChangeSnv(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeSnv(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             ReturnNow = true; // A SNP can only affect one exon
@@ -25,7 +24,7 @@ namespace Proteogenomics
             CodonsReference = CodonsRef();
             CodonsAlternate = CodonsAlt();
 
-            // Use a generic low priority variant, this allows 'setCodons' to override it
+            // Use a generic low priority variant, this allows 'AdditionalEffects' to override it
             Effect(exon, EffectType.CODON_CHANGE, true);
 
             if (CodonsReference == "") VariantEffects.addErrorWarning(Variant, ErrorWarningType.ERROR_MISSING_CDS_SEQUENCE);

@@ -1,6 +1,5 @@
 ﻿using Bio.Extensions;
 using System;
-using System.Collections.Generic;
 
 namespace Proteogenomics
 {
@@ -14,7 +13,7 @@ namespace Proteogenomics
         protected string cdsAlt;
         protected string cdsRef;
 
-        public CodonChangeStructural(Variant variant, Transcript transcript, List<VariantEffect> variantEffects)
+        public CodonChangeStructural(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             coding = transcript.isProteinCoding(); // || Config.get().isTreatAllAsProteinCoding();
@@ -51,7 +50,10 @@ namespace Proteogenomics
 
             for (; codonNumEndRef >= CodonStartNumber && codonNumEndAlt >= CodonStartNumber; codonNumEndRef--, codonNumEndAlt--)
             {
-                if (!codonEquals(cdsRef, cdsAlt, codonNumEndRef, codonNumEndAlt)) break;
+                if (!codonEquals(cdsRef, cdsAlt, codonNumEndRef, codonNumEndAlt))
+                {
+                    break;
+                }
             }
 
             // Codons
@@ -59,7 +61,10 @@ namespace Proteogenomics
             CodonsAlternate = Codons(cdsAlt, CodonStartNumber, codonNumEndAlt);
 
             // No codon difference found?
-            if (CodonsReference == "" && CodonsAlternate == "") CodonStartNumber = CodonStartIndex = -1;
+            if (CodonsReference == "" && CodonsAlternate == "")
+            {
+                CodonStartNumber = CodonStartIndex = -1;
+            }
         }
 
         public override void ChangeCodon()
@@ -72,8 +77,14 @@ namespace Proteogenomics
             else
             {
                 // Does the variant affect any exons?
-                if (exonFull > 0 || exonPartial > 0) { Exons(); }
-                else { Intron(); }
+                if (exonFull > 0 || exonPartial > 0)
+                {
+                    Exons();
+                }
+                else
+                {
+                    Intron();
+                }
             }
         }
 
