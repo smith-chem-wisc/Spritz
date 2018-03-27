@@ -47,8 +47,8 @@ namespace Proteogenomics
                 case Variant.VariantType.MNV:
                     return new CodonChangeMnv(variant, transcript, variantEffects);
 
-                case Variant.VariantType.MIXED:
-                    return new CodonChangeMixed(variant, transcript, variantEffects);
+                //case Variant.VariantType.MIXED:
+                //    return new CodonChangeMixed(variant, transcript, variantEffects);
 
                 case Variant.VariantType.DUP:
                     return new CodonChangeDup(variant, transcript, variantEffects);
@@ -168,7 +168,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected long CdsBaseNumber(long pos)
         {
-            long cdsbn = Transcript.baseNumberCds(pos, true);
+            long cdsbn = Transcript.BaseNumberCds(pos, true);
 
             // Does not intersect the transcript?
             if (cdsbn < 0)
@@ -176,12 +176,12 @@ namespace Proteogenomics
                 // 'pos' before transcript start
                 if (pos <= Transcript.cdsStart)
                 {
-                    if (Transcript.Strand == "+") return 0;
+                    if (Transcript.IsStrandPlus()) return 0;
                     return Transcript.RetrieveCodingSequence().Count;
                 }
 
                 // 'pos' is after CDS end
-                if (Transcript.Strand == "+") return Transcript.RetrieveCodingSequence().Count;
+                if (Transcript.IsStrandPlus()) return Transcript.RetrieveCodingSequence().Count;
                 return 0;
             }
 
@@ -218,7 +218,7 @@ namespace Proteogenomics
                 {
                     long cdsBaseInExon = -1; // cdsBaseInExon: base number relative to the beginning of the coding part of this exon (i.e. excluding 5'UTRs)
 
-                    if (Transcript.Strand == "+")
+                    if (Transcript.IsStrandPlus())
                     {
                         long firstvariantBaseInExon = Math.Max(Variant.OneBasedStart, Math.Max(exon.OneBasedStart, cdsStart));
                         cdsBaseInExon = firstvariantBaseInExon - Math.Max(exon.OneBasedStart, cdsStart);
@@ -249,7 +249,7 @@ namespace Proteogenomics
                     if (ReturnNow) return;
                 }
 
-                if (Transcript.Strand == "+") firstCdsBaseInExon += (int)Math.Max(0, exon.OneBasedEnd - Math.Max(exon.OneBasedStart, cdsStart) + 1);
+                if (Transcript.IsStrandPlus()) firstCdsBaseInExon += (int)Math.Max(0, exon.OneBasedEnd - Math.Max(exon.OneBasedStart, cdsStart) + 1);
                 else firstCdsBaseInExon += (int)Math.Max(0, Math.Min(cdsStart, exon.OneBasedEnd) - exon.OneBasedStart + 1);
             }
 
@@ -331,12 +331,12 @@ namespace Proteogenomics
         private VariantEffect Effect(Interval marker, EffectType effectType, EffectImpact effectImpact, string codonsOld, string codonsNew, int codonNum, int codonIndex, bool allowReplace)
         {
             // Create and add variant affect
-            long cDnaPos = Transcript.baseNumber2MRnaPos(Variant.OneBasedStart);
+            long cDnaPos = Transcript.BaseNumber2MRnaPos(Variant.OneBasedStart);
             VariantEffect varEff = new VariantEffect(Variant, marker, effectType, effectImpact, codonsOld, codonsNew, codonNum, codonIndex, cDnaPos);
             VariantEffects.add(varEff);
 
             // Are there any additional effects? Sometimes a new effect arises from setting codons (e.g. FRAME_SHIFT disrupts a STOP codon)
-            EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex, varEff.getAaRef(), varEff.getAaAlt());
+            EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex, varEff.aaRef, varEff.aaAlt);
             if (addEffType != EffectType.NONE && addEffType != effectType)
             {
                 if (allowReplace && addEffType.CompareTo(effectType) < 0)
@@ -399,7 +399,7 @@ namespace Proteogenomics
                 return sb.ToString();
             }
 
-            return Variant.NetChange(Transcript.Strand != "+");
+            return Variant.NetChange(Transcript.IsStrandMinus());
         }
 
         public override string ToString()
@@ -412,7 +412,7 @@ namespace Proteogenomics
             sb.Append("Effects    :\n");
             foreach (VariantEffect veff in VariantEffects.Effects)
             {
-                sb.Append("\t" + veff.getEffectTypeString(false) + "\t" + veff.getCodonsRef() + "/" + veff.getCodonsAlt() + "\t" + veff.getAaRef() + "/" + veff.getAaAlt() + "\n");
+                sb.Append("\t" + veff.getEffectTypeString(false) + "\t" + veff.codonsRef + "/" + veff.codonsAlt + "\t" + veff.aaRef + "/" + veff.aaAlt + "\n");
             }
 
             return sb.ToString();

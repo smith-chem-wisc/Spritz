@@ -75,7 +75,7 @@ namespace WorkflowLayer
             List<Protein> proteins = new List<Protein>();
             List<Variant> singleNucleotideVariants = vcf.Select(x => x)
                 .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
-                .Select(v => new Variant(v, v.Start)).ToList();
+                .Select(v => new Variant(null, v, genome)).ToList();
             geneModel.ApplyVariants(singleNucleotideVariants);
             List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
             for (int i = 0; i < transcripts.Count; i++)

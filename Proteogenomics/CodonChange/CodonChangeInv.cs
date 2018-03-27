@@ -42,7 +42,7 @@
         private void exons()
         {
             Interval cdsMarker = null;
-            if (Transcript.isProteinCoding()) cdsMarker = Transcript.cdsMarker();
+            if (Transcript.isProteinCoding()) cdsMarker = Transcript.CdsMarker();
 
             foreach (Exon ex in Transcript.Exons)
             {

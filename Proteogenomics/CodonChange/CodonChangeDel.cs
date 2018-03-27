@@ -131,7 +131,7 @@ namespace Proteogenomics
             long cdsBaseMax = CdsBaseNumber(max);
 
             // Swap?
-            if (Transcript.Strand != "+")
+            if (Transcript.IsStrandMinus())
             {
                 long swap = cdsBaseMin;
                 cdsBaseMin = cdsBaseMax;

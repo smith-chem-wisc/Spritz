@@ -30,14 +30,14 @@
             {
                 return -1;
             }
-            if (isStrandPlus())
+            if (IsStrandPlus())
             {
                 return variant.OneBasedStart - cdsEnd;
             }
             return cdsEnd - variant.OneBasedEnd;
         }
 
-        public override bool variantEffect(Variant variant, VariantEffects variantEffects)
+        public override bool VariantEffect(Variant variant, VariantEffects variantEffects)
         {
             if (!Intersects(variant)) { return false; }
 
@@ -47,11 +47,11 @@
                 return true;
             }
 
-            Transcript tr = (Transcript)findParent(typeof(Transcript));
+            Transcript tr = (Transcript)FindParent(typeof(Transcript));
             long distance = utrDistance(variant, tr);
 
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.set(this, EffectType.UTR_3_PRIME, VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
+            variantEffect.set(this, EffectType.UTR_3_PRIME, Proteogenomics.VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
             variantEffect.setDistance(distance);
             variantEffects.add(variantEffect);
 

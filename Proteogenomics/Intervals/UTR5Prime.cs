@@ -38,7 +38,7 @@ namespace Proteogenomics
             {
                 return -1;
             }
-            if (isStrandPlus())
+            if (IsStrandPlus())
             {
                 return cdsStart - variant.OneBasedEnd;
             }
@@ -49,11 +49,11 @@ namespace Proteogenomics
         {
             if (UTRs == null)
             {
-                Transcript tr = (Transcript)findParent(typeof(Transcript));
+                Transcript tr = (Transcript)FindParent(typeof(Transcript));
 
                 // Get UTRs and sort them
                 UTRs = tr.UTRs.OfType<UTR5Prime>().ToList();
-                if (isStrandPlus())
+                if (IsStrandPlus())
                 {
                     UTRs = UTRs.OrderBy(u => u.OneBasedStart).ToList(); // Sort by start position
                 }
@@ -111,13 +111,13 @@ namespace Proteogenomics
             if (!seqChange.isSnv()) return ""; // Only SNPs supported.
 
             // Calculate SNP position relative to UTRs
-            long pos = seqChange.distanceBases(get5primeUtrs().OfType<Interval>().ToList(), isStrandMinus());
+            long pos = seqChange.DistanceBases(get5primeUtrs().OfType<Interval>().ToList(), IsStrandMinus());
 
             // Change base at SNP position
             string sequence = getSequence();
             char[] chars = sequence.ToCharArray();
             char snpBase = seqChange.NetChange(this)[0];
-            if (isStrandMinus() && Alphabets.DNA.TryGetComplementSymbol((byte)snpBase, out byte complement))
+            if (IsStrandMinus() && Alphabets.DNA.TryGetComplementSymbol((byte)snpBase, out byte complement))
             {
                 snpBase = (char)complement;
             }
@@ -127,7 +127,7 @@ namespace Proteogenomics
             return startGained(chars, pos);
         }
 
-        public override bool variantEffect(Variant variant, VariantEffects variantEffects)
+        public override bool VariantEffect(Variant variant, VariantEffects variantEffects)
         {
             // Has the whole UTR been deleted?
             if (variant.Includes(this) && (variant.VarType == Variant.VariantType.DEL))
@@ -137,10 +137,10 @@ namespace Proteogenomics
             }
 
             // Add distance
-            Transcript tr = (Transcript)findParent(typeof(Transcript));
+            Transcript tr = (Transcript)FindParent(typeof(Transcript));
             long distance = utrDistance(variant, tr);
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.set(this, IntervalType, VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
+            variantEffect.set(this, IntervalType, Proteogenomics.VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
             variantEffect.setDistance(distance);
             variantEffects.add(variantEffect);
 

@@ -5,6 +5,7 @@ using System.Linq;
 namespace Proteogenomics
 {
     public class Interval
+        : IComparable<Interval>
     {
         #region Public Properties
 
@@ -259,7 +260,7 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         /// <param name="variantEffects"></param>
         /// <returns></returns>
-        public virtual bool variantEffect(Variant variant, VariantEffects variantEffects)
+        public virtual bool VariantEffect(Variant variant, VariantEffects variantEffects)
         {
             if (!Intersects(variant)) return false;
             variantEffects.add(variant, this, IntervalType, "");
@@ -272,7 +273,7 @@ namespace Proteogenomics
         /// <param name="markers"></param>
         /// <param name="fromEnd"></param>
         /// <returns></returns>
-        public long distanceBases(List<Interval> markers, bool fromEnd)
+        public long DistanceBases(List<Interval> markers, bool fromEnd)
         {
             // Create a new list of sorted intervals
             List<Interval> markersSort = fromEnd ?
@@ -316,7 +317,25 @@ namespace Proteogenomics
 
         #region Public Methods
 
-        public Interval findParent(Type type)
+        /// <summary>
+        /// Compare by start and end
+        /// </summary>
+        /// <param name="i2"></param>
+        /// <returns></returns>
+        public virtual int CompareTo(Interval i2)
+        {
+            // Start
+            if (OneBasedStart > i2.OneBasedStart) { return 1; }
+            if (OneBasedStart < i2.OneBasedStart) { return -1; }
+
+            // End
+            if (OneBasedEnd > i2.OneBasedEnd) { return 1; }
+            if (OneBasedEnd < i2.OneBasedEnd) { return -1; }
+
+            return 0;
+        }
+
+        public Interval FindParent(Type type)
         {
             if (GetType().Equals(type))
             {
@@ -324,7 +343,7 @@ namespace Proteogenomics
             }
             if (Parent != null && Parent.GetType().Equals(type))
             {
-                return Parent.findParent(type);
+                return Parent.FindParent(type);
             }
             return null;
         }
@@ -333,7 +352,7 @@ namespace Proteogenomics
         /// Is this interval on the forward strand?
         /// </summary>
         /// <returns></returns>
-        public bool isStrandPlus()
+        public bool IsStrandPlus()
         {
             return Strand == "+";
         }
@@ -342,7 +361,7 @@ namespace Proteogenomics
         /// Is this interval on the reverse strand?
         /// </summary>
         /// <returns></returns>
-        public bool isStrandMinus()
+        public bool IsStrandMinus()
         {
             return Strand != "+";
         }

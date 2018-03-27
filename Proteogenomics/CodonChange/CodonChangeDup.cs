@@ -49,7 +49,7 @@
         {
             if (coding)
             {
-                if (Transcript.Strand == "+") return Variant.OneBasedEnd > Transcript.cdsEnd;
+                if (Transcript.IsStrandPlus()) return Variant.OneBasedEnd > Transcript.cdsEnd;
                 return Variant.OneBasedEnd > Transcript.cdsStart;
             }
 

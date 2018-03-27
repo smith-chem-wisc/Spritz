@@ -145,7 +145,6 @@
     <Compile Include="CodonChange\CodonChangeStructural.cs" />
     <Compile Include="CodonChange\CodonChangeSnv.cs" />
     <Compile Include="CodonChange\CodonChange.cs" />
-    <Compile Include="CodonChange\Coding.cs" />
     <Compile Include="CodonChange\EffectImpact.cs" />
     <Compile Include="CodonChange\EffectType.cs" />
     <Compile Include="CodonChange\ErrorWarningType.cs" />
@@ -178,7 +177,6 @@
     <Compile Include="Intervals\UTR3Prime.cs" />
     <Compile Include="Intervals\UTR5Prime.cs" />
     <Compile Include="Variant.cs" />
-    <Compile Include="TranscriptPossiblyWithVariants.cs" />
     <Compile Include="CodonChange\VariantEffect.cs" />
     <Compile Include="CodonsStandard.cs" />
     <Compile Include="CodonsVertebrateMitochondrial.cs" />

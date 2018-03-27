@@ -42,7 +42,7 @@ namespace Proteogenomics
             if (CodonsReference == "") return "";
 
             char[] codonChars = CodonsReference.ToLower().ToCharArray();
-            char snpBase = Variant.NetChange(Transcript.Strand != "+")[0];
+            char snpBase = Variant.NetChange(Transcript.IsStrandMinus())[0];
             if (CodonStartIndex < codonChars.Length) codonChars[CodonStartIndex] = char.ToUpper(snpBase);
 
             string codonsNew = new string(codonChars);

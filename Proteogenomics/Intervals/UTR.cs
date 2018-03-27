@@ -17,6 +17,6 @@
 
         public abstract bool is5Prime();
 
-        public abstract override bool variantEffect(Variant variant, VariantEffects variantEffects);
+        public abstract override bool VariantEffect(Variant variant, VariantEffects variantEffects);
     }
 }

@@ -22,13 +22,13 @@ namespace Proteogenomics
         {
             if (pos < cdsStart)
             {
-                return Transcript.Strand == "+" ? 0 : Transcript.RetrieveCodingSequence().Count - 1;
+                return Transcript.IsStrandPlus() ? 0 : Transcript.RetrieveCodingSequence().Count - 1;
             }
             if (pos > cdsEnd)
             {
-                return Transcript.Strand == "+" ? Transcript.RetrieveCodingSequence().Count - 1 : 0;
+                return Transcript.IsStrandPlus() ? Transcript.RetrieveCodingSequence().Count - 1 : 0;
             }
-            return Transcript.baseNumberCds(pos, usePrevBaseIntron);
+            return Transcript.BaseNumberCds(pos, usePrevBaseIntron);
         }
 
         /// <summary>
@@ -52,8 +52,8 @@ namespace Proteogenomics
             if (!Transcript.Intersects(Variant)) { return; }
 
             // CDS coordinates
-            cdsStart = Transcript.Strand == "+" ? Transcript.cdsStart : Transcript.cdsEnd;
-            cdsEnd = Transcript.Strand == "+" ? Transcript.cdsEnd : Transcript.cdsStart;
+            cdsStart = Transcript.IsStrandPlus() ? Transcript.cdsStart : Transcript.cdsEnd;
+            cdsEnd = Transcript.IsStrandPlus() ? Transcript.cdsEnd : Transcript.cdsStart;
 
             // Does it intersect CDS?
             if (cdsStart > Variant.OneBasedEnd) { return; }
@@ -61,7 +61,7 @@ namespace Proteogenomics
 
             // Base number relative to CDS start
             long scStart, scEnd;
-            if (Transcript.Strand == "+")
+            if (Transcript.IsStrandPlus())
             {
                 scStart = cdsBaseNumber(Variant.OneBasedStart, false);
                 scEnd = cdsBaseNumber(Variant.OneBasedEnd, true);
@@ -170,12 +170,12 @@ namespace Proteogenomics
                 foreach (Exon exon in Transcript.ExonsSortedStrand)
                 {
                     string seq = Variant.NetChange(exon);
-                    sb.Append(exon.Strand == "+" ? seq : SequenceExtensions.ConvertToString(new Sequence(Alphabets.AmbiguousDNA, seq).GetReverseComplementedSequence()));
+                    sb.Append(exon.IsStrandPlus() ? seq : SequenceExtensions.ConvertToString(new Sequence(Alphabets.AmbiguousDNA, seq).GetReverseComplementedSequence()));
                 }
                 return sb.ToString();
             }
 
-            return Variant.NetChange(Transcript.Strand == "+");
+            return Variant.NetChange(Transcript.IsStrandPlus());
         }
 
         private long round3(long num, bool end)

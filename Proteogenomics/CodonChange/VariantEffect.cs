@@ -9,6 +9,7 @@ using System.Text;
 namespace Proteogenomics
 {
     public class VariantEffect
+        : IComparable<VariantEffect>
     {
         // Don't show codon change sequences that are too long
         public static readonly int MAX_CODON_SEQUENCE_LEN = 100;
@@ -100,8 +101,8 @@ namespace Proteogenomics
             { EffectType.NONE, EffectImpact.MODIFIER } //
         };
 
-        protected Variant variant { get; set; }
-        protected List<EffectType> effectTypes { get; set; }
+        public Variant Variant { get; private set; }
+        public List<EffectType> effectTypes { get; private set; }
         protected EffectType effectType { get; set; }
         protected List<EffectImpact> effectImpacts { get; set; }
         protected EffectImpact effectImpact { get; set; }
@@ -109,28 +110,29 @@ namespace Proteogenomics
         protected HashSet<ErrorWarningType> error { get; set; } = new HashSet<ErrorWarningType>();
         protected HashSet<ErrorWarningType> warning { get; set; } = new HashSet<ErrorWarningType>();
         protected string message { get; set; } = ""; // Any message, warning or error?
-        protected string codonsRef = "", codonsAlt = ""; // Codon change information
+        public string codonsRef { get; private set; } = ""; // Codon change information
+        public string codonsAlt { get; private set; } = ""; // Codon change information
         protected string codonsAroundOld = "", codonsAroundNew = ""; // Codons around
         protected long distance = -1; // Distance metric
-        protected long cDnaPos = -1; // Position in cDNA
-        protected int codonNum = -1; // Codon number (negative number mens 'information not available')
-        protected int codonIndex = -1; // Index within a codon (negative number mens 'information not available')
-        protected int codonDegeneracy = -1; // Codon degeneracy (negative number mens 'information not available')
-        protected string aaRef { get; set; } = "";
-        protected string aaAlt { get; set; } = ""; // Amino acid changes
+        public long cDnaPos { get; private set; } = -1; // Position in cDNA
+        public int codonNum { get; private set; } = -1; // Codon number (negative number mens 'information not available')
+        public int codonIndex { get; private set; } = -1; // Index within a codon (negative number mens 'information not available')
+        public int codonDegeneracy { get; private set; } = -1; // Codon degeneracy (negative number mens 'information not available')
+        public string aaRef { get; set; } = "";
+        public string aaAlt { get; private set; } = ""; // Amino acid changes
         protected string aasAroundOld { get; set; } = "";
         protected string aasAroundNew { get; set; } = ""; // Amino acids around
 
         public VariantEffect(Variant variant)
         {
-            this.variant = variant;
+            Variant = variant;
             effectTypes = new List<EffectType>();
             effectImpacts = new List<EffectImpact>();
         }
 
         public VariantEffect(Variant variant, Interval marker, EffectType effectType, EffectImpact effectImpact, string codonsOld, string codonsNew, int codonNum, int codonIndex, long cDnaPos)
         {
-            this.variant = variant;
+            Variant = variant;
             effectTypes = new List<EffectType>();
             effectImpacts = new List<EffectImpact>();
             set(marker, effectType, effectImpact, "");
@@ -181,6 +183,140 @@ namespace Proteogenomics
         }
 
         /// <summary>
+        /// Compare to another variantEffect
+        /// </summary>
+        /// <param name="variantEffect"></param>
+        /// <returns></returns>
+        public int CompareTo(VariantEffect varEffOther)
+        {
+            // Sort by impact
+            int comp = getEffectImpact().CompareTo(varEffOther.getEffectImpact());
+            if (comp != 0) return comp;
+
+            // Sort by effect
+            comp = getEffectType().CompareTo(varEffOther.getEffectType());
+            if (comp != 0) return comp;
+
+            //---
+            // Transcript based comparisons
+            //---
+            Transcript trThis = getTranscript();
+            Transcript trOther = varEffOther.getTranscript();
+
+            // This transcript data
+            //int tslThis = TranscriptSupportLevel.TSL_NULL_VALUE;
+            //int canonThis = 0;
+            long startThis = 0;
+            long endThis = 0;
+            string idThis = null;
+            string chrThis = null;
+            if (trThis != null)
+            {
+                //tslThis = TranscriptSupportLevel.tsl(trThis.getTranscriptSupportLevel());
+                //canonThis = trThis.isCanonical() ? 1 : 0;
+                idThis = trThis.ID;
+                chrThis = trThis.ChromosomeID;
+                startThis = trThis.OneBasedStart;
+                endThis = trThis.OneBasedEnd;
+            }
+
+            // Other transcript data
+            //int tslOther = TranscriptSupportLevel.TSL_NULL_VALUE;
+            //int canonOther = 0;
+            long startOther = 0;
+            long endOther = 0;
+            string idOther = null;
+            string chrOther = null;
+            if (trOther != null)
+            {
+                //tslOther = TranscriptSupportLevel.tsl(trOther.getTranscriptSupportLevel());
+                //canonOther = trOther.isCanonical() ? 1 : 0;
+                idOther = trOther.ID;
+                chrOther = trOther.ChromosomeID;
+                startOther = trOther.OneBasedStart;
+                endOther = trOther.OneBasedEnd;
+            }
+
+            // Compare by TSL: Smaller first
+            //comp = tslThis - tslOther;
+            //if (comp != 0) return comp;
+
+            // Compare by canonical transcript: Larger first
+            //comp = canonOther - canonThis;
+            //if (comp != 0) return comp;
+
+            // Compare genomic coordinate
+            comp = compareNull(chrThis, chrOther);
+            if (comp != 0) return comp;
+
+            comp = startThis.CompareTo(startOther);
+            if (comp != 0) return comp;
+
+            comp = endThis.CompareTo(endOther);
+            if (comp != 0) return comp;
+
+            // Compare IDs
+            comp = compareNull(idThis, idOther); 
+            if (comp != 0) return comp;
+
+            //---
+            // Marker based comparisons
+            //---
+            Interval mThis = getMarker();
+            Interval mOther = varEffOther.getMarker();
+
+            startThis = 0;
+            endThis = 0;
+            idThis = null;
+            chrThis = null;
+            if (mThis != null)
+            {
+                //idThis = mThis.getId();
+                chrThis = mThis.ChromosomeID;
+                startThis = mThis.OneBasedStart;
+                endThis = mThis.OneBasedEnd;
+            }
+
+            startOther = 0;
+            endOther = 0;
+            idOther = null;
+            chrOther = null;
+            if (mOther != null)
+            {
+                //idOther = mOther.getId();
+                chrOther = mOther.ChromosomeID;
+                startOther = mOther.OneBasedStart;
+                endOther = mOther.OneBasedEnd;
+            }
+
+            // Compare genomic coordinate
+            comp = compareNull(chrThis, chrOther);
+            if (comp != 0) return comp;
+
+            comp = startThis.CompareTo(startOther);
+            if (comp != 0) return comp;
+
+            comp = endThis.CompareTo(endOther);
+            if (comp != 0) return comp;
+
+            // Compare IDs
+            comp = compareNull(idThis, idOther);
+            if (comp != 0) return comp;
+
+            //---
+            // Variant based comparison
+            //---
+            return Variant.CompareTo(varEffOther.Variant);
+        }
+
+        private int compareNull(IComparable oThis, IComparable oThat)
+        {
+            return oThis != null && oThat != null ? oThis.CompareTo(oThat) :
+                oThis == null && oThat == null ? 0 :
+                oThis == null ? -1 : 1;
+        }
+
+        /// <summary>
         /// Show a string with overall effect
         /// </summary>
         /// <param name="shortFormat"></param>
@@ -216,11 +352,6 @@ namespace Proteogenomics
             if (shortFormat) { e = e.Split(':')[0]; }
 
             return e;
-        }
-
-        public string getAaAlt()
-        {
-            return aaAlt;
         }
 
         /// <summary>
@@ -270,8 +401,8 @@ namespace Proteogenomics
         /// <returns></returns>
         public string getAaNetChange()
         {
-            string aaShort = getAaRef().ToUpper();
-            string aaLong = getAaAlt().ToUpper();
+            string aaShort = aaRef.ToUpper();
+            string aaLong = aaAlt.ToUpper();
 
             if (aaLong.Length < aaShort.Length)
             {
@@ -286,11 +417,6 @@ namespace Proteogenomics
 
             // Assumptions broken (may be this is not an InDel).
             return null;
-        }
-
-        public string getAaRef()
-        {
-            return aaRef;
         }
 
         /// <summary>
@@ -308,11 +434,6 @@ namespace Proteogenomics
 
         //    return null;
         //}
-
-        public long getcDnaPos()
-        {
-            return cDnaPos;
-        }
 
         /// <summary>
         /// CDS length (negative if there is none)
@@ -342,29 +463,9 @@ namespace Proteogenomics
         /// <returns></returns>
         public string getCodonChangeMax()
         {
-            if (variant.Length() > MAX_CODON_SEQUENCE_LEN) { return ""; }// Cap length in order not to make VCF files grow too much
+            if (Variant.Length() > MAX_CODON_SEQUENCE_LEN) { return ""; }// Cap length in order not to make VCF files grow too much
             if (codonsRef == "" && codonsAlt == "") { return ""; }
             return codonsRef + "/" + codonsAlt;
-        }
-
-        public int getCodonIndex()
-        {
-            return codonIndex;
-        }
-
-        public int getCodonNum()
-        {
-            return codonNum;
-        }
-
-        public string getCodonsAlt()
-        {
-            return codonsAlt;
-        }
-
-        public string getCodonsRef()
-        {
-            return codonsRef;
         }
 
         /// <summary>
@@ -399,15 +500,6 @@ namespace Proteogenomics
             // Pick highest effect type
             effectType = EffectType.NONE;
             return effectTypes.Min();
-        }
-
-        /// <summary>
-        /// Highest effect type
-        /// </summary>
-        /// <returns></returns>
-        public List<EffectType> getEffectTypes()
-        {
-            return effectTypes;
         }
 
         public string getEffectTypeString(bool useFirstEffect)
@@ -457,7 +549,7 @@ namespace Proteogenomics
                 {
                     return (Exon)marker;
                 }
-                return (Exon)marker.findParent(typeof(Exon));
+                return (Exon)marker.FindParent(typeof(Exon));
             }
             return null;
         }
@@ -468,7 +560,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public FunctionalClass getFunctionalClass()
         {
-            if (variant.isSnv())
+            if (Variant.isSnv())
             {
                 if (!aaAlt.Equals(aaRef))
                 {
@@ -488,7 +580,7 @@ namespace Proteogenomics
             if (marker != null)
             {
                 if (marker is Gene) return (Gene)marker;
-                return (Gene)marker.findParent(typeof(Gene));
+                return (Gene)marker.FindParent(typeof(Gene));
             }
             return null;
         }
@@ -626,7 +718,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public Genotype getGenotype()
         {
-            return variant.Genotype;
+            return Variant.Genotype;
         }
 
         ///**
@@ -685,7 +777,7 @@ namespace Proteogenomics
             if (marker != null)
             {
                 if (marker is Intron) return (Intron)marker;
-                return (Intron)marker.findParent(typeof(Intron));
+                return (Intron)marker.FindParent(typeof(Intron));
             }
             return null;
         }
@@ -700,14 +792,14 @@ namespace Proteogenomics
             if (marker != null)
             {
                 if (marker is Transcript) return (Transcript)marker;
-                return (Transcript)marker.findParent(typeof(Transcript));
+                return (Transcript)marker.FindParent(typeof(Transcript));
             }
             return null;
         }
 
         public Variant getVariant()
         {
-            return variant;
+            return Variant;
         }
 
         public string getWarning()
@@ -930,11 +1022,11 @@ namespace Proteogenomics
             if (transcript != null)
             {
                 // Transcript level errors or warnings
-                addErrorWarningInfo(transcript.sanityCheck(variant));
+                addErrorWarningInfo(transcript.sanityCheck(Variant));
 
                 // Exon level errors or warnings
                 Exon exon = getExon();
-                if (exon != null) addErrorWarningInfo(exon.sanityCheck(variant));
+                if (exon != null) addErrorWarningInfo(exon.sanityCheck(Variant));
             }
         }
 
@@ -959,7 +1051,7 @@ namespace Proteogenomics
         public string toStr()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("Variant             : " + variant.ToString());
+            sb.Append("Variant             : " + Variant.ToString());
             sb.Append("\n\tEffectTypes     : " + effectTypes);
             sb.Append("\n\tEffectImpacts   : " + effectImpacts);
             if (marker != null) sb.Append("\n\tMarker          : " + marker.ToString());

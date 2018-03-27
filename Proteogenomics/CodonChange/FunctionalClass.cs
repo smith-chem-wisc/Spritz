@@ -5,9 +5,9 @@
     /// </summary>
     public enum FunctionalClass
     {
-        NONE
-        , SILENT
-        , MISSENSE
-        , NONSENSE
+        NONE = 0
+        , SILENT = 1
+        , MISSENSE = 2
+        , NONSENSE = 3
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace Proteogenomics
 {
@@ -80,13 +81,13 @@ namespace Proteogenomics
         private bool canAddType(Variant variant, Interval marker)
         {
             VariantEffect veff = get();
-            if (veff == null || veff.getVariant() == null)
+            if (veff == null || veff.Variant == null)
             {
                 return false;
             }
 
             // Do genotypes match?
-            var gt = veff.getVariant().Genotype;
+            var gt = veff.Variant.Genotype;
             var vgt = variant.Genotype;
             if (((vgt != null) ^ (gt != null)) // One null and one non-null?
                     || ((vgt != null) && (gt != null) && !variant.Genotype.Equals(variant.Genotype)) // Both non-null, but different?
@@ -96,7 +97,7 @@ namespace Proteogenomics
             }
 
             // Do transcripts match?
-            Transcript trMarker = (Transcript)marker.findParent(typeof(Transcript));
+            Transcript trMarker = (Transcript)marker.FindParent(typeof(Transcript));
 
             Transcript tr = veff.getTranscript();
             if (tr == null || trMarker == null) { return false; }
@@ -150,11 +151,23 @@ namespace Proteogenomics
             Effects.Sort();
         }
 
+        public string TranscriptAnnotation()
+        {
+            StringBuilder sb = new StringBuilder();
+            Variant theVariant = Effects[0].Variant;
+            sb.Append("variant:" + theVariant.ToString() + " ");
+            foreach (VariantEffect eff in Effects)
+            {
+                sb.Append("effect:" + eff.getFunctionalClass().ToString() + " " + eff.getEffectType().ToString() + " " + eff.codonsRef.ToUpper() + eff.codonNum.ToString() + eff.codonsAlt);
+            }
+            return sb.ToString();
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("Effects; " + size() + "\n");
+            sb.Append("Effects; " + size().ToString() + "\n");
 
             foreach (VariantEffect eff in Effects)
             {

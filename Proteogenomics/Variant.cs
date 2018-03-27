@@ -50,19 +50,29 @@ namespace Proteogenomics
         public Allele ReferenceAllele { get; set; }
 
         /// <summary>
-        /// The alternate allele
-        /// </summary>
-        public Allele AlternateAllele { get; set; }
-
-        /// <summary>
         /// The reference allele as a string
         /// </summary>
         public string ReferenceAlleleString { get; set; }
 
         /// <summary>
+        /// The first allele
+        /// </summary>
+        public Allele FirstAllele { get; set; }
+
+        /// <summary>
         /// The alternate allele as a string
         /// </summary>
-        public string AlternateAlleleString { get; set; }
+        public string FirstAlleleString { get; set; }
+
+        /// <summary>
+        /// The first allele
+        /// </summary>
+        public Allele SecondAllele { get; set; }
+
+        /// <summary>
+        /// The alternate allele as a string
+        /// </summary>
+        public string SecondAlleleString { get; set; }
 
         /// <summary>
         /// The genotype of this variation
@@ -82,12 +92,12 @@ namespace Proteogenomics
         /// <summary>
         /// Depth of reads across this position containing the reference allele
         /// </summary>
-        public int ReferenceAlleleDepth { get; set; }
+        public int FirstAlleleDepth { get; set; }
 
         /// <summary>
         /// Depth of reads across this position containing the alternate allele
         /// </summary>
-        public int AlternateAlleleDepth { get; set; }
+        public int SecondAlleleDepth { get; set; }
 
         /// <summary>
         /// Text annotation for protein entries
@@ -103,12 +113,12 @@ namespace Proteogenomics
 
         #region Public Constructor
 
-        public Variant(Interval parent, VariantContext variant, Genome genome, int zeroBasedAlleleIndex)
-            : this(parent, variant, genome.Chromosomes.FirstOrDefault(c => c.FriendlyName == variant.Chr), zeroBasedAlleleIndex)
+        public Variant(Interval parent, VariantContext variant, Genome genome)
+            : this(parent, variant, genome.Chromosomes.FirstOrDefault(c => c.FriendlyName == variant.Chr))
         {
         }
 
-        public Variant(Interval parent, VariantContext variant, Chromosome chromosome, int zeroBasedAlleleIndex)
+        public Variant(Interval parent, VariantContext variant, Chromosome chromosome)
             : base(parent, variant.Chr, "+", variant.Start, variant.End)
         {
             Chromosome = chromosome;
@@ -117,10 +127,12 @@ namespace Proteogenomics
             Genotype = variant.Genotypes.First(); // assumes just one sample
             GenotypeType = Genotype.Type;
             ReadDepth = Genotype.DP;
-            ReferenceAlleleDepth = Genotype.AD[0];
-            AlternateAlleleDepth = Genotype.AD[1];
-            AlternateAllele = Genotype.GetAllele(1);
-            AlternateAlleleString = variant.AlternateAlleles[zeroBasedAlleleIndex].BaseString;
+            FirstAlleleDepth = Genotype.AD == null ? -1 : Genotype.AD[0];
+            SecondAlleleDepth = Genotype.AD == null ? -1 : Genotype.AD[1];
+            FirstAllele = Genotype.GetAllele(0);
+            FirstAlleleString = FirstAllele.BaseString;
+            SecondAllele = Genotype.GetAllele(1);
+            SecondAlleleString = SecondAllele.BaseString;
             CalculateType();
 
             if (variant.Attributes.TryGetValue("ANN", out object snpEffAnnotationObj))
@@ -137,42 +149,42 @@ namespace Proteogenomics
         public void CalculateType()
         {
             // Sanity check
-            if (AlternateAlleleString.IndexOf(',') >= 0 || AlternateAlleleString.IndexOf('/') >= 0)
-                throw new Exception("Variants with multiple ALTs are not allowed (ALT: '" + AlternateAlleleString + "')");
+            if (SecondAlleleString.IndexOf(',') >= 0 || SecondAlleleString.IndexOf('/') >= 0)
+                throw new Exception("Variants with multiple ALTs are not allowed (ALT: '" + SecondAlleleString + "')");
 
             // Remove leading char (we still have some test cases using old TXT format)
             if (ReferenceAlleleString == "*") ReferenceAlleleString = "";
 
             // Possibly some old formatting with +, -, and =
-            if (AlternateAlleleString.StartsWith("+"))
+            if (SecondAlleleString.StartsWith("+"))
             {
                 // Insertion
-                AlternateAlleleString = ReferenceAlleleString + AlternateAlleleString.Substring(1);
+                SecondAlleleString = ReferenceAlleleString + SecondAlleleString.Substring(1);
             }
-            else if (AlternateAlleleString.StartsWith("-"))
+            else if (SecondAlleleString.StartsWith("-"))
             {
                 // Deletion
-                ReferenceAlleleString = AlternateAlleleString.Substring(1);
-                AlternateAlleleString = "";
+                ReferenceAlleleString = SecondAlleleString.Substring(1);
+                SecondAlleleString = "";
             }
-            else if (AlternateAlleleString.StartsWith("="))
+            else if (SecondAlleleString.StartsWith("="))
             {
                 // Mixed variant
-                AlternateAlleleString = AlternateAlleleString.Substring(1);
+                SecondAlleleString = SecondAlleleString.Substring(1);
             }
 
             //---
             // Calculate variant type
             //---
-            if (ReferenceAlleleString == AlternateAlleleString)
+            if (ReferenceAlleleString == SecondAlleleString)
                 this.VarType = VariantType.INTERVAL;
-            else if (ReferenceAlleleString.Length == 1 && AlternateAlleleString.Length == 1)
+            else if (ReferenceAlleleString.Length == 1 && SecondAlleleString.Length == 1)
                 this.VarType = VariantType.SNV;
-            else if (ReferenceAlleleString.Length == AlternateAlleleString.Length)
+            else if (ReferenceAlleleString.Length == SecondAlleleString.Length)
                 this.VarType = VariantType.MNV;
-            else if (ReferenceAlleleString.Length < AlternateAlleleString.Length && AlternateAlleleString.StartsWith(ReferenceAlleleString))
+            else if (ReferenceAlleleString.Length < SecondAlleleString.Length && SecondAlleleString.StartsWith(ReferenceAlleleString))
                 this.VarType = VariantType.INS;
-            else if (ReferenceAlleleString.Length > AlternateAlleleString.Length && ReferenceAlleleString.StartsWith(AlternateAlleleString))
+            else if (ReferenceAlleleString.Length > SecondAlleleString.Length && ReferenceAlleleString.StartsWith(SecondAlleleString))
                 this.VarType = VariantType.DEL;
             else
                 this.VarType = VariantType.MIXED;
@@ -260,7 +272,7 @@ namespace Proteogenomics
 
             // This is a length changing Variant (i.e. Insertions, deletion, or mixed change)
             // Calculate the number of bases of change in length
-            if (ReferenceAlleleString != "" || AlternateAlleleString != "") return AlternateAlleleString.Length - ReferenceAlleleString.Length;
+            if (ReferenceAlleleString != "" || SecondAlleleString != "") return SecondAlleleString.Length - ReferenceAlleleString.Length;
 
             // Default to traditional apporach for imprecise and structural variants
             return OneBasedEnd - OneBasedStart;
@@ -272,12 +284,12 @@ namespace Proteogenomics
             {
                 return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, ReferenceAlleleString).GetReverseComplementedSequence()) : ReferenceAlleleString; // Deletion have empty 'alt'
             }
-            return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, AlternateAlleleString).GetReverseComplementedSequence()) : AlternateAlleleString;
+            return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, SecondAlleleString).GetReverseComplementedSequence()) : SecondAlleleString;
         }
 
         public string NetChange(Interval interval)
         {
-            string netChange = AlternateAlleleString;
+            string netChange = SecondAlleleString;
             if (isDel()) netChange = ReferenceAlleleString; // In deletions 'alt' is empty
 
             long removeBefore = interval.OneBasedStart - OneBasedStart;
@@ -298,6 +310,37 @@ namespace Proteogenomics
             netChange = netChange.Substring((int)removeBefore, netChange.Length - (int)removeAfter);
 
             return netChange;
+        }
+
+        public override int CompareTo(Interval i2)
+        {
+            int comp = base.CompareTo(i2);
+            if (comp != 0) { return comp; }
+
+            Variant v2 = i2 as Variant;
+            if (v2 == null) { return GetType().Name.CompareTo(i2.GetType().Name); }
+
+            comp = ReferenceAlleleString.CompareTo(v2.ReferenceAlleleString);
+            if (comp != 0) { return comp; }
+
+            comp = SecondAlleleString.CompareTo(v2.SecondAlleleString);
+            if (comp != 0) { return comp; }
+
+            return 0;
+        }
+
+        public override string ToString()
+        {
+            if ((ReferenceAlleleString == null || ReferenceAlleleString == "") && (SecondAlleleString == null || SecondAlleleString == ""))
+            {
+                return ChromosomeID + ":" + OneBasedStart.ToString() + "-" + OneBasedEnd.ToString() + "[" + VarType.ToString() + "]";
+            }
+
+            return ChromosomeID //
+                    + ":" + OneBasedStart.ToString() //
+                    + "_" + ReferenceAlleleString //
+                    + "/" + SecondAlleleString
+                    + "_" + Genotype.Type.ToString();
         }
 
         #endregion Public Methods

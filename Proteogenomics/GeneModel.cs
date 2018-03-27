@@ -157,7 +157,7 @@ namespace Proteogenomics
                 if (hasExonId)
                 {
                     ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(currentTranscript, exon_dna, oneBasedStart, oneBasedEnd, chrom.ChromosomeID, strand);
+                    Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(), oneBasedStart, oneBasedEnd, chrom.ChromosomeID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (hasProteinId)
@@ -227,7 +227,7 @@ namespace Proteogenomics
                 if (feature.Key == "exon")
                 {
                     ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(currentTranscript, exon_dna, oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand);
+                    Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(), oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
@@ -292,14 +292,14 @@ namespace Proteogenomics
                 Gene previousNegativeStrandGene = null;
                 foreach (Gene gene in it.Intervals.OfType<Gene>().OrderBy(g => g.OneBasedStart))
                 {
-                    Gene previous = gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene;
-                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.Chromosome, gene.ChromosomeID, gene.Strand, (gene.Strand == "+" ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
+                    Gene previous = gene.IsStrandPlus() ? previousPositiveStrandGene : previousNegativeStrandGene;
+                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.Chromosome, gene.ChromosomeID, gene.Strand, (gene.IsStrandPlus() ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
 
-                    if (gene.Strand == "+")
+                    if (gene.IsStrandPlus())
                     {
                         previousPositiveStrandGene = gene;
                     }
-                    if (gene.Strand == "-")
+                    if (gene.IsStrandMinus())
                     {
                         previousNegativeStrandGene = gene;
                     }
@@ -351,9 +351,9 @@ namespace Proteogenomics
             return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
         }
 
-        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, bool translateWithVariants, int minPeptideLength = 7)
         {
-            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, translateWithVariants, minPeptideLength)).ToList();
+            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, selenocysteineContaining, translateWithVariants, minPeptideLength)).ToList();
         }
 
         #endregion Translation Methods

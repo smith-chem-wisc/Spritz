@@ -120,10 +120,8 @@ namespace Proteogenomics
 
         #endregion Public Constructors
 
-        #region Translate and Replace with SnpEff Annotated Variations Method
-
         /// <summary>
-        /// Apply this variant and adjust the start and stop indices
+        /// Apply the second (alternate) allele of this variant and adjust the start and stop indices
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
@@ -156,6 +154,20 @@ namespace Proteogenomics
         }
 
         /// <summary>
+        /// Applies the first allele, for when it doesn't match the reference
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <returns></returns>
+        private Interval ApplyFirstAllele(Variant variant)
+        {
+            Variant v = new Variant(variant.Parent, variant.VariantContext, variant.Chromosome);
+            v.SecondAllele = v.FirstAllele;
+            v.SecondAlleleDepth = v.FirstAlleleDepth;
+            v.SecondAlleleString = v.FirstAlleleString;
+            return ApplyVariant(v);
+        }
+
+        /// <summary>
         /// Takes in list of variants to combinitorially apply to this transcript
         /// </summary>
         /// <param name="variantOrderedDescStart"></param>
@@ -166,25 +178,35 @@ namespace Proteogenomics
             for (int i = 0; i < variantOrderedDescStart.Count; i++)
             {
                 Variant v = variantOrderedDescStart[i];
-                VariantEffects variantEffect = AnnotateVariant(v);
-                if (variantEffect == null)
+                VariantEffects variantEffects = AnnotateVariant(v);
+                bool missenseOrNonsense = variantEffects.Effects.Any(eff => eff.getFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
+                if (variantEffects == null)
                 {
                     continue;
                 }
-                Transcript newTranscript = ApplyVariant(v) as Transcript;
-                newTranscript.VariantAnnotations.Add(variantEffect.ToString());
-                result.Add(newTranscript);
+                Transcript firstAllele = this;
+                Transcript secondAllele = ApplyVariant(v) as Transcript;
+                secondAllele.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+                result.Add(secondAllele);
                 if (variantOrderedDescStart.Count - i > 1)
                 {
-                    result.AddRange(newTranscript.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
+                    // add the combinations of the new transcript with the remaining variants (recurse)
+                    result.AddRange(secondAllele.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
                 }
-                if (v.GenotypeType == GenotypeType.HETEROZYGOUS)
+                if (v.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense)
                 {
-                    result.Add(this);
+                    // if the first allele is different than the reference (possible error in reference sequence), then make that change
+                    if (v.ReferenceAlleleString != v.FirstAlleleString)
+                    {
+                        firstAllele = ApplyFirstAllele(v) as Transcript;
+                    }
+                    // if heterozygous and a coding change, add the first allele, too
+                    result.Add(firstAllele);
                 }
-                if (v.GenotypeType == GenotypeType.HETEROZYGOUS && variantOrderedDescStart.Count - i > 1)
+                if (v.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense && variantOrderedDescStart.Count - i > 1)
                 {
-                    result.AddRange(this.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
+                    // if heterozygous and a coding change, add the first allele with combinations of the remaining variants (recurse)
+                    result.AddRange(firstAllele.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
                 }
             }
             return result;
@@ -196,30 +218,10 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         public VariantEffects AnnotateVariant(Variant variant)
         {
-            // Leaving off here for 180319
-
-            // >> Figure out the codon change from the information in this transcript (port from SnpEff CodonChange)
-            // >> Figure out the VariantEffect for the change, and note the high/medium/low/modifier status of the change
-            // >> Translate the codons like I was doing in ProteinAnnotation, making that byte array to stick into translate. There are places in CodonChange and VariantEffect that need this
-
-            //return "variant:"; // frameshift or something SPACE notations about what changes were made to the sequence
-            //      This is challenging because annotating transcripts is different than annotating variants
-            //      Make this more transcript-centric, perhaps. Just one codon-change per transcrpit per variant.
-
             // Then in translation, make a simple method to look up the bad accessions
             //      (could also try to assess this from the sequence itself using the warnings and errors)
             //      (namely, does it have stop codons in it, does it have a start codon)
             //      (but will have to do this anyway to find the selenocysteine sequences, so might as well just keep that code)
-            // Put together coding sequences based on the UTRs, now that they're being fixed in the ApplyVariants method
-            // Translate the thing
-            //      Keep the accessions to look up and increment accessions to make them unique during translation
-            //      Replace the selenocysteine sites like before
-
-            // Delete all the ProteinAnnotation code and Transcript and TranscriptPossiblyWithVariants code that isn't being used
-            //     Don't need to prepare for translation anymore
-            //     Don't need to step through translation anymore (but keep the formatting of variants from ProteinAnnotation)
-            //  - space delimited with variant annotations: "variant:type originalSequence###alteredSequence chr:oneBasedStart"
-            //     Don't need to TranslateFromSnpEff
 
             // Test
             //   1. UTR ranges get change
@@ -273,7 +275,7 @@ namespace Proteogenomics
             {
                 if (ex.Intersects(variant))
                 {
-                    exonAnnotated |= ex.variantEffect(variant, variantEffects);
+                    exonAnnotated |= ex.VariantEffect(variant, variantEffects);
                 }
             }
 
@@ -286,7 +288,7 @@ namespace Proteogenomics
                 if (utr.Intersects(variant))
                 {
                     // Calculate the effect
-                    utr.variantEffect(variant, variantEffects);
+                    utr.VariantEffect(variant, variantEffects);
                     included |= utr.Includes(variant); // Is this variant fully included in the UTR?
                 }
             }
@@ -302,7 +304,7 @@ namespace Proteogenomics
             {
                 if (intron.Intersects(variant))
                 {
-                    intron.variantEffect(variant, variantEffects);
+                    intron.VariantEffect(variant, variantEffects);
                     included |= intron.Includes(variant); // Is this variant fully included in this intron?
                 }
             }
@@ -327,13 +329,13 @@ namespace Proteogenomics
         {
             VariantEffect ve = new VariantEffect(variant);
             ve.addErrorWarningInfo(sanityCheck(variant));
-            Exon x = findExon(variant);
+            Exon x = FindExon(variant);
             if (x != null)
             {
                 ve.addErrorWarningInfo(x.sanityCheck(variant));
             }
             ve.setEffectType(type);
-            ve.setEffectImpact(VariantEffect.EffectDictionary[type]);
+            ve.setEffectImpact(Proteogenomics.VariantEffect.EffectDictionary[type]);
             return ve;
         }
 
@@ -342,10 +344,10 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        public ISequence baseAt(int pos)
+        public ISequence BaseAt(int pos)
         {
-            calcCdsStartEnd();
-            Exon ex = findExon(pos);
+            CalcCdsStartEnd();
+            Exon ex = FindExon(pos);
             if (ex == null) return null;
             return ex.basesAt(pos - ex.OneBasedStart, 1);
         }
@@ -357,7 +359,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        public long baseNumber2MRnaPos(long pos)
+        public long BaseNumber2MRnaPos(long pos)
         {
             long count = 0;
             foreach (Exon eint in ExonsSortedStrand)
@@ -366,7 +368,7 @@ namespace Proteogenomics
                 {
                     // Intersect this exon? Calculate the number of bases from the beginning
                     long dist = 0;
-                    if (Strand == "+") dist = pos - eint.OneBasedStart;
+                    if (IsStrandPlus()) dist = pos - eint.OneBasedStart;
                     else dist = eint.OneBasedEnd - pos;
 
                     // Sanity check
@@ -380,17 +382,18 @@ namespace Proteogenomics
             return -1;
         }
 
-        /**
-         * Calculate base number in a CDS where 'pos' maps
-         *
-         * @param usePrevBaseIntron: When 'pos' is intronic this method returns:
-         * 			- if( usePrevBaseIntron== false)  => The first base in the exon after 'pos' (i.e. first coding base after intron)
-         * 			- if( usePrevBaseIntron== true)   => The last base in the  exon before 'pos'  (i.e. last coding base before intron)
-         *
-         * @returns Base number or '-1' if it does not map to a coding base
-         */
-
-        public long baseNumberCds(long pos, bool usePrevBaseIntron)
+        /// <summary>
+        /// Calculate base number in a CDS where 'pos' maps
+        ///
+        /// usePrevBaseIntron: When 'pos' is intronic this method returns:
+        /// 			- if(usePrevBaseIntron== false)  => The first base in the exon after 'pos' (i.e.first coding base after intron)
+        /// 			- if(usePrevBaseIntron== true)   => The last base in the exon before 'pos'  (i.e.last coding base before intron)
+        ///
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="usePrevBaseIntron"></param>
+        /// <returns>Base number or '-1' if it does not map to a coding base</returns>
+        public long BaseNumberCds(long pos, bool usePrevBaseIntron)
         {
             // Doesn't hit this transcript?
             if (!Intersects(pos)) return -1;
@@ -399,7 +402,7 @@ namespace Proteogenomics
             if (UTRs.Any(utr => utr.Intersects(pos))) return -1;
 
             // Calculate cdsStart and cdsEnd (if not already done)
-            calcCdsStartEnd();
+            CalcCdsStartEnd();
 
             // All exons..
             long firstCdsBaseInExon = 0; // Where the exon maps to the CDS (i.e. which CDS base number does the first base in this exon maps to).
@@ -408,7 +411,7 @@ namespace Proteogenomics
                 if (eint.Intersects(pos))
                 {
                     long cdsBaseInExon; // cdsBaseInExon: base number relative to the beginning of the coding part of this exon (i.e. excluding 5'UTRs)
-                    if (isStrandPlus()) cdsBaseInExon = pos - Math.Max(eint.OneBasedStart, cdsStart);
+                    if (IsStrandPlus()) cdsBaseInExon = pos - Math.Max(eint.OneBasedStart, cdsStart);
                     else cdsBaseInExon = Math.Min(eint.OneBasedEnd, cdsStart) - pos;
 
                     cdsBaseInExon = Math.Max(0, cdsBaseInExon);
@@ -418,12 +421,12 @@ namespace Proteogenomics
                 else
                 {
                     // Before exon begins?
-                    if ((isStrandPlus() && (pos < eint.OneBasedStart)) // Before exon begins (positive strand)?
-                            || (isStrandMinus() && (pos > eint.OneBasedEnd))) // Before exon begins (negative strand)?
+                    if ((IsStrandPlus() && (pos < eint.OneBasedStart)) // Before exon begins (positive strand)?
+                            || (IsStrandMinus() && (pos > eint.OneBasedEnd))) // Before exon begins (negative strand)?
                         return firstCdsBaseInExon - (usePrevBaseIntron ? 1 : 0);
                 }
 
-                if (isStrandPlus()) firstCdsBaseInExon += Math.Max(0, eint.OneBasedEnd - Math.Max(eint.OneBasedStart, cdsStart) + 1);
+                if (IsStrandPlus()) firstCdsBaseInExon += Math.Max(0, eint.OneBasedEnd - Math.Max(eint.OneBasedStart, cdsStart) + 1);
                 else firstCdsBaseInExon += Math.Max(0, Math.Min(cdsStart, eint.OneBasedEnd) - eint.OneBasedStart + 1);
             }
 
@@ -435,7 +438,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="cdsBaseNumber"></param>
         /// <returns></returns>
-        public string baseNumberCds2Codon(int cdsBaseNumber)
+        public string BaseNumberCds2Codon(int cdsBaseNumber)
         {
             int codonNum = cdsBaseNumber / CodonChange.CODON_SIZE;
             int min = codonNum * CodonChange.CODON_SIZE;
@@ -451,11 +454,11 @@ namespace Proteogenomics
         /// Calculate chromosome position as function of CDS number
         /// </summary>
         /// <returns>An array mapping 'cds2pos[cdsBaseNumber] = chromosmalPos'</returns>
-        public long[] baseNumberCds2Pos()
+        public long[] BaseNumberCds2Pos()
         {
             if (cds2pos != null) return cds2pos;
 
-            calcCdsStartEnd();
+            CalcCdsStartEnd();
 
             cds2pos = new long[RetrieveCodingSequence().Count];
             for (int i = 0; i < cds2pos.Length; i++)
@@ -470,8 +473,8 @@ namespace Proteogenomics
             int cdsBaseNum = 0;
             foreach (Exon exon in ExonsSortedStrand)
             {
-                long min = isStrandPlus() ? exon.OneBasedStart : exon.OneBasedEnd;
-                int step = isStrandPlus() ? 1 : -1;
+                long min = IsStrandPlus() ? exon.OneBasedStart : exon.OneBasedEnd;
+                int step = IsStrandPlus() ? 1 : -1;
                 for (long pos = min; exon.Intersects(pos) && cdsBaseNum < cds2pos.Length; pos += step)
                 {
                     if ((cdsMin <= pos) && (pos <= cdsMax))
@@ -487,7 +490,7 @@ namespace Proteogenomics
         /// <summary>
         /// Calculate CDS start and CDS end
         /// </summary>
-        private void calcCdsStartEnd()
+        private void CalcCdsStartEnd()
         {
             // Do we need to calculate these values?
             // Note: In circular genomes, one of cdsStart / cdsEnd might be less
@@ -499,12 +502,12 @@ namespace Proteogenomics
                 if (UTRs.Count == 0)
                 {
                     // No UTRs => Use all exons
-                    cdsStart = (isStrandPlus() ? OneBasedEnd : OneBasedStart); // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
-                    cdsEnd = (isStrandPlus() ? OneBasedStart : OneBasedEnd); // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
+                    cdsStart = (IsStrandPlus() ? OneBasedEnd : OneBasedStart); // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
+                    cdsEnd = (IsStrandPlus() ? OneBasedStart : OneBasedEnd); // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
 
                     foreach (Exon ex in Exons)
                     {
-                        if (isStrandPlus())
+                        if (IsStrandPlus())
                         {
                             cdsStart = Math.Min(cdsStart, ex.OneBasedStart);
                             cdsEnd = Math.Max(cdsEnd, ex.OneBasedEnd);
@@ -519,34 +522,34 @@ namespace Proteogenomics
                 else
                 {
                     // We have to take into account UTRs
-                    cdsStart = (isStrandPlus() ? OneBasedStart : OneBasedEnd); // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
-                    cdsEnd = (isStrandPlus() ? OneBasedEnd : OneBasedStart); // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
+                    cdsStart = (IsStrandPlus() ? OneBasedStart : OneBasedEnd); // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
+                    cdsEnd = (IsStrandPlus() ? OneBasedEnd : OneBasedStart); // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
                     long cdsStartNotExon = cdsStart;
 
                     foreach (UTR utr in UTRs)
                     {
                         if (utr is UTR5Prime)
                         {
-                            if (isStrandPlus()) cdsStart = Math.Max(cdsStart, utr.OneBasedEnd + 1);
+                            if (IsStrandPlus()) cdsStart = Math.Max(cdsStart, utr.OneBasedEnd + 1);
                             else cdsStart = Math.Min(cdsStart, utr.OneBasedStart - 1);
                         }
                         else if (utr is UTR3Prime)
                         {
-                            if (isStrandPlus()) cdsEnd = Math.Min(cdsEnd, utr.OneBasedStart - 1);
+                            if (IsStrandPlus()) cdsEnd = Math.Min(cdsEnd, utr.OneBasedStart - 1);
                             else cdsEnd = Math.Max(cdsEnd, utr.OneBasedEnd + 1);
                         }
                     }
 
                     // Make sure cdsStart and cdsEnd lie within an exon
-                    if (isStrandPlus())
+                    if (IsStrandPlus())
                     {
-                        cdsStart = firstExonPositionAfter(cdsStart);
-                        cdsEnd = lastExonPositionBefore(cdsEnd);
+                        cdsStart = FirstExonPositionAfter(cdsStart);
+                        cdsEnd = LastExonPositionBefore(cdsEnd);
                     }
                     else
                     {
-                        cdsStart = lastExonPositionBefore(cdsStart);
-                        cdsEnd = firstExonPositionAfter(cdsEnd);
+                        cdsStart = LastExonPositionBefore(cdsStart);
+                        cdsEnd = FirstExonPositionAfter(cdsEnd);
                     }
 
                     // We were not able to find cdsStart & cdsEnd within exon limits.
@@ -561,11 +564,11 @@ namespace Proteogenomics
         /// Create a marker of the coding region in this transcript
         /// </summary>
         /// <returns></returns>
-        public Interval cdsMarker()
+        public Interval CdsMarker()
         {
             Interval interval = new Interval(this);
-            interval.OneBasedStart = isStrandPlus() ? cdsStart : cdsEnd;
-            interval.OneBasedEnd = isStrandPlus() ? cdsEnd : cdsStart;
+            interval.OneBasedStart = IsStrandPlus() ? cdsStart : cdsEnd;
+            interval.OneBasedEnd = IsStrandPlus() ? cdsEnd : cdsStart;
             return interval;
         }
 
@@ -574,7 +577,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="exon"></param>
         /// <returns></returns>
-        public CDS findCds(Exon exon)
+        public CDS FindCds(Exon exon)
         {
             return CodingDomainSequences.FirstOrDefault(c => exon.Includes(c));
         }
@@ -584,7 +587,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        public Exon findExon(int pos)
+        public Exon FindExon(int pos)
         {
             return Exons.FirstOrDefault(x => x.Includes(pos));
         }
@@ -594,7 +597,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="marker"></param>
         /// <returns></returns>
-        public Exon findExon(Interval marker)
+        public Exon FindExon(Interval marker)
         {
             return Exons.FirstOrDefault(x => x.Intersects(marker));
         }
@@ -604,7 +607,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        private long firstExonPositionAfter(long pos)
+        private long FirstExonPositionAfter(long pos)
         {
             foreach (Exon ex in Exons.OrderBy(x => x.OneBasedStart))
             {
@@ -621,7 +624,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        private long lastExonPositionBefore(long pos)
+        private long LastExonPositionBefore(long pos)
         {
             long last = -1;
             foreach (Exon ex in Exons.OrderBy(x => x.OneBasedStart))
@@ -649,112 +652,6 @@ namespace Proteogenomics
             }
             return pos;
         }
-
-        /// <summary>
-        /// Stores accessions for checking that they are unique.
-        /// </summary>
-        private static HashSet<string> accessions = new HashSet<string>();
-
-        /// <summary>
-        /// Translates a transcript into full-length variant protein sequences using SnpEff annotations to modify protein sequences.
-        /// </summary>
-        /// <param name="translateCodingDomains"></param>
-        /// <param name="includeVariants"></param>
-        /// <param name="badProteinAccessions"></param>
-        /// <param name="selenocysteineContaining"></param>
-        /// <returns></returns>
-        public IEnumerable<Protein> TranslateFromSnpEffAnnotatedSNVs(bool translateCodingDomains, bool includeVariants, string reference, Dictionary<string, string> proteinSequences, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
-        {
-            badProteinAccessions = badProteinAccessions != null ? badProteinAccessions : new HashSet<string>();
-            selenocysteineContaining = selenocysteineContaining != null ? selenocysteineContaining : new Dictionary<string, string>();
-
-            // don't process proteins that have CDS without discrete sequence or without actual start or stop, i.e. containing 'X' or '*'
-            proteinSequences.TryGetValue(ProteinID, out string proteinSequence);
-            if (proteinSequence == null || badProteinAccessions.Contains(ProteinID))
-            {
-                return new List<Protein>();
-            }
-
-            // todo: allow depth filter here using "DP" column, especially for indels
-            List<SnpEffAnnotation> synonymous = new List<SnpEffAnnotation>();
-            List<SnpEffAnnotation> homozygousMissense = new List<SnpEffAnnotation>();
-            List<SnpEffAnnotation> heterozygousMissense = new List<SnpEffAnnotation>();
-            List<SnpEffAnnotation> other = new List<SnpEffAnnotation>();
-            string id = reference.StartsWith("GRCh38") ? ID + "." + Version : ID;
-            foreach (SnpEffAnnotation a in SnpEffVariants.Where(annotation => annotation.FeatureID == id))
-            {
-                if (a.Synonymous)
-                {
-                    synonymous.Add(a);
-                }
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HOMOZYGOUS_ALT)
-                {
-                    homozygousMissense.Add(a);
-                }
-                else if (a.Missense && a.Variant.Variants.FirstOrDefault(v => v.AlternateAlleleString == a.Allele).GenotypeType == GenotypeType.HETEROZYGOUS)
-                {
-                    heterozygousMissense.Add(a);
-                }
-                else
-                {
-                    other.Add(a);
-                }
-            }
-
-            int maxCombosPerTranscript = 32;
-            List<List<SnpEffAnnotation>> missenseCombinations = new List<List<SnpEffAnnotation>> { new List<SnpEffAnnotation>(homozygousMissense) };
-            missenseCombinations.AddRange(
-                Enumerable.Range(1, heterozygousMissense.Count).SelectMany(k =>
-                    ProteogenomicsUtility.Combinations(heterozygousMissense, k)
-                        .Select(heteroAlleles => new List<SnpEffAnnotation>(homozygousMissense).Concat(heteroAlleles).ToList()))
-                    .ToList());
-
-            // fake phasing (of variants within 100 bp of each other) to eliminate combinitorial explosion
-            // this section eliminates instances where variants that are very close to each other are emitted as separate haplotypes
-            int fakePhasingRange = 101;
-            int range = fakePhasingRange;
-            List<List<SnpEffAnnotation>> fakePhased = null;
-            while (fakePhased == null || fakePhased.Count > Math.Max(2, maxCombosPerTranscript))
-            {
-                fakePhased = new List<List<SnpEffAnnotation>>();
-                List<List<SnpEffAnnotation>> phasedLast = missenseCombinations.OrderBy(x => x.Count).ToList();
-                List<long> variantSites = phasedLast.Last().Select(v => v.Variant.OneBasedStart).ToList();
-                foreach (List<SnpEffAnnotation> hap in phasedLast)
-                {
-                    List<long> hapSites = hap.Select(v => v.Variant.OneBasedStart).ToList();
-                    bool containsVariantsToFakePhase = variantSites.Any(vs => !hapSites.Contains(vs) && hap.Any(v => Math.Abs(v.Variant.OneBasedStart - vs) < range));
-                    if (!containsVariantsToFakePhase)
-                    {
-                        fakePhased.Add(hap);
-                    }
-                }
-                missenseCombinations = fakePhased;
-                range *= 2;
-            }
-
-            List<Protein> proteins = new List<Protein>();
-            foreach (List<SnpEffAnnotation> annotations in missenseCombinations)
-            {
-                string variantAminoAcidSequence = proteinSequence;
-                foreach (SnpEffAnnotation a in annotations)
-                {
-                    variantAminoAcidSequence = variantAminoAcidSequence.Substring(0, a.AminoAcidLocation - 1) + a.AlternateAminoAcid + variantAminoAcidSequence.Substring(a.AminoAcidLocation, variantAminoAcidSequence.Length - a.AminoAcidLocation);
-                }
-                List<SnpEffAnnotation> combinedAnnotations = synonymous.Concat(annotations).ToList();
-                string proteinSnpEffAnnotation = "{" + String.Join(" ", combinedAnnotations.Select(a => "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";" + a.Annotation)) + "} OS=Homo sapiens GN=" + Gene.ID;
-                List<SequenceVariation> sequenceVariations = combinedAnnotations.Select(a => new SequenceVariation(a.Variant.OneBasedStart, a.Variant.ReferenceAlleleString, a.Allele, "AF=" + a.Variant.Variants.FirstOrDefault(v => v.AlternateAllele == a.Allele).AlleleFrequency.ToString("N2") + ";ANN=" + a.Annotation)).ToList();
-                string accession = ProteinID;
-                int arbitraryNumber = 1;
-                while (accessions.Contains(accession))
-                {
-                    accession = ProteinID + "_v" + arbitraryNumber++.ToString();
-                }
-                proteins.Add(new Protein(variantAminoAcidSequence.Split('*')[0], accession, null, null, null, null, proteinSnpEffAnnotation, false, false, null, sequenceVariations));
-            }
-            return proteins;
-        }
-
-        #endregion Translate and Replace with SnpEff Annotated Variations Method
 
         #region Translate from Variant Nucleotide Sequences Methods
 
@@ -787,7 +684,7 @@ namespace Proteogenomics
             foreach (Exon exon in exons)
             {
                 missingSequence |= exon.Sequence != null; // If there is no sequence, we are in trouble
-                sequence.Append(Strand == "+" ? exon.Sequence : exon.Sequence.GetReverseComplementedSequence());
+                sequence.Append(IsStrandPlus() ? exon.Sequence : exon.Sequence.GetReverseComplementedSequence());
                 alphabet = alphabet == null || alphabet.HasAmbiguity && !exon.Sequence.Alphabet.HasAmbiguity ? // keep the alphabet with the most characters
                     alphabet :
                     exon.Sequence.Alphabet;
@@ -830,23 +727,46 @@ namespace Proteogenomics
         {
             return ExonsSortedStrand != null ?
                 ExonsSortedStrand :
-                Strand == "+" ?
+                IsStrandPlus() ?
                     Exons.OrderBy(x => x.OneBasedStart).ToList() :
                     Exons.OrderByDescending(x => x.OneBasedEnd).ToList();
         }
 
-        public IEnumerable<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public ISequence SplicedRNA()
         {
-            List<TranscriptPossiblyWithVariants> transcriptHaplotypes = CombineExonSequences(translateCodingDomains, includeVariants, out bool successfulCombination).Where(t => t.OkayToTranslate()).ToList();
-            if (!successfulCombination)
-            {
-                combinatoricFailures.Add(ID);
-                Console.WriteLine("combining exons failed " + combinatoricFailures.Count.ToString());
-            }
-            return ProteinAnnotation.OneFrameTranslationWithAnnotation(transcriptHaplotypes, incompleteTranscriptAccessions, selenocysteineContaining);
+            bool ambiguity = ExonsSortedStrand.Any(x => x.Sequence.Alphabet.HasAmbiguity);
+            return new Sequence(ambiguity ? Alphabets.AmbiguousDNA : Alphabets.DNA, String.Join("", ExonsSortedStrand.Select(x => SequenceExtensions.ConvertToString(x.Sequence))));
         }
 
-        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts, int indexBinSize, int minLength, bool includeVariants)
+        public Protein Protein()
+        {
+            return Protein(null);
+        }
+
+        public Protein Protein(Dictionary<string, string> selenocysteineContaining)
+        {
+            return Protein(RetrieveCodingSequence(), selenocysteineContaining);
+        }
+
+        private Protein Protein(ISequence dnaSeq, Dictionary<string, string> selenocysteineContaining)
+        {
+            selenocysteineContaining = selenocysteineContaining != null ? selenocysteineContaining : new Dictionary<string, string>();
+            bool hasSelenocysteine = selenocysteineContaining.TryGetValue(ProteinID, out string selenocysteineContainingSeq);
+            HashSet<int> uIndices = !hasSelenocysteine ? new HashSet<int>() : new HashSet<int>(Enumerable.Range(0, selenocysteineContainingSeq.Length).Where(i => selenocysteineContainingSeq[i] == 'U'));
+
+            ISequence proteinSequence = Translation.OneFrameTranslation(dnaSeq, Gene.Chromosome.Mitochondrial);
+            string proteinBases = !hasSelenocysteine ?
+                SequenceExtensions.ConvertToString(proteinSequence) :
+                // replace amber stop codons with selenocysteines where appropriate
+                new string(Enumerable.Range(0, (int)proteinSequence.Count).Select(i => uIndices.Contains(i) && proteinSequence[i] == Alphabets.Protein.Ter ? (char)Alphabets.Protein.U : (char)proteinSequence[i]).ToArray());
+
+            string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
+            string annotations = String.Join(" ", VariantAnnotations);
+            string accession = Translation.GetSafeProteinAccession(ProteinID);
+            return new Protein(proteinSequenceString, accession, "Homo sapiens", null, null, null, annotations, annotations);
+        }
+
+        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts, Dictionary<string, string> selenocysteineContaining, int indexBinSize, int minLength, bool includeVariants)
         {
             List<CDS> annotatedStarts = new List<CDS>();
             for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
@@ -854,42 +774,37 @@ namespace Proteogenomics
                 if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromosomeID, Strand, i * indexBinSize), out List<CDS> cds))
                 {
                     annotatedStarts.AddRange(cds.Where(x =>
-                        Exons.Any(xx => xx.Includes(Strand == "+" ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
-                            && xx.Includes(Strand == "+" ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
+                        Exons.Any(xx => xx.Includes(IsStrandPlus() ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
+                            && xx.Includes(IsStrandPlus() ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
                 }
             }
 
             char terminatingCharacter = ProteinAlphabet.Instance.GetFriendlyName(Alphabets.Protein.Ter)[0];
             if (annotatedStarts.Count > 0)
             {
-                // gets the first annotated start that produces
-                Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
                 foreach (CDS annotatedStart in annotatedStarts)
                 {
-                    long startCodonStart = Strand == "+" ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
-                    List<TranscriptPossiblyWithVariants> transcripts = CombineExonSequences(false, includeVariants, out bool success).Where(t => t.OkayToTranslate()).ToList();
-                    foreach (TranscriptPossiblyWithVariants transcript in transcripts)
+                    long startCodonStart = IsStrandPlus() ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
+                    ISequence cds;
+                    if (IsStrandPlus())
                     {
-                        if (Strand == "+")
-                        {
-                            long exonLengthBeforeCodingStart = Exons.Where(x => x.OneBasedEnd < annotatedStart.OneBasedStart).Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
-                            long exonZeroBasedCodingStart = startCodonStart - Exons.FirstOrDefault(x => x.Includes(annotatedStart.OneBasedStart)).OneBasedStart;
-                            transcript.ZeroBasedCodingStart = exonLengthBeforeCodingStart + exonZeroBasedCodingStart;
-                            long lengthAfterCodingStart = transcript.VariantTranscriptSequence.Count - transcript.ZeroBasedCodingStart;
-                            transcript.VariantTranscriptSequence = transcript.VariantTranscriptSequence.GetSubSequence(transcript.ZeroBasedCodingStart, lengthAfterCodingStart);
-                        }
-                        else
-                        {
-                            long length = Exons.Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
-                            long chop = Exons.Where(x => x.OneBasedEnd >= annotatedStart.OneBasedEnd).Sum(x => annotatedStart.OneBasedEnd < x.OneBasedStart ? x.OneBasedEnd - x.OneBasedStart + 1 : x.OneBasedEnd - annotatedStart.OneBasedEnd);
-                            long lengthAfterCodingStart = length - chop;
-                            transcript.VariantTranscriptSequence = transcript.VariantTranscriptSequence.GetSubSequence(0, lengthAfterCodingStart);
-                        }
-                        Protein p = ProteinAnnotation.OneFrameTranslationWithAnnotation(transcript);
-                        if (p.BaseSequence.Length >= minLength && ProteinAnnotation.AddProteinIfLessComplex(proteinDictionary, p))
-                        {
-                            yield return p;
-                        }
+                        long exonLengthBeforeCodingStart = Exons.Where(x => x.OneBasedEnd < annotatedStart.OneBasedStart).Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
+                        long exonZeroBasedCodingStart = startCodonStart - Exons.FirstOrDefault(x => x.Includes(annotatedStart.OneBasedStart)).OneBasedStart;
+                        long zeroBasedCodingStart = exonLengthBeforeCodingStart + exonZeroBasedCodingStart;
+                        long lengthAfterCodingStart = Exons.Sum(x => x.Length()) - zeroBasedCodingStart;
+                        cds = SplicedRNA().GetSubSequence(zeroBasedCodingStart, lengthAfterCodingStart);
+                    }
+                    else
+                    {
+                        long length = Exons.Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
+                        long chop = Exons.Where(x => x.OneBasedEnd >= annotatedStart.OneBasedEnd).Sum(x => annotatedStart.OneBasedEnd < x.OneBasedStart ? x.OneBasedEnd - x.OneBasedStart + 1 : x.OneBasedEnd - annotatedStart.OneBasedEnd);
+                        long lengthAfterCodingStart = length - chop;
+                        cds = SplicedRNA().GetReversedSequence().GetSubSequence(0, lengthAfterCodingStart).GetReversedSequence();
+                    }
+                    Protein p = Protein(cds, selenocysteineContaining);
+                    if (p.BaseSequence.Length >= minLength)
+                    {
+                        yield return p;
                     }
                 }
             }
@@ -921,12 +836,12 @@ namespace Proteogenomics
                 if (x.OneBasedStart < codingLeft)
                 {
                     long end = x.OneBasedEnd < codingLeft ? x.OneBasedEnd : codingLeft;
-                    UTRs.Add(Strand == "+" ? new UTR5Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR);
+                    UTRs.Add(IsStrandPlus() ? new UTR5Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR);
                 }
                 if (x.OneBasedEnd > CodingDomainSequences.Last().OneBasedEnd)
                 {
                     long start = x.OneBasedStart < codingRight ? x.OneBasedStart : codingRight;
-                    UTRs.Add(Strand == "+" ? new UTR3Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR);
+                    UTRs.Add(IsStrandPlus() ? new UTR3Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR);
                 }
             }
             return UTRs;
@@ -947,7 +862,7 @@ namespace Proteogenomics
             long afterStart = Math.Min(OneBasedEnd + 1, chrMax);
             long afterEnd = Math.Min(OneBasedEnd + DEFAULT_UP_DOWN_LENGTH, chrMax);
 
-            if (Strand == "+")
+            if (IsStrandPlus())
             {
                 if (beforeStart < beforeEnd) Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd);
                 if (afterStart < afterEnd) Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd);
@@ -1036,7 +951,7 @@ namespace Proteogenomics
             //if (!Config.get().isTreatAllAsProteinCoding() && !isProteinCoding()) return false;
 
             // Get protein sequence
-            string prot = protein();
+            string prot = Protein().BaseSequence;
             if (prot == null) return false;
 
             // Any STOP codon before the end?

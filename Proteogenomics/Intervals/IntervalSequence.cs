@@ -82,7 +82,7 @@ namespace Proteogenomics
         protected void ApplyDel(Variant variant, IntervalSequence markerSeq)
         {
             // Get sequence in positive strand direction
-            ISequence seq = Strand == "+" ? Sequence : Sequence.GetReverseComplementedSequence();
+            ISequence seq = IsStrandPlus() ? Sequence : Sequence.GetReverseComplementedSequence();
 
             // Apply change to sequence
             long idxStart = variant.OneBasedStart - OneBasedStart;
@@ -94,13 +94,13 @@ namespace Proteogenomics
 
             // Update sequence
             seq = new Sequence(seq.Alphabet, newSeq.ToString());
-            markerSeq.Sequence = Strand == "+" ? seq : seq.GetReverseComplementedSequence();
+            markerSeq.Sequence = IsStrandPlus() ? seq : seq.GetReverseComplementedSequence();
         }
 
         protected void ApplyDup(Variant variant, IntervalSequence markerSeq)
         {
             // Get sequence in positive strand direction
-            ISequence seq = Strand == "+" ? Sequence : Sequence.GetReverseComplementedSequence();
+            ISequence seq = IsStrandPlus() ? Sequence : Sequence.GetReverseComplementedSequence();
 
             // Apply duplication to sequence
             String dupSeq = SequenceExtensions.ConvertToString(GetSequence(Intersect(variant)));
@@ -115,13 +115,13 @@ namespace Proteogenomics
             }
 
             // Update sequence
-            markerSeq.Sequence = Strand == "+" ? seq : seq.GetReverseComplementedSequence();
+            markerSeq.Sequence = IsStrandPlus() ? seq : seq.GetReverseComplementedSequence();
         }
 
         protected void ApplyIns(Variant variant, IntervalSequence markerSeq)
         {
             // Get sequence in positive strand direction
-            ISequence seq = Strand == "+" ? Sequence : Sequence.GetReverseComplementedSequence();
+            ISequence seq = IsStrandPlus() ? Sequence : Sequence.GetReverseComplementedSequence();
 
             // Apply change to sequence
             String netChange = variant.NetChange(this);
@@ -136,7 +136,7 @@ namespace Proteogenomics
             }
 
             // Update sequence
-            markerSeq.Sequence = Strand == "+" ? seq : seq.GetReverseComplementedSequence();
+            markerSeq.Sequence = IsStrandPlus() ? seq : seq.GetReverseComplementedSequence();
         }
 
         protected void ApplyMnp(Variant variant, IntervalSequence markerSeq)
@@ -156,29 +156,29 @@ namespace Proteogenomics
             long idxEnd = idxStart + changeSize;
 
             // Apply variant to sequence
-            ISequence seq = Strand == "+" ? Sequence : Sequence.GetReverseComplementedSequence();
+            ISequence seq = IsStrandPlus() ? Sequence : Sequence.GetReverseComplementedSequence();
             StringBuilder seqsb = new StringBuilder();
             seqsb.Append(SequenceExtensions.ConvertToString(seq, 0, idxStart));
-            String seqAlt = variant.AlternateAlleleString.Substring((int)idxAlt, (int)(idxAlt + changeSize));
+            String seqAlt = variant.SecondAlleleString.Substring((int)idxAlt, (int)(idxAlt + changeSize));
             seqsb.Append(seqAlt);
             seqsb.Append(SequenceExtensions.ConvertToString(seq, idxEnd));
 
             // Update sequence
             seq = new Sequence(seq.Alphabet, seqsb.ToString());
-            markerSeq.Sequence = Strand == "+" ? seq : seq.GetReverseComplementedSequence();
+            markerSeq.Sequence = IsStrandPlus() ? seq : seq.GetReverseComplementedSequence();
         }
 
         protected void ApplySnp(Variant variant, IntervalSequence markerSeq)
         {
             // Get sequence in positive strand direction
-            ISequence seq = Strand == "+" ? Sequence : Sequence.GetReverseComplementedSequence();
+            ISequence seq = IsStrandPlus() ? Sequence : Sequence.GetReverseComplementedSequence();
 
             // Apply change to sequence
             long idx = variant.OneBasedStart - OneBasedStart;
-            seq = new Sequence(seq.Alphabet, SequenceExtensions.ConvertToString(seq, 0, idx) + variant.AlternateAlleleString + SequenceExtensions.ConvertToString(seq, idx + 1));
+            seq = new Sequence(seq.Alphabet, SequenceExtensions.ConvertToString(seq, 0, idx) + variant.SecondAlleleString + SequenceExtensions.ConvertToString(seq, idx + 1));
 
             // Update sequence
-            markerSeq.Sequence = Strand == "+" ? seq : seq.GetReverseComplementedSequence();
+            markerSeq.Sequence = IsStrandPlus() ? seq : seq.GetReverseComplementedSequence();
         }
 
         #endregion Variant Application Methods
@@ -193,7 +193,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public ISequence basesAt(long index, long len)
         {
-            if (isStrandMinus())
+            if (IsStrandMinus())
             {
                 long idx = Sequence.Count - index - len;
                 return Sequence.GetSubSequence(idx, len).GetReverseComplementedSequence(); // Minus strand => Sequence has been reversed and WC-complemented

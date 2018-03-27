@@ -16,7 +16,7 @@
         /// <returns></returns>
         protected override bool ChangeCodon(Exon exon)
         {
-            string netChange = Variant.NetChange(Transcript.Strand != "+");
+            string netChange = Variant.NetChange(Transcript.IsStrandMinus());
 
             CodonsReference = CodonsRef();
             CodonsAlternate = CodonsAlt();
@@ -84,11 +84,11 @@
             // Inserts BEFORE base:
             //		- In positive strand that is BEFORE pos
             //		- In negative strand, that is AFTER pos
-            int idx = CodonStartIndex + (Transcript.Strand != "+" ? 1 : 0);
+            int idx = CodonStartIndex + (Transcript.IsStrandMinus() ? 1 : 0);
 
             // Insertion: Concatenate...
             string prefix = CodonsReference.Length >= idx ? CodonsReference.Substring(0, idx) : CodonsReference; // First part of the codon
-            string netChange = Variant.NetChange(Transcript.Strand != "+"); // Insertion
+            string netChange = Variant.NetChange(Transcript.IsStrandMinus()); // Insertion
             string suffix = CodonsReference.Length >= idx ? CodonsReference.Substring(idx) : ""; // last part of the codon
 
             // New codon
