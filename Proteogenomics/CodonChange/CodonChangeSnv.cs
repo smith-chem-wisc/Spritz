@@ -1,6 +1,7 @@
 ﻿using Bio;
 using Bio.Extensions;
 using System;
+using System.Globalization;
 
 namespace Proteogenomics
 {
@@ -27,7 +28,10 @@ namespace Proteogenomics
             // Use a generic low priority variant, this allows 'AdditionalEffects' to override it
             Effect(exon, EffectType.CODON_CHANGE, true);
 
-            if (CodonsReference == "") VariantEffects.addErrorWarning(Variant, ErrorWarningType.ERROR_MISSING_CDS_SEQUENCE);
+            if (CodonsReference == "")
+            {
+                VariantEffects.addErrorWarning(Variant, ErrorWarningType.ERROR_MISSING_CDS_SEQUENCE);
+            }
 
             return true;
         }
@@ -39,11 +43,17 @@ namespace Proteogenomics
         protected override string CodonsAlt()
         {
             // Was there a problem getting 'codonsOld'? => We cannot do anything
-            if (CodonsReference == "") return "";
+            if (CodonsReference == "")
+            {
+                return "";
+            }
 
-            char[] codonChars = CodonsReference.ToLower().ToCharArray();
+            char[] codonChars = CodonsReference.ToLower(CultureInfo.InvariantCulture).ToCharArray();
             char snpBase = Variant.NetChange(Transcript.IsStrandMinus())[0];
-            if (CodonStartIndex < codonChars.Length) codonChars[CodonStartIndex] = char.ToUpper(snpBase);
+            if (CodonStartIndex < codonChars.Length)
+            {
+                codonChars[CodonStartIndex] = char.ToUpper(snpBase);
+            }
 
             string codonsNew = new string(codonChars);
             return codonsNew;
@@ -63,11 +73,11 @@ namespace Proteogenomics
 
             // Calculate minBase (first codon base in the CDS)
             int minBase = CodonStartNumber * CODON_SIZE;
-            if (minBase < 0) minBase = 0;
+            if (minBase < 0) { minBase = 0; }
 
             // Calculate maxBase (last codon base in the CDS)
             long maxBase = CodonStartNumber * CODON_SIZE + numCodons * CODON_SIZE;
-            if (maxBase > cdsLen) maxBase = cdsLen;
+            if (maxBase > cdsLen) { maxBase = cdsLen; }
 
             // Sanity checks
             if (cdsLen == 0 // Empty CDS => Cannot get codon (e.g. one or more exons are missing their sequences
@@ -75,10 +85,10 @@ namespace Proteogenomics
             ) return "";
 
             // Create codon sequence
-            char[] codonChars = SequenceExtensions.ConvertToString(cdsStr.GetSubSequence(minBase, maxBase)).ToLower().ToCharArray();
+            char[] codonChars = SequenceExtensions.ConvertToString(cdsStr.GetSubSequence(minBase, maxBase)).ToLower(CultureInfo.InvariantCulture).ToCharArray();
 
             // Capitatlize changed base
-            if (CodonStartIndex < codonChars.Length) codonChars[CodonStartIndex] = char.ToUpper(codonChars[CodonStartIndex]);
+            if (CodonStartIndex < codonChars.Length) { codonChars[CodonStartIndex] = char.ToUpper(codonChars[CodonStartIndex]); }
             string codon = new String(codonChars);
 
             return codon;

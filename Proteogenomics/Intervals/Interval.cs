@@ -111,7 +111,7 @@ namespace Proteogenomics
 
                 default:
                     // We are not ready for mixed changes
-                    throw new Exception("Variant type not supported: " + variant.VarType.ToString() + "\n\t" + variant);
+                    throw new ArgumentException("Variant type not supported: " + variant.VarType.ToString() + "\n\t" + variant);
             }
 
             // Always return a copy of the marker (if the variant is applied)
@@ -168,7 +168,7 @@ namespace Proteogenomics
                 // Part 2: Deletion matching the marker (intersection)
                 long istart = Math.Max(variant.OneBasedStart, m.OneBasedStart);
                 long iend = Math.Min(variant.OneBasedEnd, m.OneBasedEnd);
-                if (iend < istart) throw new Exception("This should never happen!"); // Sanity check
+                if (iend < istart) { throw new ArgumentOutOfRangeException("This should never happen!"); }// Sanity check
                 m.OneBasedEnd -= (iend - istart + 1); // Update end coordinate
 
                 // Part 3: Deletion before the marker
@@ -262,7 +262,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public virtual bool VariantEffect(Variant variant, VariantEffects variantEffects)
         {
-            if (!Intersects(variant)) return false;
+            if (!Intersects(variant)) { return false; }
             variantEffects.add(variant, this, IntervalType, "");
             return true;
         }
@@ -464,7 +464,7 @@ namespace Proteogenomics
         {
             long start = Math.Max(this.OneBasedStart, other.OneBasedStart);
             long end = Math.Min(this.OneBasedEnd, other.OneBasedEnd);
-            if (end < start) return 0;
+            if (end < start) { return 0; }
             return end - start + 1;
         }
 

@@ -22,9 +22,9 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
-        public ErrorWarningType sanityCheck(Variant variant)
+        public ErrorWarningType SanityCheck(Variant variant)
         {
-            if (!Intersects(variant)) return ErrorWarningType.NONE;
+            if (!Intersects(variant)) { return ErrorWarningType.NONE; }
 
             // Only makes sense for SNPs and MNPs
             if ((variant.VarType != Variant.VariantType.SNV) && (variant.VarType != Variant.VariantType.MNV)) return ErrorWarningType.NONE;
@@ -33,8 +33,8 @@ namespace Proteogenomics
             long mstart = Math.Max(variant.OneBasedStart, OneBasedStart);
             long idxStart = mstart - OneBasedStart;
 
-            if (Sequence.Count <= 0) return ErrorWarningType.WARNING_SEQUENCE_NOT_AVAILABLE;
-            if (idxStart >= Sequence.Count) return ErrorWarningType.ERROR_OUT_OF_EXON;
+            if (Sequence.Count <= 0) { return ErrorWarningType.WARNING_SEQUENCE_NOT_AVAILABLE; }
+            if (idxStart >= Sequence.Count) { return ErrorWarningType.ERROR_OUT_OF_EXON; }
 
             long mend = Math.Min(variant.OneBasedEnd, OneBasedEnd);
             long len = mend - mstart + 1;
@@ -43,7 +43,7 @@ namespace Proteogenomics
 
             // Get variant's reference coordinates
             long varRefStart = mstart - variant.OneBasedStart;
-            if (varRefStart < 0) return ErrorWarningType.ERROR_OUT_OF_EXON;
+            if (varRefStart < 0) { return ErrorWarningType.ERROR_OUT_OF_EXON; }
 
             long varRefEnd = mend - variant.OneBasedStart;
 
@@ -58,7 +58,7 @@ namespace Proteogenomics
             refStr = variant.ReferenceAlleleString;
             //}
 
-            if (varRefEnd >= refStr.Length) return ErrorWarningType.ERROR_OUT_OF_EXON;
+            if (varRefEnd >= refStr.Length) { return ErrorWarningType.ERROR_OUT_OF_EXON; }
 
             string variantReference = refStr.Substring((int)varRefStart, (int)(varRefEnd + 1));
 

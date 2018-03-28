@@ -31,8 +31,8 @@
                 }
 
                 // Annotate
-                if (intersectsExons) exons();
-                else intron();
+                if (intersectsExons) { exons(); }
+                else { intron(); }
             }
         }
 
@@ -42,7 +42,10 @@
         private void exons()
         {
             Interval cdsMarker = null;
-            if (Transcript.isProteinCoding()) cdsMarker = Transcript.CdsMarker();
+            if (Transcript.isProteinCoding())
+            {
+                cdsMarker = Transcript.CdsMarker();
+            }
 
             foreach (Exon ex in Transcript.Exons)
             {
@@ -52,7 +55,10 @@
 
                     // Is the variant affecting a coding part of the exon?
                     // If so, then this is a HIGH impact effect.
-                    if (cdsMarker != null && Variant.Intersect(ex).Intersects(cdsMarker)) impact = EffectImpact.HIGH;
+                    if (cdsMarker != null && Variant.Intersect(ex).Intersects(cdsMarker))
+                    {
+                        impact = EffectImpact.HIGH;
+                    }
 
                     // Is the whole exon inverted or just part of it?
                     EffectType effType = Variant.Includes(ex) ? EffectType.EXON_INVERSION : EffectType.EXON_INVERSION_PARTIAL;

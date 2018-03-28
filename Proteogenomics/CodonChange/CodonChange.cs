@@ -2,20 +2,21 @@
 using Bio.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace Proteogenomics
 {
     public class CodonChange
     {
-        public HashSet<string> StartCodons = new HashSet<string> { "ATG" };
-        public static bool ShowCodonChange = true; // This is disabled in some specific test cases
+        public static readonly HashSet<string> StartCodons = new HashSet<string> { "ATG" };
+        public static readonly bool ShowCodonChange = true; // This is disabled in some specific test cases
         public static readonly int CODON_SIZE = 3; // I'll be extremely surprised if you ever need to change this parameter...
 
         public int CodonStartNumber { get; set; } = -1;
         public int CodonStartIndex { get; set; } = -1;
-        protected bool ReturnNow { get; set; } = false; // Can we return immediately after calculating the first 'codonChangeSingle()'?
-        protected bool RequireNetCdsChange { get; set; } = false;
+        protected bool ReturnNow { get; set; } // Can we return immediately after calculating the first 'codonChangeSingle()'?
+        protected bool RequireNetCdsChange { get; set; }
         protected Variant Variant { get; set; }
         protected Transcript Transcript { get; set; }
         protected Exon Exon { get; set; }
@@ -60,7 +61,7 @@ namespace Proteogenomics
                     return new CodonChangeInterval(variant, transcript, variantEffects);
 
                 default:
-                    throw new Exception("Unimplemented factory for variant type '" + variant.VarType + "', variant: " + variant);
+                    throw new ArgumentException("Unimplemented factory for variant type '" + variant.VarType + "', variant: " + variant);
             }
         }
 
@@ -88,13 +89,13 @@ namespace Proteogenomics
             bool hasOldAa = CodonExtensions.TryTranslateCodon(Transcript.Gene.Chromosome.Mitochondrial, codonsOld, out byte oldAA);
             bool hasNewAa = CodonExtensions.TryTranslateCodon(Transcript.Gene.Chromosome.Mitochondrial, codonsNew, out byte newAA);
             bool isStartNew = Transcript.Gene.Chromosome.Mitochondrial ?
-                CodonsVertebrateMitochondrial.START_CODONS.Contains(codonsNew.ToUpper()) :
-                CodonsStandard.START_CODONS.Contains(codonsNew.ToUpper());
+                CodonsVertebrateMitochondrial.START_CODONS.Contains(codonsNew.ToUpper(CultureInfo.InvariantCulture)) :
+                CodonsStandard.START_CODONS.Contains(codonsNew.ToUpper(CultureInfo.InvariantCulture));
             bool isStartOld = Transcript.Gene.Chromosome.Mitochondrial ?
-                CodonsVertebrateMitochondrial.START_CODONS.Contains(codonsOld.ToUpper()) :
-                CodonsStandard.START_CODONS.Contains(codonsOld.ToUpper());
-            bool isStopNew = newAA == Alphabets.Protein.Ter;
-            bool isStopOld = oldAA == Alphabets.Protein.Ter;
+                CodonsVertebrateMitochondrial.START_CODONS.Contains(codonsOld.ToUpper(CultureInfo.InvariantCulture)) :
+                CodonsStandard.START_CODONS.Contains(codonsOld.ToUpper(CultureInfo.InvariantCulture));
+            bool isStopOld = hasOldAa && oldAA == Alphabets.Protein.Ter;
+            bool isStopNew = hasNewAa && newAA == Alphabets.Protein.Ter;
 
             if (Variant.isSnv() || Variant.isMnv())
             {
@@ -105,16 +106,19 @@ namespace Proteogenomics
                     if (codonNum == 0 && isStartOld)
                     {
                         // It is in the first codon (which also is a start codon)
-                        if (isStartNew) newEffectType = EffectType.SYNONYMOUS_START; // The new codon is also a start codon => SYNONYMOUS_START
-                        else newEffectType = EffectType.START_LOST; // The AA is the same, but the codon is not a start codon => start lost
+                        if (isStartNew) { newEffectType = EffectType.SYNONYMOUS_START; }// The new codon is also a start codon => SYNONYMOUS_START
+                        else { newEffectType = EffectType.START_LOST; } // The AA is the same, but the codon is not a start codon => start lost
                     }
                     else if (isStopOld)
                     {
                         // Stop codon
-                        if (isStopNew) newEffectType = EffectType.SYNONYMOUS_STOP; // New codon is also a stop => SYNONYMOUS_STOP
-                        else newEffectType = EffectType.STOP_LOST; // New codon is not a stop, the we've lost a stop
+                        if (isStopNew) { newEffectType = EffectType.SYNONYMOUS_STOP; }// New codon is also a stop => SYNONYMOUS_STOP
+                        else { newEffectType = EffectType.STOP_LOST; }// New codon is not a stop, the we've lost a stop
                     }
-                    else newEffectType = EffectType.SYNONYMOUS_CODING; // All other cases are just SYNONYMOUS_CODING
+                    else
+                    {
+                        newEffectType = EffectType.SYNONYMOUS_CODING;  // All other cases are just SYNONYMOUS_CODING
+                    }
                 }
                 else
                 {
@@ -122,14 +126,14 @@ namespace Proteogenomics
                     if ((codonNum == 0) && isStartOld)
                     {
                         // It is in the first codon (which also is a start codon)
-                        if (isStartNew) newEffectType = EffectType.NON_SYNONYMOUS_START; // Non-synonymous mutation on first codon => start lost
-                        else newEffectType = EffectType.START_LOST; // Non-synonymous mutation on first codon => start lost
+                        if (isStartNew) { newEffectType = EffectType.NON_SYNONYMOUS_START; }// Non-synonymous mutation on first codon => start lost
+                        else { newEffectType = EffectType.START_LOST; }// Non-synonymous mutation on first codon => start lost
                     }
                     else if (isStopOld)
                     {
                         // Stop codon
-                        if (isStopNew) newEffectType = EffectType.NON_SYNONYMOUS_STOP; // Notice: This should never happen for SNPs! (for some reason I removed this comment at some point and that create some confusion): http://www.biostars.org/post/show/51352/in-snpeff-impact-what-is-difference-between-stop_gained-and-non-synonymous_stop/
-                        else newEffectType = EffectType.STOP_LOST;
+                        if (isStopNew) { newEffectType = EffectType.NON_SYNONYMOUS_STOP; } // Notice: This should never happen for SNPs! (for some reason I removed this comment at some point and that create some confusion): http://www.biostars.org/post/show/51352/in-snpeff-impact-what-is-difference-between-stop_gained-and-non-synonymous_stop/
+                        else { newEffectType = EffectType.STOP_LOST; }
                     }
                     else if (isStopNew)
                     {
@@ -176,12 +180,12 @@ namespace Proteogenomics
                 // 'pos' before transcript start
                 if (pos <= Transcript.cdsStart)
                 {
-                    if (Transcript.IsStrandPlus()) return 0;
+                    if (Transcript.IsStrandPlus()) { return 0; }
                     return Transcript.RetrieveCodingSequence().Count;
                 }
 
                 // 'pos' is after CDS end
-                if (Transcript.IsStrandPlus()) return Transcript.RetrieveCodingSequence().Count;
+                if (Transcript.IsStrandPlus()) { return Transcript.RetrieveCodingSequence().Count; }
                 return 0;
             }
 
@@ -193,7 +197,10 @@ namespace Proteogenomics
         /// </summary>
         public virtual void ChangeCodon()
         {
-            if (!Transcript.Intersects(Variant)) return;
+            if (!Transcript.Intersects(Variant))
+            {
+                return;
+            }
 
             // Get coding start (after 5 prime UTR)
             long cdsStart = Transcript.cdsStart;
@@ -202,7 +209,8 @@ namespace Proteogenomics
             NetCodingSequenceChange = NetCdsChange();
             if (RequireNetCdsChange && NetCodingSequenceChange == "")
             { // This can happen on mixed changes where the 'InDel' part lies outside the transcript's exons
-                CodonsReference = CodonsAlternate = "";
+                CodonsReference = "";
+                CodonsAlternate = "";
                 return;
             }
 
@@ -216,7 +224,7 @@ namespace Proteogenomics
                 Exon = exon;
                 if (exon.Intersects(Variant))
                 {
-                    long cdsBaseInExon = -1; // cdsBaseInExon: base number relative to the beginning of the coding part of this exon (i.e. excluding 5'UTRs)
+                    long cdsBaseInExon; // cdsBaseInExon: base number relative to the beginning of the coding part of this exon (i.e. excluding 5'UTRs)
 
                     if (Transcript.IsStrandPlus())
                     {
@@ -229,7 +237,7 @@ namespace Proteogenomics
                         cdsBaseInExon = Math.Min(exon.OneBasedEnd, cdsStart) - lastvariantBaseInExon;
                     }
 
-                    if (cdsBaseInExon < 0) cdsBaseInExon = 0;
+                    if (cdsBaseInExon < 0) { cdsBaseInExon = 0; }
 
                     // Get codon number and index within codon (where seqChage is pointing)
                     if (CodonStartNumber < 0)
@@ -239,21 +247,20 @@ namespace Proteogenomics
                     }
 
                     // Use appropriate method to calculate codon change
-                    bool hasChanged = false; // Was there any change?
-                    hasChanged = ChangeCodon(exon);
+                    //bool hasChanged = false; // Was there any change?
+                    //hasChanged = ChangeCodon(exon);
 
                     // Any change? => Add change to list
                     //if (hasChanged && !VariantEffects.hasMarker()) VariantEffects.setMarker(exon); // It is affecting this exon, so we set the marker
 
                     // Can we finish after effect of first exon is added?
-                    if (ReturnNow) return;
+                    if (ReturnNow) { return; }
                 }
 
-                if (Transcript.IsStrandPlus()) firstCdsBaseInExon += (int)Math.Max(0, exon.OneBasedEnd - Math.Max(exon.OneBasedStart, cdsStart) + 1);
-                else firstCdsBaseInExon += (int)Math.Max(0, Math.Min(cdsStart, exon.OneBasedEnd) - exon.OneBasedStart + 1);
+                firstCdsBaseInExon += Transcript.IsStrandPlus() ?
+                    (int)Math.Max(0, exon.OneBasedEnd - Math.Max(exon.OneBasedStart, cdsStart) + 1) :
+                    (int)Math.Max(0, Math.Min(cdsStart, exon.OneBasedEnd) - exon.OneBasedStart + 1);
             }
-
-            return;
         }
 
         /// <summary>
@@ -263,7 +270,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected virtual bool ChangeCodon(Exon exon)
         {
-            throw new Exception("Unimplemented method codonChangeSingle() for\n\t\tVariant type : " + Variant.GetType().Name + "\n\t\tClass        : " + GetType().Name + "\n\t\tVariant      : " + Variant);
+            throw new InvalidOperationException("Unimplemented method codonChangeSingle() for\n\t\tVariant type : " + Variant.GetType().Name + "\n\t\tClass        : " + GetType().Name + "\n\t\tVariant      : " + Variant);
         }
 
         /// <summary>
@@ -272,7 +279,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected virtual string CodonsAlt()
         {
-            throw new Exception("Unimplemented method for this thype of CodonChange: " + this.GetType().Name);
+            throw new InvalidOperationException("Unimplemented method for this thype of CodonChange: " + this.GetType().Name);
         }
 
         /// <summary>
@@ -298,15 +305,15 @@ namespace Proteogenomics
             int end = start + numCodons * CODON_SIZE;
 
             int len = (int)cds.Count;
-            if (start >= len) start = len;
-            if (end >= len) end = len;
+            if (start >= len) { start = len; }
+            if (end >= len) { end = len; }
 
             // Capitalize
             codon = SequenceExtensions.ConvertToString(cds.GetSubSequence(start, end));
 
             // Codon not multiple of three? Add missing bases as 'N'
-            if (codon.Length % 3 == 1) codon += "NN";
-            else if (codon.Length % 3 == 2) codon += "N";
+            if (codon.Length % 3 == 1) { codon += "NN"; }
+            else if (codon.Length % 3 == 2) { codon += "N"; }
 
             return codon;
         }
@@ -387,7 +394,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected virtual string NetCdsChange()
         {
-            if (!RequireNetCdsChange) return "";
+            if (!RequireNetCdsChange) { return ""; }
 
             if (Variant.Length() > 1)
             {

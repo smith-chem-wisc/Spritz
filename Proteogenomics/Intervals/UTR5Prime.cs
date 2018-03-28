@@ -2,6 +2,7 @@
 using Bio.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -74,7 +75,7 @@ namespace Proteogenomics
             {
                 Exon ex = (Exon)utr.Parent;
                 ISequence utrSeq = ex.Sequence;
-                if (utr.Length() < utrSeq.Count) utrSeq = utrSeq.GetSubSequence(0, utr.Length()); // UTR5' may stop before end of exon
+                if (utr.Length() < utrSeq.Count) { utrSeq = utrSeq.GetSubSequence(0, utr.Length()); } // UTR5' may stop before end of exon
                 sb.Append(SequenceExtensions.ConvertToString(utrSeq));
             }
             return sb.ToString();
@@ -86,15 +87,15 @@ namespace Proteogenomics
         /// <param name="chars"></param>
         /// <param name="pos"></param>
         /// <returns></returns>
-        private string startGained(char[] chars, long pos)
+        private static string startGained(char[] chars, long pos)
         {
             // Analyze all frames
             for (long i = Math.Max(0, pos - 2); (i <= pos) && ((i + 2) < chars.Length); i++)
             {
                 string codon = "" + chars[i] + chars[i + 1] + chars[i + 2];
-                if (CodonsStandard.START_CODONS.Contains(codon.ToUpper()))
+                if (CodonsStandard.START_CODONS.Contains(codon.ToUpper(CultureInfo.InvariantCulture)))
                 {
-                    return codon.ToUpper(); // This frame has a start codon?
+                    return codon.ToUpper(CultureInfo.InvariantCulture); // This frame has a start codon?
                 }
             }
             return "";
@@ -104,11 +105,10 @@ namespace Proteogenomics
         /// Did we gain a start codon in this 5'UTR interval?
         /// </summary>
         /// <param name="seqChange"></param>
-        /// <param name="tr"></param>
         /// <returns>A new start codon (if gained)</returns>
-        private string startGained(Variant seqChange, Transcript tr)
+        private string startGained(Variant seqChange)
         {
-            if (!seqChange.isSnv()) return ""; // Only SNPs supported.
+            if (!seqChange.isSnv()) { return ""; } // Only SNPs supported.
 
             // Calculate SNP position relative to UTRs
             long pos = seqChange.DistanceBases(get5primeUtrs().OfType<Interval>().ToList(), IsStrandMinus());
@@ -145,7 +145,7 @@ namespace Proteogenomics
             variantEffects.add(variantEffect);
 
             // Start gained?
-            string gained = startGained(variant, tr);
+            string gained = startGained(variant);
             if (gained != "")
             {
                 variantEffects.add(variant, this, EffectType.START_GAINED, gained);

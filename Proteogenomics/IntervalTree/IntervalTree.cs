@@ -4,17 +4,11 @@ namespace Proteogenomics
 {
     public class IntervalTree
     {
-        #region Public Properties
-
         public IntervalNode Head { get; set; } = new IntervalNode();
 
         public List<Interval> Intervals { get; set; }
 
-        public bool Synced { get; set; } = false;
-
-        #endregion Public Properties
-
-        #region Constructors
+        public bool Synced { get; set; }
 
         /// <summary>
         /// Instantiate a new interval tree with no intervals
@@ -30,13 +24,9 @@ namespace Proteogenomics
         public IntervalTree(IEnumerable<Interval> intervals)
         {
             Head = new IntervalNode(intervals);
-            this.Intervals = new List<Interval>(intervals);
+            Intervals = new List<Interval>(intervals);
             Synced = true;
         }
-
-        #endregion Constructors
-
-        #region Public Methods
 
         public void Add(Interval interval)
         {
@@ -67,16 +57,14 @@ namespace Proteogenomics
 
         public List<Interval> Query(Interval interval)
         {
-            if (!Synced) Build();
+            if (!Synced) { Build(); }
             return Head.Query(interval);
         }
 
         public List<Interval> Stab(long point)
         {
-            if (!Synced) Build();
+            if (!Synced) { Build(); }
             return Head.Stab(point);
         }
-
-        #endregion Public Methods
     }
 }

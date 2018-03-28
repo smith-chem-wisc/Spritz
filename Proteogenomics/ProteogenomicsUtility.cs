@@ -5,16 +5,13 @@ namespace Proteogenomics
 {
     public static class ProteogenomicsUtility
     {
-        #region Constant
-
-        public const string ENSEMBL_FASTA_HEADER_DELIMETER = " ";
-
-        #endregion Constant
-
-        #region IUPAC Codes Not Contained in DotNetBio
+        public static readonly string ENSEMBL_FASTA_HEADER_DELIMETER = " ";
 
         public static char[] amino_acids = "ACDEFGHIKLMNPQRSTVWY".ToCharArray();
 
+        /// <summary>
+        /// IUPAC Codes Not Contained in DotNetBio
+        /// </summary>
         public static Dictionary<char, string> amino_acids_1to3 = new Dictionary<char, string>()
         {
             { 'A', "Ala" },
@@ -53,8 +50,6 @@ namespace Proteogenomics
             amino_acids_1to3.ToList().ToDictionary(
                 one_to_three => one_to_three.Value,
                 one_to_three => one_to_three.Key);
-
-        #endregion IUPAC Codes Not Contained in DotNetBio
 
         public static IEnumerable<IEnumerable<T>> Combinations<T>(this IEnumerable<T> elements, int k)//given an array of elements, it returns all combination sub arrays of length k
         {

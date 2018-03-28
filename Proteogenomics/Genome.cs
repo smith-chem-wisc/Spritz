@@ -25,7 +25,6 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="genomeFastaLocation"></param>
         public Genome(string genomeFastaLocation)
-            : base()
         {
             Chromosomes = new FastAParser().Parse(genomeFastaLocation).Select(s => new Chromosome(s, this)).ToList();
         }

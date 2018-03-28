@@ -5,19 +5,13 @@ namespace Proteogenomics
 {
     public class IntervalNode
     {
-        #region Public Properties
-
-        public long Center;
+        public long Center { get; set; }
 
         public IntervalNode LeftNode { get; set; }
 
         public IntervalNode RightNode { get; set; }
 
         public List<Interval> IntervalsCenter { get; set; } = new List<Interval>();
-
-        #endregion Public Properties
-
-        #region Constructors
 
         public IntervalNode()
         {
@@ -27,10 +21,6 @@ namespace Proteogenomics
         {
             Build(intervals);
         }
-
-        #endregion Constructors
-
-        #region Public Methods
 
         /// <summary>
         /// Build an interval tree
@@ -91,7 +81,5 @@ namespace Proteogenomics
             if (point > Center && RightNode != null) { results.AddRange(RightNode.Stab(point)); }
             return results;
         }
-
-        #endregion Public Methods
     }
 }

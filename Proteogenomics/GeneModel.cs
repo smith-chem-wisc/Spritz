@@ -80,7 +80,7 @@ namespace Proteogenomics
             foreach (ISequence chromFeatures in geneFeatures)
             {
                 Chromosome chrom = Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID);
-                if (chrom == null) continue;
+                if (chrom == null) { continue; }
 
                 chromFeatures.Metadata.TryGetValue("features", out object f);
                 List<MetadataListItem<List<string>>> features = f as List<MetadataListItem<List<string>>>;
@@ -147,7 +147,7 @@ namespace Proteogenomics
 
             if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
                 currentGene.Transcripts.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
@@ -203,7 +203,7 @@ namespace Proteogenomics
                     GenomeForest.Add(currentGene);
                 }
 
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
                 currentGene.Transcripts.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
@@ -219,7 +219,7 @@ namespace Proteogenomics
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd);
+                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
                     currentGene.Transcripts.Add(currentTranscript);
                     GenomeForest.Add(currentTranscript);
                 }

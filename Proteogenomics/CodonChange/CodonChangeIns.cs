@@ -1,4 +1,6 @@
-﻿namespace Proteogenomics
+﻿using System.Globalization;
+
+namespace Proteogenomics
 {
     public class CodonChangeIns
         : CodonChange
@@ -21,7 +23,7 @@
             CodonsReference = CodonsRef();
             CodonsAlternate = CodonsAlt();
 
-            EffectType effType = EffectType.NONE;
+            EffectType effType;
 
             if (netChange.Length % CODON_SIZE != 0)
             {
@@ -54,7 +56,7 @@
                  * 		Insert 'TTT' pos 1:	ATT TAA CCC GGG AAA CCC GGG AAA CCC GGG
                  * 		Insert 'TTT' pos 2:	AAT TTA CCC GGG AAA CCC GGG AAA CCC GGG
                  */
-                if (CodonsAlternate.ToUpper().StartsWith(CodonsReference.ToUpper()))
+                if (CodonsAlternate.ToUpper(CultureInfo.InvariantCulture).StartsWith(CodonsReference.ToUpper(CultureInfo.InvariantCulture)))
                 {
                     /**
                      *  May be the inserted base are equal to the old ones.

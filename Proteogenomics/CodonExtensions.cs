@@ -16,7 +16,7 @@ namespace Proteogenomics
         {
             if (codon.Length != CodonChange.CODON_SIZE)
             {
-                throw new Exception("Codon size not supported: " + codon);
+                throw new ArgumentException("Codon size not supported: " + codon);
             }
             return TryTranslateBytes(mitochondrial, (byte)codon[0], (byte)codon[1], (byte)codon[2], out aminoAcid);
         }

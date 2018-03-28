@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
-using System.Linq;
 
 namespace Proteogenomics
 {
@@ -57,13 +57,19 @@ namespace Proteogenomics
             {
                 get().addEffect(effectType);
             }
-            else add(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], "");
+            else
+            {
+                add(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], "");
+            }
         }
 
         public void addErrorWarning(Variant variant, ErrorWarningType errwarn)
         {
             VariantEffect veff = get();
-            if (veff != null) veff.addErrorWarningInfo(errwarn);
+            if (veff != null)
+            {
+                veff.addErrorWarningInfo(errwarn);
+            }
             else
             {
                 veff = new VariantEffect(variant);
@@ -126,8 +132,7 @@ namespace Proteogenomics
         public bool hasMarker()
         {
             VariantEffect veff = get();
-            if (veff == null) return false;
-            return veff.getMarker() != null;
+            return veff == null ? false : veff.getMarker() != null;
         }
 
         public bool isEmpty()
@@ -158,7 +163,7 @@ namespace Proteogenomics
             sb.Append("variant:" + theVariant.ToString() + " ");
             foreach (VariantEffect eff in Effects)
             {
-                sb.Append("effect:" + eff.getFunctionalClass().ToString() + " " + eff.getEffectType().ToString() + " " + eff.codonsRef.ToUpper() + eff.codonNum.ToString() + eff.codonsAlt);
+                sb.Append("effect:" + eff.getFunctionalClass().ToString() + " " + eff.getEffectType().ToString() + " " + eff.codonsRef.ToUpper(CultureInfo.InvariantCulture) + eff.codonNum.ToString() + eff.codonsAlt);
             }
             return sb.ToString();
         }

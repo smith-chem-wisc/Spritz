@@ -49,8 +49,9 @@
         {
             if (coding)
             {
-                if (Transcript.IsStrandPlus()) return Variant.OneBasedEnd > Transcript.cdsEnd;
-                return Variant.OneBasedEnd > Transcript.cdsStart;
+                return Transcript.IsStrandPlus() ?
+                    Variant.OneBasedEnd > Transcript.cdsEnd :
+                    Variant.OneBasedEnd > Transcript.cdsStart;
             }
 
             return Variant.OneBasedEnd > Transcript.OneBasedEnd;
@@ -68,13 +69,13 @@
                 // Is the effect of a duplication beyond transcript's end?
                 // Then it probably does not have much impact
                 EffectImpact impact = coding ? EffectImpact.LOW : EffectImpact.MODIFIER;
-                if (exonFull > 0) EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION, impact);
-                if (exonPartial > 0) EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION_PARTIAL, impact);
+                if (exonFull > 0) { EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION, impact); }
+                if (exonPartial > 0) { EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION_PARTIAL, impact); }
                 return;
             }
 
-            if (coding) ExonsCoding();
-            else ExonsNoncoding();
+            if (coding) { ExonsCoding(); }
+            else { ExonsNoncoding(); }
         }
 
         /// <summary>
@@ -84,12 +85,15 @@
         {
             CodonsRefAlt();
 
-            if (exonFull > 0) Effect(Transcript, EffectType.EXON_DUPLICATION, false);
-            if (exonPartial > 0) Effect(Transcript, EffectType.EXON_DUPLICATION_PARTIAL, false);
+            if (exonFull > 0) { Effect(Transcript, EffectType.EXON_DUPLICATION, false); }
+            if (exonPartial > 0) { Effect(Transcript, EffectType.EXON_DUPLICATION_PARTIAL, false); }
 
             // Is this duplication creating a frame-shift?
             int lenDiff = cdsAlt.Length - cdsRef.Length;
-            if (lenDiff % 3 != 0) Effect(Transcript, EffectType.FRAME_SHIFT, false);
+            if (lenDiff % 3 != 0)
+            {
+                Effect(Transcript, EffectType.FRAME_SHIFT, false);
+            }
         }
 
         /// <summary>
@@ -97,8 +101,8 @@
         /// </summary>
         protected override void ExonsNoncoding()
         {
-            if (exonFull > 0) EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION, EffectImpact.MODIFIER);
-            if (exonPartial > 0) EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION_PARTIAL, EffectImpact.MODIFIER);
+            if (exonFull > 0) { EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION, EffectImpact.MODIFIER); }
+            if (exonPartial > 0) { EffectNoCodon(Transcript, EffectType.EXON_DUPLICATION_PARTIAL, EffectImpact.MODIFIER); }
         }
 
         /// <summary>

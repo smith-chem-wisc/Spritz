@@ -3,12 +3,12 @@
     public abstract class UTR :
         Interval
     {
-        public UTR(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
+        protected UTR(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
             : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
         {
         }
 
-        public UTR(UTR utr)
+        protected UTR(UTR utr)
             : base(utr)
         {
         }

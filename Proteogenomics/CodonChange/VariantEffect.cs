@@ -3,6 +3,7 @@ using Bio.Algorithms.Translation;
 using Bio.VCF;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -104,7 +105,7 @@ namespace Proteogenomics
         public Variant Variant { get; private set; }
         public List<EffectType> effectTypes { get; private set; }
         protected EffectType effectType { get; set; }
-        protected List<EffectImpact> effectImpacts { get; set; }
+        protected List<EffectImpact> EffectImpacts { get; set; }
         protected EffectImpact effectImpact { get; set; }
         protected Interval marker { get; set; }
         protected HashSet<ErrorWarningType> error { get; set; } = new HashSet<ErrorWarningType>();
@@ -127,14 +128,14 @@ namespace Proteogenomics
         {
             Variant = variant;
             effectTypes = new List<EffectType>();
-            effectImpacts = new List<EffectImpact>();
+            EffectImpacts = new List<EffectImpact>();
         }
 
         public VariantEffect(Variant variant, Interval marker, EffectType effectType, EffectImpact effectImpact, string codonsOld, string codonsNew, int codonNum, int codonIndex, long cDnaPos)
         {
             Variant = variant;
             effectTypes = new List<EffectType>();
-            effectImpacts = new List<EffectImpact>();
+            EffectImpacts = new List<EffectImpact>();
             set(marker, effectType, effectImpact, "");
             setCodons(codonsOld, codonsNew, codonNum, codonIndex);
             this.cDnaPos = cDnaPos;
@@ -148,7 +149,7 @@ namespace Proteogenomics
 
         public void addEffectImpact(EffectImpact effectImpact)
         {
-            effectImpacts.Add(effectImpact);
+            EffectImpacts.Add(effectImpact);
             this.effectImpact = EffectImpact.MODIFIER;
         }
 
@@ -247,17 +248,17 @@ namespace Proteogenomics
 
             // Compare genomic coordinate
             comp = compareNull(chrThis, chrOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             comp = startThis.CompareTo(startOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             comp = endThis.CompareTo(endOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             // Compare IDs
-            comp = compareNull(idThis, idOther); 
-            if (comp != 0) return comp;
+            comp = compareNull(idThis, idOther);
+            if (comp != 0) { return comp; }
 
             //---
             // Marker based comparisons
@@ -291,17 +292,17 @@ namespace Proteogenomics
 
             // Compare genomic coordinate
             comp = compareNull(chrThis, chrOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             comp = startThis.CompareTo(startOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             comp = endThis.CompareTo(endOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             // Compare IDs
             comp = compareNull(idThis, idOther);
-            if (comp != 0) return comp;
+            if (comp != 0) { return comp; }
 
             //---
             // Variant based comparison
@@ -309,7 +310,7 @@ namespace Proteogenomics
             return Variant.CompareTo(varEffOther.Variant);
         }
 
-        private int compareNull(IComparable oThis, IComparable oThat)
+        private static int compareNull(IComparable oThis, IComparable oThat)
         {
             return oThis != null && oThat != null ? oThis.CompareTo(oThat) :
                 oThis == null && oThat == null ? 0 :
@@ -331,7 +332,7 @@ namespace Proteogenomics
             string codonEffect = this.codonEffect(showAaChange, showBioType, useFirstEffect); // Codon effect
 
             // Create effect string
-            if (codonEffect != "") e = codonEffect;
+            if (codonEffect != "") { e = codonEffect; }
             //else if (isRegulation()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + ((Regulation)marker).getName() + "]";
             //else if (isNextProt()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + VcfEffect.vcfEffSafe(((NextProt)marker).getId()) + "]"; // Make sure this 'id' is not dangerous in a VCF 'EFF' field
             //else if (isMotif()) return getEffectTypestring(useSeqOntology, useFirstEffect) + "[" + ((Motif)marker).getPwmId() + ":" + ((Motif)marker).getPwmName() + "]";
@@ -401,8 +402,8 @@ namespace Proteogenomics
         /// <returns></returns>
         public string getAaNetChange()
         {
-            string aaShort = aaRef.ToUpper();
-            string aaLong = aaAlt.ToUpper();
+            string aaShort = aaRef.ToUpper(CultureInfo.InvariantCulture);
+            string aaLong = aaAlt.ToUpper(CultureInfo.InvariantCulture);
 
             if (aaLong.Length < aaShort.Length)
             {
@@ -479,7 +480,7 @@ namespace Proteogenomics
             //    // Not a change? => Modifier
             //    return EffectImpact.MODIFIER;
             //}
-            return effectImpacts.Min(); // Get effect's type highest impact
+            return EffectImpacts.Min(); // Get effect's type highest impact
         }
 
         /// <summary>
@@ -504,7 +505,7 @@ namespace Proteogenomics
 
         public string getEffectTypeString(bool useFirstEffect)
         {
-            if (effectTypes == null) return "";
+            if (effectTypes == null) { return ""; }
 
             // Show all effects
             StringBuilder sb = new StringBuilder();
@@ -521,12 +522,14 @@ namespace Proteogenomics
                 // Make sure we don't add the same effect twice
                 if (added == null || added.Add(eff))
                 {
-                    if (sb.Length > 0) sb.Append(" ");
-                    sb.Append(eff);
+                    sb.Append(sb.Length > 0 ? " " : eff);
                 }
 
                 // Only use first effect?
-                if (useFirstEffect) return sb.ToString();
+                if (useFirstEffect)
+                {
+                    return sb.ToString();
+                }
             }
 
             return sb.ToString();
@@ -565,11 +568,11 @@ namespace Proteogenomics
                 if (!aaAlt.Equals(aaRef))
                 {
                     Codons.TryLookup((byte)codonsAlt[0], (byte)codonsAlt[1], (byte)codonsAlt[2], out byte aa);
-                    if (aa == Alphabets.Protein.Ter) return FunctionalClass.NONSENSE;
+                    if (aa == Alphabets.Protein.Ter) { return FunctionalClass.NONSENSE; }
 
                     return FunctionalClass.MISSENSE;
                 }
-                if (!codonsAlt.Equals(codonsRef)) return FunctionalClass.SILENT;
+                if (!codonsAlt.Equals(codonsRef)) { return FunctionalClass.SILENT; }
             }
 
             return FunctionalClass.NONE;
@@ -579,7 +582,7 @@ namespace Proteogenomics
         {
             if (marker != null)
             {
-                if (marker is Gene) return (Gene)marker;
+                if (marker is Gene) { return (Gene)marker; }
                 return (Gene)marker.FindParent(typeof(Gene));
             }
             return null;
@@ -588,7 +591,7 @@ namespace Proteogenomics
         public string getGeneRegion()
         {
             EffectType eff = getGeneRegion(getEffectType());
-            if (eff == EffectType.TRANSCRIPT && isExon()) eff = EffectType.EXON;
+            if (eff == EffectType.TRANSCRIPT && isExon()) { eff = EffectType.EXON; }
             return eff.ToString();
         }
 
@@ -703,11 +706,11 @@ namespace Proteogenomics
                     return EffectType.GENOME;
 
                 default:
-                    throw new Exception("Unknown gene region for effect type: '" + type + "'");
+                    throw new ArgumentException("Unknown gene region for effect type: '" + type + "'");
             }
         }
 
-        public List<Gene> getGenes()
+        public static List<Gene> getGenes()
         {
             return null;
         }
@@ -776,7 +779,7 @@ namespace Proteogenomics
         {
             if (marker != null)
             {
-                if (marker is Intron) return (Intron)marker;
+                if (marker is Intron) { return (Intron)marker; }
                 return (Intron)marker.FindParent(typeof(Intron));
             }
             return null;
@@ -791,7 +794,7 @@ namespace Proteogenomics
         {
             if (marker != null)
             {
-                if (marker is Transcript) return (Transcript)marker;
+                if (marker is Transcript) { return (Transcript)marker; }
                 return (Transcript)marker.FindParent(typeof(Transcript));
             }
             return null;
@@ -821,9 +824,9 @@ namespace Proteogenomics
 
         public bool hasEffectImpact(EffectImpact effectImpact)
         {
-            foreach (EffectImpact effImp in effectImpacts)
+            foreach (EffectImpact effImp in EffectImpacts)
             {
-                if (effImp == effectImpact) return true;
+                if (effImp == effectImpact) { return true; }
             }
             return false;
         }
@@ -832,7 +835,7 @@ namespace Proteogenomics
         {
             foreach (EffectType effType in effectTypes)
             {
-                if (effType == effectType) return true;
+                if (effType == effectType) { return true; }
             }
             return false;
         }
@@ -946,7 +949,7 @@ namespace Proteogenomics
             }
             else if (Codons.TryLookup((byte)codonsOld[0], (byte)codonsOld[0], (byte)codonsOld[0], out byte aa))
             {
-                aaRef = new string(new char[] { (char)aa });
+                aaRef = new string(new[] { (char)aa });
                 //codonDegeneracy = codonTable.degenerate(codonsOld, codonIndex); // Calculate codon degeneracy
             }
 
@@ -956,7 +959,7 @@ namespace Proteogenomics
             }
             else if (Codons.TryLookup((byte)codonsNew[0], (byte)codonsNew[0], (byte)codonsNew[0], out byte aa))
             {
-                aaAlt = new string(new char[] { (char)aa });
+                aaAlt = new string(new[] { (char)aa });
             }
         }
 
@@ -967,8 +970,8 @@ namespace Proteogenomics
         /// <param name="codonsRight"></param>
         public void setCodonsAround(string codonsLeft, string codonsRight)
         {
-            codonsAroundOld = codonsLeft.ToLower() + codonsRef.ToUpper() + codonsRight.ToLower();
-            codonsAroundNew = codonsLeft.ToLower() + codonsAlt.ToUpper() + codonsRight.ToLower();
+            codonsAroundOld = codonsLeft.ToLower(CultureInfo.InvariantCulture) + codonsRef.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
+            codonsAroundNew = codonsLeft.ToLower(CultureInfo.InvariantCulture) + codonsAlt.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
 
             // Amino acids surrounding the ones changed
             string aasLeft = Codons.TryLookup((byte)codonsLeft[0], (byte)codonsLeft[0], (byte)codonsLeft[0], out byte aa1) ?
@@ -977,8 +980,8 @@ namespace Proteogenomics
             string aasRigt = Codons.TryLookup((byte)codonsRight[0], (byte)codonsRight[0], (byte)codonsRight[0], out byte aa2) ?
                 new string(new char[] { (char)aa2 }) :
                 "";
-            aasAroundOld = aasLeft.ToLower() + aaRef.ToUpper() + aasRigt.ToLower();
-            aasAroundNew = aasLeft.ToLower() + aaAlt.ToUpper() + aasRigt.ToLower();
+            aasAroundOld = aasLeft.ToLower(CultureInfo.InvariantCulture) + aaRef.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
+            aasAroundNew = aasLeft.ToLower(CultureInfo.InvariantCulture) + aaAlt.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
         }
 
         public void setDistance(long distance)
@@ -998,8 +1001,8 @@ namespace Proteogenomics
 
         public void setEffectImpact(EffectImpact effectImpact)
         {
-            effectImpacts.Clear();
-            effectImpacts.Add(effectImpact);
+            EffectImpacts.Clear();
+            EffectImpacts.Add(effectImpact);
             this.effectImpact = EffectImpact.MODIFIER;
         }
 
@@ -1026,7 +1029,7 @@ namespace Proteogenomics
 
                 // Exon level errors or warnings
                 Exon exon = getExon();
-                if (exon != null) addErrorWarningInfo(exon.sanityCheck(Variant));
+                if (exon != null) addErrorWarningInfo(exon.SanityCheck(Variant));
             }
         }
 
@@ -1053,7 +1056,7 @@ namespace Proteogenomics
             StringBuilder sb = new StringBuilder();
             sb.Append("Variant             : " + Variant.ToString());
             sb.Append("\n\tEffectTypes     : " + effectTypes);
-            sb.Append("\n\tEffectImpacts   : " + effectImpacts);
+            sb.Append("\n\tEffectImpacts   : " + EffectImpacts);
             if (marker != null) sb.Append("\n\tMarker          : " + marker.ToString());
             if (codonsRef != "" || codonsAlt != "") sb.Append("\n\tCodons Ref/Alt  : " + codonsRef + " / " + codonsAlt);
             if (aaRef != "" || aaAlt != "") sb.Append("\n\tAA Ref/Alt      : " + aaRef + " / " + aaAlt);

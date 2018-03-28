@@ -23,24 +23,25 @@ namespace Proteogenomics
         public static ISequence OneFrameTranslation(ISequence dnaSequence, bool mitochondrial)
         {
             ISequence rnaSequence = Transcription.Transcribe(dnaSequence);
-            ISequence proteinSequence = !mitochondrial ? 
+            ISequence proteinSequence = !mitochondrial ?
                 ProteinTranslation.Translate(rnaSequence) :
                 new Sequence(Alphabets.AmbiguousProtein, String.Join("", Enumerable.Range(0, (int)(rnaSequence.Count % 3))
-                    .Select(codonNum => CodonsVertebrateMitochondrial.TryLookup(rnaSequence, codonNum * 3, out byte aa) ? 
-                        new string(new char[] { (char)aa }) :
+                    .Select(codonNum => CodonsVertebrateMitochondrial.TryLookup(rnaSequence, codonNum * 3, out byte aa) ?
+                        new string(new[] { (char)aa }) :
                         "X")));
             return proteinSequence;
         }
 
         public static string GetSafeProteinAccession(string accession)
         {
+            string newAccession = accession;
             int i = 1;
-            while (ProteinAccessions.Contains(accession))
+            while (ProteinAccessions.Contains(newAccession))
             {
-                accession = accession + "_" + i++.ToString();
+                newAccession = accession + "_" + i++.ToString();
             }
-            ProteinAccessions.Add(accession);
-            return accession;
+            ProteinAccessions.Add(newAccession);
+            return newAccession;
         }
 
         /// <summary>

@@ -21,9 +21,9 @@ namespace Proteogenomics
         protected override bool ChangeCodon(Exon exon)
         {
             // Is there any net effect?
-            if (NetCodingSequenceChange == "") return false;
+            if (NetCodingSequenceChange == "") { return false; }
 
-            EffectType effType = EffectType.NONE;
+            EffectType effType;
 
             if (Variant.Includes(exon))
             {
@@ -32,7 +32,8 @@ namespace Proteogenomics
                  */
                 CodonsReference = "";
                 CodonsAlternate = "";
-                CodonStartNumber = CodonStartIndex = -1;
+                CodonStartNumber = -1;
+                CodonStartIndex = -1;
                 effType = EffectType.EXON_DELETED;
             }
             else if (NetCodingSequenceChange.Length % CODON_SIZE != 0)
@@ -123,7 +124,7 @@ namespace Proteogenomics
         /// <returns></returns>
         protected override string CodonsRef()
         {
-            if (NetCodingSequenceChange == "") return "";
+            if (NetCodingSequenceChange == "") { return ""; }
 
             long min = Variant.OneBasedStart;
             long max = Variant.OneBasedEnd;
@@ -138,16 +139,16 @@ namespace Proteogenomics
                 cdsBaseMax = swap;
             }
 
-            if (cdsBaseMax < cdsBaseMin) throw new Exception("This should never happen!\n\tcdsBaseMin: " + cdsBaseMin + "\n\tcdsBaseMax: " + cdsBaseMax + "\n\tmin: " + min + "\n\tmax: " + max + "\n\tSeqChange: " + Variant + "\n\ttranscript: " + Transcript + "\n\tCDS.len: " + Transcript.RetrieveCodingSequence().Count);
+            if (cdsBaseMax < cdsBaseMin) throw new ArgumentOutOfRangeException("This should never happen!\n\tcdsBaseMin: " + cdsBaseMin + "\n\tcdsBaseMax: " + cdsBaseMax + "\n\tmin: " + min + "\n\tmax: " + max + "\n\tSeqChange: " + Variant + "\n\ttranscript: " + Transcript + "\n\tCDS.len: " + Transcript.RetrieveCodingSequence().Count);
 
             long maxCodon = cdsBaseMax / CODON_SIZE;
             long minCodon = cdsBaseMin / CODON_SIZE;
             long oldCodonCdsStart = (CODON_SIZE * minCodon);
             long oldCodonCdsEnd = (CODON_SIZE * (maxCodon + 1)) - 1;
 
-            string codons = "";
-            if (oldCodonCdsEnd >= Transcript.RetrieveCodingSequence().Count) codons = SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence()).Substring((int)oldCodonCdsStart);
-            else codons = SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence().GetSubSequence(oldCodonCdsStart, oldCodonCdsEnd + 1));
+            string codons = oldCodonCdsEnd >= Transcript.RetrieveCodingSequence().Count ?
+                SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence()).Substring((int)oldCodonCdsStart) :
+                SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence().GetSubSequence(oldCodonCdsStart, oldCodonCdsEnd + 1));
 
             return codons;
         }
@@ -164,7 +165,10 @@ namespace Proteogenomics
         {
             foreach (Exon ex in Transcript.Exons)
             {
-                if (Variant.Includes(ex)) EffectNoCodon(ex, EffectType.EXON_DELETED);
+                if (Variant.Includes(ex))
+                {
+                    EffectNoCodon(ex, EffectType.EXON_DELETED);
+                }
             }
         }
 
@@ -193,7 +197,7 @@ namespace Proteogenomics
             // A combination of partial and full exons affected
             //---
             CodonsRefAlt();
-            EffectType effType = EffectType.NONE;
+            EffectType effType;
             int lenDiff = cdsAlt.Length - cdsRef.Length;
             if (lenDiff % CODON_SIZE != 0)
             {
@@ -236,8 +240,8 @@ namespace Proteogenomics
 
         protected override void ExonsNoncoding()
         {
-            if (exonFull > 0) EffectNoCodon(Transcript, EffectType.EXON_DELETED, EffectImpact.MODIFIER);
-            if (exonPartial > 0) EffectNoCodon(Transcript, EffectType.EXON_DELETED_PARTIAL, EffectImpact.MODIFIER);
+            if (exonFull > 0) { EffectNoCodon(Transcript, EffectType.EXON_DELETED, EffectImpact.MODIFIER); }
+            if (exonPartial > 0) { EffectNoCodon(Transcript, EffectType.EXON_DELETED_PARTIAL, EffectImpact.MODIFIER); }
         }
 
         protected override void Intron()

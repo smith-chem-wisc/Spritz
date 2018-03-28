@@ -57,7 +57,9 @@ namespace Proteogenomics
         {
             byte value;
             if (TryLookup(sequence, offset, out value))
+            {
                 return value;
+            }
 
             throw new InvalidOperationException(
                 string.Format(null, "({0},{1},{2}) not found.", (char)sequence[offset], (char)sequence[offset + 1], (char)sequence[offset + 2]));
@@ -80,10 +82,13 @@ namespace Proteogenomics
         public static bool TryLookup(ISequence sequence, int offset, out byte aminoAcid)
         {
             if (sequence == null)
+            {
                 throw new ArgumentNullException("sequence");
+            }
             if (offset >= sequence.Count - 2)
+            {
                 throw new ArgumentException("offset overflow");
-
+            }
             return TryLookup(sequence[offset], sequence[offset + 1], sequence[offset + 2], out aminoAcid);
         }
 

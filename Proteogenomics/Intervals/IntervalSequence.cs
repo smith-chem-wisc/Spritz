@@ -40,7 +40,7 @@ namespace Proteogenomics
             Variants.Add(variant);
 
             IntervalSequence newIntervalSeq = new IntervalSequence(base.ApplyVariant(variant), new Sequence(Sequence));
-            if (variant.Intersects(this) && Sequence != null && !(Sequence.Count == 0))
+            if (variant.Intersects(this) && Sequence != null && Sequence.Count != 0)
             {
                 switch (variant.VarType)
                 {
@@ -72,7 +72,7 @@ namespace Proteogenomics
                         break;
 
                     default:
-                        throw new Exception("Unimplemented method for variant change type " + variant.VarType + "\n\tVariant: " + variant);
+                        throw new ArgumentException("Unimplemented method for variant change type " + variant.VarType + "\n\tVariant: " + variant);
                 }
             }
 
@@ -89,8 +89,8 @@ namespace Proteogenomics
             long idxEnd = idxStart + variant.Length();
 
             StringBuilder newSeq = new StringBuilder();
-            if (idxStart >= 0) newSeq.Append(SequenceExtensions.ConvertToString(seq, 0, idxStart));
-            if (idxEnd >= 0 && idxEnd < seq.Count) newSeq.Append(SequenceExtensions.ConvertToString(seq));
+            if (idxStart >= 0) { newSeq.Append(SequenceExtensions.ConvertToString(seq, 0, idxStart)); }
+            if (idxEnd >= 0 && idxEnd < seq.Count) { newSeq.Append(SequenceExtensions.ConvertToString(seq)); }
 
             // Update sequence
             seq = new Sequence(seq.Alphabet, newSeq.ToString());
@@ -211,7 +211,7 @@ namespace Proteogenomics
         public ISequence basesAtPos(int pos, int len)
         {
             long index = pos - OneBasedEnd;
-            if (index < 0) return new Sequence(Alphabets.DNA, "");
+            if (index < 0) { return new Sequence(Alphabets.DNA, ""); }
             return basesAt(index, len);
         }
 

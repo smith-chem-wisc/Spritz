@@ -6,14 +6,12 @@ namespace Proteogenomics
     public abstract class CodonChangeStructural
         : CodonChange
     {
-        public static bool debug = false;
-
         protected bool coding;
         protected int exonFull, exonPartial;
         protected string cdsAlt;
         protected string cdsRef;
 
-        public CodonChangeStructural(Variant variant, Transcript transcript, VariantEffects variantEffects)
+        protected CodonChangeStructural(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
             coding = transcript.isProteinCoding(); // || Config.get().isTreatAllAsProteinCoding();
@@ -45,8 +43,8 @@ namespace Proteogenomics
             }
 
             // Removing trailing codons
-            int codonNumEndRef = cdsRef.Length / 3; //+ (cdsRef.Length % 3 == 0 ? 0 : 1);
-            int codonNumEndAlt = cdsAlt.Length / 3; //+ (cdsAlt.Length % 3 == 0 ? 0 : 1);
+            int codonNumEndRef = cdsRef.Length / 3;
+            int codonNumEndAlt = cdsAlt.Length / 3;
 
             for (; codonNumEndRef >= CodonStartNumber && codonNumEndAlt >= CodonStartNumber; codonNumEndRef--, codonNumEndAlt--)
             {
@@ -63,7 +61,8 @@ namespace Proteogenomics
             // No codon difference found?
             if (CodonsReference == "" && CodonsAlternate == "")
             {
-                CodonStartNumber = CodonStartIndex = -1;
+                CodonStartNumber = -1;
+                CodonStartIndex = -1;
             }
         }
 
@@ -93,15 +92,21 @@ namespace Proteogenomics
             base.ChangeCodon();
         }
 
-        private int codonDiffIndex(string cdsRef, string cdsAlt, int codonNumRef, int codonNumAlt)
+        private static int codonDiffIndex(string cdsRef, string cdsAlt, int codonNumRef, int codonNumAlt)
         {
             for (int h = 0, i = 3 * codonNumRef, j = 3 * codonNumAlt; h < 3; i++, j++, h++)
             {
                 // Premature end of sequence? (i.e. sequence ends before codon end)
-                if (i >= cdsRef.Length || j >= cdsAlt.Length) return h;
+                if (i >= cdsRef.Length || j >= cdsAlt.Length)
+                {
+                    return h;
+                }
 
                 // Different base? Return index
-                if (cdsRef[i] != cdsAlt[j]) return h;
+                if (cdsRef[i] != cdsAlt[j])
+                {
+                    return h;
+                }
             }
 
             return -1;
@@ -115,7 +120,7 @@ namespace Proteogenomics
         /// <param name="codonNumRef"></param>
         /// <param name="codonNumAlt"></param>
         /// <returns></returns>
-        private bool codonEquals(string cdsRef, string cdsAlt, int codonNumRef, int codonNumAlt)
+        private static bool codonEquals(string cdsRef, string cdsAlt, int codonNumRef, int codonNumAlt)
         {
             for (int h = 0, i = 3 * codonNumRef, j = 3 * codonNumAlt; h < 3; i++, j++, h++)
             {
@@ -141,7 +146,7 @@ namespace Proteogenomics
         /// <param name="codonNumStart"></param>
         /// <param name="codonNumEnd"></param>
         /// <returns></returns>
-        private string Codons(string cds, int codonNumStart, int codonNumEnd)
+        private static string Codons(string cds, int codonNumStart, int codonNumEnd)
         {
             if (codonNumEnd >= 0 && codonNumEnd < codonNumStart) { return ""; }
             int endBase = codonNumEnd < 0 ? cds.Length : 3 * (codonNumEnd + 1);
@@ -167,7 +172,8 @@ namespace Proteogenomics
         /// </summary>
         protected void CountAffectedExons()
         {
-            exonFull = exonPartial = 0;
+            exonFull = 0;
+            exonPartial = 0;
 
             foreach (Exon ex in Transcript.Exons)
             {

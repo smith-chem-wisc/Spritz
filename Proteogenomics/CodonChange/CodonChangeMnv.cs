@@ -40,8 +40,6 @@ namespace Proteogenomics
 
             // Create change effect
             Effect(Transcript, EffectType.CODON_CHANGE, true); // Use a generic low priority variant, this allows 'setCodons' to override it
-
-            return;
         }
 
         /// <summary>
@@ -83,7 +81,7 @@ namespace Proteogenomics
             // Round to codon position
             long scStart3 = round3(scStart, false);
             long scEnd3 = round3(scEnd, true);
-            if (scEnd3 == scStart3) scEnd3 += 3; // At least one codon
+            if (scEnd3 == scStart3) { scEnd3 += 3; }// At least one codon
 
             // Append 'N'
             string padN = "";
@@ -103,7 +101,7 @@ namespace Proteogenomics
                         break;
 
                     default:
-                        throw new Exception("Sanity check failed. Number of 'N' pading is :" + diff + ". This should not happen!");
+                        throw new ArgumentOutOfRangeException("Sanity check failed. Number of 'N' pading is :" + diff + ". This should not happen!");
                 }
             }
 
@@ -112,8 +110,7 @@ namespace Proteogenomics
 
             // Get new codon (change)
             string prepend = CodonsReference.Substring(0, (int)(scStart - scStart3));
-            string append = "";
-            if (scEnd3 > scEnd) append = CodonsReference.Substring(CodonsReference.Length - (int)(scEnd3 - scEnd));
+            string append = scEnd3 > scEnd ? CodonsReference.Substring(CodonsReference.Length - (int)(scEnd3 - scEnd)) : "";
             CodonsAlternate = prepend + NetCdsChange() + append;
 
             // Pad codons with 'N' if required
@@ -138,7 +135,10 @@ namespace Proteogenomics
                         CodonsAlternate = CodonsAlternate.Substring(3);
                         CodonStartNumber++;
                     }
-                    else break;
+                    else
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -178,22 +178,11 @@ namespace Proteogenomics
             return Variant.NetChange(Transcript.IsStrandPlus());
         }
 
-        private long round3(long num, bool end)
+        private static long round3(long num, bool end)
         {
-            if (end)
-            {
-                if (num % 3 == 2)
-                {
-                    return num;
-                }
-                return (num / 3) * 3 + 2;
-            }
-
-            if (num % 3 == 0)
-            {
-                return num;
-            }
-            return (num / 3) * 3;
+            return end ?
+                num % 3 == 2 ? num : (num / 3) * 3 + 2 :
+                num % 3 == 0 ? num : (num / 3) * 3;
         }
     }
 }

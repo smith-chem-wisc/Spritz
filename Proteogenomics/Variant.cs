@@ -137,8 +137,8 @@ namespace Proteogenomics
 
             if (variant.Attributes.TryGetValue("ANN", out object snpEffAnnotationObj))
             {
-                if (snpEffAnnotationObj as string[] != null) SnpEffAnnotations = (snpEffAnnotationObj as string[]).Select(x => new SnpEffAnnotation(this, x)).ToList();
-                if (snpEffAnnotationObj as string != null) SnpEffAnnotations = new List<SnpEffAnnotation> { new SnpEffAnnotation(this, snpEffAnnotationObj as string) };
+                if (snpEffAnnotationObj as string[] != null) { SnpEffAnnotations = (snpEffAnnotationObj as string[]).Select(x => new SnpEffAnnotation(this, x)).ToList(); }
+                if (snpEffAnnotationObj as string != null) { SnpEffAnnotations = new List<SnpEffAnnotation> { new SnpEffAnnotation(this, snpEffAnnotationObj as string) }; }
             }
         }
 
@@ -150,10 +150,12 @@ namespace Proteogenomics
         {
             // Sanity check
             if (SecondAlleleString.IndexOf(',') >= 0 || SecondAlleleString.IndexOf('/') >= 0)
-                throw new Exception("Variants with multiple ALTs are not allowed (ALT: '" + SecondAlleleString + "')");
+            {
+                throw new ArgumentException("Variants with multiple ALTs are not allowed (ALT: '" + SecondAlleleString + "')");
+            }
 
             // Remove leading char (we still have some test cases using old TXT format)
-            if (ReferenceAlleleString == "*") ReferenceAlleleString = "";
+            if (ReferenceAlleleString == "*") { ReferenceAlleleString = ""; }
 
             // Possibly some old formatting with +, -, and =
             if (SecondAlleleString.StartsWith("+"))
@@ -177,17 +179,29 @@ namespace Proteogenomics
             // Calculate variant type
             //---
             if (ReferenceAlleleString == SecondAlleleString)
-                this.VarType = VariantType.INTERVAL;
+            {
+                VarType = VariantType.INTERVAL;
+            }
             else if (ReferenceAlleleString.Length == 1 && SecondAlleleString.Length == 1)
-                this.VarType = VariantType.SNV;
+            {
+                VarType = VariantType.SNV;
+            }
             else if (ReferenceAlleleString.Length == SecondAlleleString.Length)
-                this.VarType = VariantType.MNV;
+            {
+                VarType = VariantType.MNV;
+            }
             else if (ReferenceAlleleString.Length < SecondAlleleString.Length && SecondAlleleString.StartsWith(ReferenceAlleleString))
-                this.VarType = VariantType.INS;
+            {
+                VarType = VariantType.INS;
+            }
             else if (ReferenceAlleleString.Length > SecondAlleleString.Length && ReferenceAlleleString.StartsWith(SecondAlleleString))
-                this.VarType = VariantType.DEL;
+            {
+                VarType = VariantType.DEL;
+            }
             else
-                this.VarType = VariantType.MIXED;
+            {
+                VarType = VariantType.MIXED;
+            }
 
             //---
             // Start and end position
@@ -208,12 +222,12 @@ namespace Proteogenomics
 
         public bool isDel()
         {
-            return (VarType == VariantType.DEL);
+            return VarType == VariantType.DEL;
         }
 
         public bool isDup()
         {
-            return (VarType == VariantType.DUP);
+            return VarType == VariantType.DUP;
         }
 
         public bool isElongation()
@@ -223,7 +237,7 @@ namespace Proteogenomics
 
         public bool isInDel()
         {
-            return (VarType == VariantType.INS) || (VarType == VariantType.DEL);
+            return VarType == VariantType.INS || VarType == VariantType.DEL;
         }
 
         public bool isIns()
@@ -268,11 +282,13 @@ namespace Proteogenomics
         public long LengthChange()
         {
             if (isSnv() || isMnv())
+            {
                 return 0;
+            }
 
             // This is a length changing Variant (i.e. Insertions, deletion, or mixed change)
             // Calculate the number of bases of change in length
-            if (ReferenceAlleleString != "" || SecondAlleleString != "") return SecondAlleleString.Length - ReferenceAlleleString.Length;
+            if (ReferenceAlleleString != "" || SecondAlleleString != "") { return SecondAlleleString.Length - ReferenceAlleleString.Length; }
 
             // Default to traditional apporach for imprecise and structural variants
             return OneBasedEnd - OneBasedStart;
@@ -290,21 +306,27 @@ namespace Proteogenomics
         public string NetChange(Interval interval)
         {
             string netChange = SecondAlleleString;
-            if (isDel()) netChange = ReferenceAlleleString; // In deletions 'alt' is empty
+            if (isDel()) { netChange = ReferenceAlleleString; } // In deletions 'alt' is empty
 
             long removeBefore = interval.OneBasedStart - OneBasedStart;
             if (removeBefore > 0)
             {
-                if (removeBefore >= netChange.Length) return ""; // Nothing left
+                if (removeBefore >= netChange.Length) { return ""; }// Nothing left
             }
-            else removeBefore = 0;
+            else
+            {
+                removeBefore = 0;
+            }
 
             long removeAfter = OneBasedEnd - interval.OneBasedEnd;
             if (removeAfter > 0)
             {
-                if ((removeBefore + removeAfter) >= netChange.Length) return ""; // Nothing left
+                if ((removeBefore + removeAfter) >= netChange.Length) { return ""; } // Nothing left
             }
-            else removeAfter = 0;
+            else
+            {
+                removeAfter = 0;
+            }
 
             // Remove leading and trailing parts
             netChange = netChange.Substring((int)removeBefore, netChange.Length - (int)removeAfter);
