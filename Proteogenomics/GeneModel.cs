@@ -14,8 +14,6 @@ namespace Proteogenomics
     /// </summary>
     public class GeneModel
     {
-        #region Private Fields
-
         /// <summary>
         /// Gets the first instance of a word
         /// </summary>
@@ -26,9 +24,16 @@ namespace Proteogenomics
         /// </summary>
         private static Regex attributeValue = new Regex(@"""([\w.]+)""");
 
-        #endregion Private Fields
-
-        #region Public Properties
+        /// <summary>
+        /// Constructs this GeneModel object from a Genome object and a corresponding GTF or GFF3 gene model file.
+        /// </summary>
+        /// <param name="genome"></param>
+        /// <param name="geneModelFile"></param>
+        public GeneModel(Genome genome, string geneModelFile)
+        {
+            Genome = genome;
+            ReadGeneFeatures(geneModelFile);
+        }
 
         /// <summary>
         /// Genome this gene model is based on.
@@ -50,24 +55,7 @@ namespace Proteogenomics
         /// </summary>
         public List<Intergenic> Intergenics { get; set; } = new List<Intergenic>();
 
-        #endregion Public Properties
-
-        #region Public Constructor
-
-        /// <summary>
-        /// Constructs this GeneModel object from a Genome object and a corresponding GTF or GFF3 gene model file.
-        /// </summary>
-        /// <param name="genome"></param>
-        /// <param name="geneModelFile"></param>
-        public GeneModel(Genome genome, string geneModelFile)
-        {
-            this.Genome = genome;
-            ReadGeneFeatures(geneModelFile);
-        }
-
-        #endregion Public Constructor
-
-        #region Public Methods -- Read Gene Model File
+        #region Methods -- Read Gene Model File
 
         private Gene currentGene = null;
         private Transcript currentTranscript = null;
@@ -238,10 +226,6 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Public Methods -- Read Gene Model File
-
-        #region Private Method -- Read Gene Model File
-
         private static Regex gffVersion = new Regex(@"(##gff-version\s+)(\d)");
 
         /// <summary>
@@ -277,9 +261,9 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Private Method -- Read Gene Model File
+        #endregion Methods -- Read Gene Model File
 
-        #region Public Methods
+        #region Methods -- Applying Variants
 
         /// <summary>
         /// Creates UTRs for transcripts and
@@ -324,7 +308,7 @@ namespace Proteogenomics
         /// Apply a list of variants to the intervals within this gene model
         /// </summary>
         /// <param name="variants"></param>
-        public void ApplyVariants(List<Variant> variants)
+        public List<Transcript> ApplyVariants(List<Variant> variants)
         {
             List<Transcript> resultingTranscripts = new List<Transcript>();
             foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
@@ -340,9 +324,10 @@ namespace Proteogenomics
                 List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
                 resultingTranscripts.AddRange(t.ApplyVariantsCombinitorially(transcriptVariants));
             }
+            return resultingTranscripts;
         }
 
-        #endregion Public Methods
+        #endregion Methods -- Applying Variants
 
         #region Translation Methods
 

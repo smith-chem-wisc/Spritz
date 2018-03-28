@@ -71,19 +71,26 @@ namespace WorkflowLayer
                 Console.WriteLine("Error: VCF not found: " + vcfPath);
                 return "Error: VCF not found: " + vcfPath;
             }
+
+            // Parse VCF file
             VCFParser vcf = new VCFParser(vcfPath);
             List<Protein> proteins = new List<Protein>();
             List<Variant> singleNucleotideVariants = vcf.Select(x => x)
                 .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
                 .Select(v => new Variant(null, v, genome)).ToList();
-            geneModel.ApplyVariants(singleNucleotideVariants);
-            List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
+
+            // Apply the variants and translate the variant transcripts
+            List<Transcript> transcripts = geneModel.ApplyVariants(singleNucleotideVariants);
             for (int i = 0; i < transcripts.Count; i++)
             {
                 Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
-                proteins.AddRange(transcripts[i].TranslateFromSnpEffAnnotatedSNVs(true, true, reference, proteinSeqeunces, badProteinAccessions, selenocysteineContaininAccessions));
+                if (badProteinAccessions.Contains(transcripts[i].ID) || badProteinAccessions.Contains(transcripts[i].ProteinID))
+                {
+                    continue;
+                }
+                proteins.Add(transcripts[i].Protein(selenocysteineContaininAccessions));
             }
-            int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
+            int transcriptsWithVariants = transcripts.Count(t => t.CodingDomainSequences.Any(y => y.Variants.Count > 0));
             string proteinVariantDatabase = outprefix + ".protein.fasta";
             string proteinVariantDatabaseXml = outprefix + ".protein.xml";
             List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();

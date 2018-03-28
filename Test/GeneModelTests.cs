@@ -58,7 +58,7 @@ namespace Test
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_pacbio.gff3"));
 
-            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, false, 7)).ToList();
+            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, null, false, 7)).ToList();
 
             //Forward strand, single coding region
             Assert.AreEqual("PB2015.1.1", proteins[0].Accession);
@@ -114,7 +114,7 @@ namespace Test
             Genome genome = new Genome(@"D:\GRCh38.81\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
             GeneModel geneModel = new GeneModel(genome, @"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gff3");
             List<Protein> geneBasedProteins = geneModel.Translate(true, true, badProteinAccessions, selenocysteineContainingAccessions);
-            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh38.81\Homo_sapiens.GRCh38.pep.all.fasta", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression);
+            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh38.81\Homo_sapiens.GRCh38.pep.all.fasta", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 
             foreach (Protein p in proteins)

@@ -34,7 +34,7 @@ namespace Benchmark
             Genome genome = new Genome(@"D:\GRCh37_canon\GRCh37_canon.fa");
             Console.WriteLine(genome.Chromosomes.Count + " chroms");
 
-            List<Protein> ensembl_seqs = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh37.87\Homo_sapiens.GRCh37.pep.all.fa", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression).ToList();
+            List<Protein> ensembl_seqs = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh37.87\Homo_sapiens.GRCh37.pep.all.fa", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors).ToList();
             HashSet<string> incompletes = new HashSet<string>(ensembl_seqs.Where(p => 
                 p.BaseSequence.StartsWith("X") || p.BaseSequence.EndsWith("X") || p.BaseSequence.Contains("*")).Select(p => p.Accession.Split(' ')[0].Split('.')[0]));
 
@@ -49,7 +49,7 @@ namespace Benchmark
             Console.WriteLine(pacBioModel.Genes.Count + " genes2");
             Console.WriteLine(pacBioModel.Genes.Sum(g => g.Transcripts.Count) + " transcripts2");
             Console.WriteLine(pacBioModel.Genes.Sum(g => g.Transcripts.Sum(t => t.Exons.Count)) + " exons2");
-            List<Protein> pacbio_proteins = pacBioModel.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(ensemblModel, false, 7)).ToList();
+            List<Protein> pacbio_proteins = pacBioModel.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(ensemblModel, null, false, 7)).ToList();
             Dictionary<string, List<Protein>> seq_unique = new Dictionary<string, List<Protein>>();
             foreach (Protein p in pacbio_proteins)
             {
