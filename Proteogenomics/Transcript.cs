@@ -83,7 +83,7 @@ namespace Proteogenomics
         /// <summary>
         /// Introns for this transcript
         /// </summary>
-        public List<Intron> Introns { get; set; }
+        public List<Intron> Introns { get; set; } = new List<Intron>();
 
         /// <summary>
         /// Coding domain sequence (CDS) information

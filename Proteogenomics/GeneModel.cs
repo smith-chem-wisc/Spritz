@@ -105,7 +105,10 @@ namespace Proteogenomics
             }
             CreateUTRsAndIntergenicRegions();
             // possibly check transcript sanity here with Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t => t.SanityCheck());
-            Parallel.ForEach(Genes, gene => gene.TranscriptTree.Build(gene.Transcripts));
+            foreach (Gene gene in Genes)
+            {
+                gene.TranscriptTree.Build();
+            }
             GenomeForest.Build();
         }
 
@@ -137,6 +140,7 @@ namespace Proteogenomics
             {
                 currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
                 currentGene.Transcripts.Add(currentTranscript);
+                currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
 
@@ -193,6 +197,7 @@ namespace Proteogenomics
 
                 currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
                 currentGene.Transcripts.Add(currentTranscript);
+                currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
 

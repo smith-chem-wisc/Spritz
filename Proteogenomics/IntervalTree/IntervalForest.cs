@@ -7,16 +7,6 @@ namespace Proteogenomics
     /// </summary>
     public class IntervalForest
     {
-        #region Public Properties
-
-        public string Name { get; set; }
-
-        public Dictionary<string, IntervalTree> Forest { get; set; } = new Dictionary<string, IntervalTree>();
-
-        #endregion Public Properties
-
-        #region Constructors
-
         public IntervalForest()
         {
         }
@@ -26,9 +16,11 @@ namespace Proteogenomics
             Add(intervals);
         }
 
-        #endregion Constructors
 
-        #region Public Methods
+        public string Name { get; set; }
+
+        public Dictionary<string, IntervalTree> Forest { get; set; } = new Dictionary<string, IntervalTree>();
+
 
         public void Add(IEnumerable<Interval> intervals)
         {
@@ -40,9 +32,18 @@ namespace Proteogenomics
 
         public void Add(Interval interval)
         {
-            if (interval == null) return;
-            if (Forest.TryGetValue(interval.ChromosomeID, out IntervalTree tree)) tree.Add(interval);
-            else Forest.Add(interval.ChromosomeID, new IntervalTree(new List<Interval> { interval }));
+            if (interval == null)
+            {
+                return;
+            }
+            if (Forest.TryGetValue(interval.ChromosomeID, out IntervalTree tree))
+            {
+                tree.Add(interval);
+            }
+            else
+            {
+                Forest.Add(interval.ChromosomeID, new IntervalTree(new List<Interval> { interval }));
+            }
         }
 
         public void Build()
@@ -52,7 +53,5 @@ namespace Proteogenomics
                 it.Build();
             }
         }
-
-        #endregion Public Methods
     }
 }

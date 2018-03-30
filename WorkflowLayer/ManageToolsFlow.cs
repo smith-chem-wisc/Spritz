@@ -27,6 +27,7 @@ namespace WorkflowLayer
 
             // file compression
             "zlib1g-dev",
+            "liblzo2-dev",
             "unzip",
             "liblzma-dev",
             "libncurses5-dev",
@@ -111,9 +112,7 @@ namespace WorkflowLayer
 
             // python setup
             commands.Add("sudo easy_install pip");
-            commands.Add("sudo pip install --upgrade virtualenv");
-            commands.Add("pip install --upgrade pip");
-            commands.Add("sudo pip install --upgrade qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
+            commands.Add("sudo pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
 
             // java8 setup
             commands.Add

@@ -6,7 +6,7 @@ namespace Proteogenomics
     {
         public IntervalNode Head { get; set; } = new IntervalNode();
 
-        public List<Interval> Intervals { get; set; }
+        public List<Interval> Intervals { get; set; } = new List<Interval>();
 
         public bool Synced { get; set; }
 

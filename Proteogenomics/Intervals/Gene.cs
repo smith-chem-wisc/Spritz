@@ -15,7 +15,7 @@ namespace Proteogenomics
         public string ID { get; set; }
         public Chromosome Chromosome { get; set; }
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
-        public IntervalTree TranscriptTree { get; set; }
+        public IntervalTree TranscriptTree { get; set; } = new IntervalTree();
 
         public Gene(string ID, Chromosome chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
             : base(chromosome, chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd)

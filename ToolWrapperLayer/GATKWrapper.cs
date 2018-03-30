@@ -105,7 +105,9 @@ namespace ToolWrapperLayer
                 "  unzip gatk-4.0.0.0.zip",
                 "  rm gatk-4.0.0.0.zip",
                 "  mv gatk-4.0.0.0 gatk",
-                "fi"
+                "fi",
+                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
+
             });
             return scriptPath;
         }
