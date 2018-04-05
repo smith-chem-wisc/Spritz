@@ -72,7 +72,12 @@ namespace ToolWrapperLayer
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(htmlReport) +
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
-                    " > " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath)
+                    " > " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath),
+
+                // remove the annotated VCF file if snpEff didn't work, e.g. if there was no VCF file to annotate
+                "if [[ ( -f " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath) + " && ! -s " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath) + " ) ]]; then",
+                "  rm " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath),
+                "fi",
             };
         }
 

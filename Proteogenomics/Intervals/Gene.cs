@@ -17,18 +17,28 @@ namespace Proteogenomics
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();
         public IntervalTree TranscriptTree { get; set; } = new IntervalTree();
 
+        /// <summary>
+        /// Constructing a gene using Bio object
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="chromosome"></param>
+        /// <param name="strand"></param>
+        /// <param name="oneBasedStart"></param>
+        /// <param name="oneBasedEnd"></param>
+        /// <param name="metadata"></param>
         public Gene(string ID, Chromosome chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
-            : base(chromosome, chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd)
+            : base(chromosome, chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null)
         {
             this.ID = ID;
             this.Chromosome = chromosome;
             this.Metadata = metadata;
         }
 
-        public List<Protein> Translate(bool translateCodingDomains, bool includeVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public List<Protein> Translate(bool translateCodingDomains, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
+            incompleteTranscriptAccessions = incompleteTranscriptAccessions ?? new HashSet<string>();
             List<Protein> proteins = new List<Protein>();
-            foreach (Transcript t in Transcripts)
+            foreach (Transcript t in translateCodingDomains ? Transcripts.Where(t => t.isProteinCoding()) : Transcripts)
             {
                 if (incompleteTranscriptAccessions.Contains(t.ProteinID)) { continue; }
                 lock (proteins) { proteins.Add(t.Protein(selenocysteineContaining)); }
@@ -36,7 +46,7 @@ namespace Proteogenomics
             return proteins;
         }
 
-        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, bool includeVariants, int min_length)
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, int min_length)
         {
             int indexBinSize = 100000;
             Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts = new Dictionary<Tuple<string, string, long>, List<CDS>>();
@@ -51,7 +61,7 @@ namespace Proteogenomics
             List<Protein> proteins = new List<Protein>();
             Parallel.ForEach(Transcripts, t =>
             {
-                IEnumerable<Protein> p = t.TranslateUsingAnnotatedStartCodons(binnedCodingStarts, selenocysteineContaining, indexBinSize, min_length, includeVariants);
+                IEnumerable<Protein> p = t.TranslateUsingAnnotatedStartCodons(binnedCodingStarts, selenocysteineContaining, indexBinSize, min_length);
                 if (p != null)
                 {
                     lock (proteins) proteins.AddRange(p);

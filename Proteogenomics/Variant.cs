@@ -119,7 +119,7 @@ namespace Proteogenomics
         }
 
         public Variant(Interval parent, VariantContext variant, Chromosome chromosome)
-            : base(parent, variant.Chr, "+", variant.Start, variant.End)
+            : base(parent, variant.Chr, "+", variant.Start, variant.End, null)
         {
             Chromosome = chromosome;
             ReferenceAllele = variant.Reference;
@@ -305,8 +305,7 @@ namespace Proteogenomics
 
         public string NetChange(Interval interval)
         {
-            string netChange = SecondAlleleString;
-            if (isDel()) { netChange = ReferenceAlleleString; } // In deletions 'alt' is empty
+            string netChange = isDel() ? ReferenceAlleleString : SecondAlleleString; // In deletions 'alt' is empty
 
             long removeBefore = interval.OneBasedStart - OneBasedStart;
             if (removeBefore > 0)
@@ -329,7 +328,8 @@ namespace Proteogenomics
             }
 
             // Remove leading and trailing parts
-            netChange = netChange.Substring((int)removeBefore, netChange.Length - (int)removeAfter);
+            int netChangeLen = netChange.Length - (int)removeAfter - (int)removeBefore;
+            netChange = netChange.Substring((int)removeBefore, netChangeLen);
 
             return netChange;
         }

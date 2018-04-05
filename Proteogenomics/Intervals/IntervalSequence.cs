@@ -1,6 +1,7 @@
 ﻿using Bio;
 using Bio.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Proteogenomics
@@ -15,8 +16,8 @@ namespace Proteogenomics
         /// </summary>
         public ISequence Sequence { get; set; }
 
-        public IntervalSequence(Interval parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, ISequence sequence)
-            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
+        public IntervalSequence(Interval parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, ISequence sequence, HashSet<Variant> variants)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, variants)
         {
             Sequence = sequence;
         }
@@ -37,9 +38,7 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         public override Interval ApplyVariant(Variant variant)
         {
-            Variants.Add(variant);
-
-            IntervalSequence newIntervalSeq = new IntervalSequence(base.ApplyVariant(variant), new Sequence(Sequence));
+            IntervalSequence newIntervalSeq = new IntervalSequence(base.ApplyVariant(variant), new Sequence(Sequence)); // adds the variant to the variant list
             if (variant.Intersects(this) && Sequence != null && Sequence.Count != 0)
             {
                 switch (variant.VarType)
@@ -159,7 +158,7 @@ namespace Proteogenomics
             ISequence seq = IsStrandPlus() ? Sequence : Sequence.GetReverseComplementedSequence();
             StringBuilder seqsb = new StringBuilder();
             seqsb.Append(SequenceExtensions.ConvertToString(seq, 0, idxStart));
-            String seqAlt = variant.SecondAlleleString.Substring((int)idxAlt, (int)(idxAlt + changeSize));
+            String seqAlt = variant.SecondAlleleString.Substring((int)idxAlt, (int)changeSize);
             seqsb.Append(seqAlt);
             seqsb.Append(SequenceExtensions.ConvertToString(seq, idxEnd));
 
@@ -175,7 +174,10 @@ namespace Proteogenomics
 
             // Apply change to sequence
             long idx = variant.OneBasedStart - OneBasedStart;
-            seq = new Sequence(seq.Alphabet, SequenceExtensions.ConvertToString(seq, 0, idx) + variant.SecondAlleleString + SequenceExtensions.ConvertToString(seq, idx + 1));
+            string before = idx > 0 ? SequenceExtensions.ConvertToString(seq, 0, idx) : "";
+            string var = variant.SecondAlleleString;
+            string after = idx + 1 < seq.Count ? SequenceExtensions.ConvertToString(seq, idx + 1) : "";
+            seq = new Sequence(seq.Alphabet, before + var + after);
 
             // Update sequence
             markerSeq.Sequence = IsStrandPlus() ? seq : seq.GetReverseComplementedSequence();

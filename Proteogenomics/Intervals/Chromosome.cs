@@ -13,7 +13,7 @@ namespace Proteogenomics
         public bool Mitochondrial { get; set; }
 
         public Chromosome(ISequence sequence, Genome genome)
-            : base(genome, sequence.ID, "+", 1, sequence.Count)
+            : base(genome, sequence.ID, "+", 1, sequence.Count, null)
         {
             Sequence = sequence;
             FriendlyName = GetFriendlyChromosomeName(ChromosomeID);

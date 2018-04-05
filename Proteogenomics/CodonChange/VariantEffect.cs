@@ -104,7 +104,7 @@ namespace Proteogenomics
 
         public Variant Variant { get; private set; }
         public List<EffectType> effectTypes { get; private set; }
-        protected EffectType effectType { get; set; }
+        protected EffectType effectType { get; set; } = EffectType.NONE;
         protected List<EffectImpact> EffectImpacts { get; set; }
         protected EffectImpact effectImpact { get; set; }
         protected Interval marker { get; set; }
@@ -113,7 +113,8 @@ namespace Proteogenomics
         protected string message { get; set; } = ""; // Any message, warning or error?
         public string codonsRef { get; private set; } = ""; // Codon change information
         public string codonsAlt { get; private set; } = ""; // Codon change information
-        protected string codonsAroundOld = "", codonsAroundNew = ""; // Codons around
+        protected string codonsAroundOld { get; private set; } = ""; // Codons around
+        protected string codonsAroundNew { get; private set; } = "";
         protected long distance = -1; // Distance metric
         public long cDnaPos { get; private set; } = -1; // Position in cDNA
         public int codonNum { get; private set; } = -1; // Codon number (negative number mens 'information not available')
@@ -572,7 +573,10 @@ namespace Proteogenomics
 
                     return FunctionalClass.MISSENSE;
                 }
-                if (!codonsAlt.Equals(codonsRef)) { return FunctionalClass.SILENT; }
+                if (!codonsAlt.Equals(codonsRef))
+                {
+                    return FunctionalClass.SILENT;
+                }
             }
 
             return FunctionalClass.NONE;

@@ -14,6 +14,8 @@ namespace Proteogenomics
     public class Transcript
         : Interval
     {
+        private List<Exon> _sortedStrand;
+
         /// <summary>
         /// Used to construct upstream and downstream reginos
         /// </summary>
@@ -31,13 +33,26 @@ namespace Proteogenomics
         /// <param name="gene"></param>
         /// <param name="metadata"></param>
         /// <param name="ProteinID"></param>
-        public Transcript(string id, string version, Gene gene, string strand, long oneBasedStart, long oneBasedEnd, string proteinID)
-            : base(gene, gene.ChromosomeID, strand, oneBasedStart, oneBasedEnd)
+        public Transcript(string id, string version, Gene gene, string strand, long oneBasedStart, long oneBasedEnd, string proteinID, HashSet<Variant> variants)
+            : base(gene, gene.ChromosomeID, strand, oneBasedStart, oneBasedEnd, variants)
         {
             ID = id;
             Version = version;
             ProteinID = proteinID ?? id;
             Gene = gene;
+            Variants = variants ?? new HashSet<Variant>();
+        }
+
+        /// <summary>
+        /// Copy this transcript
+        /// </summary>
+        /// <param name="transcript"></param>
+        public Transcript(Transcript transcript)
+            : this(transcript.ID, transcript.Version, transcript.Gene, transcript.Strand, transcript.OneBasedStart, transcript.OneBasedEnd, transcript.ProteinID, transcript.Variants)
+        {
+            VariantAnnotations = new List<string>(transcript.VariantAnnotations);
+            Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(x)));
+            SetRegions(this);
         }
 
         /// <summary>
@@ -63,7 +78,18 @@ namespace Proteogenomics
         /// <summary>
         /// Exons sorted by start position or by reverse end position if on reverse strand
         /// </summary>
-        public List<Exon> ExonsSortedStrand { get { return SortedStrand(); } }
+        public List<Exon> ExonsSortedStrand
+        {
+            get
+            {
+                _sortedStrand = _sortedStrand ?? SortedStrand();
+                return _sortedStrand;
+            }
+            private set
+            {
+                _sortedStrand = value;
+            }
+        }
 
         /// <summary>
         /// List of the untranslated regions
@@ -123,14 +149,17 @@ namespace Proteogenomics
         public override Interval ApplyVariant(Variant variant)
         {
             Interval interval = base.ApplyVariant(variant);
-            Transcript transcript = new Transcript(ID, Version, Gene, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd, ProteinID);
+            Transcript transcript = new Transcript(ID, Version, Gene, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd, ProteinID, interval.Variants);
             for (int i = 0; i < CodingDomainSequences.Count; i++)
             {
                 if (CodingDomainSequences[i].Includes(variant))
                 {
                     transcript.CodingDomainSequences.Add(CodingDomainSequences[i].ApplyVariant(variant) as CDS);
                 }
-                transcript.CodingDomainSequences.Add(CodingDomainSequences[i]);
+                else
+                {
+                    transcript.CodingDomainSequences.Add(CodingDomainSequences[i]);
+                }
             }
             for (int i = 0; i < Exons.Count; i++)
             {
@@ -138,14 +167,27 @@ namespace Proteogenomics
                 {
                     transcript.Exons.Add(Exons[i].ApplyVariant(variant) as Exon); // applies variant to sequence
                 }
-                transcript.Exons.Add(Exons[i]);
+                else
+                {
+                    transcript.Exons.Add(Exons[i]);
+                }
             }
-
             transcript.VariantAnnotations = new List<string>(VariantAnnotations);
-            transcript.CreateIntrons();
-            transcript.CreateUTRs();
-            transcript.CreateUpDown(Gene.Chromosome);
+            SetRegions(transcript);
             return transcript;
+        }
+
+        /// <summary>
+        /// Sets relevant regions for a transcript
+        /// </summary>
+        /// <param name="transcript"></param>
+        public static void SetRegions(Transcript transcript)
+        {
+            transcript.Introns = transcript.CreateIntrons();
+            transcript.UTRs = transcript.CreateUTRs();
+            var updown = transcript.CreateUpDown(transcript.Gene.Chromosome);
+            transcript.Upstream = updown.OfType<Upstream>().FirstOrDefault();
+            transcript.Downstream = updown.OfType<Downstream>().FirstOrDefault();
         }
 
         /// <summary>
@@ -172,14 +214,14 @@ namespace Proteogenomics
             List<Transcript> result = new List<Transcript>();
             for (int i = 0; i < variantOrderedDescStart.Count; i++)
             {
+                Transcript firstAllele = this;
                 Variant v = variantOrderedDescStart[i];
                 VariantEffects variantEffects = AnnotateVariant(v);
                 bool missenseOrNonsense = variantEffects.Effects.Any(eff => eff.getFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
                 if (variantEffects == null)
                 {
-                    continue;
+                    result.Add(firstAllele);
                 }
-                Transcript firstAllele = this;
                 Transcript secondAllele = ApplyVariant(v) as Transcript;
                 secondAllele.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
                 result.Add(secondAllele);
@@ -194,6 +236,7 @@ namespace Proteogenomics
                     if (v.ReferenceAlleleString != v.FirstAlleleString)
                     {
                         firstAllele = ApplyFirstAllele(v) as Transcript;
+                        firstAllele.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
                     }
                     // if heterozygous and a coding change, add the first allele, too
                     result.Add(firstAllele);
@@ -270,7 +313,7 @@ namespace Proteogenomics
             {
                 if (ex.Intersects(variant))
                 {
-                    exonAnnotated |= ex.VariantEffect(variant, variantEffects);
+                    exonAnnotated |= ex.CreateVariantEffect(variant, variantEffects);
                 }
             }
 
@@ -283,7 +326,7 @@ namespace Proteogenomics
                 if (utr.Intersects(variant))
                 {
                     // Calculate the effect
-                    utr.VariantEffect(variant, variantEffects);
+                    utr.CreateVariantEffect(variant, variantEffects);
                     included |= utr.Includes(variant); // Is this variant fully included in the UTR?
                 }
             }
@@ -299,7 +342,7 @@ namespace Proteogenomics
             {
                 if (intron.Intersects(variant))
                 {
-                    intron.VariantEffect(variant, variantEffects);
+                    intron.CreateVariantEffect(variant, variantEffects);
                     included |= intron.Includes(variant); // Is this variant fully included in this intron?
                 }
             }
@@ -330,7 +373,7 @@ namespace Proteogenomics
                 ve.addErrorWarningInfo(x.SanityCheck(variant));
             }
             ve.setEffectType(type);
-            ve.setEffectImpact(Proteogenomics.VariantEffect.EffectDictionary[type]);
+            ve.setEffectImpact(VariantEffect.EffectDictionary[type]);
             return ve;
         }
 
@@ -672,7 +715,8 @@ namespace Proteogenomics
             // Concatenate all exons
             List<Exon> exons = ExonsSortedStrand;
             StringBuilder sequence = new StringBuilder();
-            int utr5len = 0, utr3len = 0;
+            int utr5len = 0;
+            int utr3len = 0;
 
             // 5 prime UTR length
             foreach (UTR utr in UTRs.OfType<UTR5Prime>())
@@ -685,9 +729,9 @@ namespace Proteogenomics
             bool missingSequence = false;
             foreach (Exon exon in exons)
             {
-                missingSequence |= exon.Sequence != null; // If there is no sequence, we are in trouble
-                sequence.Append(IsStrandPlus() ? exon.Sequence : exon.Sequence.GetReverseComplementedSequence());
-                alphabet = alphabet == null || alphabet.HasAmbiguity && !exon.Sequence.Alphabet.HasAmbiguity ? // keep the alphabet with the most characters
+                missingSequence |= exon.Sequence == null; // If there is no sequence, we are in trouble
+                sequence.Append(IsStrandPlus() ? SequenceExtensions.ConvertToString(exon.Sequence) : SequenceExtensions.ConvertToString(exon.Sequence.GetReverseComplementedSequence()));
+                alphabet = alphabet != null && (alphabet.HasAmbiguity && !exon.Sequence.Alphabet.HasAmbiguity) ? // keep the alphabet with the most characters
                     alphabet :
                     exon.Sequence.Alphabet;
             }
@@ -708,6 +752,7 @@ namespace Proteogenomics
 
                 // Cut 5 prime UTR and 3 prime UTR points
                 int subEnd = sequence.Length - utr3len;
+                int subLen = subEnd - utr5len;
 
                 if (utr5len > subEnd)
                 {
@@ -715,7 +760,7 @@ namespace Proteogenomics
                 }
                 else
                 {
-                    CodingSequence = new Sequence(alphabet, sequence.ToString().Substring(utr5len, subEnd));
+                    CodingSequence = new Sequence(alphabet, sequence.ToString().Substring(utr5len, subLen));
                 }
             }
             return CodingSequence;
@@ -727,11 +772,9 @@ namespace Proteogenomics
         /// <returns></returns>
         private List<Exon> SortedStrand()
         {
-            return ExonsSortedStrand != null ?
-                ExonsSortedStrand :
-                IsStrandPlus() ?
-                    Exons.OrderBy(x => x.OneBasedStart).ToList() :
-                    Exons.OrderByDescending(x => x.OneBasedEnd).ToList();
+            return IsStrandPlus() ?
+                Exons.OrderBy(x => x.OneBasedStart).ToList() :
+                Exons.OrderByDescending(x => x.OneBasedEnd).ToList();
         }
 
         public ISequence SplicedRNA()
@@ -754,7 +797,9 @@ namespace Proteogenomics
         {
             selenocysteineContaining = selenocysteineContaining != null ? selenocysteineContaining : new Dictionary<string, string>();
             bool hasSelenocysteine = selenocysteineContaining.TryGetValue(ProteinID, out string selenocysteineContainingSeq);
-            HashSet<int> uIndices = !hasSelenocysteine ? new HashSet<int>() : new HashSet<int>(Enumerable.Range(0, selenocysteineContainingSeq.Length).Where(i => selenocysteineContainingSeq[i] == 'U'));
+            HashSet<int> uIndices = !hasSelenocysteine ?
+                new HashSet<int>() :
+                new HashSet<int>(Enumerable.Range(0, selenocysteineContainingSeq.Length).Where(i => selenocysteineContainingSeq[i] == 'U'));
 
             ISequence proteinSequence = Translation.OneFrameTranslation(dnaSeq, Gene.Chromosome.Mitochondrial);
             string proteinBases = !hasSelenocysteine ?
@@ -765,10 +810,11 @@ namespace Proteogenomics
             string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
             string annotations = String.Join(" ", VariantAnnotations);
             string accession = Translation.GetSafeProteinAccession(ProteinID);
-            return new Protein(proteinSequenceString, accession, "Homo sapiens", null, null, null, annotations, annotations);
+            return new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations);
         }
 
-        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts, Dictionary<string, string> selenocysteineContaining, int indexBinSize, int minLength, bool includeVariants)
+        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts,
+            Dictionary<string, string> selenocysteineContaining, int indexBinSize, int minLength)
         {
             List<CDS> annotatedStarts = new List<CDS>();
             for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
@@ -840,12 +886,16 @@ namespace Proteogenomics
                 if (x.OneBasedStart < codingLeft)
                 {
                     long end = x.OneBasedEnd < codingLeft ? x.OneBasedEnd : codingLeft;
-                    UTRs.Add(IsStrandPlus() ? new UTR5Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR : new UTR3Prime(x, ChromosomeID, Strand, x.OneBasedStart, end) as UTR);
+                    UTRs.Add(IsStrandPlus() ?
+                        new UTR5Prime(x, ChromosomeID, Strand, x.OneBasedStart, end, null) as UTR :
+                        new UTR3Prime(x, ChromosomeID, Strand, x.OneBasedStart, end, null) as UTR);
                 }
                 if (x.OneBasedEnd > CodingDomainSequences.Last().OneBasedEnd)
                 {
                     long start = x.OneBasedStart < codingRight ? x.OneBasedStart : codingRight;
-                    UTRs.Add(IsStrandPlus() ? new UTR3Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR : new UTR5Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd) as UTR);
+                    UTRs.Add(IsStrandPlus() ?
+                        new UTR3Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd, null) as UTR :
+                        new UTR5Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd, null) as UTR);
                 }
             }
             return UTRs;
@@ -868,13 +918,13 @@ namespace Proteogenomics
 
             if (IsStrandPlus())
             {
-                if (beforeStart < beforeEnd) { Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd); }
-                if (afterStart < afterEnd) { Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd); }
+                if (beforeStart < beforeEnd) { Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd, null); }
+                if (afterStart < afterEnd) { Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd, null); }
             }
             else
             {
-                if (afterStart < afterEnd) { Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd); }
-                if (beforeStart < beforeEnd) { Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd); }
+                if (afterStart < afterEnd) { Upstream = new Upstream(this, chromosomeSequence.ChromosomeID, Strand, afterStart, afterEnd, null); }
+                if (beforeStart < beforeEnd) { Downstream = new Downstream(this, chromosomeSequence.ChromosomeID, Strand, beforeStart, beforeEnd, null); }
             }
 
             return new List<Interval> { Upstream, Downstream };
@@ -890,7 +940,7 @@ namespace Proteogenomics
                     previous = x;
                     continue;
                 }
-                Intron intron = new Intron(this, x.ChromosomeID, x.Strand, previous.OneBasedEnd + 1, x.OneBasedStart - 1);
+                Intron intron = new Intron(this, x.ChromosomeID, x.Strand, previous.OneBasedEnd + 1, x.OneBasedStart - 1, null);
                 if (intron.Length() > 0)
                 {
                     Introns.Add(intron);

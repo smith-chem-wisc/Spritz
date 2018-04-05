@@ -25,7 +25,7 @@ namespace Proteogenomics
             ISequence rnaSequence = Transcription.Transcribe(dnaSequence);
             ISequence proteinSequence = !mitochondrial ?
                 ProteinTranslation.Translate(rnaSequence) :
-                new Sequence(Alphabets.AmbiguousProtein, String.Join("", Enumerable.Range(0, (int)(rnaSequence.Count % 3))
+                new Sequence(Alphabets.AmbiguousProtein, String.Join("", Enumerable.Range(0, (int)(rnaSequence.Count / 3))
                     .Select(codonNum => CodonsVertebrateMitochondrial.TryLookup(rnaSequence, codonNum * 3, out byte aa) ?
                         new string(new[] { (char)aa }) :
                         "X")));

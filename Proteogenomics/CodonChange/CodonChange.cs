@@ -237,7 +237,10 @@ namespace Proteogenomics
                         cdsBaseInExon = Math.Min(exon.OneBasedEnd, cdsStart) - lastvariantBaseInExon;
                     }
 
-                    if (cdsBaseInExon < 0) { cdsBaseInExon = 0; }
+                    if (cdsBaseInExon < 0)
+                    {
+                        cdsBaseInExon = 0;
+                    }
 
                     // Get codon number and index within codon (where seqChage is pointing)
                     if (CodonStartNumber < 0)

@@ -1,10 +1,12 @@
-﻿namespace Proteogenomics
+﻿using System.Collections.Generic;
+
+namespace Proteogenomics
 {
     public abstract class UTR :
         Interval
     {
-        protected UTR(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
-            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
+        protected UTR(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, variants)
         {
         }
 
@@ -17,6 +19,6 @@
 
         public abstract bool is5Prime();
 
-        public abstract override bool VariantEffect(Variant variant, VariantEffects variantEffects);
+        public abstract override bool CreateVariantEffect(Variant variant, VariantEffects variantEffects);
     }
 }

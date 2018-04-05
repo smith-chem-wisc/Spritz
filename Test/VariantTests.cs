@@ -1,13 +1,12 @@
-﻿using Bio;
-using Bio.VCF;
+﻿using Bio.VCF;
 using NUnit.Framework;
 using Proteogenomics;
 using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UsefulProteomicsDatabases;
 using ToolWrapperLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -31,28 +30,28 @@ namespace Test
 
             GeneModel geneModel;
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            var transcripts1 = geneModel.ApplyVariants(variants99999);
+            List<Transcript> transcripts1 = geneModel.ApplyVariants(variants99999);
             Assert.AreEqual(0, transcripts1[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            var transcripts2 = geneModel.ApplyVariants(variants100000);
+            List<Transcript> transcripts2 = geneModel.ApplyVariants(variants100000);
             Assert.AreEqual(1, transcripts2[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            var transcripts3 = geneModel.ApplyVariants(variants100000);
+            List<Transcript> transcripts3 = geneModel.ApplyVariants(variants100000);
             Assert.AreEqual(0, transcripts3[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            var transcripts4 = geneModel.ApplyVariants(variants100001);
+            List<Transcript> transcripts4 = geneModel.ApplyVariants(variants100001);
             Assert.AreEqual(1, transcripts4[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            var transcripts5 = geneModel.ApplyVariants(variants100001);
+            List<Transcript> transcripts5 = geneModel.ApplyVariants(variants100001);
             Assert.AreEqual(0, transcripts5[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            var transcripts6 = geneModel.ApplyVariants(variants200000);
+            List<Transcript> transcripts6 = geneModel.ApplyVariants(variants200000);
             Assert.AreEqual(1, transcripts6[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            var transcripts7 = geneModel.ApplyVariants(variants200000);
+            List<Transcript> transcripts7 = geneModel.ApplyVariants(variants200000);
             Assert.AreEqual(0, transcripts7[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
@@ -68,10 +67,10 @@ namespace Test
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData",  "chr1_one_transcript.gtf"));
-            geneModel.ApplyVariants(variants);
-            List<Protein> proteins = geneModel.Translate(true, true).ToList();
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
+            List<Protein> proteins_wo_variant = geneModel.Translate(true).ToList();
+            List<Transcript> transcripts = geneModel.ApplyVariants(variants);
+            List<Protein> proteins = transcripts.Select(t => t.Protein()).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
@@ -96,9 +95,9 @@ namespace Test
             Assert.AreEqual(1, variants.Count);
 
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
-            geneModel.ApplyVariants(variants);
-            List<Protein> proteins = geneModel.Translate(true, true).ToList();
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            List<Protein> proteins_wo_variant = geneModel.Translate(true).ToList();
+            List<Transcript> transcripts = geneModel.ApplyVariants(variants);
+            List<Protein> proteins = transcripts.Select(t => t.Protein()).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
             Assert.AreEqual(2, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
@@ -123,9 +122,9 @@ namespace Test
             Assert.AreEqual(1, variants.Count);
 
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
-            geneModel.ApplyVariants(variants);
-            List<Protein> proteins = geneModel.Translate(true, true).ToList();
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            List<Protein> proteins_wo_variant = geneModel.Translate(true).ToList();
+            List<Transcript> transcripts = geneModel.ApplyVariants(variants);
+            List<Protein> proteins = transcripts.Select(t => t.Protein()).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
@@ -149,9 +148,9 @@ namespace Test
             Assert.AreEqual(1, variants.Count);
 
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"));
-            geneModel.ApplyVariants(variants);
-            List<Protein> proteins = geneModel.Translate(true, true).ToList();
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            List<Protein> proteins_wo_variant = geneModel.Translate(true).ToList();
+            List<Transcript> transcripts = geneModel.ApplyVariants(variants);
+            List<Protein> proteins = transcripts.Select(t => t.Protein()).ToList();
             Assert.AreEqual(1, geneModel.Genes.Count);
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
@@ -190,9 +189,9 @@ namespace Test
             }).WaitForExit();
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.7.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr7_one_transcript_reverse.gtf"));
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            List<Protein> proteins = geneModel.Translate(true).ToList();
             Assert.AreEqual("MQWALAVLLAFLSPASQKSSNLEGRTKSVIRQTGSSAEITCDLAEGSNGYIHWYLHQEGKAPQRLQYYDSYNSKVVLESGVSPGKYYTYASTRNNLRLILRNLIENDFGVYYCATWDG",
-                proteins_wo_variant[0].BaseSequence);
+                proteins[0].BaseSequence);
         }
 
         [Test]
@@ -211,9 +210,9 @@ namespace Test
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.5.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr5_selenocysteineContaining.gtf"));
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false, badProteinAccessions, selenocysteineContainingAccessions).ToList();
+            List<Protein> proteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions).ToList();
             Assert.AreEqual("MWRSLGLALALCLLPSGGTESQDQSSLCKQPPAWSIRDQDPMLNSNGSVTVVALLQASUYLCILQASKLEDLRVKLKKEGYSNISYIVVNHQGISSRLKYTHLKNKVSEHIPVYQQEENQTDVWTLLNGSKDDFLIYDRCGRLVYHLGLPFSFLTFPYVEEAIKIAYCEKKCGNCSLTTLKDEDFCKRVSLATVDKTVETPSPHYHHEHHHNHGHQHLGSSELSENQQPGAPNAPTHPAPPGLHHHHKHKGQHRQGHPENRDMPASEDLQDLQKKLCRKRCINQLLCKLPTDSELAPRSUCCHCRHLIFEKTGSAITUQCKENLPSLCSUQGLRAEENITESCQURLPPAAUQISQQLIPTEASASURUKNQAKKUEUPSN",
-                proteins_wo_variant[0].BaseSequence);
+                proteins[0].BaseSequence);
         }
 
         [Test]
@@ -229,14 +228,14 @@ namespace Test
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.MT.fa"));
 
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chrM_one_transcript_reverse.gtf"));
-            List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            List<Protein> proteins = geneModel.Translate(true).ToList();
             Assert.AreEqual("MPMANLLLLIVPILIAMAFLMLTERKILGYMQLRKGPNVVGPYGLLQPFADAMKLFTKEPLKPATSTITLYITAPTLALTIALLLWTPLPMPNPLVNLNLGLLFILATSSLAVYSILWSGWASNSNYALIGALRAVAQTISYEVTLAIILLSTLLMSGSFNLSTLITTQEHLWLLLPSWPLAMMWFISTLAETNRTPFDLAEGESELVSGFNIEYAAGPFALFFMAEYTNIIMMNTLTTTIFLGTTYDALSPELYTTYFVTKTLLLTSLFLWIRTAYPRFRYDQLMHLLWKNFLPLTLALLMWYVSMPITISSIPPQT",
-                proteins_wo_variant[0].BaseSequence);
+                proteins[0].BaseSequence);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chrM_one_transcript_reverse2.gtf"));
-            proteins_wo_variant = geneModel.Translate(true, false).ToList();
+            proteins = geneModel.Translate(true).ToList();
             Assert.AreEqual("INPLAQPVIYSTIFAGTLITALSSHWFFTWVGLEMNMLAFIPVLTKKMNPRSTEAAIKYFLTQATASMILLMAILFNNMLSGQWTMTNTTNQYSSLMIMMAMAMKLGMAPFHFWVPEVTQGTPLTSGLLLLTWQKLAPISIMYQISPSLNVSLLLTLSILSIMAGSWGGLNQTQLRKILAYSSITHMGWMMAVLPYNPNMTILNLTIYIILTTTAFLLLNLNSSTTTLLLSRTWNKLTWLTPLIPSTLLSLGGLPPLTGFLPKWAIIEEFTKNNSLIIPTIMATITLLNLYFYLRLIYSTSITLLPMSNNVKMKWQFEHTKPTPFLPTLIALTTLLLPISPFMLMIL",
-                proteins_wo_variant[0].BaseSequence);
+                proteins[0].BaseSequence);
         }
 
         //[Test]

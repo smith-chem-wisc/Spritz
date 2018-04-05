@@ -4,15 +4,15 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UsefulProteomicsDatabases;
 using ToolWrapperLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
     [TestFixture]
     public class GeneModelTests
     {
-        Genome genome;
+        private Genome genome;
 
         [OneTimeSetUp]
         public void setup()
@@ -25,7 +25,7 @@ namespace Test
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.AreEqual(165, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
-            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
+            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true)).ToList();
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace Test
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.AreEqual(148, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
-            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
+            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true)).ToList();
 
             //Forward strand, single coding region
             Assert.AreEqual("ENSP00000334393", proteins[0].Accession);
@@ -58,7 +58,7 @@ namespace Test
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_pacbio.gff3"));
 
-            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, null, false, 7)).ToList();
+            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, null, 7)).ToList();
 
             //Forward strand, single coding region
             Assert.AreEqual("PB2015.1.1", proteins[0].Accession);
@@ -113,18 +113,18 @@ namespace Test
 
             Genome genome = new Genome(@"D:\GRCh38.81\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
             GeneModel geneModel = new GeneModel(genome, @"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gff3");
-            List<Protein> geneBasedProteins = geneModel.Translate(true, true, badProteinAccessions, selenocysteineContainingAccessions);
+            List<Protein> geneBasedProteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions);
             List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh38.81\Homo_sapiens.GRCh38.pep.all.fasta", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 
             foreach (Protein p in proteins)
             {
                 // now handled with the badAccessions // && !p.BaseSequence.Contains('*') && !seq.Contains('*') && !p.BaseSequence.Contains('X'))
-                if (accSeq.TryGetValue(p.Accession, out string seq)) 
+                if (accSeq.TryGetValue(p.Accession, out string seq))
                 {
                     // there are instances where alternative start codons are used where Ensembl somehow doesn't include them correctly
                     if (!p.FullName.Contains("GRCh38:MT")) Assert.AreEqual(p.BaseSequence, seq);
-                    else Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1)); 
+                    else Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1));
                 }
             }
         }

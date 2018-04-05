@@ -37,12 +37,12 @@ namespace Proteogenomics
         /// <summary>
         /// Type of interval
         /// </summary>
-        public EffectType IntervalType { get; set; }
+        public EffectType IntervalType { get; set; } = EffectType.NONE;
 
         /// <summary>
         /// Variants contained in this interval
         /// </summary>
-        public List<Variant> Variants { get; set; } = new List<Variant>();
+        public HashSet<Variant> Variants { get; set; } = new HashSet<Variant>();
 
         #endregion Public Properties
 
@@ -55,12 +55,14 @@ namespace Proteogenomics
         /// <param name="strand"></param>
         /// <param name="oneBasedStart"></param>
         /// <param name="oneBasedEnd"></param>
-        public Interval(Interval parent, string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd)
+        public Interval(Interval parent, string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants)
         {
-            this.ChromosomeID = chromosomeID;
-            this.Strand = strand;
-            this.OneBasedStart = oneBasedStart;
-            this.OneBasedEnd = oneBasedEnd;
+            Parent = parent;
+            ChromosomeID = chromosomeID;
+            Strand = strand;
+            OneBasedStart = oneBasedStart;
+            OneBasedEnd = oneBasedEnd;
+            Variants = variants ?? new HashSet<Variant>();
         }
 
         /// <summary>
@@ -68,7 +70,7 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="interval"></param>
         public Interval(Interval interval) :
-            this(interval.Parent, interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd)
+            this(interval.Parent, interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd, interval.Variants)
         {
         }
 
@@ -260,7 +262,7 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         /// <param name="variantEffects"></param>
         /// <returns></returns>
-        public virtual bool VariantEffect(Variant variant, VariantEffects variantEffects)
+        public virtual bool CreateVariantEffect(Variant variant, VariantEffects variantEffects)
         {
             if (!Intersects(variant)) { return false; }
             variantEffects.add(variant, this, IntervalType, "");
@@ -341,7 +343,7 @@ namespace Proteogenomics
             {
                 return this;
             }
-            if (Parent != null && Parent.GetType().Equals(type))
+            if (Parent != null && Parent as Interval != null)
             {
                 return Parent.FindParent(type);
             }

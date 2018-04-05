@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Proteogenomics
 {
@@ -93,14 +92,21 @@ namespace Proteogenomics
                             key = attributeKey.Match(attrib.TrimStart()).Groups[1].Value;
                             val = attributeValue.Match(attrib.TrimStart()).Groups[1].Value;
                         }
+
                         if (!attributes.TryGetValue(key, out string x)) // sometimes there are two tags, so avoid adding twice
+                        {
                             attributes.Add(key, val);
+                        }
                     }
 
                     if (feature.FreeText.Contains('='))
+                    {
                         ProcessGff3Feature(feature, start, end, chrom, attributes);
+                    }
                     else
+                    {
                         ProcessGtfFeature(feature, start, end, chrom, attributes);
+                    }
                 }
             }
             CreateUTRsAndIntergenicRegions();
@@ -127,7 +133,12 @@ namespace Proteogenomics
             bool hasTranscriptVersion = attributes.TryGetValue("version", out string transcriptVersion) && hasTranscriptId;
             bool hasExonId = attributes.TryGetValue("exon_id", out string exonId);
             bool hasProteinId = attributes.TryGetValue("protein_id", out string proteinId);
-            string strand = feature.SubItems["strand"][0];
+            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish);
+            if (!hasStrand)
+            {
+                return;
+            }
+            string strand = strandish[0];
 
             if (hasGeneId && (currentGene == null || hasGeneId && geneId != currentGene.ID))
             {
@@ -138,26 +149,27 @@ namespace Proteogenomics
 
             if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
                 currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
 
-            if (hasExonId || hasProteinId)
+            if (hasExonId)
             {
-                if (hasExonId)
-                {
-                    ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(), oneBasedStart, oneBasedEnd, chrom.ChromosomeID, strand);
-                    currentTranscript.Exons.Add(exon);
-                }
-                else if (hasProteinId)
-                {
-                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
-                    currentTranscript.CodingDomainSequences.Add(cds);
-                    currentTranscript.ProteinID = proteinId;
-                }
+                ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
+                    oneBasedStart, oneBasedEnd, chrom.ChromosomeID, strand, null);
+                currentTranscript.Exons.Add(exon);
+            }
+            else if (hasProteinId)
+            {
+                CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                currentTranscript.CodingDomainSequences.Add(cds);
+                currentTranscript.ProteinID = proteinId;
+            }
+            else
+            { // nothing to do
             }
         }
 
@@ -195,7 +207,7 @@ namespace Proteogenomics
                     GenomeForest.Add(currentGene);
                 }
 
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
                 currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
@@ -212,7 +224,7 @@ namespace Proteogenomics
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null);
+                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                     currentGene.Transcripts.Add(currentTranscript);
                     GenomeForest.Add(currentTranscript);
                 }
@@ -220,13 +232,17 @@ namespace Proteogenomics
                 if (feature.Key == "exon")
                 {
                     ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
-                    Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(), oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand);
+                    Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
+                        oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand, null);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd);
+                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
                     currentTranscript.CodingDomainSequences.Add(cds);
+                }
+                else
+                { // nothing to do
                 }
             }
         }
@@ -254,6 +270,7 @@ namespace Proteogenomics
                     {
                         break;
                     }
+
                     if (line.StartsWith("##gff-version"))
                     {
                         writer.Write(gffVersion.Replace(line, m => m.Groups[1] + "2") + "\n");
@@ -271,7 +288,7 @@ namespace Proteogenomics
         #region Methods -- Applying Variants
 
         /// <summary>
-        /// Creates UTRs for transcripts and
+        /// Creates UTRs for transcripts and intergenic regions after reading gene model
         /// </summary>
         public void CreateUTRsAndIntergenicRegions()
         {
@@ -279,11 +296,19 @@ namespace Proteogenomics
             {
                 Gene previousPositiveStrandGene = null;
                 Gene previousNegativeStrandGene = null;
+
+                // Create intergenic regions on each strand
                 foreach (Gene gene in it.Intervals.OfType<Gene>().OrderBy(g => g.OneBasedStart))
                 {
+                    Intergenic intergenic = null;
                     Gene previous = gene.IsStrandPlus() ? previousPositiveStrandGene : previousNegativeStrandGene;
-                    Intergenic intergenic = previous == null ? null : new Intergenic(gene.Chromosome, gene.ChromosomeID, gene.Strand, (gene.IsStrandPlus() ? previousPositiveStrandGene : previousNegativeStrandGene).OneBasedEnd + 1, gene.OneBasedStart - 1);
+                    if (previous != null)
+                    {
+                        // if there's a previous gene, create the intergenic region
+                        intergenic = new Intergenic(gene.Chromosome, gene.ChromosomeID, gene.Strand, previous.OneBasedEnd + 1, gene.OneBasedStart - 1, null);
+                    }
 
+                    // store previous genes on each strand
                     if (gene.IsStrandPlus())
                     {
                         previousPositiveStrandGene = gene;
@@ -293,17 +318,16 @@ namespace Proteogenomics
                         previousNegativeStrandGene = gene;
                     }
 
-                    if (intergenic != null && intergenic.Length() <= 0)
+                    // add the intergenic region to the genome forest if it was created
+                    if (intergenic != null && intergenic.Length() > 0)
                     {
                         GenomeForest.Add(intergenic);
                     }
 
-                    Chromosome chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.ChromosomeID == gene.ChromosomeID);
+                    // while we're here, set the regions of each transcript, too
                     foreach (Transcript t in gene.Transcripts)
                     {
-                        GenomeForest.Add(t.CreateIntrons());
-                        GenomeForest.Add(t.CreateUTRs());
-                        GenomeForest.Add(t.CreateUpDown(chromSeq));
+                        Transcript.SetRegions(t);
                     }
                 }
             }
@@ -326,8 +350,15 @@ namespace Proteogenomics
             }
             foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
             {
-                List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
-                resultingTranscripts.AddRange(t.ApplyVariantsCombinitorially(transcriptVariants));
+                if (t.Variants.Count == 0)
+                {
+                    resultingTranscripts.Add(new Transcript(t));
+                }
+                else
+                {
+                    List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
+                    resultingTranscripts.AddRange(t.ApplyVariantsCombinitorially(transcriptVariants));
+                }
             }
             return resultingTranscripts;
         }
@@ -336,14 +367,14 @@ namespace Proteogenomics
 
         #region Translation Methods
 
-        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        public List<Protein> Translate(bool translateCodingDomains, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
-            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
+            return Genes.SelectMany(g => g.Translate(translateCodingDomains, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
         }
 
-        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, bool translateWithVariants, int minPeptideLength = 7)
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, int minPeptideLength = 7)
         {
-            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, selenocysteineContaining, translateWithVariants, minPeptideLength)).ToList();
+            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, selenocysteineContaining, minPeptideLength)).ToList();
         }
 
         #endregion Translation Methods

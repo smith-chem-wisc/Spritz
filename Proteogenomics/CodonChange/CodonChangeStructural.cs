@@ -152,7 +152,8 @@ namespace Proteogenomics
             int endBase = codonNumEnd < 0 ? cds.Length : 3 * (codonNumEnd + 1);
             endBase = Math.Min(cds.Length, endBase);
             int startBase = Math.Max(0, 3 * codonNumStart);
-            return cds.Substring(startBase, endBase); // isn't this supposed to be length?
+            int baseLen = endBase - startBase;
+            return cds.Substring(startBase, baseLen);
         }
 
         /// <summary>

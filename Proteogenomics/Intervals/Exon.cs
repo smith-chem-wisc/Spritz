@@ -1,20 +1,44 @@
 ﻿using Bio;
 using System;
+using System.Collections.Generic;
 
 namespace Proteogenomics
 {
     public class Exon :
         IntervalSequence
     {
-        public Exon(Transcript parent, ISequence Sequence, long oneBasedStart, long oneBasedEnd, string chromID, string strand)
-            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, Sequence)
+        /// <summary>
+        /// Construct an exon
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <param name="Sequence"></param>
+        /// <param name="oneBasedStart"></param>
+        /// <param name="oneBasedEnd"></param>
+        /// <param name="chromID"></param>
+        /// <param name="strand"></param>
+        public Exon(Transcript parent, ISequence Sequence, long oneBasedStart, long oneBasedEnd, string chromID, string strand, HashSet<Variant> variants)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, Sequence, variants)
         {
         }
 
+        /// <summary>
+        /// Copy an exon
+        /// </summary>
+        /// <param name="x"></param>
+        public Exon(Exon x)
+            : this(x.Parent as Transcript, x.Sequence, x.OneBasedStart, x.OneBasedEnd, x.ChromosomeID, x.Strand, x.Variants)
+        {
+        }
+
+        /// <summary>
+        /// Apply a variant to this exon interval and sequence
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <returns></returns>
         public override Interval ApplyVariant(Variant variant)
         {
             IntervalSequence i = base.ApplyVariant(variant) as IntervalSequence;
-            return new Exon(i.Parent as Transcript, i.Sequence, i.OneBasedStart, i.OneBasedEnd, i.ChromosomeID, i.Strand);
+            return new Exon(i.Parent as Transcript, i.Sequence, i.OneBasedStart, i.OneBasedEnd, i.ChromosomeID, i.Strand, i.Variants);
         }
 
         /// <summary>
@@ -60,7 +84,8 @@ namespace Proteogenomics
 
             if (varRefEnd >= refStr.Length) { return ErrorWarningType.ERROR_OUT_OF_EXON; }
 
-            string variantReference = refStr.Substring((int)varRefStart, (int)(varRefEnd + 1));
+            int varRefLen = (int)(varRefEnd - varRefStart + 1);
+            string variantReference = refStr.Substring((int)varRefStart, varRefLen);
 
             // Reference sequence different than expected?
             if (!realReference.Equals(variantReference))

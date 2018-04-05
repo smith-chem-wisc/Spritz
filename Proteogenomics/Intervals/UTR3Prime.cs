@@ -1,10 +1,12 @@
-﻿namespace Proteogenomics
+﻿using System.Collections.Generic;
+
+namespace Proteogenomics
 {
     public class UTR3Prime
         : UTR
     {
-        public UTR3Prime(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
-            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
+        public UTR3Prime(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, variants)
         {
         }
 
@@ -37,9 +39,12 @@
             return cdsEnd - variant.OneBasedEnd;
         }
 
-        public override bool VariantEffect(Variant variant, VariantEffects variantEffects)
+        public override bool CreateVariantEffect(Variant variant, VariantEffects variantEffects)
         {
-            if (!Intersects(variant)) { return false; }
+            if (!Intersects(variant))
+            {
+                return false;
+            }
 
             if (variant.Includes(this) && variant.VarType == Variant.VariantType.DEL)
             {
@@ -51,7 +56,7 @@
             long distance = utrDistance(variant, tr);
 
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.set(this, EffectType.UTR_3_PRIME, Proteogenomics.VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
+            variantEffect.set(this, EffectType.UTR_3_PRIME, VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
             variantEffect.setDistance(distance);
             variantEffects.add(variantEffect);
 

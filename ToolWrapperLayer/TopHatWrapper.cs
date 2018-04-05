@@ -65,6 +65,7 @@ namespace ToolWrapperLayer
                 "  rm tophat-2.1.1.Linux_x86_64.tar.gz bowtie.zip",
                 "  mv tophat-2.1.1.Linux_x86_64 tophat-2.1.1",
                 "  mv bowtie2-2.3.4-linux-x86_64 bowtie2-2.3.4",
+                "  cp bowtie2-2.3.4/* tophat-2.1.1",
                 "fi"
             });
             return scriptPath;
@@ -104,10 +105,13 @@ namespace ToolWrapperLayer
         {
             bowtieIndexPrefix = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta));
             if (BowtieIndexExists(genomeFasta))
+            {
                 return;
+            }
             string script_name = Path.Combine(binDirectory, "scripts", "bowtieIndices.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "bowtie2-2.3.4/bowtie2-build" +
                     " " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix)
@@ -124,7 +128,7 @@ namespace ToolWrapperLayer
         /// <param name="geneModelGtfOrGffPath"></param>
         /// <param name="strandSpecific"></param>
         /// <param name="outputDirectory"></param>
-        public static void Align(string binDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths, string geneModelGtfOrGffPath, bool strandSpecific, out string outputDirectory)
+        public static void Align(string binDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths, bool strandSpecific, out string outputDirectory)
         {
             string tempDir = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), "tmpDir");
             outputDirectory = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), Path.GetFileNameWithoutExtension(fastqPaths[0]) + "TophatOut");
@@ -136,15 +140,13 @@ namespace ToolWrapperLayer
                 "tophat-2.1.1/tophat2" +
                     " --num-threads " + threads.ToString() +
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
-                    " --GTF " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
+                    //" --GTF " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) + /// this triggers tophat to try building an index
                     " --tmp-dir " + WrapperUtility.ConvertWindowsPath(tempDir) +
                     (strandSpecific ? " --library-type fr-firststrand" : "") +
                     " " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix) +
-                    " " + String.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x)))
+                    " " + String.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))),
+                "if [ -d " + WrapperUtility.ConvertWindowsPath(tempDir) + " ]; then rm -r " + WrapperUtility.ConvertWindowsPath(tempDir) + "; fi",
             }).WaitForExit();
-
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir);
         }
 
         #endregion Public Methods

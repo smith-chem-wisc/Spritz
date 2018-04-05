@@ -1,10 +1,12 @@
-﻿namespace Proteogenomics
+﻿using System.Collections.Generic;
+
+namespace Proteogenomics
 {
     public class Upstream
         : Interval
     {
-        public Upstream(Transcript parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd)
-            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
+        public Upstream(Transcript parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants)
+            : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, variants)
         {
         }
 

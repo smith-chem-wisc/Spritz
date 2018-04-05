@@ -2,7 +2,6 @@
 using Bio.IO.FastA;
 using NUnit.Framework;
 using Proteogenomics;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,7 +13,6 @@ namespace Test
     [TestFixture]
     public class WrapperIntegrationTests
     {
-
         #region Installs
 
         [Test, Order(0)]
@@ -74,6 +72,7 @@ namespace Test
         }
 
         private string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa");
+
         [Test, Order(1)]
         public void DownloadReferences()
         {
@@ -189,7 +188,7 @@ namespace Test
         [Test, Order(2)]
         public void TestGenomeGenerate()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "genomeGenerate.bash"), 
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "genomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
                 1,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir"),
@@ -238,7 +237,6 @@ namespace Test
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "mapper.fastq"),
                 },
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"),
                 true,
                 out string tophatOutDirectory
                 );
@@ -536,7 +534,7 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
-                8, 
+                8,
                 new List<string[]>
                 {
                     new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
@@ -600,7 +598,7 @@ namespace Test
 
         /// <summary>
         /// Handling tough non-karyotypic ordering of chromosomes and an SRA input
-        /// 
+        ///
         /// This also tests well-encoded quality scores, so if it starts to fail, check out whether the exit code of the FixMisencodedQualityBaseReads is expected (2 for failure).
         /// </summary>
         [Test, Order(3)]
@@ -626,11 +624,10 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-               // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
+                // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
             }
         }
 
         #endregion Runner Tests
-
     }
 }

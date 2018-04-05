@@ -13,8 +13,8 @@ namespace Proteogenomics
     {
         private List<UTR5Prime> UTRs { get; set; }
 
-        public UTR5Prime(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd) :
-            base(parent, chromID, strand, oneBasedStart, oneBasedEnd)
+        public UTR5Prime(Exon parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants) :
+            base(parent, chromID, strand, oneBasedStart, oneBasedEnd, variants)
         {
         }
 
@@ -127,7 +127,7 @@ namespace Proteogenomics
             return startGained(chars, pos);
         }
 
-        public override bool VariantEffect(Variant variant, VariantEffects variantEffects)
+        public override bool CreateVariantEffect(Variant variant, VariantEffects variantEffects)
         {
             // Has the whole UTR been deleted?
             if (variant.Includes(this) && (variant.VarType == Variant.VariantType.DEL))
@@ -140,7 +140,7 @@ namespace Proteogenomics
             Transcript tr = (Transcript)FindParent(typeof(Transcript));
             long distance = utrDistance(variant, tr);
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.set(this, IntervalType, Proteogenomics.VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
+            variantEffect.set(this, IntervalType, VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
             variantEffect.setDistance(distance);
             variantEffects.add(variantEffect);
 
