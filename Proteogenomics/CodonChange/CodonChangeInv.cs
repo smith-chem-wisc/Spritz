@@ -42,7 +42,7 @@
         private void exons()
         {
             Interval cdsMarker = null;
-            if (Transcript.isProteinCoding())
+            if (Transcript.IsProteinCoding())
             {
                 cdsMarker = Transcript.CdsMarker();
             }

@@ -265,7 +265,7 @@ namespace Proteogenomics
         public virtual bool CreateVariantEffect(Variant variant, VariantEffects variantEffects)
         {
             if (!Intersects(variant)) { return false; }
-            variantEffects.add(variant, this, IntervalType, "");
+            variantEffects.AddEffect(variant, this, IntervalType, "");
             return true;
         }
 

@@ -14,7 +14,7 @@ namespace Proteogenomics
         protected CodonChangeStructural(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
-            coding = transcript.isProteinCoding(); // || Config.get().isTreatAllAsProteinCoding();
+            coding = transcript.IsProteinCoding(); // || Config.get().isTreatAllAsProteinCoding();
             CountAffectedExons();
         }
 

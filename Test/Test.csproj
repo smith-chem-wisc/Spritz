@@ -112,6 +112,7 @@
     <Compile Include="GeneModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestProteomicsReadWrite.cs" />
+    <Compile Include="SnpEffPortTests.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
     <Compile Include="VariantTests.cs" />
     <Compile Include="WrapperIntegrationTests.cs" />
@@ -226,6 +227,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\chr_1_one_99999.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\ugh.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\chr_1_one_heterozygous_missense.vcf">

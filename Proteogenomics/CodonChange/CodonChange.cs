@@ -178,7 +178,7 @@ namespace Proteogenomics
             if (cdsbn < 0)
             {
                 // 'pos' before transcript start
-                if (pos <= Transcript.cdsStart)
+                if (pos <= Transcript.CdsOneBasedStart)
                 {
                     if (Transcript.IsStrandPlus()) { return 0; }
                     return Transcript.RetrieveCodingSequence().Count;
@@ -203,7 +203,7 @@ namespace Proteogenomics
             }
 
             // Get coding start (after 5 prime UTR)
-            long cdsStart = Transcript.cdsStart;
+            long cdsStart = Transcript.CdsOneBasedStart;
 
             // We may have to calculate 'netCdsChange', which is the effect on the CDS
             NetCodingSequenceChange = NetCdsChange();
@@ -250,11 +250,14 @@ namespace Proteogenomics
                     }
 
                     // Use appropriate method to calculate codon change
-                    //bool hasChanged = false; // Was there any change?
-                    //hasChanged = ChangeCodon(exon);
+                    bool hasChanged = false; // Was there any change?
+                    hasChanged = ChangeCodon(exon); // This is overriden for the specific type of codon change
 
                     // Any change? => Add change to list
-                    //if (hasChanged && !VariantEffects.hasMarker()) VariantEffects.setMarker(exon); // It is affecting this exon, so we set the marker
+                    if (hasChanged && !VariantEffects.HasMarker())
+                    {
+                        VariantEffects.SetMarker(exon); // It is affecting this exon, so we set the marker
+                    }
 
                     // Can we finish after effect of first exon is added?
                     if (ReturnNow) { return; }
@@ -343,21 +346,21 @@ namespace Proteogenomics
             // Create and add variant affect
             long cDnaPos = Transcript.BaseNumber2MRnaPos(Variant.OneBasedStart);
             VariantEffect varEff = new VariantEffect(Variant, marker, effectType, effectImpact, codonsOld, codonsNew, codonNum, codonIndex, cDnaPos);
-            VariantEffects.add(varEff);
+            VariantEffects.AddEffect(varEff);
 
             // Are there any additional effects? Sometimes a new effect arises from setting codons (e.g. FRAME_SHIFT disrupts a STOP codon)
-            EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex, varEff.aaRef, varEff.aaAlt);
+            EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex, varEff.ReferenceAA, varEff.AlternateAA);
             if (addEffType != EffectType.NONE && addEffType != effectType)
             {
                 if (allowReplace && addEffType.CompareTo(effectType) < 0)
                 {
                     // Replace main effect (using default impact)
-                    varEff.setEffect(addEffType);
+                    varEff.SetEffect(addEffType);
                 }
                 else
                 {
                     // Add effect to list (using default impact)
-                    varEff.addEffect(addEffType);
+                    varEff.AddEffect(addEffType);
                 }
             }
 
@@ -422,7 +425,7 @@ namespace Proteogenomics
             sb.Append("Effects    :\n");
             foreach (VariantEffect veff in VariantEffects.Effects)
             {
-                sb.Append("\t" + veff.getEffectTypeString(false) + "\t" + veff.codonsRef + "/" + veff.codonsAlt + "\t" + veff.aaRef + "/" + veff.aaAlt + "\n");
+                sb.Append("\t" + veff.GetEffectTypeString(false) + "\t" + veff.CodonsRef + "/" + veff.CodonsAlt + "\t" + veff.ReferenceAA + "/" + veff.AlternateAA + "\n");
             }
 
             return sb.ToString();

@@ -96,5 +96,36 @@ namespace Proteogenomics
             // OK
             return ErrorWarningType.NONE;
         }
+
+        public override bool CreateVariantEffect(Variant variant, VariantEffects variantEffects)
+        {
+            if (!Intersects(variant)) return false;
+
+            Transcript tr = (Transcript)Parent;
+            bool coding = tr.IsProteinCoding();
+
+            // Different analysis for coding or non-coding
+            bool exonAnnotated = false;
+            if (!coding || variant.isInterval() || !variant.isVariant())
+            {
+                // Non-coding or non-variant? Just annotate as 'exon'
+                variantEffects.AddEffect(variant, this, EffectType.EXON, "");
+                exonAnnotated = true;
+            }
+            else if (tr.IsCds(variant))
+            {
+                // Is it a coding transcript and the variant is within the CDS?
+                // => We need codon analysis
+                CodonChange codonChange = CodonChange.Factory(variant, tr, variantEffects);
+                codonChange.ChangeCodon();
+                exonAnnotated = true;
+            }
+
+            // Any splice site effect to add?
+            //for (SpliceSite ss : spliceSites)
+            //    if (ss.intersects(variant)) ss.variantEffect(variant, variantEffects);
+
+            return exonAnnotated;
+        }
     }
 }

@@ -9,17 +9,6 @@ namespace Proteogenomics
     public class Genome
         : Interval
     {
-        #region Public Properties
-
-        /// <summary>
-        /// Chromosomes contained in this genome.
-        /// </summary>
-        public List<Chromosome> Chromosomes { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Constructor
-
         /// <summary>
         /// Parses the chromosomes listed in a genome fasta.
         /// </summary>
@@ -29,9 +18,10 @@ namespace Proteogenomics
             Chromosomes = new FastAParser().Parse(genomeFastaLocation).Select(s => new Chromosome(s, this)).ToList();
         }
 
-        #endregion Public Constructor
-
-        #region Public Method
+        /// <summary>
+        /// Chromosomes contained in this genome.
+        /// </summary>
+        public List<Chromosome> Chromosomes { get; set; }
 
         /// <summary>
         /// Orders the chromosomes in this genome by karyotypic order, i.e. by chromosome size.
@@ -121,7 +111,5 @@ namespace Proteogenomics
             File.Delete(filePath);
             File.Move(filePath + ".tmp", filePath);
         }
-
-        #endregion Public Method
     }
 }

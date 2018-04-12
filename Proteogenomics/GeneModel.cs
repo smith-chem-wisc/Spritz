@@ -342,7 +342,7 @@ namespace Proteogenomics
             List<Transcript> resultingTranscripts = new List<Transcript>();
             foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
             {
-                List<Interval> intervals = GenomeForest.Forest[v.ChromosomeID].Stab(v.OneBasedStart);
+                List<Interval> intervals = GenomeForest.Forest[Chromosome.GetFriendlyChromosomeName(v.ChromosomeID)].Stab(v.OneBasedStart);
                 foreach (Interval i in intervals)
                 {
                     i.ApplyVariant(v);
@@ -357,7 +357,8 @@ namespace Proteogenomics
                 else
                 {
                     List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
-                    resultingTranscripts.AddRange(t.ApplyVariantsCombinitorially(transcriptVariants));
+                    List<Transcript> variantTranscripts = t.ApplyVariantsCombinitorially(transcriptVariants).ToList();
+                    resultingTranscripts.AddRange(variantTranscripts);
                 }
             }
             return resultingTranscripts;

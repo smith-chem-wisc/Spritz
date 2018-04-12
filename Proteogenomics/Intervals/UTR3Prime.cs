@@ -27,7 +27,7 @@ namespace Proteogenomics
 
         private long utrDistance(Variant variant, Transcript tr)
         {
-            long cdsEnd = tr.cdsEnd;
+            long cdsEnd = tr.CdsOneBasedEnd;
             if (cdsEnd < 0)
             {
                 return -1;
@@ -48,7 +48,7 @@ namespace Proteogenomics
 
             if (variant.Includes(this) && variant.VarType == Variant.VariantType.DEL)
             {
-                variantEffects.addEffectType(variant, this, EffectType.UTR_3_DELETED); // A UTR was removed entirely
+                variantEffects.AddEffectType(variant, this, EffectType.UTR_3_DELETED); // A UTR was removed entirely
                 return true;
             }
 
@@ -56,9 +56,9 @@ namespace Proteogenomics
             long distance = utrDistance(variant, tr);
 
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.set(this, EffectType.UTR_3_PRIME, VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
-            variantEffect.setDistance(distance);
-            variantEffects.add(variantEffect);
+            variantEffect.Set(this, EffectType.UTR_3_PRIME, VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
+            variantEffect.SetDistance(distance);
+            variantEffects.AddEffect(variantEffect);
 
             return true;
         }

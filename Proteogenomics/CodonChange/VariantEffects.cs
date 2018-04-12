@@ -15,32 +15,17 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         /// <param name="marker"></param>
         /// <param name="effectType"></param>
-        /// <param name="effectImpact"></param>
         /// <param name="message"></param>
-        public void add(Variant variant, Interval marker, EffectType effectType, EffectImpact effectImpact, String message)
+        public void AddEffect(Variant variant, Interval marker, EffectType effectType, String message)
         {
-            VariantEffect effNew = new VariantEffect(variant);
-            effNew.set(marker, effectType, effectImpact, message);
-            add(effNew);
-        }
-
-        /// <summary>
-        /// Add an effect
-        /// </summary>
-        /// <param name="variant"></param>
-        /// <param name="marker"></param>
-        /// <param name="effectType"></param>
-        /// <param name="message"></param>
-        public void add(Variant variant, Interval marker, EffectType effectType, String message)
-        {
-            add(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], message);
+            AddEffect(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], message);
         }
 
         /// <summary>
         /// Add an effect
         /// </summary>
         /// <param name="variantEffect"></param>
-        public void add(VariantEffect variantEffect)
+        public void AddEffect(VariantEffect variantEffect)
         {
             Effects.Add(variantEffect);
         }
@@ -51,31 +36,106 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         /// <param name="marker"></param>
         /// <param name="effectType"></param>
-        public void addEffectType(Variant variant, Interval marker, EffectType effectType)
+        public void AddEffectType(Variant variant, Interval marker, EffectType effectType)
         {
-            if (canAddType(variant, marker))
+            if (CanAddType(variant, marker))
             {
-                get().addEffect(effectType);
+                Get().AddEffect(effectType);
             }
             else
             {
-                add(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], "");
+                AddEffect(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], "");
             }
         }
 
-        public void addErrorWarning(Variant variant, ErrorWarningType errwarn)
+        /// <summary>
+        /// Add an error or warning
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <param name="errwarn"></param>
+        public void AddErrorWarning(Variant variant, ErrorWarningType errwarn)
         {
-            VariantEffect veff = get();
+            VariantEffect veff = Get();
             if (veff != null)
             {
-                veff.addErrorWarningInfo(errwarn);
+                veff.AddErrorWarningInfo(errwarn);
             }
             else
             {
                 veff = new VariantEffect(variant);
-                veff.addErrorWarningInfo(errwarn);
-                add(veff);
+                veff.AddErrorWarningInfo(errwarn);
+                AddEffect(veff);
             }
+        }
+
+        /// <summary>
+        /// Get (or create) the latest ChangeEffect
+        /// </summary>
+        /// <returns></returns>
+        public VariantEffect Get()
+        {
+            return Effects.Count == 0 ? null : Effects[Effects.Count - 1];
+        }
+
+        public bool HasMarker()
+        {
+            VariantEffect veff = Get();
+            if (veff == null) return false;
+            return veff.GetMarker() != null;
+        }
+
+        public void SetMarker(Interval marker)
+        {
+            VariantEffect veff = Get();
+            if (veff != null) veff.SetMarker(marker);
+        }
+
+        /// <summary>
+        /// Get a string representing the annotation for this variant effect on a transript
+        /// </summary>
+        /// <returns></returns>
+        public string TranscriptAnnotation()
+        {
+            StringBuilder sb = new StringBuilder();
+            Variant theVariant = Effects[0].Variant;
+            sb.Append("variant:" + theVariant.ToString() + " ");
+            foreach (VariantEffect eff in Effects)
+            {
+                sb.Append("effect:" + eff.GetFunctionalClass().ToString() + " " + eff.GetEffectType().ToString() + " " + eff.CodonsRef.ToUpper(CultureInfo.InvariantCulture) + eff.CodonNum.ToString() + eff.CodonsAlt);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Get a string representing this object
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("Effects; " + Effects.Count.ToString() + "\n");
+
+            foreach (VariantEffect eff in Effects)
+            {
+                sb.Append("\t" + eff.ToStr() + "\n");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Add an effect
+        /// </summary>
+        /// <param name="variant"></param>
+        /// <param name="marker"></param>
+        /// <param name="effectType"></param>
+        /// <param name="effectImpact"></param>
+        /// <param name="message"></param>
+        private void AddEffect(Variant variant, Interval marker, EffectType effectType, EffectImpact effectImpact, String message)
+        {
+            VariantEffect effNew = new VariantEffect(variant);
+            effNew.Set(marker, effectType, effectImpact, message);
+            AddEffect(effNew);
         }
 
         /// <summary>
@@ -84,9 +144,9 @@ namespace Proteogenomics
         /// <param name="variant"></param>
         /// <param name="marker"></param>
         /// <returns>true if transcript IDs and variant's genotypes match (i.e. we can add effectType)</returns>
-        private bool canAddType(Variant variant, Interval marker)
+        private bool CanAddType(Variant variant, Interval marker)
         {
-            VariantEffect veff = get();
+            VariantEffect veff = Get();
             if (veff == null || veff.Variant == null)
             {
                 return false;
@@ -105,80 +165,10 @@ namespace Proteogenomics
             // Do transcripts match?
             Transcript trMarker = (Transcript)marker.FindParent(typeof(Transcript));
 
-            Transcript tr = veff.getTranscript();
+            Transcript tr = veff.GetTranscript();
             if (tr == null || trMarker == null) { return false; }
 
             return tr.ID == trMarker.ID;
-        }
-
-        /// <summary>
-        /// Get (or create) the latest ChangeEffect
-        /// </summary>
-        /// <returns></returns>
-        public VariantEffect get()
-        {
-            if (Effects.Count == 0)
-            {
-                return null;
-            }
-            return Effects[Effects.Count - 1];
-        }
-
-        public VariantEffect get(int index)
-        {
-            return Effects[index];
-        }
-
-        public bool hasMarker()
-        {
-            VariantEffect veff = get();
-            return veff == null ? false : veff.getMarker() != null;
-        }
-
-        public bool isEmpty()
-        {
-            return Effects.Count == 0;
-        }
-
-        public void setMarker(Interval marker)
-        {
-            VariantEffect veff = get();
-            if (veff != null) { veff.setMarker(marker); }
-        }
-
-        public int size()
-        {
-            return Effects.Count;
-        }
-
-        public void sort()
-        {
-            Effects.Sort();
-        }
-
-        public string TranscriptAnnotation()
-        {
-            StringBuilder sb = new StringBuilder();
-            Variant theVariant = Effects[0].Variant;
-            sb.Append("variant:" + theVariant.ToString() + " ");
-            foreach (VariantEffect eff in Effects)
-            {
-                sb.Append("effect:" + eff.getFunctionalClass().ToString() + " " + eff.getEffectType().ToString() + " " + eff.codonsRef.ToUpper(CultureInfo.InvariantCulture) + eff.codonNum.ToString() + eff.codonsAlt);
-            }
-            return sb.ToString();
-        }
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("Effects; " + size().ToString() + "\n");
-
-            foreach (VariantEffect eff in Effects)
-            {
-                sb.Append("\t" + eff.toStr() + "\n");
-            }
-            return sb.ToString();
         }
     }
 }

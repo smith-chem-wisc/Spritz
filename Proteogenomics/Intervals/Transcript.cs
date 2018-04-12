@@ -15,6 +15,7 @@ namespace Proteogenomics
         : Interval
     {
         private List<Exon> _sortedStrand;
+        private Protein protein;
 
         /// <summary>
         /// Used to construct upstream and downstream reginos
@@ -121,10 +122,18 @@ namespace Proteogenomics
         /// </summary>
         public ISequence CodingSequence { get; set; }
 
-        public long cdsStart { get; set; }
-        public long cdsEnd { get; set; }
-        public long[] cds2pos { get; set; }
-        public long[] aa2pos { get; set; }
+        /// <summary>
+        /// Start of coding sequence
+        /// </summary>
+        public long CdsOneBasedStart { get; set; } = -1;
+
+        /// <summary>
+        /// End of coding sequence
+        /// </summary>
+        public long CdsOneBasedEnd { get; set; } = -1;
+
+        public long[] Cds2Pos { get; set; }
+        public long[] AA2Pos { get; set; }
 
         /// <summary>
         /// Variants annotated for this transcript using SnpEff.
@@ -217,7 +226,7 @@ namespace Proteogenomics
                 Transcript firstAllele = this;
                 Variant v = variantOrderedDescStart[i];
                 VariantEffects variantEffects = AnnotateVariant(v);
-                bool missenseOrNonsense = variantEffects.Effects.Any(eff => eff.getFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
+                bool missenseOrNonsense = variantEffects.Effects.Any(eff => eff.GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
                 if (variantEffects == null)
                 {
                     result.Add(firstAllele);
@@ -356,7 +365,7 @@ namespace Proteogenomics
             //---
             if (!exonAnnotated)
             {
-                variantEffects.add(SetEffect(variant, EffectType.TRANSCRIPT));
+                variantEffects.AddEffect(SetEffect(variant, EffectType.TRANSCRIPT));
                 return variantEffects;
             }
 
@@ -366,15 +375,31 @@ namespace Proteogenomics
         private VariantEffect SetEffect(Variant variant, EffectType type)
         {
             VariantEffect ve = new VariantEffect(variant);
-            ve.addErrorWarningInfo(sanityCheck(variant));
+            ve.AddErrorWarningInfo(sanityCheck(variant));
             Exon x = FindExon(variant);
             if (x != null)
             {
-                ve.addErrorWarningInfo(x.SanityCheck(variant));
+                ve.AddErrorWarningInfo(x.SanityCheck(variant));
             }
-            ve.setEffectType(type);
-            ve.setEffectImpact(VariantEffect.EffectDictionary[type]);
+            ve.SetEffectType(type);
+            ve.SetEffectImpact(VariantEffect.EffectDictionary[type]);
             return ve;
+        }
+
+        public bool IsCds(Variant variant)
+        {
+            CalcCdsStartEnd();
+
+            long cs = CdsOneBasedStart;
+            long ce = CdsOneBasedEnd;
+
+            if (IsStrandMinus())
+            {
+                cs = CdsOneBasedEnd;
+                ce = CdsOneBasedStart;
+            }
+
+            return variant.OneBasedEnd >= cs && variant.OneBasedStart <= ce;
         }
 
         /// <summary>
@@ -452,8 +477,8 @@ namespace Proteogenomics
                 if (eint.Intersects(pos))
                 {
                     long cdsBaseInExon = IsStrandPlus() ? // cdsBaseInExon: base number relative to the beginning of the coding part of this exon (i.e. excluding 5'UTRs)
-                        pos - Math.Max(eint.OneBasedStart, cdsStart) :
-                        Math.Min(eint.OneBasedEnd, cdsStart) - pos;
+                        pos - Math.Max(eint.OneBasedStart, CdsOneBasedStart) :
+                        Math.Min(eint.OneBasedEnd, CdsOneBasedStart) - pos;
 
                     cdsBaseInExon = Math.Max(0, cdsBaseInExon);
 
@@ -468,8 +493,8 @@ namespace Proteogenomics
                 }
 
                 firstCdsBaseInExon += IsStrandPlus() ?
-                    Math.Max(0, eint.OneBasedEnd - Math.Max(eint.OneBasedStart, cdsStart) + 1) :
-                    Math.Max(0, Math.Min(cdsStart, eint.OneBasedEnd) - eint.OneBasedStart + 1);
+                    Math.Max(0, eint.OneBasedEnd - Math.Max(eint.OneBasedStart, CdsOneBasedStart) + 1) :
+                    Math.Max(0, Math.Min(CdsOneBasedStart, eint.OneBasedEnd) - eint.OneBasedStart + 1);
             }
 
             return firstCdsBaseInExon - 1;
@@ -498,18 +523,18 @@ namespace Proteogenomics
         /// <returns>An array mapping 'cds2pos[cdsBaseNumber] = chromosmalPos'</returns>
         public long[] BaseNumberCds2Pos()
         {
-            if (cds2pos != null) { return cds2pos; }
+            if (Cds2Pos != null) { return Cds2Pos; }
 
             CalcCdsStartEnd();
 
-            cds2pos = new long[RetrieveCodingSequence().Count];
-            for (int i = 0; i < cds2pos.Length; i++)
+            Cds2Pos = new long[RetrieveCodingSequence().Count];
+            for (int i = 0; i < Cds2Pos.Length; i++)
             {
-                cds2pos[i] = -1;
+                Cds2Pos[i] = -1;
             }
 
-            long cdsMin = Math.Min(cdsStart, cdsEnd);
-            long cdsMax = Math.Max(cdsStart, cdsEnd);
+            long cdsMin = Math.Min(CdsOneBasedStart, CdsOneBasedEnd);
+            long cdsMax = Math.Max(CdsOneBasedStart, CdsOneBasedEnd);
 
             // For each exon, add CDS position to array
             int cdsBaseNum = 0;
@@ -517,16 +542,16 @@ namespace Proteogenomics
             {
                 long min = IsStrandPlus() ? exon.OneBasedStart : exon.OneBasedEnd;
                 int step = IsStrandPlus() ? 1 : -1;
-                for (long pos = min; exon.Intersects(pos) && cdsBaseNum < cds2pos.Length; pos += step)
+                for (long pos = min; exon.Intersects(pos) && cdsBaseNum < Cds2Pos.Length; pos += step)
                 {
                     if (cdsMin <= pos && pos <= cdsMax)
                     {
-                        cds2pos[cdsBaseNum++] = pos;
+                        Cds2Pos[cdsBaseNum++] = pos;
                     }
                 }
             }
 
-            return cds2pos;
+            return Cds2Pos;
         }
 
         /// <summary>
@@ -537,69 +562,69 @@ namespace Proteogenomics
             // Do we need to calculate these values?
             // Note: In circular genomes, one of cdsStart / cdsEnd might be less
             //       than zero (we must check both)
-            if (cdsStart < 0 && cdsEnd < 0)
+            if (CdsOneBasedStart < 0 && CdsOneBasedEnd < 0)
             {
                 // Calculate coding start (after 5 prime UTR)
 
                 if (UTRs.Count == 0)
                 {
                     // No UTRs => Use all exons
-                    cdsStart = IsStrandPlus() ? OneBasedEnd : OneBasedStart; // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
-                    cdsEnd = IsStrandPlus() ? OneBasedStart : OneBasedEnd; // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
+                    CdsOneBasedStart = IsStrandPlus() ? OneBasedEnd : OneBasedStart; // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
+                    CdsOneBasedEnd = IsStrandPlus() ? OneBasedStart : OneBasedEnd; // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
 
                     foreach (Exon ex in Exons)
                     {
                         if (IsStrandPlus())
                         {
-                            cdsStart = Math.Min(cdsStart, ex.OneBasedStart);
-                            cdsEnd = Math.Max(cdsEnd, ex.OneBasedEnd);
+                            CdsOneBasedStart = Math.Min(CdsOneBasedStart, ex.OneBasedStart);
+                            CdsOneBasedEnd = Math.Max(CdsOneBasedEnd, ex.OneBasedEnd);
                         }
                         else
                         {
-                            cdsStart = Math.Max(cdsStart, ex.OneBasedEnd);
-                            cdsEnd = Math.Min(cdsEnd, ex.OneBasedStart);
+                            CdsOneBasedStart = Math.Max(CdsOneBasedStart, ex.OneBasedEnd);
+                            CdsOneBasedEnd = Math.Min(CdsOneBasedEnd, ex.OneBasedStart);
                         }
                     }
                 }
                 else
                 {
                     // We have to take into account UTRs
-                    cdsStart = IsStrandPlus() ? OneBasedStart : OneBasedEnd; // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
-                    cdsEnd = IsStrandPlus() ? OneBasedEnd : OneBasedStart; // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
-                    long cdsStartNotExon = cdsStart;
+                    CdsOneBasedStart = IsStrandPlus() ? OneBasedStart : OneBasedEnd; // cdsStart is the position of the first base in the CDS (i.e. the first base after all 5'UTR)
+                    CdsOneBasedEnd = IsStrandPlus() ? OneBasedEnd : OneBasedStart; // cdsEnd is the position of the last base in the CDS (i.e. the first base before all 3'UTR)
+                    long cdsStartNotExon = CdsOneBasedStart;
 
                     foreach (UTR utr in UTRs)
                     {
                         if (utr is UTR5Prime)
                         {
-                            if (IsStrandPlus()) { cdsStart = Math.Max(cdsStart, utr.OneBasedEnd + 1); }
-                            else { cdsStart = Math.Min(cdsStart, utr.OneBasedStart - 1); }
+                            if (IsStrandPlus()) { CdsOneBasedStart = Math.Max(CdsOneBasedStart, utr.OneBasedEnd + 1); }
+                            else { CdsOneBasedStart = Math.Min(CdsOneBasedStart, utr.OneBasedStart - 1); }
                         }
                         else if (utr is UTR3Prime)
                         {
-                            if (IsStrandPlus()) { cdsEnd = Math.Min(cdsEnd, utr.OneBasedStart - 1); }
-                            else { cdsEnd = Math.Max(cdsEnd, utr.OneBasedEnd + 1); }
+                            if (IsStrandPlus()) { CdsOneBasedEnd = Math.Min(CdsOneBasedEnd, utr.OneBasedStart - 1); }
+                            else { CdsOneBasedEnd = Math.Max(CdsOneBasedEnd, utr.OneBasedEnd + 1); }
                         }
                     }
 
                     // Make sure cdsStart and cdsEnd lie within an exon
                     if (IsStrandPlus())
                     {
-                        cdsStart = FirstExonPositionAfter(cdsStart);
-                        cdsEnd = LastExonPositionBefore(cdsEnd);
+                        CdsOneBasedStart = FirstExonPositionAfter(CdsOneBasedStart);
+                        CdsOneBasedEnd = LastExonPositionBefore(CdsOneBasedEnd);
                     }
                     else
                     {
-                        cdsStart = LastExonPositionBefore(cdsStart);
-                        cdsEnd = FirstExonPositionAfter(cdsEnd);
+                        CdsOneBasedStart = LastExonPositionBefore(CdsOneBasedStart);
+                        CdsOneBasedEnd = FirstExonPositionAfter(CdsOneBasedEnd);
                     }
 
                     // We were not able to find cdsStart & cdsEnd within exon limits.
                     // Probably there is something wrong with the database and the transcript does
                     // not have a single coding base (e.g. all of it is UTR).
-                    if (cdsStart < 0 || cdsEnd < 0)
+                    if (CdsOneBasedStart < 0 || CdsOneBasedEnd < 0)
                     {
-                        cdsStart = cdsEnd = cdsStartNotExon;
+                        CdsOneBasedStart = CdsOneBasedEnd = cdsStartNotExon;
                     }
                 }
             }
@@ -612,8 +637,8 @@ namespace Proteogenomics
         public Interval CdsMarker()
         {
             Interval interval = new Interval(this);
-            interval.OneBasedStart = IsStrandPlus() ? cdsStart : cdsEnd;
-            interval.OneBasedEnd = IsStrandPlus() ? cdsEnd : cdsStart;
+            interval.OneBasedStart = IsStrandPlus() ? CdsOneBasedStart : CdsOneBasedEnd;
+            interval.OneBasedEnd = IsStrandPlus() ? CdsOneBasedEnd : CdsOneBasedStart;
             return interval;
         }
 
@@ -785,12 +810,12 @@ namespace Proteogenomics
 
         public Protein Protein()
         {
-            return Protein(null);
+            return protein ?? Protein(null);
         }
 
         public Protein Protein(Dictionary<string, string> selenocysteineContaining)
         {
-            return Protein(RetrieveCodingSequence(), selenocysteineContaining);
+            return protein ?? Protein(RetrieveCodingSequence(), selenocysteineContaining);
         }
 
         private Protein Protein(ISequence dnaSeq, Dictionary<string, string> selenocysteineContaining)
@@ -810,7 +835,8 @@ namespace Proteogenomics
             string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
             string annotations = String.Join(" ", VariantAnnotations);
             string accession = Translation.GetSafeProteinAccession(ProteinID);
-            return new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations);
+            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations);
+            return protein;
         }
 
         public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts,
@@ -859,7 +885,7 @@ namespace Proteogenomics
             //return Translation.ThreeFrameTranslation(Exons, ProteinID);
         }
 
-        public bool isProteinCoding()
+        public bool IsProteinCoding()
         {
             return CodingDomainSequences.Count > 0;
         }
@@ -973,7 +999,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public bool isErrorProteinLength()
         {
-            if (!isProteinCoding()) return false; //!Config.get().isTreatAllAsProteinCoding() &&
+            if (!IsProteinCoding()) return false; //!Config.get().isTreatAllAsProteinCoding() &&
             return (RetrieveCodingSequence().Count % 3) != 0;
         }
 
@@ -985,7 +1011,7 @@ namespace Proteogenomics
         {
             if (
                 //!Config.get().isTreatAllAsProteinCoding() &&
-                !isProteinCoding())
+                !IsProteinCoding())
             {
                 return false;
             }
@@ -1035,7 +1061,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public bool isWarningStopCodon()
         {
-            if (isProteinCoding()) { return false; }//!Config.get().isTreatAllAsProteinCoding() &&
+            if (IsProteinCoding()) { return false; }//!Config.get().isTreatAllAsProteinCoding() &&
 
             // Not even one codon in this protein? Error
             ISequence cds = RetrieveCodingSequence();

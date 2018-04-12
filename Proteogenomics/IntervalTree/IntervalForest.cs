@@ -36,13 +36,13 @@ namespace Proteogenomics
             {
                 return;
             }
-            if (Forest.TryGetValue(interval.ChromosomeID, out IntervalTree tree))
+            if (Forest.TryGetValue(Chromosome.GetFriendlyChromosomeName(interval.ChromosomeID), out IntervalTree tree))
             {
                 tree.Add(interval);
             }
             else
             {
-                Forest.Add(interval.ChromosomeID, new IntervalTree(new List<Interval> { interval }));
+                Forest.Add(Chromosome.GetFriendlyChromosomeName(interval.ChromosomeID), new IntervalTree(new List<Interval> { interval }));
             }
         }
 

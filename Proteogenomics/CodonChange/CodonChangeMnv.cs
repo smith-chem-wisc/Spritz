@@ -50,8 +50,8 @@ namespace Proteogenomics
             if (!Transcript.Intersects(Variant)) { return; }
 
             // CDS coordinates
-            cdsStart = Transcript.IsStrandPlus() ? Transcript.cdsStart : Transcript.cdsEnd;
-            cdsEnd = Transcript.IsStrandPlus() ? Transcript.cdsEnd : Transcript.cdsStart;
+            cdsStart = Transcript.IsStrandPlus() ? Transcript.CdsOneBasedStart : Transcript.CdsOneBasedEnd;
+            cdsEnd = Transcript.IsStrandPlus() ? Transcript.CdsOneBasedEnd : Transcript.CdsOneBasedStart;
 
             // Does it intersect CDS?
             if (cdsStart > Variant.OneBasedEnd) { return; }

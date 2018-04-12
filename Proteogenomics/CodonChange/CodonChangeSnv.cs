@@ -30,7 +30,7 @@ namespace Proteogenomics
 
             if (CodonsReference == "")
             {
-                VariantEffects.addErrorWarning(Variant, ErrorWarningType.ERROR_MISSING_CDS_SEQUENCE);
+                VariantEffects.AddErrorWarning(Variant, ErrorWarningType.ERROR_MISSING_CDS_SEQUENCE);
             }
 
             return true;

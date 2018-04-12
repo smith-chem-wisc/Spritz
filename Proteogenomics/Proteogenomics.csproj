@@ -157,7 +157,7 @@
     <Compile Include="Intervals\Exon.cs" />
     <Compile Include="Intervals\Gene.cs" />
     <Compile Include="GeneModel.cs" />
-    <Compile Include="Genome.cs" />
+    <Compile Include="Intervals\Genome.cs" />
     <Compile Include="Intervals\Intergenic.cs" />
     <Compile Include="Intervals\Interval.cs" />
     <Compile Include="Intervals\IntervalSequence.cs" />
@@ -170,12 +170,12 @@
     <Compile Include="ProteogenomicsUtility.cs" />
     <Compile Include="SnpEffAnnotation.cs" />
     <Compile Include="Translation.cs" />
-    <Compile Include="Transcript.cs" />
+    <Compile Include="Intervals\Transcript.cs" />
     <Compile Include="Intervals\Upstream.cs" />
     <Compile Include="Intervals\UTR.cs" />
     <Compile Include="Intervals\UTR3Prime.cs" />
     <Compile Include="Intervals\UTR5Prime.cs" />
-    <Compile Include="Variant.cs" />
+    <Compile Include="Intervals\Variant.cs" />
     <Compile Include="CodonChange\VariantEffect.cs" />
     <Compile Include="CodonsStandard.cs" />
     <Compile Include="CodonsVertebrateMitochondrial.cs" />

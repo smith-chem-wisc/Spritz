@@ -6,7 +6,7 @@
         public CodonChangeDup(Variant variant, Transcript transcript, VariantEffects variantEffects)
             : base(variant, transcript, variantEffects)
         {
-            coding = transcript.isProteinCoding();// || Config.get().isTreatAllAsProteinCoding();
+            coding = transcript.IsProteinCoding();// || Config.get().isTreatAllAsProteinCoding();
         }
 
         /**
@@ -50,8 +50,8 @@
             if (coding)
             {
                 return Transcript.IsStrandPlus() ?
-                    Variant.OneBasedEnd > Transcript.cdsEnd :
-                    Variant.OneBasedEnd > Transcript.cdsStart;
+                    Variant.OneBasedEnd > Transcript.CdsOneBasedEnd :
+                    Variant.OneBasedEnd > Transcript.CdsOneBasedStart;
             }
 
             return Variant.OneBasedEnd > Transcript.OneBasedEnd;

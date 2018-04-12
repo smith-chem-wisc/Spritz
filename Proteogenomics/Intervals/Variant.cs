@@ -275,6 +275,11 @@ namespace Proteogenomics
             return isDel() || isInv() || isDup();
         }
 
+        public bool isVariant()
+        {
+            return VarType != VariantType.INTERVAL;
+        }
+
         /// <summary>
         /// Calculate the number of bases of change in length
         /// </summary>
@@ -298,9 +303,13 @@ namespace Proteogenomics
         {
             if (isDel())
             {
-                return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, ReferenceAlleleString).GetReverseComplementedSequence()) : ReferenceAlleleString; // Deletion have empty 'alt'
+                return reverseStrand ? 
+                    SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, ReferenceAlleleString).GetReverseComplementedSequence()) : 
+                    ReferenceAlleleString; // Deletion have empty 'alt'
             }
-            return reverseStrand ? SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, SecondAlleleString).GetReverseComplementedSequence()) : SecondAlleleString;
+            return reverseStrand ?
+                SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, SecondAlleleString).GetReverseComplementedSequence()) : 
+                SecondAlleleString;
         }
 
         public string NetChange(Interval interval)

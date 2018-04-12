@@ -34,7 +34,7 @@ namespace Proteogenomics
 
         private long utrDistance(Variant variant, Transcript tr)
         {
-            long cdsStart = tr.cdsStart;
+            long cdsStart = tr.CdsOneBasedStart;
             if (cdsStart < 0)
             {
                 return -1;
@@ -132,7 +132,7 @@ namespace Proteogenomics
             // Has the whole UTR been deleted?
             if (variant.Includes(this) && (variant.VarType == Variant.VariantType.DEL))
             {
-                variantEffects.add(variant, this, EffectType.UTR_5_DELETED, ""); // A UTR was removed entirely
+                variantEffects.AddEffect(variant, this, EffectType.UTR_5_DELETED, ""); // A UTR was removed entirely
                 return true;
             }
 
@@ -140,15 +140,15 @@ namespace Proteogenomics
             Transcript tr = (Transcript)FindParent(typeof(Transcript));
             long distance = utrDistance(variant, tr);
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.set(this, IntervalType, VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
-            variantEffect.setDistance(distance);
-            variantEffects.add(variantEffect);
+            variantEffect.Set(this, IntervalType, VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
+            variantEffect.SetDistance(distance);
+            variantEffects.AddEffect(variantEffect);
 
             // Start gained?
             string gained = startGained(variant);
             if (gained != "")
             {
-                variantEffects.add(variant, this, EffectType.START_GAINED, gained);
+                variantEffects.AddEffect(variant, this, EffectType.START_GAINED, gained);
             }
 
             return true;
