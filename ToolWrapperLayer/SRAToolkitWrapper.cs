@@ -77,7 +77,7 @@ namespace ToolWrapperLayer
                 "echo \"Downloading " + sraAccession + "\"",
                 "cd " + WrapperUtility.ConvertWindowsPath(bin),
                 "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(destinationDirectoryPath) + "\" " +
-                    sraAccession + " > " + WrapperUtility.ConvertWindowsPath(logPath),
+                    sraAccession + " >> " + WrapperUtility.ConvertWindowsPath(logPath),
             }).WaitForExit();
             fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
         }

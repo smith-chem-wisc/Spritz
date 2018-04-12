@@ -32,7 +32,7 @@ namespace ToolWrapperLayer
                 "cd slncky",
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
                 "if [ ! -d annotations ]; then tar -xvf annotations.tar.gz; fi",
-                "if [ ! -d annotations ]; then rm annotations.tar.gz; fi",
+                "if [ -d annotations ]; then rm annotations.tar.gz; fi",
             });
             return scriptPath;
         }

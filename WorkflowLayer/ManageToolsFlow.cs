@@ -24,6 +24,7 @@ namespace WorkflowLayer
             "make",
             "cmake",
             "build-essential",
+            //"clang", // needed for some tools, but not any in these workflows
 
             // file compression
             "zlib1g-dev",

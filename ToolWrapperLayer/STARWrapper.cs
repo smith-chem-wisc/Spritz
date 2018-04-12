@@ -254,7 +254,8 @@ namespace ToolWrapperLayer
         /// <param name="strandSpecific"></param>
         /// <param name="genomeLoad"></param>
         /// <returns></returns>
-        public static List<string> AlignRNASeqReadsForVariantCalling(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
+        public static List<string> AlignRNASeqReadsForVariantCalling(string binDirectory, int threads, string genomeDir, string[] fastqFiles,
+            string outprefix, bool overwriteStarAlignment, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
             string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
             string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
@@ -283,6 +284,7 @@ namespace ToolWrapperLayer
             string dedupArguments =
                 " --runMode inputAlignmentsFromBAM" +
                 " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
+                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
                 " --runThreadN " + threads.ToString() +
                 " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix +
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) + Path.GetFileNameWithoutExtension(SortedBamFileSuffix);
@@ -290,9 +292,18 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then STAR/source/STAR" + alignmentArguments + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then STAR/source/STAR" + dedupArguments + "; fi",
-                File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
+
+                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
+                "  STAR/source/STAR" + alignmentArguments,
+                overwriteStarAlignment ? "" : "fi",
+
+                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
+                "  STAR/source/STAR" + dedupArguments,
+                overwriteStarAlignment ? "" : "fi",
+
+                File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
+                    "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
+                    "",
             };
         }
 

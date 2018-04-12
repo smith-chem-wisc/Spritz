@@ -42,14 +42,14 @@ namespace Benchmark
             Console.WriteLine(ensemblModel.Genes.Count + " genes");
             Console.WriteLine(ensemblModel.Genes.Sum(g => g.Transcripts.Count) + " transcripts");
             Console.WriteLine(ensemblModel.Genes.Sum(g => g.Transcripts.Sum(t => t.Exons.Count)) + " exons");
-            List<Protein> ensembl_proteins = ensemblModel.Genes.SelectMany(g => g.Translate(true, false)).Where(p => !incompletes.Contains(p.Accession)).ToList();
+            List<Protein> ensembl_proteins = ensemblModel.Genes.SelectMany(g => g.Translate(true)).Where(p => !incompletes.Contains(p.Accession)).ToList();
             Console.WriteLine(ensembl_proteins.Count + " proteins");
 
             GeneModel pacBioModel = new GeneModel(genome, @"D:\GRCh37.87\IsoSeq_MCF7_2015edition_polished.unimapped.gff");
             Console.WriteLine(pacBioModel.Genes.Count + " genes2");
             Console.WriteLine(pacBioModel.Genes.Sum(g => g.Transcripts.Count) + " transcripts2");
             Console.WriteLine(pacBioModel.Genes.Sum(g => g.Transcripts.Sum(t => t.Exons.Count)) + " exons2");
-            List<Protein> pacbio_proteins = pacBioModel.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(ensemblModel, null, false, 7)).ToList();
+            List<Protein> pacbio_proteins = pacBioModel.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(ensemblModel, null, 7)).ToList();
             Dictionary<string, List<Protein>> seq_unique = new Dictionary<string, List<Protein>>();
             foreach (Protein p in pacbio_proteins)
             {

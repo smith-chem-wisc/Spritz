@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 
 namespace ToolWrapperLayer
@@ -27,10 +29,10 @@ namespace ToolWrapperLayer
                 "  tar -jxvf samtools-1.6.tar.bz2",
                 "  rm samtools-1.6.tar.bz2",
                 "  cd samtools-1.6",
-                "  ./configure --prefix=/usr/local/bin",
+                "  ./configure", // configures install to /usr/local/bin and /usr/local/share
                 "  make",
                 "  make install",
-                "fi"
+                "fi",
             });
             return scriptPath;
         }
@@ -49,6 +51,15 @@ namespace ToolWrapperLayer
 
         #region Public Methods
 
+        public static string SortBam(string binDirectory, string bamPath)
+        {
+            var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
+            megabytes = megabytes > 10000 ? 10000 : megabytes; // this is the max samtools sort can take, apparently
+            return "samtools sort -@ " + Environment.ProcessorCount.ToString() + " -m " + megabytes + "M " +
+                " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + " " +
+                WrapperUtility.ConvertWindowsPath(bamPath);
+        }
+
         public static string GenomeFastaIndexCommand(string binDirectory, string genomeFastaPath)
         {
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then " +
@@ -58,7 +69,9 @@ namespace ToolWrapperLayer
 
         public static string IndexBamCommand(string binDirectory, string bamPath)
         {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath) + "; fi";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then " +
+                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath) +
+                "; fi";
         }
 
         #endregion Public Methods

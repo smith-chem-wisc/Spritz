@@ -200,7 +200,7 @@ namespace Test
         [Test, Order(3)]
         public void TestAlign()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"),
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"), 
             STARWrapper.BasicAlignReadCommands
             (
                 TestContext.CurrentContext.TestDirectory,
@@ -424,14 +424,14 @@ namespace Test
         [Test, Order(4)]
         public void CufflinksRun()
         {
-            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam");
+            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam");
             CufflinksWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 8,
                 bamPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 false,
-                true,
+                false,
                 out string outputDirectory
                 );
             Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, "transcripts.gtf")));
@@ -451,7 +451,7 @@ namespace Test
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "scalpel_test_out"),
                 out string newVcf);
             Assert.IsTrue(File.Exists(newVcf));

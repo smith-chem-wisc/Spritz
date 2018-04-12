@@ -391,7 +391,7 @@ namespace Proteogenomics
         public int getAaLength()
         {
             int cdsLen = (int)getCdsLength();
-            if (cdsLen < 0) return -1;
+            if (cdsLen < 0) { return -1; }
 
             int lenNoStop = Math.Max(0, cdsLen - 3); // Do not include the STOP codon
             return lenNoStop / 3;

@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.IO;
-using System.Collections.ObjectModel;
 using WorkflowLayer;
-
 
 namespace SpritzGUI
 {
@@ -24,7 +21,6 @@ namespace SpritzGUI
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
 
-
         public MainWindow()
         {
             InitializeComponent();
@@ -36,8 +32,6 @@ namespace SpritzGUI
 
             EverythingRunnerEngine.NewRnaSeqFastqHandler += AddNewRnaSeqFastq;
         }
-
-        
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
@@ -53,7 +47,7 @@ namespace SpritzGUI
                     else
                     {
                         AddAFile(draggedFilePath);
-                    }                   
+                    }
                     dataGridFASTA.Items.Refresh();
                     dataGridGeneSet.Items.Refresh();
                     dataGridRnaSeqFastq.Items.Refresh();
@@ -62,25 +56,21 @@ namespace SpritzGUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            
         }
 
         private void MenuItem_Help_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void MenuItem_Contact_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void BtnAddFastq2Proteins_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new Fastq2ProteinsFlowWindows();
-            if (dialog.ShowDialog()==true)
+            if (dialog.ShowDialog() == true)
             {
-
             }
         }
 
@@ -89,7 +79,6 @@ namespace SpritzGUI
             var dialog = new LncRNADiscoverFlowWindows();
             if (dialog.ShowDialog() == true)
             {
-
             }
         }
 
@@ -207,11 +196,13 @@ namespace SpritzGUI
                     GenomeFastaDataGrid genomeFasta = new GenomeFastaDataGrid(filepath);
                     genomeFastaCollection.Add(genomeFasta);
                     break;
+
                 case ".gtf":
                 case ".gff3":
                     GeneSetDataGrid geneSet = new GeneSetDataGrid(filepath);
                     geneSetCollection.Add(geneSet);
                     break;
+
                 case ".fastq":
                 case ".fastq.gz":
                     RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
@@ -219,27 +210,22 @@ namespace SpritzGUI
                     UpdateOutputFolderTextbox();
                     break;
             }
-
         }
 
         private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void RemoveLastTaskButton_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
