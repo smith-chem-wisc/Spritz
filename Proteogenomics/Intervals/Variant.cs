@@ -303,12 +303,12 @@ namespace Proteogenomics
         {
             if (isDel())
             {
-                return reverseStrand ? 
-                    SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, ReferenceAlleleString).GetReverseComplementedSequence()) : 
+                return reverseStrand ?
+                    SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, ReferenceAlleleString).GetReverseComplementedSequence()) :
                     ReferenceAlleleString; // Deletion have empty 'alt'
             }
             return reverseStrand ?
-                SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, SecondAlleleString).GetReverseComplementedSequence()) : 
+                SequenceExtensions.ConvertToString(new Sequence(Alphabets.DNA, SecondAlleleString).GetReverseComplementedSequence()) :
                 SecondAlleleString;
         }
 

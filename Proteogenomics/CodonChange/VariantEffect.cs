@@ -1,6 +1,4 @@
 ﻿using Bio;
-using Bio.Algorithms.Translation;
-using Bio.VCF;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -477,7 +475,7 @@ namespace Proteogenomics
             {
                 e = GetEffectTypeString(useFirstEffect); // + ": " + marker.getId();
             }
-            
+
             if (shortFormat)
             {
                 e = e.Split(':')[0];
@@ -531,8 +529,8 @@ namespace Proteogenomics
         /// <returns></returns>
         public string GetCodonChange()
         {
-            return CodonsRef == "" && CodonsAlt == "" ? 
-                "" : 
+            return CodonsRef == "" && CodonsAlt == "" ?
+                "" :
                 CodonsRef + "/" + CodonsAlt;
         }
 
@@ -895,7 +893,10 @@ namespace Proteogenomics
 
                 // Exon level errors or warnings
                 Exon exon = GetExon();
-                if (exon != null) AddErrorWarningInfo(exon.SanityCheck(Variant));
+                if (exon != null)
+                {
+                    AddErrorWarningInfo(exon.SanityCheck(Variant));
+                }
             }
         }
 

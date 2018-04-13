@@ -85,9 +85,11 @@ namespace ToolWrapperLayer
         /// <param name="outputDirectory"></param>
         public static void AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
         {
+            bool isStranded = strandSpecific;
             if (inferStrandSpecificity)
             {
-                strandSpecific = RSeQCWrapper.CheckStrandSpecificity(binDirectory, bamPath, geneModelGtfOrGffPath, 0.8);
+                BAMProperties bamProperties = new BAMProperties(bamPath, geneModelGtfOrGffPath, 0.8);
+                isStranded = bamProperties.StrandSpecific;
             }
 
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksSortCheck");
@@ -104,7 +106,7 @@ namespace ToolWrapperLayer
                     " --num-threads " + threads.ToString() +
                     " --GTF-guide " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
-                    (strandSpecific ? "--library-type fr-firststrand" : "") +
+                    (isStranded ? "--library-type fr-firststrand" : "") +
                     " $bam",
             }).WaitForExit();
         }

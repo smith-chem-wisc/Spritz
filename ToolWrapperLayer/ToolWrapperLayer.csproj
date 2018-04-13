@@ -99,6 +99,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BAMProperties.cs" />
     <Compile Include="BEDOPSWrapper.cs" />
     <Compile Include="BedtoolsWrapper.cs" />
     <Compile Include="BLASTWrapper.cs" />

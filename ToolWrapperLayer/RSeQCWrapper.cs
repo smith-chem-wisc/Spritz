@@ -58,8 +58,6 @@ namespace ToolWrapperLayer
 
         #endregion Installation Methods
 
-        #region Public Methods
-
         public static int InferInnerDistance(string binDirectory, string bamPath, string geneModelPath, out string[] outputFiles)
         {
             if (Path.GetExtension(geneModelPath) != ".bed")
@@ -98,46 +96,5 @@ namespace ToolWrapperLayer
             int averageDistance = (int)Math.Round(distances.Average(), 0);
             return averageDistance;
         }
-
-        public static bool CheckStrandSpecificity(string binDirectory, string bamPath, string geneModelPath, double minFractionStrandSpecific)
-        {
-            string outfile = Path.GetFileNameWithoutExtension(bamPath) + ".inferexpt";
-            string outpath = Path.Combine(Path.GetDirectoryName(bamPath), outfile);
-
-            // todo: rework this with Bio.IO.BAM
-            // Can use the method IEnumerable<SAMAlignedSequence> Bio.IO.Bam.BamParser.Parse(Stream stream)
-            // and then SAMAlignedSequence.Flag.HasFlag(SAMFlags.ASDFDSADF)
-
-            InferExperiment(binDirectory, bamPath, geneModelPath, outpath);
-            string[] lines = File.ReadAllLines(outpath);
-            double fraction_aligned_in_same_direction = double.Parse(lines[lines.Length - 2].Split(':')[1].TrimStart());
-            double fraction_aligned_in_other_direction = double.Parse(lines[lines.Length - 1].Split(':')[1].TrimStart());
-            return fraction_aligned_in_same_direction / fraction_aligned_in_other_direction < 1 - minFractionStrandSpecific
-                || fraction_aligned_in_same_direction / fraction_aligned_in_other_direction > minFractionStrandSpecific;
-        }
-
-        #endregion Public Methods
-
-        #region Private Methods
-
-        private static void InferExperiment(string binDirectory, string bamFile, string geneModel, string outFile)
-        {
-            if (Path.GetExtension(geneModel) != ".bed")
-            {
-                geneModel = BEDOPSWrapper.Gtf2Bed12(binDirectory, geneModel);
-            }
-            string script_path = Path.Combine(binDirectory, "scripts", "infer_expt.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "python RSeQC-2.6.4/scripts/infer_experiment.py" +
-                    " -r " + WrapperUtility.ConvertWindowsPath(geneModel) +
-                    " -i " + WrapperUtility.ConvertWindowsPath(bamFile) +
-                    " > " + WrapperUtility.ConvertWindowsPath(outFile),
-                WrapperUtility.EnsureClosedFileCommands(outFile)
-            }).WaitForExit();
-        }
-
-        #endregion Private Methods
     }
 }

@@ -254,11 +254,11 @@ namespace Test
         [Test, Order(4)]
         public void StrandSpecificityTest()
         {
-            Assert.IsFalse(RSeQCWrapper.CheckStrandSpecificity(
-                TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed"),
-                0.8));
+            BAMProperties bam = new BAMProperties(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                0.8);
+            Assert.IsFalse(bam.StrandSpecific);
         }
 
         [Test, Order(2)]
@@ -542,7 +542,7 @@ namespace Test
                 },
                 false,
                 false,
-                true,
+                false,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
@@ -552,7 +552,7 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("missense")));
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
             }
         }
 
@@ -582,7 +582,7 @@ namespace Test
                 },
                 false,
                 false,
-                true,
+                false,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
@@ -612,7 +612,7 @@ namespace Test
                 "SRR6319804",
                 false,
                 false,
-                true,
+                false,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
