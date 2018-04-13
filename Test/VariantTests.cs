@@ -129,14 +129,14 @@ namespace Test
             Assert.AreEqual(1, proteins.Count);
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(1, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
-            Assert.IsFalse(proteins.Any(p => p.FullName.Contains(FunctionalClass.SILENT.ToString()))); // synonymous
-            Assert.IsFalse(proteins.Any(p => p.FullName.Contains("1:69666")));
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains(FunctionalClass.SILENT.ToString()))); // synonymous
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
 
             string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.fasta");
             ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
             string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
-            Assert.IsFalse(proteinFastaLines[0].Contains(FunctionalClass.SILENT.ToString())); // synonymous
-            Assert.IsFalse(proteinFastaLines[0].Contains("1:69666"));
+            Assert.IsTrue(proteinFastaLines[0].Contains(FunctionalClass.SILENT.ToString())); // synonymous
+            Assert.IsTrue(proteinFastaLines[0].Contains("1:69666"));
         }
 
         [Test]
@@ -180,6 +180,8 @@ namespace Test
         [Test]
         public void TranslateAnotherReverseStrand()
         {
+            // See http://useast.ensembl.org/Homo_sapiens/Transcript/Sequence_cDNA?db=core;g=ENSG00000233306;r=7:38362864-38363518;t=ENST00000426402
+
             WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr7script.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),

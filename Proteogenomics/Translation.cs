@@ -61,5 +61,17 @@ namespace Proteogenomics
             //return the protein sequence corresponding to the longest ORF
             return new Protein(prot_seq.SelectMany(s => SequenceExtensions.ConvertToString(s).Split('*')).OrderByDescending(s => s.Length).FirstOrDefault(), proteinID);
         }
+
+        /// <summary>
+        /// Get AA for a single DNA codon
+        /// </summary>
+        /// <param name="codon"></param>
+        /// <param name="aa"></param>
+        /// <returns></returns>
+        public static bool TranslateDnaCodon(string codon, out byte aa)
+        {
+            ISequence rnaCodon = Transcription.Transcribe(new Sequence(Alphabets.DNA, codon.Select(c => (byte)c).ToArray()));
+            return Codons.TryLookup(rnaCodon, 0, out aa);
+        }
     }
 }

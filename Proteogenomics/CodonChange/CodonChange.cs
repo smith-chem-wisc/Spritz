@@ -79,10 +79,8 @@ namespace Proteogenomics
         /// <param name="codonsNew"></param>
         /// <param name="codonNum"></param>
         /// <param name="codonIndex"></param>
-        /// <param name="aaOld"></param>
-        /// <param name="aaNew"></param>
         /// <returns></returns>
-        protected EffectType AdditionalEffect(string codonsOld, string codonsNew, int codonNum, int codonIndex, string aaOld, string aaNew)
+        protected EffectType AdditionalEffect(string codonsOld, string codonsNew, int codonNum, int codonIndex)
         {
             EffectType newEffectType = EffectType.NONE;
 
@@ -100,7 +98,7 @@ namespace Proteogenomics
             if (Variant.isSnv() || Variant.isMnv())
             {
                 // SNM and MNP effects
-                if (aaOld.Equals(aaNew))
+                if (oldAA.Equals(newAA))
                 {
                     // Same AA: Synonymous coding
                     if (codonNum == 0 && isStartOld)
@@ -350,7 +348,7 @@ namespace Proteogenomics
             VariantEffects.AddEffect(varEff);
 
             // Are there any additional effects? Sometimes a new effect arises from setting codons (e.g. FRAME_SHIFT disrupts a STOP codon)
-            EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex, varEff.ReferenceAA, varEff.AlternateAA);
+            EffectType addEffType = AdditionalEffect(codonsOld, codonsNew, codonNum, codonIndex);
             if (addEffType != EffectType.NONE && addEffType != effectType)
             {
                 if (allowReplace && addEffType.CompareTo(effectType) < 0)

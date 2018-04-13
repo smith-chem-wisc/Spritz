@@ -755,8 +755,8 @@ namespace Proteogenomics
             foreach (Exon exon in exons)
             {
                 missingSequence |= exon.Sequence == null; // If there is no sequence, we are in trouble
-                sequence.Append(IsStrandPlus() ? SequenceExtensions.ConvertToString(exon.Sequence) : SequenceExtensions.ConvertToString(exon.Sequence.GetReverseComplementedSequence()));
-                alphabet = alphabet != null && (alphabet.HasAmbiguity && !exon.Sequence.Alphabet.HasAmbiguity) ? // keep the alphabet with the most characters
+                sequence.Append(SequenceExtensions.ConvertToString(exon.Sequence)); // reverse complemented for reverse strand during loading
+                alphabet = alphabet != null && alphabet.HasAmbiguity && !exon.Sequence.Alphabet.HasAmbiguity ? // keep the alphabet with the most characters
                     alphabet :
                     exon.Sequence.Alphabet;
             }
@@ -776,7 +776,8 @@ namespace Proteogenomics
                 }
 
                 // Cut 5 prime UTR and 3 prime UTR points
-                int subEnd = sequence.Length - utr3len;
+                string dnaSequence = sequence.ToString();
+                int subEnd = dnaSequence.Length - utr3len;
                 int subLen = subEnd - utr5len;
 
                 if (utr5len > subEnd)
@@ -785,7 +786,7 @@ namespace Proteogenomics
                 }
                 else
                 {
-                    CodingSequence = new Sequence(alphabet, sequence.ToString().Substring(utr5len, subLen));
+                    CodingSequence = new Sequence(alphabet, dnaSequence.Substring(utr5len, subLen));
                 }
             }
             return CodingSequence;
@@ -1083,7 +1084,7 @@ namespace Proteogenomics
             if (cds.Count < 3) { return true; }
 
             ISequence codon = cds.GetSubSequence(cds.Count - CodonChange.CODON_SIZE, CodonChange.CODON_SIZE);
-            return Codons.TryLookup(codon[0], codon[1], codon[2], out byte aa) && aa == Alphabets.Protein.Ter;
+            return Codons.TryLookup(Transcription.Transcribe(codon), 0, out byte aa) && aa == Alphabets.Protein.Ter;
         }
 
         #endregion Warning Methods

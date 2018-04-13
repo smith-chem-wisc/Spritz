@@ -102,19 +102,21 @@ namespace Test
         [Test]
         public void SameProteins()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr5script.bash"), new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
-                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then wget ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz; fi",
-                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then gunzip " + EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename + ".gz; fi",
-                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.pep.all.fa"))
-            }).WaitForExit();
+            EnsemblDownloadsWrapper.DownloadReferences(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                "grch38",
+                out string genomeFastaPath,
+                out string gtf,
+                out string gff,
+                out string proteinFasta
+            );
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSeqs, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
-            Genome genome = new Genome(@"D:\GRCh38.81\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
-            GeneModel geneModel = new GeneModel(genome, @"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gff3");
+            Genome genome = new Genome(genomeFastaPath);
+            GeneModel geneModel = new GeneModel(genome, gff);
             List<Protein> geneBasedProteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions);
-            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh38.81\Homo_sapiens.GRCh38.pep.all.fasta", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
+            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 
             foreach (Protein p in proteins)

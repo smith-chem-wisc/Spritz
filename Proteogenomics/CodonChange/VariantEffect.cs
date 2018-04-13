@@ -635,7 +635,7 @@ namespace Proteogenomics
             {
                 if (!AlternateAA.Equals(ReferenceAA))
                 {
-                    Codons.TryLookup((byte)CodonsAlt[0], (byte)CodonsAlt[1], (byte)CodonsAlt[2], out byte aa);
+                    Translation.TranslateDnaCodon(CodonsAlt, out byte aa);
                     if (aa == Alphabets.Protein.Ter) { return FunctionalClass.NONSENSE; }
 
                     return FunctionalClass.MISSENSE;
@@ -815,7 +815,7 @@ namespace Proteogenomics
             {
                 ReferenceAA = "";
             }
-            else if (Codons.TryLookup((byte)codonsOld[0], (byte)codonsOld[1], (byte)codonsOld[2], out byte aa))
+            else if (Translation.TranslateDnaCodon(codonsOld, out byte aa))
             {
                 ReferenceAA = new string(new[] { (char)aa });
                 //codonDegeneracy = codonTable.degenerate(codonsOld, codonIndex); // Calculate codon degeneracy
@@ -825,7 +825,7 @@ namespace Proteogenomics
             {
                 AlternateAA = "";
             }
-            else if (Codons.TryLookup((byte)codonsNew[0], (byte)codonsNew[1], (byte)codonsNew[2], out byte aa))
+            else if (Translation.TranslateDnaCodon(codonsNew, out byte aa))
             {
                 AlternateAA = new string(new[] { (char)aa });
             }
@@ -842,10 +842,10 @@ namespace Proteogenomics
             CodonsAroundNew = codonsLeft.ToLower(CultureInfo.InvariantCulture) + CodonsAlt.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
 
             // Amino acids surrounding the ones changed
-            string aasLeft = Codons.TryLookup((byte)codonsLeft[0], (byte)codonsLeft[0], (byte)codonsLeft[0], out byte aa1) ?
+            string aasLeft = Translation.TranslateDnaCodon(codonsLeft, out byte aa1) ?
                 new string(new char[] { (char)aa1 }) :
                 "";
-            string aasRigt = Codons.TryLookup((byte)codonsRight[0], (byte)codonsRight[0], (byte)codonsRight[0], out byte aa2) ?
+            string aasRigt = Translation.TranslateDnaCodon(codonsRight, out byte aa2) ?
                 new string(new char[] { (char)aa2 }) :
                 "";
             AroundOldAAs = aasLeft.ToLower(CultureInfo.InvariantCulture) + ReferenceAA.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
