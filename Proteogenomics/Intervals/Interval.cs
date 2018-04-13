@@ -335,7 +335,7 @@ namespace Proteogenomics
             List<Interval> intervals = new List<Interval>();
             if (Intersects(interval))
             {
-                if (interval.OneBasedStart <= OneBasedStart && OneBasedEnd <= interval.OneBasedEnd)
+                if (interval.Includes(this))
                 {
                     // 'this' is included in 'interval' => Nothing left
                 }

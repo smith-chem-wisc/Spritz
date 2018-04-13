@@ -137,7 +137,7 @@
     <None Include="TestData\chr1_sample.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\chr5_selenocysteineContaining.gtf">
+    <None Include="TestData\chr5_selenocysteineContaining.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\chr7_one_transcript_reverse.gtf">

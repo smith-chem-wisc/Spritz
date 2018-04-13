@@ -906,7 +906,7 @@ namespace Proteogenomics
             }
 
             List<Interval> missing = Exons.OfType<Interval>().ToList();
-            foreach (Interval interval in UTRs.Concat(CodingDomainSequences.OfType<Interval>()))
+            foreach (Interval interval in UTRs.Concat(CodingDomainSequences.OfType<Interval>().ToList()))
             {
                 missing = missing.SelectMany(i => i.Minus(interval)).ToList();
             }
