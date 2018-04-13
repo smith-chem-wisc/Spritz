@@ -85,7 +85,7 @@ namespace Proteogenomics
             ) return "";
 
             // Create codon sequence
-            char[] codonChars = SequenceExtensions.ConvertToString(cdsStr.GetSubSequence(minBase, maxBase)).ToLower(CultureInfo.InvariantCulture).ToCharArray();
+            char[] codonChars = SequenceExtensions.ConvertToString(cdsStr.GetSubSequence(minBase, CODON_SIZE)).ToLower(CultureInfo.InvariantCulture).ToCharArray();
 
             // Capitatlize changed base
             if (CodonStartIndex < codonChars.Length) { codonChars[CodonStartIndex] = char.ToUpper(codonChars[CodonStartIndex]); }

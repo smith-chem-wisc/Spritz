@@ -148,7 +148,7 @@ namespace Proteogenomics
 
             string codons = oldCodonCdsEnd >= Transcript.RetrieveCodingSequence().Count ?
                 SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence()).Substring((int)oldCodonCdsStart) :
-                SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence().GetSubSequence(oldCodonCdsStart, oldCodonCdsEnd + 1));
+                SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence().GetSubSequence(oldCodonCdsStart, (maxCodon - minCodon + 1) * CODON_SIZE));
 
             return codons;
         }

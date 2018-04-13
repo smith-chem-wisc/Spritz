@@ -141,8 +141,6 @@ namespace Proteogenomics
 
         protected List<EffectImpact> EffectImpacts { get; set; }
 
-        protected EffectImpact EffectImpact { get; set; }
-
         protected Interval Marker { get; set; }
 
         protected HashSet<ErrorWarningType> Error { get; set; } = new HashSet<ErrorWarningType>();
@@ -285,7 +283,6 @@ namespace Proteogenomics
         public void AddEffectImpact(EffectImpact effectImpact)
         {
             EffectImpacts.Add(effectImpact);
-            EffectImpact = EffectImpact.MODIFIER;
         }
 
         public void AddEffectType(EffectType effectType)
@@ -874,7 +871,6 @@ namespace Proteogenomics
         {
             EffectImpacts.Clear();
             EffectImpacts.Add(effectImpact);
-            EffectImpact = EffectImpact.MODIFIER;
         }
 
         public void SetEffectType(EffectType effectType)

@@ -512,7 +512,7 @@ namespace Proteogenomics
             int max = codonNum * CodonChange.CODON_SIZE + CodonChange.CODON_SIZE;
             if (min >= 0 && max <= RetrieveCodingSequence().Count)
             {
-                return SequenceExtensions.ConvertToString(RetrieveCodingSequence().GetSubSequence(min, max)).ToUpper(CultureInfo.InvariantCulture);
+                return SequenceExtensions.ConvertToString(RetrieveCodingSequence().GetSubSequence(min, CodonChange.CODON_SIZE)).ToUpper(CultureInfo.InvariantCulture);
             }
             return null;
         }
@@ -904,24 +904,39 @@ namespace Proteogenomics
                 return UTRs;
             }
 
-            CodingDomainSequences = CodingDomainSequences.OrderBy(c => c.OneBasedStart).ToList();
-            long codingLeft = CodingDomainSequences.First().OneBasedStart;
-            long codingRight = CodingDomainSequences.Last().OneBasedEnd;
-            foreach (Exon x in Exons.OrderBy(c => c.OneBasedStart))
+            List<Interval> missing = Exons.OfType<Interval>().ToList();
+            foreach (Interval interval in UTRs.Concat(CodingDomainSequences.OfType<Interval>()))
             {
-                if (x.OneBasedStart < codingLeft)
+                missing = missing.SelectMany(i => i.Minus(interval)).ToList();
+            }
+
+            long codingMin = CodingDomainSequences.Select(c => c.OneBasedStart).Min();
+            long codingMax = CodingDomainSequences.Select(c => c.OneBasedEnd).Max();
+
+            foreach (Interval interval in missing)
+            {
+                Exon x = FindExon(interval);
+                if (x == null)
                 {
-                    long end = x.OneBasedEnd < codingLeft ? x.OneBasedEnd : codingLeft;
-                    UTRs.Add(IsStrandPlus() ?
-                        new UTR5Prime(x, ChromosomeID, Strand, x.OneBasedStart, end, null) as UTR :
-                        new UTR3Prime(x, ChromosomeID, Strand, x.OneBasedStart, end, null) as UTR);
+                    throw new ArgumentException("Cannot find exon for UTR: " + interval.ToString());
                 }
-                if (x.OneBasedEnd > CodingDomainSequences.Last().OneBasedEnd)
+
+                UTR toAdd = null;
+                if (IsStrandPlus())
                 {
-                    long start = x.OneBasedStart < codingRight ? x.OneBasedStart : codingRight;
-                    UTRs.Add(IsStrandPlus() ?
-                        new UTR3Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd, null) as UTR :
-                        new UTR5Prime(x, ChromosomeID, Strand, start, x.OneBasedEnd, null) as UTR);
+                    if (interval.OneBasedEnd <= codingMin) { toAdd = new UTR5Prime(x, x.ChromosomeID, x.Strand, interval.OneBasedStart, interval.OneBasedEnd, Variants); }
+                    else if (interval.OneBasedStart >= codingMax) { toAdd = new UTR3Prime(x, x.ChromosomeID, x.Strand, interval.OneBasedStart, interval.OneBasedEnd, Variants); }
+                }
+                else
+                {
+                    if (interval.OneBasedStart >= codingMax) { toAdd = new UTR5Prime(x, x.ChromosomeID, x.Strand, interval.OneBasedStart, interval.OneBasedEnd, Variants); }
+                    else if (interval.OneBasedEnd <= codingMin) { toAdd = new UTR3Prime(x, x.ChromosomeID, x.Strand, interval.OneBasedStart, interval.OneBasedEnd, Variants); }
+                }
+
+                // OK?
+                if (toAdd != null)
+                {
+                    UTRs.Add(toAdd);
                 }
             }
             return UTRs;

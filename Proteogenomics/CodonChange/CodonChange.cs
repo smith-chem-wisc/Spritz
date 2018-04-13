@@ -308,14 +308,15 @@ namespace Proteogenomics
             string codon = "";
 
             int start = CodonStartNumber * CODON_SIZE;
-            int end = start + numCodons * CODON_SIZE;
+            int more = numCodons * CODON_SIZE;
+            int end = start + more;
 
             int len = (int)cds.Count;
             if (start >= len) { start = len; }
             if (end >= len) { end = len; }
 
             // Capitalize
-            codon = SequenceExtensions.ConvertToString(cds.GetSubSequence(start, end));
+            codon = SequenceExtensions.ConvertToString(cds.GetSubSequence(start, more));
 
             // Codon not multiple of three? Add missing bases as 'N'
             if (codon.Length % 3 == 1) { codon += "NN"; }

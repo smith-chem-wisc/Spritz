@@ -81,6 +81,7 @@ namespace Proteogenomics
             // Round to codon position
             long scStart3 = round3(scStart, false);
             long scEnd3 = round3(scEnd, true);
+            long scLen3 = scEnd3 - scStart3;
             if (scEnd3 == scStart3) { scEnd3 += 3; }// At least one codon
 
             // Append 'N'
@@ -106,7 +107,7 @@ namespace Proteogenomics
             }
 
             // Get old codon (reference)
-            CodonsReference = SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence().GetSubSequence(scStart3, scEnd3 + 1));
+            CodonsReference = SequenceExtensions.ConvertToString(Transcript.RetrieveCodingSequence().GetSubSequence(scStart3, scLen3));
 
             // Get new codon (change)
             string prepend = CodonsReference.Substring(0, (int)(scStart - scStart3));

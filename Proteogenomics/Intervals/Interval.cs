@@ -7,7 +7,35 @@ namespace Proteogenomics
     public class Interval
         : IComparable<Interval>
     {
-        #region Public Properties
+        /// <summary>
+        /// Constructs an interval from chromosome, strand, start, and end
+        /// </summary>
+        /// <param name="chromID"></param>
+        /// <param name="strand"></param>
+        /// <param name="oneBasedStart"></param>
+        /// <param name="oneBasedEnd"></param>
+        public Interval(Interval parent, string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants)
+        {
+            Parent = parent;
+            ChromosomeID = chromosomeID;
+            Strand = strand;
+            OneBasedStart = oneBasedStart;
+            OneBasedEnd = oneBasedEnd;
+            Variants = variants ?? new HashSet<Variant>();
+        }
+
+        /// <summary>
+        /// Constructs an interval
+        /// </summary>
+        /// <param name="interval"></param>
+        public Interval(Interval interval) :
+            this(interval.Parent, interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd, interval.Variants)
+        {
+        }
+
+        public Interval()
+        {
+        }
 
         /// <summary>
         /// Chromosome name
@@ -44,41 +72,26 @@ namespace Proteogenomics
         /// </summary>
         public HashSet<Variant> Variants { get; set; } = new HashSet<Variant>();
 
-        #endregion Public Properties
-
-        #region Constructor
-
         /// <summary>
-        /// Constructs an interval from chromosome, strand, start, and end
+        /// Get the median of a set of intervals
         /// </summary>
-        /// <param name="chromID"></param>
-        /// <param name="strand"></param>
-        /// <param name="oneBasedStart"></param>
-        /// <param name="oneBasedEnd"></param>
-        public Interval(Interval parent, string chromosomeID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants)
+        /// <param name="intervals"></param>
+        /// <returns></returns>
+        public static long GetMedian(IEnumerable<Interval> intervals)
         {
-            Parent = parent;
-            ChromosomeID = chromosomeID;
-            Strand = strand;
-            OneBasedStart = oneBasedStart;
-            OneBasedEnd = oneBasedEnd;
-            Variants = variants ?? new HashSet<Variant>();
-        }
+            // Add all start and end coordinates
+            long i = 0;
+            long[] points = new long[2 * intervals.Count()];
+            foreach (Interval interval in intervals)
+            {
+                points[i++] = interval.OneBasedStart;
+                points[i++] = interval.OneBasedEnd;
+            }
 
-        /// <summary>
-        /// Constructs an interval
-        /// </summary>
-        /// <param name="interval"></param>
-        public Interval(Interval interval) :
-            this(interval.Parent, interval.ChromosomeID, interval.Strand, interval.OneBasedStart, interval.OneBasedEnd, interval.Variants)
-        {
+            Array.Sort(points);
+            int middle = points.Length / 2;
+            return points[middle];
         }
-
-        public Interval()
-        {
-        }
-
-        #endregion Constructor
 
         #region Variant Application Methods
 
@@ -317,7 +330,43 @@ namespace Proteogenomics
 
         #endregion Variant Application Methods
 
-        #region Public Methods
+        public List<Interval> Minus(Interval interval)
+        {
+            List<Interval> intervals = new List<Interval>();
+            if (Intersects(interval))
+            {
+                if (interval.OneBasedStart <= OneBasedStart && OneBasedEnd <= interval.OneBasedEnd)
+                {
+                    // 'this' is included in 'interval' => Nothing left
+                }
+                else if (interval.OneBasedStart <= OneBasedStart && interval.OneBasedEnd < OneBasedEnd)
+                {
+                    // 'interval' overlaps left part of 'this' => Include right part of 'this'
+                    intervals.Add(new Interval(Parent, ChromosomeID, Strand, interval.OneBasedEnd + 1, OneBasedEnd, Variants));
+                }
+                else if (OneBasedStart < interval.OneBasedStart && OneBasedEnd <= interval.OneBasedEnd)
+                {
+                    // 'interval' overlaps right part of 'this' => Include left part of 'this'
+                    intervals.Add(new Interval(Parent, ChromosomeID, Strand, OneBasedStart, interval.OneBasedStart - 1, Variants));
+                }
+                else if (OneBasedStart < interval.OneBasedStart && interval.OneBasedEnd < OneBasedEnd)
+                {
+                    // 'interval' overlaps middle of 'this' => Include left and right part of 'this'
+                    intervals.Add(new Interval(Parent, ChromosomeID, Strand, OneBasedStart, interval.OneBasedStart - 1, Variants));
+                    intervals.Add(new Interval(Parent, ChromosomeID, Strand, interval.OneBasedEnd + 1, OneBasedEnd, Variants));
+                }
+                else
+                {
+                    throw new ArgumentException("Interval intersection not analysed. This should nbever happen!");
+                }
+            }
+            else
+            {
+                intervals.Add(this); // No intersection => Just add 'this' interval
+            }
+
+            return intervals;
+        }
 
         /// <summary>
         /// Compare by start and end
@@ -469,27 +518,5 @@ namespace Proteogenomics
             if (end < start) { return 0; }
             return end - start + 1;
         }
-
-        #endregion Public Methods
-
-        #region Public Static Method
-
-        public static long GetMedian(IEnumerable<Interval> intervals)
-        {
-            // Add all start and end coordinates
-            long i = 0;
-            long[] points = new long[2 * intervals.Count()];
-            foreach (Interval interval in intervals)
-            {
-                points[i++] = interval.OneBasedStart;
-                points[i++] = interval.OneBasedEnd;
-            }
-
-            Array.Sort(points);
-            int middle = points.Length / 2;
-            return points[middle];
-        }
-
-        #endregion Public Static Method
     }
 }
