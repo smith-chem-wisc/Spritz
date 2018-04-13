@@ -1,15 +1,6 @@
-﻿using Bio.VCF;
-using Proteogenomics;
-using Proteomics;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ToolWrapperLayer;
-using UsefulProteomicsDatabases;
-using System;
 
 namespace WorkflowLayer
 {

@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Globalization;
 using System.IO;
-
 
 namespace WorkflowLayer
 {
@@ -13,9 +9,9 @@ namespace WorkflowLayer
     {
         private readonly List<Tuple<string, SpritzFlow>> taskList;
         private string outputFolder;
-        List<string> currentRnaSeqFilenameList;
-        List<string> currentGenomeFilenameList;
-        List<string> currentGeneSetFilenameList;
+        private List<string> currentRnaSeqFilenameList;
+        private List<string> currentGenomeFilenameList;
+        private List<string> currentGeneSetFilenameList;
 
         public EverythingRunnerEngine(List<Tuple<string, SpritzFlow>> taskList, List<string> startingGenomeFilenameList, List<string> startingGeneSetFilenameList, List<string> startingRnaSeqFilenameList, string outputFolder)
         {
@@ -52,7 +48,6 @@ namespace WorkflowLayer
                     Directory.CreateDirectory(outputFolderForThisTask);
 
                 ok.Item2.RunTask(outputFolderForThisTask, currentGenomeFilenameList, currentGeneSetFilenameList, currentRnaSeqFilenameList, ok.Item1);
-
             }
         }
 

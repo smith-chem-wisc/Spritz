@@ -1,15 +1,6 @@
-﻿using Bio.VCF;
-using Proteogenomics;
-using Proteomics;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ToolWrapperLayer;
-using UsefulProteomicsDatabases;
-using System;
 
 namespace WorkflowLayer
 {
@@ -18,10 +9,10 @@ namespace WorkflowLayer
         public LncRNADiscoveryFlow() : base(MyWorkflow.LncRnaDiscovery)
         {
             Parameters = new Parameters();
-        }   
+        }
 
         public Parameters Parameters { get; set; }
-       
+
         public static void Test(string test)
         {
             string script_path = Path.Combine(test, "scripts", "test.sh");

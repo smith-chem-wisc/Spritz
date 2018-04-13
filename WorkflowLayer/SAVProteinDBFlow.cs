@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using ToolWrapperLayer;
 using UsefulProteomicsDatabases;
 
@@ -16,7 +15,6 @@ namespace WorkflowLayer
     /// </summary>
     public class SAVProteinDBFlow
     {
-
         #region Runner Methods
 
         public static void GenerateSAVProteinsFromSra(string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
@@ -25,7 +23,7 @@ namespace WorkflowLayer
             string[] sras = sraAccession.Split(',');
             foreach (string sra in sras)
             {
-                SRAToolkitWrapper.Fetch(binDirectory, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
+                SRAToolkitWrapper.Fetch(binDirectory, sra, analysisDirectory, out string[] fastqPaths, out string logPath);
                 fastqs.Add(fastqPaths);
             }
             GenerateSAVProteinsFromFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
@@ -35,7 +33,7 @@ namespace WorkflowLayer
         {
             PrepareEnsemblGenomeFasta(genomeFasta, out Genome ensemblGenome, out string reorderedFasta);
             STAR2PassAlignFlow.AlignFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+            EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
             // Variant Calling
             string scriptName = Path.Combine(binDirectory, "scripts", "variantCalling.bash");
@@ -58,32 +56,41 @@ namespace WorkflowLayer
 
             // Generate databases
             GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
-            proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf => 
-                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
+            proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf =>
+                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
         }
 
         #endregion Runner Methods
 
         #region Sample Specific Database Writing
 
-        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
+        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
         {
             if (!File.Exists(vcfPath))
             {
                 Console.WriteLine("Error: VCF not found: " + vcfPath);
                 return "Error: VCF not found: " + vcfPath;
             }
+
+            // Parse VCF file
             VCFParser vcf = new VCFParser(vcfPath);
-            List<VariantSuperContext> singleNucleotideVariants = vcf.Select(x => x).Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1)).Select(v => new VariantSuperContext(v)).ToList();
-            geneModel.AmendTranscripts(singleNucleotideVariants);
             List<Protein> proteins = new List<Protein>();
-            List<Transcript> transcripts = geneModel.Genes.SelectMany(g => g.Transcripts).ToList();
+            List<Variant> singleNucleotideVariants = vcf.Select(x => x)
+                .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
+                .Select(v => new Variant(null, v, genome)).ToList();
+
+            // Apply the variants and translate the variant transcripts
+            List<Transcript> transcripts = geneModel.ApplyVariants(singleNucleotideVariants);
             for (int i = 0; i < transcripts.Count; i++)
             {
                 Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
-                proteins.AddRange(transcripts[i].TranslateFromSnpEffAnnotatedSNVs(true, true, badProteinAccessions, selenocysteineContaininAccessions));
+                if (badProteinAccessions.Contains(transcripts[i].ID) || badProteinAccessions.Contains(transcripts[i].ProteinID))
+                {
+                    continue;
+                }
+                proteins.Add(transcripts[i].Protein(selenocysteineContaininAccessions));
             }
-            int transcriptsWithVariants = geneModel.Genes.Sum(g => g.Transcripts.Count(x => x.CodingDomainSequences.Any(y => y.Variants.Count > 0)));
+            int transcriptsWithVariants = transcripts.Count(t => t.CodingDomainSequences.Any(y => y.Variants.Count > 0));
             string proteinVariantDatabase = outprefix + ".protein.fasta";
             string proteinVariantDatabaseXml = outprefix + ".protein.xml";
             List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
@@ -140,15 +147,14 @@ namespace WorkflowLayer
             // Right now this is based on ensembl references, so those are the chromosome IDs I will be using throughout
             // TODO: try this with UCSC references to judge whether there's a difference in quality / yield / FDR etc in subsequent proteomics analysis
             // This file needs to be in karyotypic order; this allows us not to have to reorder it for GATK analysis
-            string ensemblFastaHeaderDelimeter = " ";
             reorderedFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".karyotypic.fa");
             ensemblGenome = new Genome(genomeFasta);
-            if (!ensemblGenome.IsKaryotypic(ensemblFastaHeaderDelimeter))
+            if (!ensemblGenome.IsKaryotypic())
             {
-                ensemblGenome.Chromosomes = ensemblGenome.KaryotypicOrder(ensemblFastaHeaderDelimeter);
+                ensemblGenome.Chromosomes = ensemblGenome.KaryotypicOrder();
                 if (!File.Exists(reorderedFasta))
                 {
-                    Genome.WriteFasta(ensemblGenome.Chromosomes, reorderedFasta);
+                    Genome.WriteFasta(ensemblGenome.Chromosomes.Select(x => x.Sequence), reorderedFasta);
                 }
             }
             else
@@ -158,6 +164,5 @@ namespace WorkflowLayer
         }
 
         #endregion Preparing Input Files
-
     }
 }

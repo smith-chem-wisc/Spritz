@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
@@ -11,7 +10,6 @@ namespace WorkflowLayer
     /// </summary>
     public class ManageToolsFlow
     {
-
         #region Private Field
 
         /// <summary>
@@ -26,14 +24,15 @@ namespace WorkflowLayer
             "make",
             "cmake",
             "build-essential",
+            //"clang", // needed for some tools, but not any in these workflows
 
             // file compression
             "zlib1g-dev",
+            "liblzo2-dev",
             "unzip",
             "liblzma-dev",
             "libncurses5-dev",
             "libbz2-dev",
-
 
             // bioinformatics -- keep this to illustrate that these things are super outdated in aptitude
             //"samtools", // out of date
@@ -92,7 +91,7 @@ namespace WorkflowLayer
         public static void Install(string binDirectory)
         {
             // get root permissions and update and upgrade the repositories
-            List<string> commands = new List<string> 
+            List<string> commands = new List<string>
             {
                 "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
@@ -114,9 +113,7 @@ namespace WorkflowLayer
 
             // python setup
             commands.Add("sudo easy_install pip");
-            commands.Add("sudo pip install --upgrade virtualenv");
-            commands.Add("pip install --upgrade pip");
-            commands.Add("sudo pip install --upgrade qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
+            commands.Add("sudo pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
 
             // java8 setup
             commands.Add
@@ -140,8 +137,8 @@ namespace WorkflowLayer
             for (int i = 0; i < parallelScripts.Count; i++)
             {
                 commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");
-                commands.Add("bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &> " + 
-                    WrapperUtility.ConvertWindowsPath(Path.Combine(installationLogsDirectory, Path.GetFileNameWithoutExtension(parallelScripts[i]) + ".log")) + 
+                commands.Add("bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &> " +
+                    WrapperUtility.ConvertWindowsPath(Path.Combine(installationLogsDirectory, Path.GetFileNameWithoutExtension(parallelScripts[i]) + ".log")) +
                     " &");
                 commands.Add("proc" + i.ToString() + "=$!");
             }
@@ -192,6 +189,5 @@ namespace WorkflowLayer
         }
 
         #endregion Public Methods
-
     }
 }

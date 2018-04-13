@@ -13,7 +13,6 @@ namespace ToolWrapperLayer
     /// </summary>
     public class EnsemblDownloadsWrapper
     {
-
         #region Primary Assembly Genome Fasta URLs and Filenames
 
         /// <summary>
@@ -201,10 +200,13 @@ namespace ToolWrapperLayer
         /// <param name="binDirectory"></param>
         /// <param name="proteinFastaPath"></param>
         /// <returns></returns>
-        public static void GetImportantProteinAccessions(string binDirectory, string proteinFastaPath, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineProteinAccessions)
+        public static void GetImportantProteinAccessions(string binDirectory, string proteinFastaPath, out Dictionary<string, string> proteinAccessionSequence, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineProteinAccessions)
         {
             Regex transcriptAccession = new Regex(@"(transcript:)([A-Za-z0-9_.]+)"); // need to include transcript accessions for when a GTF file is used and transcript IDs become the protein IDs
-            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFastaPath, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression);
+            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFastaPath, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, null, out List<string> errors);
+            proteinAccessionSequence = proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence))
+                .Concat(proteins.Select(p => new KeyValuePair<string, string>(transcriptAccession.Match(p.FullName).Groups[2].Value, p.BaseSequence)))
+                .ToDictionary(kv => kv.Key, kv => kv.Value);
             HashSet<string> badOnes = new HashSet<string>(proteins.Where(p => p.BaseSequence.Contains('X') || p.BaseSequence.Contains('*')).SelectMany(p => new string[] { p.Accession, transcriptAccession.Match(p.FullName).Groups[2].Value }));
             badProteinAccessions = badOnes;
             selenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);

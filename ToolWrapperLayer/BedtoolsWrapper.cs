@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace ToolWrapperLayer
@@ -13,7 +9,6 @@ namespace ToolWrapperLayer
     public class BedtoolsWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -49,6 +44,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Installation Methods
-
     }
 }

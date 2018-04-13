@@ -1,68 +1,57 @@
 ﻿using Bio;
 using Bio.IO.FastA;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using System;
+using System.Linq;
 
 namespace Proteogenomics
 {
     public class Genome
+        : Interval
     {
-
-        #region Public Properties
-
-        /// <summary>
-        /// Chromosomes contained in this genome.
-        /// </summary>
-        public List<ISequence> Chromosomes { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Constructor
-
         /// <summary>
         /// Parses the chromosomes listed in a genome fasta.
         /// </summary>
         /// <param name="genomeFastaLocation"></param>
         public Genome(string genomeFastaLocation)
-        {                
-            Chromosomes = new FastAParser().Parse(genomeFastaLocation).ToList();
+        {
+            Chromosomes = new FastAParser().Parse(genomeFastaLocation).Select(s => new Chromosome(s, this)).ToList();
         }
 
-        #endregion Public Constructor
-
-        #region Public Method
+        /// <summary>
+        /// Chromosomes contained in this genome.
+        /// </summary>
+        public List<Chromosome> Chromosomes { get; set; }
 
         /// <summary>
         /// Orders the chromosomes in this genome by karyotypic order, i.e. by chromosome size.
         /// </summary>
         /// <param name="fastaHeaderDelimeter"></param>
         /// <returns></returns>
-        public List<ISequence> KaryotypicOrder(string fastaHeaderDelimeter)
+        public List<Chromosome> KaryotypicOrder()
         {
-            ISequence[] orderedChromosomes = new ISequence[Chromosomes.Count];
-            bool ucsc = Chromosomes[0].ID.StartsWith("c");
+            Chromosome[] orderedChromosomes = new Chromosome[Chromosomes.Count];
+            bool ucsc = Chromosomes[0].FriendlyName.StartsWith("c");
             int i = 0;
             foreach (int chr in Enumerable.Range(1, 22))
             {
-                ISequence s = Chromosomes.FirstOrDefault(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None)[0] == (ucsc ? "chr" + chr : chr.ToString()));
+                Chromosome s = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chr" + chr : chr.ToString()));
                 if (s != null) orderedChromosomes[i++] = s;
             }
-            ISequence seqx = Chromosomes.FirstOrDefault(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None)[0] == (ucsc ? "chrX" : "X"));
+            Chromosome seqx = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chrX" : "X"));
             if (seqx != null) orderedChromosomes[i++] = seqx;
-            ISequence seqy = Chromosomes.FirstOrDefault(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None)[0] == (ucsc ? "chrY" : "Y"));
+            Chromosome seqy = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chrY" : "Y"));
             if (seqy != null) orderedChromosomes[i++] = seqy;
-            ISequence seqm = Chromosomes.FirstOrDefault(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None)[0] == (ucsc ? "chrM" : "MT"));
+            Chromosome seqm = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chrM" : "MT"));
             if (seqm != null) orderedChromosomes[i++] = seqm;
 
-            List<ISequence> gl = Chromosomes.Where(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None).Contains("GL")).ToList();
+            List<Chromosome> gl = Chromosomes.Where(x => x.FriendlyName.Contains("GL")).ToList();
             foreach (var g in gl)
             {
                 orderedChromosomes[i++] = g;
             }
 
-            List<ISequence> ki = Chromosomes.Where(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None).Contains("KI")).ToList();
+            List<Chromosome> ki = Chromosomes.Where(x => x.FriendlyName.Contains("KI")).ToList();
             foreach (var k in ki)
             {
                 orderedChromosomes[i++] = k;
@@ -80,11 +69,11 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="fastaHeaderDelimeter"></param>
         /// <returns></returns>
-        public bool IsKaryotypic(string fastaHeaderDelimeter)
+        public bool IsKaryotypic()
         {
-            bool ucsc = Chromosomes[0].ID.StartsWith("c");
+            bool ucsc = Chromosomes[0].FriendlyName.StartsWith("c");
             int i = 0;
-            List<string> ids = Chromosomes.Select(x => x.ID.Split(new string[] { fastaHeaderDelimeter }, StringSplitOptions.None)[0]).ToList();
+            List<string> ids = Chromosomes.Select(x => x.FriendlyName).ToList();
             List<string> names = new List<string>();
             foreach (string chr in Enumerable.Range(1, 22).Select(x => x.ToString()).Concat(new string[] { "X", "Y", "M" }))
             {
@@ -122,8 +111,5 @@ namespace Proteogenomics
             File.Delete(filePath);
             File.Move(filePath + ".tmp", filePath);
         }
-
-        #endregion Public Method
-
     }
 }

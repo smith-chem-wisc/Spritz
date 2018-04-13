@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace CMD
 {
-    class Options
+    internal class Options
     {
         [Option('c', "command", Required = true, HelpText = "Command: (1) setup, (2) run, (3) vcf2protein, (4) starFusionTest, (5) lncRNADiscovery")]
         public string Command { get; set; }
@@ -51,6 +51,5 @@ namespace CMD
 
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
-
     }
 }

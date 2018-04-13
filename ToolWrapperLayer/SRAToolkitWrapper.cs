@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -11,7 +10,6 @@ namespace ToolWrapperLayer
     public class SRAToolkitWrapper :
         IInstallable
     {
-
         #region Private Fields
 
         private static string ascpDownloadLocation = "http://download.asperasoft.com/download/sw/connect/3.7.4/aspera-connect-3.7.4.147727-linux-64.tar.gz";
@@ -39,7 +37,7 @@ namespace ToolWrapperLayer
                 "  tar -xvf sratoolkit.current-ubuntu64.tar.gz",
                 "  rm sratoolkit.current-ubuntu64.tar.gz",
                 "fi"
-                
+
                 //"wget " + ascpDownloadLocation,
                 //"tar -xvf aspera-connect*.tar.gz",
                 //"rm apera-connect*.tar.gz",
@@ -79,12 +77,11 @@ namespace ToolWrapperLayer
                 "echo \"Downloading " + sraAccession + "\"",
                 "cd " + WrapperUtility.ConvertWindowsPath(bin),
                 "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(destinationDirectoryPath) + "\" " +
-                    sraAccession + " > " + WrapperUtility.ConvertWindowsPath(logPath),
+                    sraAccession + " >> " + WrapperUtility.ConvertWindowsPath(logPath),
             }).WaitForExit();
             fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
         }
 
         #endregion Public Methods
-
     }
 }

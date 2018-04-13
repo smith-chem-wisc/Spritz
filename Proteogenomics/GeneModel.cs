@@ -1,8 +1,6 @@
 ﻿using Bio;
 using Bio.IO.Gff;
-using Bio.VCF;
 using Proteomics;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,9 +13,6 @@ namespace Proteogenomics
     /// </summary>
     public class GeneModel
     {
-
-        #region Private Fields
-
         /// <summary>
         /// Gets the first instance of a word
         /// </summary>
@@ -28,29 +23,6 @@ namespace Proteogenomics
         /// </summary>
         private static Regex attributeValue = new Regex(@"""([\w.]+)""");
 
-        #endregion Private Fields
-
-        #region Public Properties
-
-        /// <summary>
-        /// Genome this gene model is based on.
-        /// </summary>
-        public Genome Genome { get; set; }
-
-        /// <summary>
-        /// Genes represented in this gene model.
-        /// </summary>
-        public List<Gene> Genes { get; set; } = new List<Gene>();
-
-        /// <summary>
-        /// Start codons represented in this gene model.
-        /// </summary>
-        public List<Exon> StartCDS { get; set; } = new List<Exon>();
-
-        #endregion Public Properties
-
-        #region Public Constructor
-
         /// <summary>
         /// Constructs this GeneModel object from a Genome object and a corresponding GTF or GFF3 gene model file.
         /// </summary>
@@ -58,13 +30,31 @@ namespace Proteogenomics
         /// <param name="geneModelFile"></param>
         public GeneModel(Genome genome, string geneModelFile)
         {
-            this.Genome = genome;
+            Genome = genome;
             ReadGeneFeatures(geneModelFile);
         }
 
-        #endregion Public Constructor
+        /// <summary>
+        /// Genome this gene model is based on.
+        /// </summary>
+        public Genome Genome { get; set; }
 
-        #region Public Methods
+        /// <summary>
+        /// Forest of intervals by chromosome name
+        /// </summary>
+        public IntervalForest GenomeForest { get; set; } = new IntervalForest();
+
+        /// <summary>
+        /// Genes represented
+        /// </summary>
+        public List<Gene> Genes { get; set; } = new List<Gene>();
+
+        /// <summary>
+        /// Intergenic regions
+        /// </summary>
+        public List<Intergenic> Intergenics { get; set; } = new List<Intergenic>();
+
+        #region Methods -- Read Gene Model File
 
         private Gene currentGene = null;
         private Transcript currentTranscript = null;
@@ -76,9 +66,7 @@ namespace Proteogenomics
 
             foreach (ISequence chromFeatures in geneFeatures)
             {
-                ISequence chromSeq = Genome.Chromosomes.FirstOrDefault(x => x.ID.Split(' ')[0] == chromFeatures.ID);
-                if (chromSeq == null) continue;
-
+                Chromosome chrom = Genome == null ? new Chromosome(new Sequence(Alphabets.DNA, ""), Genome) : Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID);
                 chromFeatures.Metadata.TryGetValue("features", out object f);
                 List<MetadataListItem<List<string>>> features = f as List<MetadataListItem<List<string>>>;
                 for (int i = 0; i < features.Count; i++)
@@ -102,64 +90,84 @@ namespace Proteogenomics
                             key = attributeKey.Match(attrib.TrimStart()).Groups[1].Value;
                             val = attributeValue.Match(attrib.TrimStart()).Groups[1].Value;
                         }
+
                         if (!attributes.TryGetValue(key, out string x)) // sometimes there are two tags, so avoid adding twice
+                        {
                             attributes.Add(key, val);
+                        }
                     }
 
                     if (feature.FreeText.Contains('='))
-                        ProcessGff3Feature(feature, start, end, chromSeq, attributes);
+                    {
+                        ProcessGff3Feature(feature, start, end, chrom, attributes);
+                    }
                     else
-                        ProcessGtfFeature(feature, start, end, chromSeq, attributes);
-
+                    {
+                        ProcessGtfFeature(feature, start, end, chrom, attributes);
+                    }
                 }
             }
+            CreateUTRsAndIntergenicRegions();
+            // possibly check transcript sanity here with Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t => t.SanityCheck());
+            foreach (Gene gene in Genes)
+            {
+                gene.TranscriptTree.Build();
+            }
+            GenomeForest.Build();
         }
 
         /// <summary>
         /// Processes a feature from a GFF3 gene model file.
         /// </summary>
         /// <param name="feature"></param>
-        /// <param name="OneBasedStart"></param>
-        /// <param name="OneBasedEnd"></param>
-        /// <param name="chromSeq"></param>
+        /// <param name="oneBasedStart"></param>
+        /// <param name="oneBasedEnd"></param>
+        /// <param name="chrom"></param>
         /// <param name="attributes"></param>
-        public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
+        public void ProcessGff3Feature(MetadataListItem<List<string>> feature, long oneBasedStart, long oneBasedEnd, Chromosome chrom, Dictionary<string, string> attributes)
         {
-            bool hasGeneId = attributes.TryGetValue("gene_id", out string gene_id);
-            bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcript_id);
-            bool hasExonId = attributes.TryGetValue("exon_id", out string exon_id);
-            bool hasProteinId = attributes.TryGetValue("protein_id", out string protein_id);
-
-            if (hasGeneId && (currentGene == null || hasGeneId && gene_id != currentGene.ID))
+            bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
+            bool hasTranscriptId = attributes.TryGetValue("transcript_id", out string transcriptId);
+            bool hasTranscriptVersion = attributes.TryGetValue("version", out string transcriptVersion) && hasTranscriptId;
+            bool hasExonId = attributes.TryGetValue("exon_id", out string exonId);
+            bool hasProteinId = attributes.TryGetValue("protein_id", out string proteinId);
+            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish);
+            if (!hasStrand)
             {
-                currentGene = new Gene(gene_id, chromSeq, feature);
+                return;
+            }
+            string strand = strandish[0];
+
+            if (hasGeneId && (currentGene == null || hasGeneId && geneId != currentGene.ID))
+            {
+                currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
                 Genes.Add(currentGene);
+                GenomeForest.Add(currentGene);
             }
 
-            if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcript_id != currentTranscript.ID))
+            if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                currentTranscript = new Transcript(transcript_id, currentGene, feature);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
+                currentGene.TranscriptTree.Add(currentTranscript);
+                GenomeForest.Add(currentTranscript);
             }
 
-            if (hasExonId || hasProteinId)
+            if (hasExonId)
             {
-                ISequence exon_dna = chromSeq.GetSubSequence(OneBasedStart - 1, OneBasedEnd - OneBasedStart + 1);
-
-                Exon exon = new Exon(exon_dna, OneBasedStart, OneBasedEnd, chromSeq.ID, feature);
-
-                if (hasExonId)
-                {
-                    //currentGene.Exons.Add(exon);
-                    currentTranscript.Exons.Add(exon);
-                }
-                else if (hasProteinId)
-                {
-                    if (currentTranscript.CodingDomainSequences.Count == 0) StartCDS.Add(exon);
-                    //currentGene.CodingDomainSequences.Add(exon);
-                    currentTranscript.CodingDomainSequences.Add(exon);
-                    currentTranscript.ProteinID = protein_id;
-                }
+                ISequence exon_dna = chrom.Sequence.Count == 0 ? new Sequence(Alphabets.DNA, "") : chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
+                    oneBasedStart, oneBasedEnd, chrom == null ? "" : chrom.ChromosomeID, strand, null);
+                currentTranscript.Exons.Add(exon);
+            }
+            else if (hasProteinId)
+            {
+                CDS cds = new CDS(currentTranscript, chrom == null ? "" : chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                currentTranscript.CodingDomainSequences.Add(cds);
+                currentTranscript.ProteinID = proteinId;
+            }
+            else
+            { // nothing to do
             }
         }
 
@@ -167,11 +175,11 @@ namespace Proteogenomics
         /// Processes a feature from a GTF gene model file.
         /// </summary>
         /// <param name="feature"></param>
-        /// <param name="OneBasedStart"></param>
-        /// <param name="OneBasedEnd"></param>
-        /// <param name="chromSeq"></param>
+        /// <param name="oneBasedStart"></param>
+        /// <param name="oneBasedEnd"></param>
+        /// <param name="chrom"></param>
         /// <param name="attributes"></param>
-        public void ProcessGtfFeature(MetadataListItem<List<string>> feature, long OneBasedStart, long OneBasedEnd, ISequence chromSeq, Dictionary<string, string> attributes)
+        public void ProcessGtfFeature(MetadataListItem<List<string>> feature, long oneBasedStart, long oneBasedEnd, Chromosome chrom, Dictionary<string, string> attributes)
         {
             bool hasGeneId = attributes.TryGetValue("gene_id", out string geneId);
             bool hasGeneName = attributes.TryGetValue("gene_name", out string geneName);
@@ -185,113 +193,66 @@ namespace Proteogenomics
             bool hasExonNumber = attributes.TryGetValue("exon_number", out string exonNumber);
             bool hasNearestRef = attributes.TryGetValue("nearest_ref", out string nearestRef); // Cufflinks
             bool hasClassCode = attributes.TryGetValue("class_code", out string classCode); // Cufflinks
+            string strand = feature.SubItems["strand"][0];
 
             // Catch the transcript features before they go by if available, i.e. if the file doesn't just have exons
             if (feature.Key == "transcript" && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq, feature);
+                    currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
+                    GenomeForest.Add(currentGene);
                 }
 
-                currentTranscript = new Transcript(transcriptId, currentGene, feature);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
+                currentGene.TranscriptTree.Add(currentTranscript);
+                GenomeForest.Add(currentTranscript);
             }
 
             if (feature.Key == "exon" || feature.Key == "CDS")
             {
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chromSeq, feature);
+                    currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
                     Genes.Add(currentGene);
+                    GenomeForest.Add(currentGene);
                 }
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    currentTranscript = new Transcript(transcriptId, currentGene, null);
+                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                     currentGene.Transcripts.Add(currentTranscript);
+                    GenomeForest.Add(currentTranscript);
                 }
-
-                ISequence exon_dna = chromSeq.GetSubSequence(OneBasedStart - 1, OneBasedEnd - OneBasedStart + 1);
-
-                Exon exon = new Exon(exon_dna, OneBasedStart, OneBasedEnd, chromSeq.ID, feature);
 
                 if (feature.Key == "exon")
                 {
-                    //currentGene.Exons.Add(exon);
+                    ISequence exon_dna = chrom.Sequence.Count == 0 ? new Sequence(Alphabets.DNA, "") : chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                    Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
+                        oneBasedStart, oneBasedEnd, chrom == null ? "" : chrom.Sequence.ID, strand, null);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    //currentGene.CodingDomainSequences.Add(exon);
-                    currentTranscript.CodingDomainSequences.Add(exon);
+                    CDS cds = new CDS(currentTranscript, chrom == null ? "" : chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                    currentTranscript.CodingDomainSequences.Add(cds);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Enters variant information into transcripts based on SnpEff annotations and into exons based on location.
-        /// </summary>
-        /// <param name="superVariants"></param>
-        public void AmendTranscripts(List<VariantSuperContext> superVariants)
-        {
-            int binSize = 100000;
-            Dictionary<Tuple<string, long>, List<VariantSuperContext>> chrIndexVariants = new Dictionary<Tuple<string, long>, List<VariantSuperContext>>();
-            Dictionary<string, List<SnpEffAnnotation>> transcriptIdSnpEffVariants = new Dictionary<string, List<SnpEffAnnotation>>();
-            foreach (VariantSuperContext superVariant in superVariants)
-            {
-                var key = new Tuple<string, long>(superVariant.Chr, superVariant.Start / binSize * binSize);
-                if (chrIndexVariants.TryGetValue(key, out List<VariantSuperContext> vars))
-                    vars.Add(superVariant);
                 else
-                    chrIndexVariants[key] = new List<VariantSuperContext> { superVariant };
-
-                foreach (SnpEffAnnotation a in superVariant.SnpEffAnnotations)
-                {
-                    if (transcriptIdSnpEffVariants.TryGetValue(a.FeatureID, out List<SnpEffAnnotation> asdf))
-                        asdf.Add(a);
-                    else
-                        transcriptIdSnpEffVariants.Add(a.FeatureID, new List<SnpEffAnnotation> { a });
-                }
-            }
-
-            foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
-            {
-                if (transcriptIdSnpEffVariants.TryGetValue(t.ID, out List<SnpEffAnnotation> annotations))
-                    t.SnpEffVariants = annotations;
-            }
-
-            foreach (Exon x in Genes.SelectMany(g => g.Transcripts.SelectMany(t => t.Exons.Concat(t.CodingDomainSequences))))
-            {
-                for (long i = x.OneBasedStart / binSize; i < x.OneBasedEnd / binSize + 1; i++)
-                {
-                    var key = new Tuple<string, long>(x.ChromID.Split(' ')[0], i * binSize);
-                    if (chrIndexVariants.TryGetValue(key, out List<VariantSuperContext> nearby_variants))
-                        x.Variants = nearby_variants.Where(v => x.Includes(v.Start)).OfType<VariantContext>().ToList();
+                { // nothing to do
                 }
             }
         }
-
-        #endregion Public Methods
-
-        #region Translation Methods
-
-        public List<Protein> Translate(bool translateCodingDomains, bool translateWithVariants, HashSet<string> badProteinAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
-        {
-            return Genes.SelectMany(g => g.Translate(translateCodingDomains, translateWithVariants, badProteinAccessions, selenocysteineContaining)).ToList();
-        }
-
-        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, bool translateWithVariants, int minPeptideLength = 7)
-        {
-            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, translateWithVariants, minPeptideLength)).ToList();
-        }
-
-        #endregion Translation Methods
-
-        #region Private Method
 
         private static Regex gffVersion = new Regex(@"(##gff-version\s+)(\d)");
+
+        /// <summary>
+        /// Required for using DotNetBio because it only handles GFF version 2 in the header.
+        /// The only difference in the new version is within the attributes, which are stored as free text anyway.
+        /// </summary>
+        /// <param name="gffPath"></param>
+        /// <param name="gffWithVersionMarked2Path"></param>
         private static void ForceGffVersionTo2(string gffPath, out string gffWithVersionMarked2Path)
         {
             gffWithVersionMarked2Path = Path.Combine(Path.GetDirectoryName(gffPath), Path.GetFileNameWithoutExtension(gffPath) + ".gff2" + Path.GetExtension(gffPath));
@@ -307,6 +268,7 @@ namespace Proteogenomics
                     {
                         break;
                     }
+
                     if (line.StartsWith("##gff-version"))
                     {
                         writer.Write(gffVersion.Replace(line, m => m.Groups[1] + "2") + "\n");
@@ -319,7 +281,104 @@ namespace Proteogenomics
             }
         }
 
-        #endregion Private Method
+        #endregion Methods -- Read Gene Model File
 
+        #region Methods -- Applying Variants
+
+        /// <summary>
+        /// Creates UTRs for transcripts and intergenic regions after reading gene model
+        /// </summary>
+        public void CreateUTRsAndIntergenicRegions()
+        {
+            foreach (IntervalTree it in GenomeForest.Forest.Values)
+            {
+                Gene previousPositiveStrandGene = null;
+                Gene previousNegativeStrandGene = null;
+
+                // Create intergenic regions on each strand
+                foreach (Gene gene in it.Intervals.OfType<Gene>().OrderBy(g => g.OneBasedStart))
+                {
+                    Intergenic intergenic = null;
+                    Gene previous = gene.IsStrandPlus() ? previousPositiveStrandGene : previousNegativeStrandGene;
+                    if (previous != null)
+                    {
+                        // if there's a previous gene, create the intergenic region
+                        intergenic = new Intergenic(gene.Chromosome, gene.ChromosomeID, gene.Strand, previous.OneBasedEnd + 1, gene.OneBasedStart - 1, null);
+                    }
+
+                    // store previous genes on each strand
+                    if (gene.IsStrandPlus())
+                    {
+                        previousPositiveStrandGene = gene;
+                    }
+                    if (gene.IsStrandMinus())
+                    {
+                        previousNegativeStrandGene = gene;
+                    }
+
+                    // add the intergenic region to the genome forest if it was created
+                    if (intergenic != null && intergenic.Length() > 0)
+                    {
+                        GenomeForest.Add(intergenic);
+                    }
+
+                    // while we're here, set the regions of each transcript, too
+                    foreach (Transcript t in gene.Transcripts)
+                    {
+                        Transcript.SetRegions(t);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Apply a list of variants to the intervals within this gene model
+        /// </summary>
+        /// <param name="variants"></param>
+        public List<Transcript> ApplyVariants(List<Variant> variants)
+        {
+            List<Transcript> resultingTranscripts = new List<Transcript>();
+            foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
+            {
+                List<Interval> intervals = GenomeForest.Forest[Chromosome.GetFriendlyChromosomeName(v.ChromosomeID)].Stab(v.OneBasedStart);
+                foreach (Interval i in intervals)
+                {
+                    i.ApplyVariant(v);
+                }
+            }
+            foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
+            {
+                if (t.Variants.Count == 0)
+                {
+                    resultingTranscripts.Add(new Transcript(t));
+                }
+                else
+                {
+                    List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
+                    if (transcriptVariants.Count <= 5)
+                    {
+                        List<Transcript> variantTranscripts = t.ApplyVariantsCombinitorially(transcriptVariants).ToList();
+                        resultingTranscripts.AddRange(variantTranscripts);
+                    }
+                }
+            }
+            return resultingTranscripts;
+        }
+
+        #endregion Methods -- Applying Variants
+
+        #region Translation Methods
+
+        public List<Protein> Translate(bool translateCodingDomains, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
+        {
+            return Genes.SelectMany(g => g.Translate(translateCodingDomains, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
+        }
+
+        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, int minPeptideLength = 7)
+        {
+            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, selenocysteineContaining, minPeptideLength)).ToList();
+        }
+
+        #endregion Translation Methods
     }
 }

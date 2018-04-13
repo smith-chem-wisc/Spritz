@@ -10,21 +10,39 @@ namespace Proteogenomics
 {
     public static class Translation
     {
+        /// <summary>
+        /// Stores accessions for checking that they are unique.
+        /// </summary>
+        private static HashSet<string> ProteinAccessions = new HashSet<string>();
 
-        #region One-Frame Translation
-
-        public static Protein OneFrameTranslation(TranscriptPossiblyWithVariants transcript)
+        /// <summary>
+        /// Translate the coding sequence of a transcript
+        /// </summary>
+        /// <param name="transcript"></param>
+        /// <returns></returns>
+        public static ISequence OneFrameTranslation(ISequence dnaSequence, bool mitochondrial)
         {
-            ISequence dnaSequence = transcript.VariantTranscriptSequence;
-            ISequence rnaSequence = Transcription.Transcribe(transcript.GetExonsUsedInDerivation()[0].Strand == "+" ? dnaSequence : dnaSequence.GetReverseComplementedSequence());
-            ISequence proteinSequence = ProteinTranslation.Translate(rnaSequence);
-            string proteinBases = SequenceExtensions.ConvertToString(proteinSequence).Split('*')[0];
-            return new Protein(proteinBases, transcript.ProteinID, null, null, null, transcript.ProteinAnnotation, transcript.ProteinAnnotation);
+            ISequence rnaSequence = Transcription.Transcribe(dnaSequence);
+            ISequence proteinSequence = !mitochondrial ?
+                ProteinTranslation.Translate(rnaSequence) :
+                new Sequence(Alphabets.AmbiguousProtein, String.Join("", Enumerable.Range(0, (int)(rnaSequence.Count / 3))
+                    .Select(codonNum => CodonsVertebrateMitochondrial.TryLookup(rnaSequence, codonNum * 3, out byte aa) ?
+                        new string(new[] { (char)aa }) :
+                        "X")));
+            return proteinSequence;
         }
 
-        #endregion One-Frame Translation
-
-        #region Three-Frame Translation
+        public static string GetSafeProteinAccession(string accession)
+        {
+            string newAccession = accession;
+            int i = 1;
+            while (ProteinAccessions.Contains(newAccession))
+            {
+                newAccession = accession + "_" + i++.ToString();
+            }
+            ProteinAccessions.Add(newAccession);
+            return newAccession;
+        }
 
         /// <summary>
         /// Not used or tested right now...
@@ -37,14 +55,23 @@ namespace Proteogenomics
             string seq = String.Join("", exons.Select(x => SequenceExtensions.ConvertToString(x.Sequence)));
             if (seq.Contains('N')) return null;
             ISequence dna_seq = new Sequence(Alphabets.DNA, seq);
-            ISequence rna_seq = Transcription.Transcribe(exons[0].Strand == "+" ? dna_seq : dna_seq.GetReverseComplementedSequence());
+            ISequence rna_seq = Transcription.Transcribe(exons[0].IsStrandPlus() ? dna_seq : dna_seq.GetReverseComplementedSequence());
             ISequence[] prot_seq = Enumerable.Range(0, 3).Select(i => ProteinTranslation.Translate(rna_seq, i)).ToArray();
 
             //return the protein sequence corresponding to the longest ORF
             return new Protein(prot_seq.SelectMany(s => SequenceExtensions.ConvertToString(s).Split('*')).OrderByDescending(s => s.Length).FirstOrDefault(), proteinID);
         }
 
-        #endregion Three-Frame Translation
-
+        /// <summary>
+        /// Get AA for a single DNA codon
+        /// </summary>
+        /// <param name="codon"></param>
+        /// <param name="aa"></param>
+        /// <returns></returns>
+        public static bool TranslateDnaCodon(string codon, out byte aa)
+        {
+            ISequence rnaCodon = Transcription.Transcribe(new Sequence(Alphabets.DNA, codon.Select(c => (byte)c).ToArray()));
+            return Codons.TryLookup(rnaCodon, 0, out aa);
+        }
     }
 }

@@ -11,7 +11,6 @@ namespace ToolWrapperLayer
     public class CufflinksWrapper :
         IInstallable
     {
-
         #region Public Properties
 
         /// <summary>
@@ -86,9 +85,11 @@ namespace ToolWrapperLayer
         /// <param name="outputDirectory"></param>
         public static void AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
         {
+            bool isStranded = strandSpecific;
             if (inferStrandSpecificity)
             {
-                strandSpecific = RSeQCWrapper.CheckStrandSpecificity(binDirectory, bamPath, geneModelGtfOrGffPath, 0.8);
+                BAMProperties bamProperties = new BAMProperties(bamPath, geneModelGtfOrGffPath, 0.8);
+                isStranded = bamProperties.StrandSpecific;
             }
 
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksSortCheck");
@@ -98,22 +99,18 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bamPath) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
-                "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " +
-                    "samtools sort -f -@ " + Environment.ProcessorCount.ToString() + " -m " + Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue()) + "M " +
-                    WrapperUtility.ConvertWindowsPath(bamPath) + " " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) +
-                    "; fi",
+                "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " + SamtoolsWrapper.SortBam(binDirectory, bamPath) + "; fi",
                 "bam=" +  WrapperUtility.ConvertWindowsPath(bamPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then bam=" + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + "; fi",
                 "cufflinks-2.2.1/cufflinks " +
                     " --num-threads " + threads.ToString() +
                     " --GTF-guide " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
-                    (strandSpecific ? "--library-type fr-firststrand" : "") +
+                    (isStranded ? "--library-type fr-firststrand" : "") +
                     " $bam",
             }).WaitForExit();
         }
 
         #endregion Public Method
-
     }
 }

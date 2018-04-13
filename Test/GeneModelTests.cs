@@ -4,15 +4,15 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UsefulProteomicsDatabases;
 using ToolWrapperLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
     [TestFixture]
     public class GeneModelTests
     {
-        Genome genome;
+        private Genome genome;
 
         [OneTimeSetUp]
         public void setup()
@@ -25,7 +25,7 @@ namespace Test
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.AreEqual(165, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
-            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
+            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true)).ToList();
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace Test
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.AreEqual(148, geneModel.Genes.SelectMany(g => g.Transcripts).Count());
-            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true, false)).ToList();
+            List<Protein> proteins = geneModel.Genes.SelectMany(g => g.Translate(true)).ToList();
 
             //Forward strand, single coding region
             Assert.AreEqual("ENSP00000334393", proteins[0].Accession);
@@ -58,7 +58,7 @@ namespace Test
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_pacbio.gff3"));
 
-            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, false, 7)).ToList();
+            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, null, 7)).ToList();
 
             //Forward strand, single coding region
             Assert.AreEqual("PB2015.1.1", proteins[0].Accession);
@@ -86,44 +86,47 @@ namespace Test
         public void KaryotypicOrder()
         {
             Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headers.fa"));
-            var seqs = headers.KaryotypicOrder(" ");
-            Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr1" && seqs[1].ID.Split(' ')[0] == "chr2");
-            Assert.IsTrue(seqs[22].ID.Split(' ')[0] == "chrX" && seqs[23].ID.Split(' ')[0] == "chrY" && seqs[24].ID.Split(' ')[0] == "chrM");
+            var seqs = headers.KaryotypicOrder();
+            Assert.IsTrue(seqs[0].FriendlyName == "chr1" && seqs[1].FriendlyName == "chr2");
+            Assert.IsTrue(seqs[22].FriendlyName == "chrX" && seqs[23].FriendlyName == "chrY" && seqs[24].FriendlyName == "chrM");
         }
 
         [Test]
         public void KaryotypicOrderShort()
         {
             Genome headers = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "headersShort.fa"));
-            var seqs = headers.KaryotypicOrder(" ");
-            Assert.IsTrue(seqs[0].ID.Split(' ')[0] == "chr9" && seqs[1].ID.Split(' ')[0] == "chr20");
+            var seqs = headers.KaryotypicOrder();
+            Assert.IsTrue(seqs[0].FriendlyName == "chr9" && seqs[1].FriendlyName == "chr20");
         }
 
         [Test]
         public void SameProteins()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr5script.bash"), new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
-                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then wget ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz; fi",
-                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then gunzip " + EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename + ".gz; fi",
-                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.pep.all.fa"))
-            }).WaitForExit();
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+            EnsemblDownloadsWrapper.DownloadReferences(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                "grch38",
+                out string genomeFastaPath,
+                out string gtf,
+                out string gff,
+                out string proteinFasta
+            );
+            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSeqs, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
-            Genome genome = new Genome(@"D:\GRCh38.81\Homo_sapiens.GRCh38.dna.primary_assembly.fa");
-            GeneModel geneModel = new GeneModel(genome, @"D:\GRCh38.81\Homo_sapiens.GRCh38.81.gff3");
-            List<Protein> geneBasedProteins = geneModel.Translate(true, true, badProteinAccessions, selenocysteineContainingAccessions);
-            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh38.81\Homo_sapiens.GRCh38.pep.all.fasta", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression);
+            Genome genome = new Genome(genomeFastaPath);
+            GeneModel geneModel = new GeneModel(genome, gff);
+            List<Protein> geneBasedProteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions);
+            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 
             foreach (Protein p in proteins)
             {
-                if (accSeq.TryGetValue(p.Accession, out string seq)) // now handled with the badAccessions: && !p.BaseSequence.Contains('*') && !seq.Contains('*') && !p.BaseSequence.Contains('X'))
+                // now handled with the badAccessions // && !p.BaseSequence.Contains('*') && !seq.Contains('*') && !p.BaseSequence.Contains('X'))
+                if (accSeq.TryGetValue(p.Accession, out string seq))
                 {
                     // there are instances where alternative start codons are used where Ensembl somehow doesn't include them correctly
                     if (!p.FullName.Contains("GRCh38:MT")) Assert.AreEqual(p.BaseSequence, seq);
-                    else Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1)); 
+                    else Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1));
                 }
             }
         }

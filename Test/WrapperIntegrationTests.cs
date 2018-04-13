@@ -2,7 +2,6 @@
 using Bio.IO.FastA;
 using NUnit.Framework;
 using Proteogenomics;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,7 +13,6 @@ namespace Test
     [TestFixture]
     public class WrapperIntegrationTests
     {
-
         #region Installs
 
         [Test, Order(0)]
@@ -74,6 +72,7 @@ namespace Test
         }
 
         private string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa");
+
         [Test, Order(1)]
         public void DownloadReferences()
         {
@@ -189,7 +188,7 @@ namespace Test
         [Test, Order(2)]
         public void TestGenomeGenerate()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "genomeGenerate.bash"), 
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "genomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
                 1,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir"),
@@ -201,7 +200,7 @@ namespace Test
         [Test, Order(3)]
         public void TestAlign()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"),
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"), 
             STARWrapper.BasicAlignReadCommands
             (
                 TestContext.CurrentContext.TestDirectory,
@@ -238,7 +237,6 @@ namespace Test
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "mapper.fastq"),
                 },
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"),
                 true,
                 out string tophatOutDirectory
                 );
@@ -256,11 +254,11 @@ namespace Test
         [Test, Order(4)]
         public void StrandSpecificityTest()
         {
-            Assert.IsFalse(RSeQCWrapper.CheckStrandSpecificity(
-                TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed"),
-                0.8));
+            BAMProperties bam = new BAMProperties(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                0.8);
+            Assert.IsFalse(bam.StrandSpecific);
         }
 
         [Test, Order(2)]
@@ -426,14 +424,14 @@ namespace Test
         [Test, Order(4)]
         public void CufflinksRun()
         {
-            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam");
+            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam");
             CufflinksWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 8,
                 bamPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 false,
-                true,
+                false,
                 out string outputDirectory
                 );
             Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, "transcripts.gtf")));
@@ -453,7 +451,7 @@ namespace Test
                 8,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "scalpel_test_out"),
                 out string newVcf);
             Assert.IsTrue(File.Exists(newVcf));
@@ -536,7 +534,7 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
-                8, 
+                8,
                 new List<string[]>
                 {
                     new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
@@ -544,7 +542,7 @@ namespace Test
                 },
                 false,
                 false,
-                true,
+                false,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
@@ -554,7 +552,7 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("missense")));
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
             }
         }
 
@@ -584,7 +582,7 @@ namespace Test
                 },
                 false,
                 false,
-                true,
+                false,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
@@ -594,13 +592,13 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any missense variations for this test set with variant filtering criteria
+                //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any variations for this test set with variant filtering criteria
             }
         }
 
         /// <summary>
         /// Handling tough non-karyotypic ordering of chromosomes and an SRA input
-        /// 
+        ///
         /// This also tests well-encoded quality scores, so if it starts to fail, check out whether the exit code of the FixMisencodedQualityBaseReads is expected (2 for failure).
         /// </summary>
         [Test, Order(3)]
@@ -614,7 +612,7 @@ namespace Test
                 "SRR6319804",
                 false,
                 false,
-                true,
+                false,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
@@ -626,11 +624,10 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-               // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
+                // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
             }
         }
 
         #endregion Runner Tests
-
     }
 }

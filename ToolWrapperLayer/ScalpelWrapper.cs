@@ -9,7 +9,6 @@ namespace ToolWrapperLayer
     public class ScalpelWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -65,6 +64,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Method
-
     }
 }

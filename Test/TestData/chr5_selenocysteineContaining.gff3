@@ -13,3 +13,7 @@
 5	havana	exon	42806896	42807108	.	-	.	Parent=transcript:ENST00000514985;Name=ENSE00003653479;constitutive=0;ensembl_end_phase=2;ensembl_phase=2;exon_id=ENSE00003653479;rank=3;version=1
 5	havana	CDS	42806896	42807108	.	-	1	ID=CDS:ENSP00000420939;Parent=transcript:ENST00000514985;protein_id=ENSP00000420939
 5	havana	CDS	42808151	42808353	.	-	0	ID=CDS:ENSP00000420939;Parent=transcript:ENST00000514985;protein_id=ENSP00000420939
+5	havana	exon	42808151	42808366	.	-	.	Parent=transcript:ENST00000514985;Name=ENSE00003463317;constitutive=0;ensembl_end_phase=2;ensembl_phase=-1;exon_id=ENSE00003463317;rank=2;version=1
+5	havana	five_prime_UTR	42808354	42808366	.	-	.	Parent=transcript:ENST00000514985
+5	havana	exon	42811836	42812079	.	-	.	Parent=transcript:ENST00000514985;Name=ENSE00002085579;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSE00002085579;rank=1;version=1
+5	havana	five_prime_UTR	42811836	42812079	.	-	.	Parent=transcript:ENST00000514985

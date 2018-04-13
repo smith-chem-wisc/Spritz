@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -10,13 +9,12 @@ namespace Proteogenomics
     /// </summary>
     public class SnpEffAnnotation
     {
-
         #region Annotation Properties
 
         /// <summary>
         /// Parent variant containing this annotation.
         /// </summary>
-        public VariantSuperContext Variant { get; set; }
+        public Variant Variant { get; set; }
 
         /// <summary>
         /// Original SnpEff annotation string.
@@ -32,7 +30,7 @@ namespace Proteogenomics
         /// <summary>
         /// It looks like these are sometimes domains, like the ones annotated in UniProt,
         /// Otherwise, this tends to just be "transcript"
-        /// 
+        ///
         /// Some examples:
         /// sequence_feature: can be initiator-methionine:Removed ... maybe not too helpful for proteomics, since this is assumed
         /// sequence_feature: helix:combinatorial_evidence_used_in_manual_assertion
@@ -48,6 +46,7 @@ namespace Proteogenomics
         /// Always seems to be the transcriptID
         /// </summary>
         public string FeatureID { get; set; }
+
         public string TranscriptBiotype { get; set; }
         public int ExonIntronRank { get; set; }
         public int ExonIntronTotal { get; set; }
@@ -73,6 +72,7 @@ namespace Proteogenomics
         /// histone mark/state: distance to summit or peak center
         /// </summary>
         public int DistanceToFeature { get; set; }
+
         public string[] Warnings { get; set; }
 
         #endregion Annotation Properties
@@ -91,7 +91,7 @@ namespace Proteogenomics
 
         #region Constructor
 
-        public SnpEffAnnotation(VariantSuperContext variant, string annotation)
+        public SnpEffAnnotation(Variant variant, string annotation)
         {
             Variant = variant;
             Annotation = annotation;
@@ -116,7 +116,7 @@ namespace Proteogenomics
             if (a[13].Split('/').Length > 1 && int.TryParse(a[13].Split('/')[1], out y)) ProteinLength = y;
             if (int.TryParse(a[14], out y)) DistanceToFeature = y;
             Warnings = a[15].Split('&');
-            
+
             if (HGVSNotationProteinLevel != null)
             {
                 GroupCollection hgvsProteinMatch = HGVSProteinRegex.Match(HGVSNotationProteinLevel).Groups;
@@ -238,11 +238,11 @@ namespace Proteogenomics
         #region Public Fields
 
         /// <summary>
-        /// It looks like WARNING_TRANSCRIPT_INCOMPLETE, WARNING_TRANSCRIPT_MULTIPLE_STOP_CODONS, 
+        /// It looks like WARNING_TRANSCRIPT_INCOMPLETE, WARNING_TRANSCRIPT_MULTIPLE_STOP_CODONS,
         /// WARNING_TRANSCRIPT_NO_STOP_CODON, and WARNING_TRANSCRIPT_NO_START_CODON are relevant to this program.
-        /// 
+        ///
         /// These are the ones that I shouldn't be translating.
-        /// 
+        ///
         /// Could also be used for error messages regarding certain transcripts.
         /// </summary>
         public Dictionary<string, string> SnpEffWarningDescriptions = new Dictionary<string, string>
@@ -261,6 +261,5 @@ namespace Proteogenomics
         };
 
         #endregion Public Fields
-
     }
 }

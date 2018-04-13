@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Globalization;
 
 namespace ToolWrapperLayer
 {
     /// <summary>
     /// SnpEff is a program for annotating variants, e.g. as missense or synonymous mutations.
-    /// 
+    ///
     /// Program citation: http://snpeff.sourceforge.net/SnpEff_paper.pdf
-    /// 
+    ///
     /// Note: SnpEff realigns indels to the 3-prime end, which isn't ideal based on the scalpel review.
     /// </summary>
     public class SnpEffWrapper :
         IInstallable
     {
-
         #region Installation Methods
 
         /// <summary>
@@ -73,7 +72,12 @@ namespace ToolWrapperLayer
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(htmlReport) +
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
-                    " > " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath)
+                    " > " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath),
+
+                // remove the annotated VCF file if snpEff didn't work, e.g. if there was no VCF file to annotate
+                "if [[ ( -f " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath) + " && ! -s " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath) + " ) ]]; then",
+                "  rm " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath),
+                "fi",
             };
         }
 
@@ -127,6 +131,5 @@ namespace ToolWrapperLayer
         }
 
         #endregion Public Methods
-
     }
 }
