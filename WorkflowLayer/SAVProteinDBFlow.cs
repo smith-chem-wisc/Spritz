@@ -15,9 +15,30 @@ namespace WorkflowLayer
     /// </summary>
     public class SAVProteinDBFlow
     {
-        #region Runner Methods
-
-        public static void GenerateSAVProteinsFromSra(string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
+        /// <summary>
+        /// Generate sample specific database starting with SRA accession number
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="reference"></param>
+        /// <param name="threads"></param>
+        /// <param name="sraAccession"></param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="inferStrandSpecificity"></param>
+        /// <param name="overwriteStarAlignment"></param>
+        /// <param name="genomeStarIndexDirectory"></param>
+        /// <param name="genomeFasta"></param>
+        /// <param name="proteinFasta"></param>
+        /// <param name="geneModelGtfOrGff"></param>
+        /// <param name="ensemblKnownSitesPath"></param>
+        /// <param name="proteinVariantDatabases"></param>
+        /// <param name="useReadSubset"></param>
+        /// <param name="readSubset"></param>
+        public static void GenerateSAVProteinsFromSra(
+            string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession,
+            bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
+            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases,
+            bool useReadSubset = false, int readSubset = 300000)
         {
             List<string[]> fastqs = new List<string[]>();
             string[] sras = sraAccession.Split(',');
@@ -29,10 +50,33 @@ namespace WorkflowLayer
             GenerateSAVProteinsFromFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
         }
 
-        public static void GenerateSAVProteinsFromFastqs(string binDirectory, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases, bool useReadSubset = false, int readSubset = 300000)
+        /// <summary>
+        /// Generate sample specific protein database starting with fastq files
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="reference"></param>
+        /// <param name="threads"></param>
+        /// <param name="fastqs"></param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="inferStrandSpecificity"></param>
+        /// <param name="overwriteStarAlignment"></param>
+        /// <param name="genomeStarIndexDirectory"></param>
+        /// <param name="genomeFasta"></param>
+        /// <param name="proteinFasta"></param>
+        /// <param name="geneModelGtfOrGff"></param>
+        /// <param name="ensemblKnownSitesPath"></param>
+        /// <param name="proteinVariantDatabases"></param>
+        /// <param name="useReadSubset"></param>
+        /// <param name="readSubset"></param>
+        public static void GenerateSAVProteinsFromFastqs(
+            string binDirectory, string analysisDirectory, string reference, int threads, List<string[]> fastqs,
+            bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
+            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases,
+            bool useReadSubset = false, int readSubset = 300000)
         {
             PrepareEnsemblGenomeFasta(genomeFasta, out Genome ensemblGenome, out string reorderedFasta);
-            STAR2PassAlignFlow.AlignFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
+            STARAlignmentFlow.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
             // Variant Calling
@@ -57,12 +101,9 @@ namespace WorkflowLayer
             // Generate databases
             GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
             proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf =>
-                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf)))).ToList();
+                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf))))
+                .ToList();
         }
-
-        #endregion Runner Methods
-
-        #region Sample Specific Database Writing
 
         public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
         {
@@ -125,10 +166,6 @@ namespace WorkflowLayer
             return proteinMetrics;
         }
 
-        #endregion Sample Specific Database Writing
-
-        #region Preparing Input Files
-
         /// <summary>
         /// Prepares an Ensembl genome fasta for alignment and all following analysis. The main issue is that Ensembl orders chromosomes lexigraphically, not karyotypically, like some software like GATK expects.
         /// </summary>
@@ -152,17 +189,12 @@ namespace WorkflowLayer
             if (!ensemblGenome.IsKaryotypic())
             {
                 ensemblGenome.Chromosomes = ensemblGenome.KaryotypicOrder();
-                if (!File.Exists(reorderedFasta))
-                {
-                    Genome.WriteFasta(ensemblGenome.Chromosomes.Select(x => x.Sequence), reorderedFasta);
-                }
+                if (!File.Exists(reorderedFasta)) { Genome.WriteFasta(ensemblGenome.Chromosomes.Select(x => x.Sequence), reorderedFasta); }
             }
             else
             {
                 reorderedFasta = genomeFasta;
             }
         }
-
-        #endregion Preparing Input Files
     }
 }

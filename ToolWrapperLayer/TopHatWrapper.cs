@@ -149,6 +149,16 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
+        /// <summary>
+        /// Gets the Windows-formatted path to the directory containing bowtie2
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public static string GetBowtie2DirectoryPath(string binDirectory)
+        {
+            return Path.Combine(binDirectory, "tophat-2.1.1");
+        }
+
         #endregion Public Methods
     }
 }

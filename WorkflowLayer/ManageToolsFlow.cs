@@ -46,9 +46,11 @@ namespace WorkflowLayer
             "gawk",
             "git",
             "python",
+            "r-base-core",
             "python-dev",
             "python-setuptools",
             "libpython2.7-dev",
+            "perl-doc",
         };
 
         /// <summary>
@@ -69,6 +71,7 @@ namespace WorkflowLayer
             new CufflinksWrapper(),
             new GATKWrapper(),
             new HISAT2Wrapper(),
+            new RSEMWrapper(),
             new RSeQCWrapper(),
             new ScalpelWrapper(),
             new SkewerWrapper(),

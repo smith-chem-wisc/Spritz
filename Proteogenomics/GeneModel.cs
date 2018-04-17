@@ -66,7 +66,8 @@ namespace Proteogenomics
 
             foreach (ISequence chromFeatures in geneFeatures)
             {
-                Chromosome chrom = Genome == null ? new Chromosome(new Sequence(Alphabets.DNA, ""), Genome) : Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID);
+                Chromosome chrom = Genome.Chromosomes.FirstOrDefault(x => x.FriendlyName == chromFeatures.ID);
+                if (chrom == null) { continue; }
                 chromFeatures.Metadata.TryGetValue("features", out object f);
                 List<MetadataListItem<List<string>>> features = f as List<MetadataListItem<List<string>>>;
                 for (int i = 0; i < features.Count; i++)
@@ -155,14 +156,14 @@ namespace Proteogenomics
 
             if (hasExonId)
             {
-                ISequence exon_dna = chrom.Sequence.Count == 0 ? new Sequence(Alphabets.DNA, "") : chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
                 Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
                     oneBasedStart, oneBasedEnd, chrom == null ? "" : chrom.ChromosomeID, strand, null);
                 currentTranscript.Exons.Add(exon);
             }
             else if (hasProteinId)
             {
-                CDS cds = new CDS(currentTranscript, chrom == null ? "" : chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
                 currentTranscript.CodingDomainSequences.Add(cds);
                 currentTranscript.ProteinID = proteinId;
             }
@@ -229,14 +230,14 @@ namespace Proteogenomics
 
                 if (feature.Key == "exon")
                 {
-                    ISequence exon_dna = chrom.Sequence.Count == 0 ? new Sequence(Alphabets.DNA, "") : chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                    ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
                     Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
-                        oneBasedStart, oneBasedEnd, chrom == null ? "" : chrom.Sequence.ID, strand, null);
+                        oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand, null);
                     currentTranscript.Exons.Add(exon);
                 }
                 else if (feature.Key == "CDS")
                 {
-                    CDS cds = new CDS(currentTranscript, chrom == null ? "" : chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
                     currentTranscript.CodingDomainSequences.Add(cds);
                 }
                 else
@@ -355,7 +356,7 @@ namespace Proteogenomics
                 else
                 {
                     List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
-                    if (transcriptVariants.Count <= 5)
+                    if (transcriptVariants.Count(v => v.GenotypeType == Bio.VCF.GenotypeType.HETEROZYGOUS) <= 5)
                     {
                         List<Transcript> variantTranscripts = t.ApplyVariantsCombinitorially(transcriptVariants).ToList();
                         resultingTranscripts.AddRange(variantTranscripts);

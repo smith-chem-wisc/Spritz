@@ -328,9 +328,22 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
-                fastqFiles.Length > 1 ? "seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
+                "if [ ! -s " + WrapperUtility.ConvertWindowsPath(newFfiles[0]) + " ]; then",
+                "  echo \"Subsetting " + reads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
+                "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
+                fastqFiles.Length > 1 ? "  seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
+                "fi"
             }).WaitForExit();
+        }
+
+        /// <summary>
+        /// Gets the Windows-formatted path to the STAR executable
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <returns></returns>
+        public static string GetStarDirectoryPath(string binDirectory)
+        {
+            return Path.Combine(binDirectory, "STAR", "source");
         }
 
         #endregion Public Methods

@@ -16,6 +16,7 @@ namespace CMD
         {
             #region Setup
 
+            // main setup involves installing tools
             if (args.Contains("setup"))
             {
                 ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
@@ -24,6 +25,31 @@ namespace CMD
 
             Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
             Options options = result.Value;
+
+            // always download references that aren't present
+            EnsemblDownloadsWrapper.DownloadReferences(
+                options.BinDirectory,
+                options.AnalysisDirectory,
+                options.Reference,
+                out string genomeFastaPath,
+                out string gtfGeneModelPath,
+                out string gff3GeneModelPath,
+                out string proteinFastaPath);
+
+            if (options.GenomeStarIndexDirectory == null)
+            {
+                options.GenomeStarIndexDirectory = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
+            }
+
+            if (options.GenomeFasta == null)
+            {
+                options.GenomeFasta = genomeFastaPath;
+            }
+
+            if (options.GeneModelGtfOrGff == null)
+            {
+                options.GeneModelGtfOrGff = gff3GeneModelPath;
+            }
 
             #endregion Setup
 
@@ -52,13 +78,14 @@ namespace CMD
 
             #endregion STAR Fusion Testing
 
-            #region Proteoform Database Engine
+            #region lncRNA Discovery Workflow
 
-            //lncRNA workflow
             if (options.Command.Equals("lncRNADiscovery", StringComparison.InvariantCultureIgnoreCase))
             {
                 if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
-                    return;
+                {
+                    throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
+                }
 
                 string[] fastqs1 = options.Fastq1.Split(',');
                 List<string[]> fastqsSeparated = options.Fastq2 == null ?
@@ -81,36 +108,67 @@ namespace CMD
                 return;
             }
 
-            // finish setup of options
+            #endregion lncRNA Discovery Workflow
 
-            EnsemblDownloadsWrapper.DownloadReferences(
-                options.BinDirectory,
-                options.AnalysisDirectory,
-                options.Reference,
-                out string genomeFastaPath,
-                out string gtfGeneModelPath,
-                out string gff3GeneModelPath,
-                out string proteinFastaPath);
+            #region Infering Strandedness
+
+            if (options.Command.Equals("strandedness"))
+            {
+                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
+                {
+                    throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
+                }
+
+                string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
+                BAMProperties b = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
+                        fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
+                Console.WriteLine(b.ToString());
+                return;
+            }
+
+            #endregion Infering Strandedness
+
+            #region Transcript Quantification
+
+            if (options.Command.Equals("quantify", StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
+                {
+                    throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
+                }
+
+                string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
+                Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
+                if (options.InferStrandSpecificity)
+                {
+                    var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
+                        fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
+                    strandedness = bamProps.Strandedness;
+                }
+
+                TranscriptQuantificationFlow.QuantifyTranscripts(
+                    options.BinDirectory,
+                    options.GenomeFasta,
+                    options.Threads,
+                    options.GeneModelGtfOrGff,
+                    RSEMAlignerOption.STAR,
+                    strandedness,
+                    fastqs,
+                    true,
+                    out string referencePrefix,
+                    out string outputPrefix);
+
+                return;
+            }
+
+            #endregion Transcript Quantification
+
+            #region Proteoform Database Engine
 
             SnpEffWrapper.DownloadSnpEffDatabase(
                 options.BinDirectory,
                 options.Reference,
                 out string snpEffDatabaseListPath);
-
-            if (options.GenomeStarIndexDirectory == null)
-            {
-                options.GenomeStarIndexDirectory = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
-            }
-
-            if (options.GenomeFasta == null)
-            {
-                options.GenomeFasta = genomeFastaPath;
-            }
-
-            if (options.GeneModelGtfOrGff == null)
-            {
-                options.GeneModelGtfOrGff = gff3GeneModelPath;
-            }
 
             if (options.ReferenceVcf == null)
             {
