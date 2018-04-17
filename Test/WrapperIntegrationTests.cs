@@ -2,6 +2,7 @@
 using Bio.IO.FastA;
 using NUnit.Framework;
 using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -38,6 +39,10 @@ namespace Test
 
             // mfold
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "mfold-3.6", "scripts", "mfold")));
+
+            // rsem
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSEM-1.3.0", "rsem-prepare-reference")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSEM-1.3.0", "rsem-calculate-expression")));
 
             // rseqc
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
@@ -123,7 +128,7 @@ namespace Test
 
         #region SRA download test
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestDownloadSRA()
         {
             SRAToolkitWrapper.Fetch(TestContext.CurrentContext.TestDirectory, "SRR6304532", TestContext.CurrentContext.TestDirectory, out string[] fastqs, out string log);
@@ -135,7 +140,7 @@ namespace Test
 
         #region BED conversion tests
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestConvertGff()
         {
             string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
@@ -143,7 +148,7 @@ namespace Test
             File.Delete(bedPath);
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestConvertGtf()
         {
             string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
@@ -151,7 +156,7 @@ namespace Test
             File.Delete(bedPath);
         }
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void TestConvertGtf12()
         {
             BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
@@ -162,7 +167,7 @@ namespace Test
 
         #region Minimal STAR alignment tests
 
-        [Test, Order(2)]
+        [Test, Order(1)]
         public void SubsetReadsCheck()
         {
             string[] new_files = new string[0];
@@ -193,14 +198,15 @@ namespace Test
                 1,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir"),
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa") },
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.gtf"))).WaitForExit();
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript.gtf"))).WaitForExit();
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir", "SA")));
         }
 
         [Test, Order(3)]
         public void TestAlign()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"), 
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "alignReads.bash"),
             STARWrapper.BasicAlignReadCommands
             (
                 TestContext.CurrentContext.TestDirectory,
@@ -249,6 +255,178 @@ namespace Test
 
         #endregion Tophat alignment tests
 
+        #region RSEM Tests
+
+        [Test, Order(2)]
+        public void RSEMStarCalculate()
+        {
+            string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperRsemStar.fastq");
+            if (!File.Exists(newMapper))
+            {
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
+            }
+
+            TranscriptQuantificationFlow.QuantifyTranscripts(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Environment.ProcessorCount,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                RSEMAlignerOption.STAR,
+                Strandedness.None,
+                new[] { newMapper },
+                true,
+                out string referencePrefix,
+                out string outputPrefix);
+
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+        }
+
+        [Test, Order(2)]
+        public void RSEMBowtieCalculate()
+        {
+            string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperRsemBowtie.fastq");
+            if (!File.Exists(newMapper))
+            {
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
+            }
+
+            TranscriptQuantificationFlow.QuantifyTranscripts(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Environment.ProcessorCount,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                RSEMAlignerOption.Bowtie2,
+                Strandedness.None,
+                new[] { newMapper },
+                true,
+                out string referencePrefix,
+                out string outputPrefix);
+
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+        }
+
+        [Test, Order(4)]
+        public void RSEMStarCalculateFromPaired()
+        {
+            string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperRsemBowtie.fastq");
+            if (!File.Exists(newMapper))
+            {
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
+            }
+
+            TranscriptQuantificationFlow.QuantifyTranscripts(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Environment.ProcessorCount,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                RSEMAlignerOption.STAR,
+                Strandedness.None,
+                new[]
+                {
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SRR6319804_1-trimmed-pair1.segment.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SRR6319804_1-trimmed-pair2.segment.fastq"),
+                },
+                true,
+                out string referencePrefix,
+                out string outputPrefix);
+
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+        }
+
+        // I'm having trouble getting RSEM to work with comma-separated inputs... I think it's because of STAR, which I have had trouble with in this respect in the past.
+
+        //[Test, Order(2)]
+        //public void RSEMStarCalculate2Fastq()
+        //{
+        //    string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperRsemStar2.fastq");
+        //    if (!File.Exists(newMapper))
+        //    {
+        //        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
+        //    }
+        //    string newMapper2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperRsemStar2Again.fastq");
+        //    if (!File.Exists(newMapper2))
+        //    {
+        //        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper2);
+        //    }
+
+        //    TranscriptQuantificationFlow.QuantifyTranscripts(
+        //        TestContext.CurrentContext.TestDirectory,
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+        //        Environment.ProcessorCount,
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+        //        RSEMAlignerOption.STAR,
+        //        Strandedness.None,
+        //        new[] { newMapper + "," + newMapper2 },
+        //        true,
+        //        out string referencePrefix,
+        //        out string outputPrefix);
+
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
+        //    Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+        //}
+
+        //[Test, Order(4)]
+        //public void RSEMStarCalculateTwoPairFastq()
+        //{
+        //    TranscriptQuantificationFlow.QuantifyTranscripts(
+        //        TestContext.CurrentContext.TestDirectory,
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+        //        Environment.ProcessorCount,
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+        //        RSEMAlignerOption.STAR,
+        //        Strandedness.None,
+        //        new[]
+        //        {
+        //            String.Join(",", new string[] {
+        //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"),
+        //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq") }),
+        //            String.Join(",", new string[] {
+        //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"),
+        //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq") })
+        //        },
+        //        true,
+        //        out string referencePrefix,
+        //        out string outputPrefix);
+
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
+        //    Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
+        //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+        //}
+
+        #endregion RSEM Tests
+
         #region Infer Experiment tests
 
         [Test, Order(4)]
@@ -257,8 +435,10 @@ namespace Test
             BAMProperties bam = new BAMProperties(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
                 0.8);
-            Assert.IsFalse(bam.StrandSpecific);
+            Assert.AreEqual(Strandedness.None, bam.Strandedness);
+            Assert.AreEqual(RnaSeqProtocol.SingleEnd, bam.Protocol);
         }
 
         [Test, Order(2)]
@@ -430,6 +610,7 @@ namespace Test
                 8,
                 bamPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
                 false,
                 false,
                 out string outputDirectory
@@ -537,8 +718,8 @@ namespace Test
                 8,
                 new List<string[]>
                 {
-                    new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
-                    new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain.fastq") },
+                    new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
+                    new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain.fastq") },
                 },
                 false,
                 false,
@@ -620,7 +801,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
                 out List<string> proteinDatabases,
                 true,
-                1000);
+                5000);
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);

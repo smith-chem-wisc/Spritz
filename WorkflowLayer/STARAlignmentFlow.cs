@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteogenomics;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
@@ -8,10 +9,8 @@ namespace WorkflowLayer
     /// <summary>
     /// Contains a workflow for running a 2-pass STAR alignment on a set of FASTQ files.
     /// </summary>
-    public class STAR2PassAlignFlow
+    public class STARAlignmentFlow
     {
-        #region Public Method
-
         /// <summary>
         /// Runs a two-pass alignment for a given set of fastq files.
         /// </summary>
@@ -36,10 +35,15 @@ namespace WorkflowLayer
         /// <param name="chimericJunctionFiles"></param>
         /// <param name="useReadSubset"></param>
         /// <param name="readSubset"></param>
-        public static void AlignFastqs(string bin, string analysisDirectory, string reference, int threads, List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory, string reorderedFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, bool useReadSubset = false, int readSubset = 300000)
+        public static void PerformTwoPassAlignment(string bin, string analysisDirectory, string reference, int threads,
+            List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
+            string reorderedFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
+            out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles,
+            out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles,
+            bool useReadSubset = false, int readSubset = 30000)
         {
             // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "genomeGenerate.bash"), 
+            WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "genomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
                 .WaitForExit();
 
@@ -52,12 +56,11 @@ namespace WorkflowLayer
             chimericJunctionFiles = new List<string>();
 
             // Trimming and strand specificity
+            Genome genome = new Genome(reorderedFasta);
             foreach (string[] fq in fastqs)
             {
-                SkewerWrapper.Trim(bin, threads, 19, fq, out string[] trimmedFastqs, out string skewerLog);
-                string[] fqForAlignment = trimmedFastqs;
-
-                // Infer strand specificity
+                // Infer strand specificity before trimming because trimming can change read pairings
+                string[] fqForAlignment = fq;
                 bool localStrandSpecific = strandSpecific;
                 if (inferStrandSpecificity || useReadSubset)
                 {
@@ -69,13 +72,17 @@ namespace WorkflowLayer
                     if (inferStrandSpecificity)
                     {
                         string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                        WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignSubset.bash"), 
+                        WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignSubset.bash"),
                             STARWrapper.BasicAlignReadCommands(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
                             .WaitForExit();
-                        BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, 0.8);
-                        localStrandSpecific = bamProperties.StrandSpecific;
+                        BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
+                        localStrandSpecific = bamProperties.Strandedness != Strandedness.None;
                     }
                 }
+
+                SkewerWrapper.Trim(bin, threads, 19, fqForAlignment, out string[] trimmedFastqs, out string skewerLog);
+                fqForAlignment = trimmedFastqs;
+
                 strandSpecificities.Add(localStrandSpecific);
                 fastqsForAlignment.Add(fqForAlignment);
             }
@@ -113,6 +120,32 @@ namespace WorkflowLayer
             WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
         }
 
-        #endregion Public Method
+        /// <summary>
+        /// Infers the strandedness of reads based on aligning a subset.
+        /// </summary>
+        /// <param name="bin"></param>
+        /// <param name="threads"></param>
+        /// <param name="fastqPaths"></param>
+        /// <param name="genomeStarIndexDirectory"></param>
+        /// <param name="reorderedFasta"></param>
+        /// <param name="geneModelGtfOrGff"></param>
+        /// <returns></returns>
+        public static BAMProperties InferStrandedness(string binDirectory, string analysisDirectory, int threads, string[] fastqPaths, string genomeStarIndexDirectory,
+            string reorderedFasta, string geneModelGtfOrGff)
+        {
+            // Alignment preparation
+            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "genomeGenerate.bash"),
+                STARWrapper.GenerateGenomeIndex(binDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
+                .WaitForExit();
+
+            STARWrapper.SubsetFastqs(binDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
+
+            string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
+            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "alignSubset.bash"),
+                STARWrapper.BasicAlignReadCommands(binDirectory, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
+                .WaitForExit();
+            BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
+            return bamProperties;
+        }
     }
 }

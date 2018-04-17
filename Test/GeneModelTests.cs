@@ -17,7 +17,7 @@ namespace Test
         [OneTimeSetUp]
         public void setup()
         {
-            genome = little_genome();
+            genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
         }
 
         [Test]
@@ -75,11 +75,6 @@ namespace Test
                 "PKTSSSQTLQAHLLLPGGINRPSFDLRTASAGPALASQGLFPGPALASWQLPQAKFLPAC" +
                 "QQPQQAQLLPHSGPFRPNL",
                 proteins[1].BaseSequence);
-        }
-
-        public Genome little_genome()
-        {
-            return new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
         }
 
         [Test]

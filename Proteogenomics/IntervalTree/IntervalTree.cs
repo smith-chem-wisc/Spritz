@@ -44,8 +44,11 @@ namespace Proteogenomics
         {
             if (!Synced)
             {
-                Head = new IntervalNode(Intervals);
-                Synced = true;
+                lock (this)
+                {
+                    Head = new IntervalNode(Intervals);
+                    Synced = true;
+                }
             }
         }
 

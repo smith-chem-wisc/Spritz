@@ -20,13 +20,13 @@ namespace Test
             VCFParser vcf99999 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_99999.vcf")); // added a snpeff variant to this one
             VCFParser vcf100000 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_100000.vcf"));
             VCFParser vcf100001 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_100001.vcf"));
-            VCFParser vcf200000 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_200000.vcf"));
-            VCFParser vcf200001 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_200001.vcf"));
+            VCFParser vcf400000 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_400000.vcf"));
+            VCFParser vcf400001 = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_400001.vcf"));
             List<Variant> variants99999 = vcf99999.Select(x => new Variant(null, x, genome)).ToList();
             List<Variant> variants100000 = vcf100000.Select(x => new Variant(null, x, genome)).ToList();
             List<Variant> variants100001 = vcf100001.Select(x => new Variant(null, x, genome)).ToList();
-            List<Variant> variants200000 = vcf200000.Select(x => new Variant(null, x, genome)).ToList();
-            List<Variant> variants200001 = vcf200001.Select(x => new Variant(null, x, genome)).ToList();
+            List<Variant> variants400000 = vcf400000.Select(x => new Variant(null, x, genome)).ToList();
+            List<Variant> variants400001 = vcf400001.Select(x => new Variant(null, x, genome)).ToList();
 
             GeneModel geneModel;
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
@@ -48,14 +48,14 @@ namespace Test
             Assert.AreEqual(0, transcripts5[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            List<Transcript> transcripts6 = geneModel.ApplyVariants(variants200000);
+            List<Transcript> transcripts6 = geneModel.ApplyVariants(variants400000);
             Assert.AreEqual(1, transcripts6[0].Exons[0].Variants.Count);
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript_little_exon.gtf"));
-            List<Transcript> transcripts7 = geneModel.ApplyVariants(variants200000);
+            List<Transcript> transcripts7 = geneModel.ApplyVariants(variants400000);
             Assert.AreEqual(0, transcripts7[0].Exons[0].Variants.Count);
 
             geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_fake_transcript.gtf"));
-            var transcripts8 = geneModel.ApplyVariants(variants200001);
+            var transcripts8 = geneModel.ApplyVariants(variants400001);
             Assert.AreEqual(0, transcripts8[0].Exons[0].Variants.Count);
         }
 
@@ -77,6 +77,7 @@ namespace Test
             Assert.AreEqual(2, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
             Assert.IsTrue(proteins[0].FullName != null);
             Assert.IsTrue(proteins[0].FullName.Contains(FunctionalClass.MISSENSE.ToString())); // sav
+            Assert.IsTrue(proteins[0].FullName.Contains(GenotypeType.HOMOZYGOUS_ALT.ToString())); // sav
             Assert.IsTrue(proteins[0].FullName.Contains("1:69640"));
 
             string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_missense.fasta");
@@ -104,6 +105,7 @@ namespace Test
             Assert.AreEqual(2, new HashSet<string> { proteins[0].BaseSequence, proteins[1].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
             Assert.IsTrue(proteins.All(p => p.FullName != null));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(FunctionalClass.MISSENSE.ToString()))); // sav
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains(GenotypeType.HETEROZYGOUS.ToString()))); // sav
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69640")));
 
             string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_missense.fasta");
@@ -130,6 +132,7 @@ namespace Test
             Assert.AreEqual(1, proteins_wo_variant.Count);
             Assert.AreEqual(1, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(FunctionalClass.SILENT.ToString()))); // synonymous
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains(GenotypeType.HETEROZYGOUS.ToString()))); // synonymous
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
 
             string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.fasta");
@@ -157,6 +160,7 @@ namespace Test
             Assert.AreEqual(1, new HashSet<string> { proteins[0].BaseSequence, proteins_wo_variant[0].BaseSequence }.Count);
             Assert.IsTrue(proteins.All(p => p.FullName != null));
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(FunctionalClass.SILENT.ToString()))); // synonymous
+            Assert.IsTrue(proteins.Any(p => p.FullName.Contains(GenotypeType.HOMOZYGOUS_ALT.ToString()))); // synonymous
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
 
             string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_synonymous.fasta");

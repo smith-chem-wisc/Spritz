@@ -42,20 +42,5 @@ namespace Test
             // Make sure it gets annotated as a missense mutation
             Assert.IsTrue(variantTranscripts[0].VariantAnnotations.Any(str => str.Contains(FunctionalClass.MISSENSE.ToString())));
         }
-
-        [Test]
-        public void test()
-        {
-        }
-
-        [Test]
-        public void test2()
-        {
-        }
-
-        [Test]
-        public void test3()
-        {
-        }
     }
 }

@@ -444,7 +444,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public bool Intersects(Interval segment)
         {
-            return !IsBefore(segment) && !IsAfter(segment);
+            return segment.OneBasedEnd >= OneBasedStart && segment.OneBasedStart <= OneBasedEnd;
         }
 
         /// <summary>
@@ -484,7 +484,7 @@ namespace Proteogenomics
         /// <returns></returns>
         public bool Intersects(long pos)
         {
-            return !IsBefore(pos) && !IsAfter(pos);
+            return OneBasedStart <= pos && pos <= OneBasedEnd;
         }
 
         /// <summary>

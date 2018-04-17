@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace ToolWrapperLayer
@@ -51,11 +51,20 @@ namespace ToolWrapperLayer
 
         #region Public Methods
 
-        public static string SortBam(string binDirectory, string bamPath)
+        /// <summary>
+        /// Gets a string representing the maximum memory that can be used for samtools sort
+        /// </summary>
+        /// <returns></returns>
+        public static string GetSamtoolsMemoryString()
         {
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             megabytes = megabytes > 10000 ? 10000 : megabytes; // this is the max samtools sort can take, apparently
-            return "samtools sort -@ " + Environment.ProcessorCount.ToString() + " -m " + megabytes + "M " +
+            return megabytes + "M";
+        }
+
+        public static string SortBam(string binDirectory, string bamPath)
+        {
+            return "samtools sort -@ " + Environment.ProcessorCount.ToString() + " -m " + GetSamtoolsMemoryString() +
                 " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + " " +
                 WrapperUtility.ConvertWindowsPath(bamPath);
         }

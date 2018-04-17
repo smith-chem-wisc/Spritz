@@ -1,6 +1,5 @@
-﻿using System;
+﻿using Proteogenomics;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 namespace ToolWrapperLayer
@@ -83,13 +82,13 @@ namespace ToolWrapperLayer
         /// <param name="strandSpecific"></param>
         /// <param name="inferStrandSpecificity"></param>
         /// <param name="outputDirectory"></param>
-        public static void AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
+        public static void AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
         {
             bool isStranded = strandSpecific;
             if (inferStrandSpecificity)
             {
-                BAMProperties bamProperties = new BAMProperties(bamPath, geneModelGtfOrGffPath, 0.8);
-                isStranded = bamProperties.StrandSpecific;
+                BAMProperties bamProperties = new BAMProperties(bamPath, geneModelGtfOrGffPath, genome, 0.8);
+                isStranded = bamProperties.Strandedness != Strandedness.None;
             }
 
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksSortCheck");

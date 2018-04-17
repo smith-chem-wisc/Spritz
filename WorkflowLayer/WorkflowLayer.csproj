@@ -132,7 +132,7 @@
     <Compile Include="Parameters\Parameters.cs" />
     <Compile Include="SAVProteinDBFlow.cs" />
     <Compile Include="SpritzFlow.cs" />
-    <Compile Include="STAR2PassAlignFlow.cs" />
+    <Compile Include="STARAlignmentFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TranscriptQuantificationFlow.cs" />
   </ItemGroup>

@@ -111,7 +111,6 @@
   <ItemGroup>
     <Compile Include="GeneModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestProteomicsReadWrite.cs" />
     <Compile Include="SnpEffPortTests.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
     <Compile Include="VariantTests.cs" />
@@ -214,10 +213,10 @@
     <Content Include="TestData\chr1Ucsc.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_200001.vcf">
+    <Content Include="TestData\chr_1_one_400001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_200000.vcf">
+    <Content Include="TestData\chr_1_one_400000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\chr_1_one_100001.vcf">

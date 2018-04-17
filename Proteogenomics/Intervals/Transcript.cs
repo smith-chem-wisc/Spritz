@@ -226,6 +226,8 @@ namespace Proteogenomics
                 Transcript firstAllele = this;
                 Variant v = variantOrderedDescStart[i];
                 VariantEffects variantEffects = AnnotateVariant(v);
+
+                // check that the functional effect is greater than missense (CompareTo greater than or equal to 0)
                 bool missenseOrNonsense = variantEffects.Effects.Any(eff => eff.GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
                 if (variantEffects == null)
                 {
