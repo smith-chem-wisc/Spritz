@@ -214,50 +214,48 @@ namespace Proteogenomics
         }
 
         /// <summary>
-        /// Takes in list of variants to combinitorially apply to this transcript
+        /// Apply a variant to this transcript, and return multiple transcripts if heterozygous and nonsynonymous
         /// </summary>
-        /// <param name="variantOrderedDescStart"></param>
+        /// <param name="variant"></param>
         /// <returns></returns>
-        public IEnumerable<Transcript> ApplyVariantsCombinitorially(List<Variant> variantOrderedDescStart)
+        public IEnumerable<Transcript> ApplyVariantCombinitorics(Variant variant)
         {
             List<Transcript> result = new List<Transcript>();
-            for (int i = 0; i < variantOrderedDescStart.Count; i++)
-            {
-                Transcript firstAllele = this;
-                Variant v = variantOrderedDescStart[i];
-                VariantEffects variantEffects = AnnotateVariant(v);
 
-                // check that the functional effect is greater than missense (CompareTo greater than or equal to 0)
-                bool missenseOrNonsense = variantEffects.Effects.Any(eff => eff.GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
-                if (variantEffects == null)
-                {
-                    result.Add(firstAllele);
-                }
-                Transcript secondAllele = ApplyVariant(v) as Transcript;
-                secondAllele.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
-                result.Add(secondAllele);
-                if (variantOrderedDescStart.Count - i > 1)
-                {
-                    // add the combinations of the new transcript with the remaining variants (recurse)
-                    result.AddRange(secondAllele.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
-                }
-                if (v.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense)
-                {
-                    // if the first allele is different than the reference (possible error in reference sequence), then make that change
-                    if (v.ReferenceAlleleString != v.FirstAlleleString)
-                    {
-                        firstAllele = ApplyFirstAllele(v) as Transcript;
-                        firstAllele.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
-                    }
-                    // if heterozygous and a coding change, add the first allele, too
-                    result.Add(firstAllele);
-                }
-                if (v.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense && variantOrderedDescStart.Count - i > 1)
-                {
-                    // if heterozygous and a coding change, add the first allele with combinations of the remaining variants (recurse)
-                    result.AddRange(firstAllele.ApplyVariantsCombinitorially(variantOrderedDescStart.GetRange(i + 1, variantOrderedDescStart.Count - i - 1)));
-                }
+            // annotate variant, and then check that functional effect is greater than missense (CompareTo greater than or equal to 0)
+            VariantEffects variantEffects = AnnotateVariant(variant);
+            bool missenseOrNonsense = variantEffects.Effects
+                .Any(eff => eff.GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
+
+            // if the variant is outside of this transcript, just return without change
+            if (variantEffects == null)
+            {
+                result.Add(this);
+                return result;
             }
+
+            // apply the variant
+            Transcript altTranscript = ApplyVariant(variant) as Transcript;
+            altTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+            result.Add(altTranscript);
+
+            // if heterozygous and nonsynonymous, do combinitorics: determine which is the other allele (reference or another alternate),
+            // and add that first allele, too
+            if (variant.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense) 
+            {
+                Transcript anotherTranscript;
+                if (variant.ReferenceAlleleString == variant.FirstAlleleString) // other allele is the reference string
+                {
+                    anotherTranscript = new Transcript(this);
+                }
+                else // other allele is another alternate string (reference may have sequencing error)
+                {
+                    anotherTranscript = ApplyFirstAllele(variant) as Transcript;
+                    anotherTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+                }
+                result.Add(anotherTranscript);
+            }
+
             return result;
         }
 

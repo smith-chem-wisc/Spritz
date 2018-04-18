@@ -33,7 +33,8 @@ namespace Test
             List<Variant> variants = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ugh.vcf")).Select(v => new Variant(null, v, new Chromosome(seq, null))).ToList();
 
             // Make sure it makes it into the DNA sequence
-            List<Transcript> variantTranscripts = t.ApplyVariantsCombinitorially(variants).ToList();
+            t.Variants = new HashSet<Variant>(variants);
+            List<Transcript> variantTranscripts = GeneModel.ApplyVariantsCombinitorially(t);
             Assert.AreEqual("AAA", SequenceExtensions.ConvertToString(t.Exons[0].Sequence));
             Assert.AreEqual("K", t.Protein().BaseSequence);
             Assert.AreEqual("AGA", SequenceExtensions.ConvertToString(variantTranscripts[0].Exons[0].Sequence));
