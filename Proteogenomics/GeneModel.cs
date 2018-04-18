@@ -1,5 +1,6 @@
 ﻿using Bio;
 using Bio.IO.Gff;
+using Bio.VCF;
 using Proteomics;
 using System.Collections.Generic;
 using System.IO;
@@ -338,32 +339,40 @@ namespace Proteogenomics
         /// <param name="variants"></param>
         public List<Transcript> ApplyVariants(List<Variant> variants)
         {
-            List<Transcript> resultingTranscripts = new List<Transcript>();
+            // first, add variants to relevant genomic regions
             foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
             {
                 List<Interval> intervals = GenomeForest.Forest[Chromosome.GetFriendlyChromosomeName(v.ChromosomeID)].Stab(v.OneBasedStart);
                 foreach (Interval i in intervals)
                 {
-                    i.ApplyVariant(v);
+                    i.Variants.Add(v);
                 }
             }
-            foreach (Transcript t in Genes.SelectMany(g => g.Transcripts))
+
+            // then, apply them
+            return Genes.SelectMany(g => g.Transcripts)
+                .SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
+        }
+
+        /// <summary>
+        /// Apply variants to a transcript
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        public static List<Transcript> ApplyVariantsCombinitorially(Transcript t)
+        {
+            List<Transcript> newTranscripts = new List<Transcript> { new Transcript(t) };
+            if (t.Variants.Count(v => v.GenotypeType == GenotypeType.HETEROZYGOUS) > 5) // avoid large combinitoric problems for now (heterozygous count > 5)
             {
-                if (t.Variants.Count == 0)
-                {
-                    resultingTranscripts.Add(new Transcript(t));
-                }
-                else
-                {
-                    List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
-                    if (transcriptVariants.Count(v => v.GenotypeType == Bio.VCF.GenotypeType.HETEROZYGOUS) <= 5)
-                    {
-                        List<Transcript> variantTranscripts = t.ApplyVariantsCombinitorially(transcriptVariants).ToList();
-                        resultingTranscripts.AddRange(variantTranscripts);
-                    }
-                }
+                Transcript.combinatoricFailures.Add(t.ID + " " + t.ProteinID);
+                return newTranscripts;
             }
-            return resultingTranscripts;
+            List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
+            foreach (Variant v in transcriptVariants)
+            {
+                newTranscripts = newTranscripts.SelectMany(nt => nt.ApplyVariantCombinitorics(v)).ToList(); // expands only when there is a heterozygous nonsynonymous variation
+            }
+            return newTranscripts;
         }
 
         #endregion Methods -- Applying Variants

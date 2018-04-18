@@ -174,7 +174,7 @@ namespace WorkflowLayer
         /// <param name="reorderedFasta"></param>
         private static void PrepareEnsemblGenomeFasta(string genomeFasta, out Genome ensemblGenome, out string reorderedFasta)
         {
-            if (Path.GetExtension(genomeFasta) == ".gz")
+            if (Path.GetExtension(genomeFasta) == ".gz" || Path.GetExtension(genomeFasta) == ".tgz")
             {
                 WrapperUtility.RunBashCommand("gunzip", WrapperUtility.ConvertWindowsPath(genomeFasta));
                 genomeFasta = Path.ChangeExtension(genomeFasta, null);
