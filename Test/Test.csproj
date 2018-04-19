@@ -132,7 +132,9 @@
     <None Include="TestData\chr1_one_transcript.gtf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\chr1_one_transcript_reverse.gtf" />
+    <None Include="TestData\chr1_one_transcript_reverse.gtf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\chr1_sample.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -162,6 +164,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\paired_end.bam">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\problematicChr19\problematicChr19Gene.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\read1.fastq">
@@ -208,6 +213,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestData\aFewNearby.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\problematicChr19\chr19problematic.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\chr1Ucsc.vcf">

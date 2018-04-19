@@ -5,6 +5,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
 namespace Proteogenomics
@@ -114,6 +115,12 @@ namespace Proteogenomics
             foreach (Gene gene in Genes)
             {
                 gene.TranscriptTree.Build();
+
+                // correct frames of coding regions and add placeholder UTRs
+                foreach (Transcript t in Genes.SelectMany(g => g.Transcripts).ToList())
+                {
+                    t.FrameCorrection();
+                }
             }
             GenomeForest.Build();
         }
@@ -133,12 +140,12 @@ namespace Proteogenomics
             bool hasTranscriptVersion = attributes.TryGetValue("version", out string transcriptVersion) && hasTranscriptId;
             bool hasExonId = attributes.TryGetValue("exon_id", out string exonId);
             bool hasProteinId = attributes.TryGetValue("protein_id", out string proteinId);
-            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish);
-            if (!hasStrand)
-            {
-                return;
-            }
+            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish); // false if empty ("." in GFF format)
+            bool hasFrame = feature.SubItems.TryGetValue("frame", out List<string> framey); // false if empty ("." in GFF format)
+            if (!hasStrand) { return; } // strand is a required to do anything in this program
             string strand = strandish[0];
+            int frame = 0;
+            if (hasFrame) { int.TryParse(framey[0], out frame); }
 
             if (hasGeneId && (currentGene == null || hasGeneId && geneId != currentGene.ID))
             {
@@ -164,7 +171,7 @@ namespace Proteogenomics
             }
             else if (hasProteinId)
             {
-                CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, frame, null);
                 currentTranscript.CodingDomainSequences.Add(cds);
                 currentTranscript.ProteinID = proteinId;
             }
@@ -195,7 +202,13 @@ namespace Proteogenomics
             bool hasExonNumber = attributes.TryGetValue("exon_number", out string exonNumber);
             bool hasNearestRef = attributes.TryGetValue("nearest_ref", out string nearestRef); // Cufflinks
             bool hasClassCode = attributes.TryGetValue("class_code", out string classCode); // Cufflinks
-            string strand = feature.SubItems["strand"][0];
+            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish);
+            bool hasFrameString = feature.SubItems.TryGetValue("frame", out List<string> framey);
+            if (!hasStrand) { return; } // strand is a requied field in both GTF and GFF
+            if (!hasFrameString) { return; } // frame is a requied field in both GTF and GFF
+            string strand = strandish[0];
+            int frame = 0;
+            bool hasFrame = framey[0] != "." && int.TryParse(framey[0], out frame);
 
             // Catch the transcript features before they go by if available, i.e. if the file doesn't just have exons
             if (feature.Key == "transcript" && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
@@ -238,7 +251,7 @@ namespace Proteogenomics
                 }
                 else if (feature.Key == "CDS")
                 {
-                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
+                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, frame, null);
                     currentTranscript.CodingDomainSequences.Add(cds);
                 }
                 else
@@ -340,18 +353,25 @@ namespace Proteogenomics
         public List<Transcript> ApplyVariants(List<Variant> variants)
         {
             // first, add variants to relevant genomic regions
-            foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
+            Parallel.ForEach(variants.OrderByDescending(v => v.OneBasedStart).ToList(), v =>
             {
-                List<Interval> intervals = GenomeForest.Forest[Chromosome.GetFriendlyChromosomeName(v.ChromosomeID)].Stab(v.OneBasedStart);
-                foreach (Interval i in intervals)
+                if (GenomeForest.Forest.TryGetValue(Chromosome.GetFriendlyChromosomeName(v.ChromosomeID), out var intervalTree))
                 {
-                    i.Variants.Add(v);
+                    foreach (Interval i in intervalTree.Stab(v.OneBasedStart))
+                    {
+                        lock (i) { i.Variants.Add(v); }
+                    }
                 }
-            }
+            });
 
             // then, apply them
-            return Genes.SelectMany(g => g.Transcripts)
-                .SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
+            List<Transcript> variantTranscripts = new List<Transcript>();
+            Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t =>
+            {
+                List<Transcript> transcripts = ApplyVariantsCombinitorially(t);
+                lock (variantTranscripts) { variantTranscripts.AddRange(transcripts); }
+            });
+            return variantTranscripts;
         }
 
         /// <summary>

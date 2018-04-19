@@ -14,8 +14,6 @@ namespace Proteogenomics
     public class Transcript
         : Interval
     {
-        private List<Exon> _sortedStrand;
-        private Protein protein;
 
         /// <summary>
         /// Used to construct upstream and downstream reginos
@@ -26,6 +24,13 @@ namespace Proteogenomics
         /// Keeping track of transcript IDs leading to failures in executing combinitorics
         /// </summary>
         public static List<string> combinatoricFailures = new List<string>();
+
+        private List<Exon> _ExonSortedStrand;
+        private List<CDS> _CdsSortedStrand;
+        private Protein protein;
+        private ISequence _CodingSequence;
+        private Exon FirstCodingExon;
+        private Exon LastCodingExon;
 
         /// <summary>
         /// Constructor from the GFF3 reader information, including IDs, strand and Protein ID if available.
@@ -83,12 +88,28 @@ namespace Proteogenomics
         {
             get
             {
-                _sortedStrand = _sortedStrand ?? SortedStrand();
-                return _sortedStrand;
+                _ExonSortedStrand = _ExonSortedStrand ?? SortedStrand(Exons.OfType<Interval>().ToList()).OfType<Exon>().ToList();
+                return _ExonSortedStrand;
             }
             private set
             {
-                _sortedStrand = value;
+                _ExonSortedStrand = value;
+            }
+        }
+
+        /// <summary>
+        /// Exons sorted by start position or by reverse end position if on reverse strand
+        /// </summary>
+        public List<CDS> CdsSortedStrand
+        {
+            get
+            {
+                _CdsSortedStrand = _CdsSortedStrand ?? SortedStrand(CodingDomainSequences.OfType<Interval>().ToList()).OfType<CDS>().ToList();
+                return _CdsSortedStrand;
+            }
+            private set
+            {
+                _CdsSortedStrand = value;
             }
         }
 
@@ -116,11 +137,6 @@ namespace Proteogenomics
         /// Coding domain sequence (CDS) information
         /// </summary>
         public List<CDS> CodingDomainSequences { get; set; } = new List<CDS>();
-
-        /// <summary>
-        /// Coding sequence
-        /// </summary>
-        public ISequence CodingSequence { get; set; }
 
         /// <summary>
         /// Start of coding sequence
@@ -732,9 +748,9 @@ namespace Proteogenomics
         /// <returns></returns>
         public ISequence RetrieveCodingSequence()
         {
-            if (CodingSequence != null)
+            if (_CodingSequence != null)
             {
-                return CodingSequence;
+                return _CodingSequence;
             }
 
             // Concatenate all exons
@@ -763,7 +779,7 @@ namespace Proteogenomics
 
             if (missingSequence)
             {
-                CodingSequence = new Sequence(Alphabets.DNA, ""); // One or more exons does not have sequence. Nothing to do
+                _CodingSequence = new Sequence(Alphabets.DNA, ""); // One or more exons does not have sequence. Nothing to do
             }
             else
             {
@@ -782,25 +798,25 @@ namespace Proteogenomics
 
                 if (utr5len > subEnd)
                 {
-                    CodingSequence = new Sequence(Alphabets.DNA, "");
+                    _CodingSequence = new Sequence(Alphabets.DNA, "");
                 }
                 else
                 {
-                    CodingSequence = new Sequence(alphabet, dnaSequence.Substring(utr5len, subLen));
+                    _CodingSequence = new Sequence(alphabet, dnaSequence.Substring(utr5len, subLen));
                 }
             }
-            return CodingSequence;
+            return _CodingSequence;
         }
 
         /// <summary>
         /// Get strands sorted by start (forward) or end and in reverse (reverse strand)
         /// </summary>
         /// <returns></returns>
-        private List<Exon> SortedStrand()
+        private List<Interval> SortedStrand(List<Interval> intervals)
         {
             return IsStrandPlus() ?
-                Exons.OrderBy(x => x.OneBasedStart).ToList() :
-                Exons.OrderByDescending(x => x.OneBasedEnd).ToList();
+                intervals.OrderBy(x => x.OneBasedStart).ToList() :
+                intervals.OrderByDescending(x => x.OneBasedEnd).ToList();
         }
 
         public ISequence SplicedRNA()
@@ -889,6 +905,95 @@ namespace Proteogenomics
         public bool IsProteinCoding()
         {
             return CodingDomainSequences.Count > 0;
+        }
+
+        /// <summary>
+        /// Fix transcripts having non-zero frames in first exon, used prior to making UTRs
+        /// </summary>
+        /// <returns></returns>
+        public void FrameCorrection()
+        {
+            List<CDS> cds = CdsSortedStrand;
+
+            // No exons? Nothing to do
+            if (cds == null || cds.Count == 0) { return; }
+
+            CDS cdsStart = cds.First();
+            if (cdsStart != null && cdsStart.StartFrame <= 0)
+            {
+                UTR5Prime utr = cdsStart.StartFrameCorrection(cdsStart.StartFrame);
+                if (utr != null) UTRs.Add(utr);
+            }
+
+            CDS cdsLast = cds.Last();
+            if (cdsLast != null && cdsLast.StartFrame <= 0)
+            {
+                UTR3Prime utr = cdsLast.EndFrameCorrection(RetrieveCodingSequence().Count);
+                if (utr != null) UTRs.Add(utr);
+            }
+
+            _CodingSequence = null; // update this later after this frame update
+        }
+
+        /// <summary>
+        /// Get first coding exon
+        /// </summary>
+        public Exon GetFirstCodingExon()
+        {
+            List<CDS> cds = CdsSortedStrand;
+            if (cds.Count == 0) { return null; }
+            if (FirstCodingExon == null)
+            {
+                // Get transcription start position
+                long cstart = IsStrandPlus() ? cds.First().OneBasedStart : cds.First().OneBasedEnd;
+
+                // Pick exon intersecting cdsStart (TSS)
+                foreach (Exon exon in ExonsSortedStrand)
+                {
+                    if (exon.Intersects(cstart))
+                    {
+                        FirstCodingExon = exon;
+                    }
+                }
+
+                // Sanity check
+                if (FirstCodingExon == null)
+                {
+                    throw new ArgumentException("Error: Cannot find first coding exon for transcript:\n" + this);
+                }
+            }
+            return FirstCodingExon;
+        }
+
+        /// <summary>
+        /// Get the last coding exon
+        /// </summary>
+        /// <returns></returns>
+        public Exon GetLastCodingExon()
+        {
+            List<CDS> cds = CdsSortedStrand;
+            if (cds.Count == 0) { return null; }
+            if (LastCodingExon == null)
+            {
+                // Get transcription start position
+                long cend = IsStrandPlus() ? cds.Last().OneBasedEnd : cds.Last().OneBasedStart;
+
+                // Pick exon intersecting cdsStart (TSS)
+                foreach (Exon exon in ExonsSortedStrand)
+                {
+                    if (exon.Intersects(cend))
+                    {
+                        LastCodingExon = exon;
+                    }
+                }
+
+                // Sanity check
+                if (LastCodingExon == null)
+                {
+                    throw new ArgumentException("Error: Cannot find first coding exon for transcript:\n" + this);
+                }
+            }
+            return LastCodingExon;
         }
 
         #endregion Translate from Variant Nucleotide Sequences Methods

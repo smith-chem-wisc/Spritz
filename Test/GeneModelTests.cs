@@ -119,12 +119,11 @@ namespace Test
                 // now handled with the badAccessions // && !p.BaseSequence.Contains('*') && !seq.Contains('*') && !p.BaseSequence.Contains('X'))
                 if (accSeq.TryGetValue(p.Accession, out string seq))
                 {
-                    // there are instances where alternative start codons are used where Ensembl somehow doesn't include them correctly
-                    if (!p.FullName.Contains("GRCh38:MT")) Assert.AreEqual(p.BaseSequence, seq);
-                    else Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1));
+                    Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1));
                 }
             }
         }
+
 
         //[Test]
         //public void TryMakingVariantDatabas()
