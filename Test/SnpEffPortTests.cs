@@ -23,7 +23,7 @@ namespace Test
             Transcript t = new Transcript("", "", g, "+", 1, 3, "", null);
             Exon x = new Exon(t, seq, 1, 3, seq.ID, "+", null);
             t.Exons = new List<Exon> { x };
-            CDS cds = new CDS(t, seq.ID, "+", 1, 3, 0, null);
+            CDS cds = new CDS(t, seq.ID, "+", 1, 3, null);
             t.CodingDomainSequences = new List<CDS> { cds };
 
             // Make a missense mutation

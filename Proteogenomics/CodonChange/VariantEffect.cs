@@ -647,6 +647,15 @@ namespace Proteogenomics
             return FunctionalClass.NONE;
         }
 
+        /// <summary>
+        /// Checks if this effect is nonsynonymous
+        /// </summary>
+        /// <returns></returns>
+        public bool IsNonsynonymous()
+        {
+            return GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0;
+        }
+
         public Gene GetGene()
         {
             if (Marker != null)
@@ -1014,6 +1023,14 @@ namespace Proteogenomics
                     + "\t" + (AroundOldAAs.Length > 0 ? AroundOldAAs + " / " + AroundNewAAs : "") //
                     + "\t" + customId //
             ;
+        }
+
+        public string TranscriptAnnotation()
+        {
+            return "effect:" + GetFunctionalClass().ToString() + " " +
+                    GetEffectType().ToString() + " " +
+                    ReferenceAA + (CodonNum + 1).ToString() + AlternateAA + " " +
+                    CodonsRef.ToLower(CultureInfo.InvariantCulture) + CodonNum.ToString() + CodonsAlt;
         }
 
         /// <summary>

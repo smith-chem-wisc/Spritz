@@ -57,7 +57,9 @@ namespace Proteogenomics
             : this(transcript.ID, transcript.Version, transcript.Gene, transcript.Strand, transcript.OneBasedStart, transcript.OneBasedEnd, transcript.ProteinID, transcript.Variants)
         {
             VariantAnnotations = new List<string>(transcript.VariantAnnotations);
+            ProteinSequenceVariations = new List<SequenceVariation>(transcript.ProteinSequenceVariations);
             Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(x)));
+            CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(cds)));
             SetRegions(this);
         }
 
@@ -167,6 +169,11 @@ namespace Proteogenomics
         public List<string> VariantAnnotations { get; set; } = new List<string>();
 
         /// <summary>
+        /// List of protein sequence variations for annotating XML files
+        /// </summary>
+        public List<SequenceVariation> ProteinSequenceVariations { get; set; } = new List<SequenceVariation>();
+
+        /// <summary>
         /// Apply the second (alternate) allele of this variant and adjust the start and stop indices
         /// </summary>
         /// <param name="variant"></param>
@@ -198,6 +205,7 @@ namespace Proteogenomics
                 }
             }
             transcript.VariantAnnotations = new List<string>(VariantAnnotations);
+            transcript.ProteinSequenceVariations = new List<SequenceVariation>(ProteinSequenceVariations);
             SetRegions(transcript);
             return transcript;
         }
@@ -234,14 +242,13 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
-        public IEnumerable<Transcript> ApplyVariantCombinitorics(Variant variant)
+        public IEnumerable<Transcript> ApplyVariantCombinitorics(Variant variant, out VariantEffects variantEffects)
         {
             List<Transcript> result = new List<Transcript>();
 
             // annotate variant, and then check that functional effect is greater than missense (CompareTo greater than or equal to 0)
-            VariantEffects variantEffects = AnnotateVariant(variant);
-            bool missenseOrNonsense = variantEffects.Effects
-                .Any(eff => eff.GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
+            variantEffects = AnnotateVariant(variant);
+            bool nonsynonymous = variantEffects.Effects.Any(eff => eff.IsNonsynonymous());
 
             // if the variant is outside of this transcript, just return without change
             if (variantEffects == null)
@@ -253,11 +260,12 @@ namespace Proteogenomics
             // apply the variant
             Transcript altTranscript = ApplyVariant(variant) as Transcript;
             altTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+            altTranscript.ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
             result.Add(altTranscript);
 
             // if heterozygous and nonsynonymous, do combinitorics: determine which is the other allele (reference or another alternate),
             // and add that first allele, too
-            if (variant.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense) 
+            if (variant.GenotypeType == GenotypeType.HETEROZYGOUS && nonsynonymous) 
             {
                 Transcript anotherTranscript;
                 if (variant.ReferenceAlleleString == variant.FirstAlleleString) // other allele is the reference string
@@ -268,6 +276,7 @@ namespace Proteogenomics
                 {
                     anotherTranscript = ApplyFirstAllele(variant) as Transcript;
                     anotherTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+                    anotherTranscript.ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
                 }
                 result.Add(anotherTranscript);
             }
@@ -852,7 +861,7 @@ namespace Proteogenomics
             string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
             string annotations = String.Join(" ", VariantAnnotations);
             string accession = Translation.GetSafeProteinAccession(ProteinID);
-            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations);
+            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations, sequenceVariations: ProteinSequenceVariations);
             return protein;
         }
 
@@ -913,23 +922,14 @@ namespace Proteogenomics
         /// <returns></returns>
         public void FrameCorrection()
         {
-            List<CDS> cds = CdsSortedStrand;
+            // No coding domains? Nothing to do
+            if (CdsSortedStrand == null || CdsSortedStrand.Count == 0) { return; }
 
-            // No exons? Nothing to do
-            if (cds == null || cds.Count == 0) { return; }
-
-            CDS cdsStart = cds.First();
-            if (cdsStart != null && cdsStart.StartFrame <= 0)
-            {
-                UTR5Prime utr = cdsStart.StartFrameCorrection(cdsStart.StartFrame);
-                if (utr != null) UTRs.Add(utr);
-            }
-
-            CDS cdsLast = cds.Last();
-            if (cdsLast != null && cdsLast.StartFrame <= 0)
+            CDS cdsLast = CdsSortedStrand.Last();
+            if (cdsLast != null)
             {
                 UTR3Prime utr = cdsLast.EndFrameCorrection(RetrieveCodingSequence().Count);
-                if (utr != null) UTRs.Add(utr);
+                if (utr != null) { UTRs.Add(utr); }
             }
 
             _CodingSequence = null; // update this later after this frame update

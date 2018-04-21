@@ -283,9 +283,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         [Test, Order(2)]
@@ -314,9 +314,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         [Test, Order(4)]
@@ -349,9 +349,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         // I'm having trouble getting RSEM to work with comma-separated inputs... I think it's because of STAR, which I have had trouble with in this respect in the past.

@@ -5,7 +5,7 @@ namespace Proteogenomics
 {
     public static class ProteogenomicsUtility
     {
-        public static readonly string ENSEMBL_FASTA_HEADER_DELIMETER = " ";
+        public static readonly string EnsemblFastaHeaderDelimeter = " ";
 
         public static char[] amino_acids = "ACDEFGHIKLMNPQRSTVWY".ToCharArray();
 

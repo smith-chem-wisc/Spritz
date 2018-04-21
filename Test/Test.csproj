@@ -166,6 +166,9 @@
     <None Include="TestData\paired_end.bam">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="TestData\problematicChr19\chr19variantTranscript.gff3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\problematicChr19\problematicChr19Gene.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

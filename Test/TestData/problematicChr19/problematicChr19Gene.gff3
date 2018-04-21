@@ -5,6 +5,18 @@
 #!genome-date 2013-12
 #!genome-build-accession NCBI:GCA_000001405.18
 #!genebuild-last-updated 2015-06
+19	ensembl_havana	gene	48637942	48646312	.	-	.	ID=gene:ENSG00000063180;Name=CA11;biotype=protein_coding;description=carbonic anhydrase XI [Source:HGNC Symbol%3BAcc:HGNC:1370];gene_id=ENSG00000063180;havana_gene=OTTHUMG00000183320;havana_version=1;logic_name=ensembl_havana_gene;version=8
+19	ensembl_havana	transcript	48638022	48639459	.	-	.	ID=transcript:ENST00000596080;Parent=gene:ENSG00000063180;Name=CA11-002;biotype=protein_coding;havana_transcript=OTTHUMT00000466175;havana_version=1;transcript_id=ENST00000596080;transcript_support_level=3;version=1
+19	havana	exon	48638022	48638144	.	-	.	Parent=transcript:ENST00000596080;Name=ENSE00003067582;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSE00003067582;rank=4;version=1
+19	havana	three_prime_UTR	48638022	48638144	.	-	.	Parent=transcript:ENST00000596080
+19	havana	three_prime_UTR	48638240	48638273	.	-	.	Parent=transcript:ENST00000596080
+19	havana	exon	48638240	48638293	.	-	.	Parent=transcript:ENST00000596080;Name=ENSE00003047738;constitutive=0;ensembl_end_phase=-1;ensembl_phase=1;exon_id=ENSE00003047738;rank=3;version=1
+19	havana	CDS	48638274	48638293	.	-	2	ID=CDS:ENSP00000469234;Parent=transcript:ENST00000596080;protein_id=ENSP00000469234
+19	havana	exon	48638888	48639053	.	-	.	Parent=transcript:ENST00000596080;Name=ENSE00000862933;constitutive=0;ensembl_end_phase=1;ensembl_phase=0;exon_id=ENSE00000862933;rank=2;version=1
+19	havana	CDS	48638888	48639053	.	-	0	ID=CDS:ENSP00000469234;Parent=transcript:ENST00000596080;protein_id=ENSP00000469234
+19	havana	exon	48639305	48639459	.	-	.	Parent=transcript:ENST00000596080;Name=ENSE00000717863;constitutive=0;ensembl_end_phase=0;ensembl_phase=1;exon_id=ENSE00000717863;rank=1;version=1
+19	havana	CDS	48639305	48639459	.	-	2	ID=CDS:ENSP00000469234;Parent=transcript:ENST00000596080;protein_id=ENSP00000469234
+###
 19	ensembl_havana	gene	55262231	55280381	.	-	.	ID=gene:ENSG00000133265;Name=HSPBP1;biotype=protein_coding;description=HSPA (heat shock 70kDa) binding protein%2C cytoplasmic cochaperone 1 [Source:HGNC Symbol%3BAcc:HGNC:24989];gene_id=ENSG00000133265;havana_gene=OTTHUMG00000180705;havana_version=1;logic_name=ensembl_havana_gene;version=10
 19	ensembl_havana	transcript	55277644	55279856	.	-	.	ID=transcript:ENST00000585698;Parent=gene:ENSG00000133265;Name=HSPBP1-007;biotype=protein_coding;havana_transcript=OTTHUMT00000452676;havana_version=1;transcript_id=ENST00000585698;transcript_support_level=2;version=1
 19	havana	exon	55277644	55277846	.	-	.	Parent=transcript:ENST00000585698;Name=ENSE00002869865;constitutive=0;ensembl_end_phase=-1;ensembl_phase=0;exon_id=ENSE00002869865;rank=3;version=1
@@ -14,4 +26,3 @@
 19	havana	five_prime_UTR	55279609	55279702	.	-	.	Parent=transcript:ENST00000585698
 19	havana	exon	55279807	55279856	.	-	.	Parent=transcript:ENST00000585698;Name=ENSE00002897374;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSE00002897374;rank=1;version=1
 19	havana	five_prime_UTR	55279807	55279856	.	-	.	Parent=transcript:ENST00000585698
-###

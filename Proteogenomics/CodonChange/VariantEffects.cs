@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Linq;
 using System.Text;
 
 namespace Proteogenomics
@@ -101,9 +102,19 @@ namespace Proteogenomics
             sb.Append("variant:" + theVariant.ToString() + " ");
             foreach (VariantEffect eff in Effects)
             {
-                sb.Append("effect:" + eff.GetFunctionalClass().ToString() + " " + eff.GetEffectType().ToString() + " " + eff.CodonsRef.ToUpper(CultureInfo.InvariantCulture) + eff.CodonNum.ToString() + eff.CodonsAlt);
+                sb.Append(eff.TranscriptAnnotation());
             }
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gets a list of the protein sequence variations noted as effects (has length of one in reference to a single transcript)
+        /// </summary>
+        /// <returns></returns>
+        public List<SequenceVariation> ProteinSequenceVariation()
+        {
+            return Effects.Where(eff => eff.IsNonsynonymous()) // has coding effect
+                .Select(eff => new SequenceVariation(eff.CodonNum + 1, eff.CodonNum + eff.AlternateAA.Length, eff.ReferenceAA, eff.AlternateAA, eff.TranscriptAnnotation())).ToList();
         }
 
         /// <summary>

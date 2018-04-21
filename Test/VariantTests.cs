@@ -255,8 +255,28 @@ namespace Test
             }).WaitForExit();
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "problematicChr19Gene.gff3"));
-            int problematic = geneModel.Genes.Sum(g => g.Transcripts.Count(t => t.RetrieveCodingSequence().Count % 3 != 0));
             geneModel.ApplyVariants(new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "chr19problematic.vcf")).Select(v => new Variant(null, v, genome.Chromosomes[0])).ToList());
+        }
+
+
+        [Test]
+        public void Chr19VariantTranscript()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr19script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "chr19variantTranscript.gff3"));
+            var variants = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "chr19problematic.vcf"))
+                .Select(v => new Variant(null, v, genome.Chromosomes[0]))
+                .Where(v => v.SecondAlleleString.Length == 1 && v.ReferenceAlleleString.Length == 1).ToList();
+            List <Transcript> transcripts = geneModel.ApplyVariants(variants).ToList();
+            List<Protein> proteins = transcripts.Select(t => t.Protein(null)).ToList();
+            int i = 0;
         }
 
         // test todo: transcript with zero CodingSequenceExons and try to translate them to check that it doesn fail
