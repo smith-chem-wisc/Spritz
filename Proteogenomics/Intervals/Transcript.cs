@@ -14,8 +14,6 @@ namespace Proteogenomics
     public class Transcript
         : Interval
     {
-        private List<Exon> _sortedStrand;
-        private Protein protein;
 
         /// <summary>
         /// Used to construct upstream and downstream reginos
@@ -26,6 +24,13 @@ namespace Proteogenomics
         /// Keeping track of transcript IDs leading to failures in executing combinitorics
         /// </summary>
         public static List<string> combinatoricFailures = new List<string>();
+
+        private List<Exon> _ExonSortedStrand;
+        private List<CDS> _CdsSortedStrand;
+        private Protein protein;
+        private ISequence _CodingSequence;
+        private Exon FirstCodingExon;
+        private Exon LastCodingExon;
 
         /// <summary>
         /// Constructor from the GFF3 reader information, including IDs, strand and Protein ID if available.
@@ -52,7 +57,9 @@ namespace Proteogenomics
             : this(transcript.ID, transcript.Version, transcript.Gene, transcript.Strand, transcript.OneBasedStart, transcript.OneBasedEnd, transcript.ProteinID, transcript.Variants)
         {
             VariantAnnotations = new List<string>(transcript.VariantAnnotations);
+            ProteinSequenceVariations = new List<SequenceVariation>(transcript.ProteinSequenceVariations);
             Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(x)));
+            CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(cds)));
             SetRegions(this);
         }
 
@@ -83,12 +90,28 @@ namespace Proteogenomics
         {
             get
             {
-                _sortedStrand = _sortedStrand ?? SortedStrand();
-                return _sortedStrand;
+                _ExonSortedStrand = _ExonSortedStrand ?? SortedStrand(Exons.OfType<Interval>().ToList()).OfType<Exon>().ToList();
+                return _ExonSortedStrand;
             }
             private set
             {
-                _sortedStrand = value;
+                _ExonSortedStrand = value;
+            }
+        }
+
+        /// <summary>
+        /// Exons sorted by start position or by reverse end position if on reverse strand
+        /// </summary>
+        public List<CDS> CdsSortedStrand
+        {
+            get
+            {
+                _CdsSortedStrand = _CdsSortedStrand ?? SortedStrand(CodingDomainSequences.OfType<Interval>().ToList()).OfType<CDS>().ToList();
+                return _CdsSortedStrand;
+            }
+            private set
+            {
+                _CdsSortedStrand = value;
             }
         }
 
@@ -118,11 +141,6 @@ namespace Proteogenomics
         public List<CDS> CodingDomainSequences { get; set; } = new List<CDS>();
 
         /// <summary>
-        /// Coding sequence
-        /// </summary>
-        public ISequence CodingSequence { get; set; }
-
-        /// <summary>
         /// Start of coding sequence
         /// </summary>
         public long CdsOneBasedStart { get; set; } = -1;
@@ -149,6 +167,11 @@ namespace Proteogenomics
         /// Annotations for the variants applied to this transcript
         /// </summary>
         public List<string> VariantAnnotations { get; set; } = new List<string>();
+
+        /// <summary>
+        /// List of protein sequence variations for annotating XML files
+        /// </summary>
+        public List<SequenceVariation> ProteinSequenceVariations { get; set; } = new List<SequenceVariation>();
 
         /// <summary>
         /// Apply the second (alternate) allele of this variant and adjust the start and stop indices
@@ -182,6 +205,7 @@ namespace Proteogenomics
                 }
             }
             transcript.VariantAnnotations = new List<string>(VariantAnnotations);
+            transcript.ProteinSequenceVariations = new List<SequenceVariation>(ProteinSequenceVariations);
             SetRegions(transcript);
             return transcript;
         }
@@ -218,14 +242,13 @@ namespace Proteogenomics
         /// </summary>
         /// <param name="variant"></param>
         /// <returns></returns>
-        public IEnumerable<Transcript> ApplyVariantCombinitorics(Variant variant)
+        public IEnumerable<Transcript> ApplyVariantCombinitorics(Variant variant, out VariantEffects variantEffects)
         {
             List<Transcript> result = new List<Transcript>();
 
             // annotate variant, and then check that functional effect is greater than missense (CompareTo greater than or equal to 0)
-            VariantEffects variantEffects = AnnotateVariant(variant);
-            bool missenseOrNonsense = variantEffects.Effects
-                .Any(eff => eff.GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0);
+            variantEffects = AnnotateVariant(variant);
+            bool nonsynonymous = variantEffects.Effects.Any(eff => eff.IsNonsynonymous());
 
             // if the variant is outside of this transcript, just return without change
             if (variantEffects == null)
@@ -237,11 +260,12 @@ namespace Proteogenomics
             // apply the variant
             Transcript altTranscript = ApplyVariant(variant) as Transcript;
             altTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+            altTranscript.ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
             result.Add(altTranscript);
 
             // if heterozygous and nonsynonymous, do combinitorics: determine which is the other allele (reference or another alternate),
             // and add that first allele, too
-            if (variant.GenotypeType == GenotypeType.HETEROZYGOUS && missenseOrNonsense) 
+            if (variant.GenotypeType == GenotypeType.HETEROZYGOUS && nonsynonymous) 
             {
                 Transcript anotherTranscript;
                 if (variant.ReferenceAlleleString == variant.FirstAlleleString) // other allele is the reference string
@@ -252,6 +276,7 @@ namespace Proteogenomics
                 {
                     anotherTranscript = ApplyFirstAllele(variant) as Transcript;
                     anotherTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+                    anotherTranscript.ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
                 }
                 result.Add(anotherTranscript);
             }
@@ -732,9 +757,9 @@ namespace Proteogenomics
         /// <returns></returns>
         public ISequence RetrieveCodingSequence()
         {
-            if (CodingSequence != null)
+            if (_CodingSequence != null)
             {
-                return CodingSequence;
+                return _CodingSequence;
             }
 
             // Concatenate all exons
@@ -763,7 +788,7 @@ namespace Proteogenomics
 
             if (missingSequence)
             {
-                CodingSequence = new Sequence(Alphabets.DNA, ""); // One or more exons does not have sequence. Nothing to do
+                _CodingSequence = new Sequence(Alphabets.DNA, ""); // One or more exons does not have sequence. Nothing to do
             }
             else
             {
@@ -782,25 +807,25 @@ namespace Proteogenomics
 
                 if (utr5len > subEnd)
                 {
-                    CodingSequence = new Sequence(Alphabets.DNA, "");
+                    _CodingSequence = new Sequence(Alphabets.DNA, "");
                 }
                 else
                 {
-                    CodingSequence = new Sequence(alphabet, dnaSequence.Substring(utr5len, subLen));
+                    _CodingSequence = new Sequence(alphabet, dnaSequence.Substring(utr5len, subLen));
                 }
             }
-            return CodingSequence;
+            return _CodingSequence;
         }
 
         /// <summary>
         /// Get strands sorted by start (forward) or end and in reverse (reverse strand)
         /// </summary>
         /// <returns></returns>
-        private List<Exon> SortedStrand()
+        private List<Interval> SortedStrand(List<Interval> intervals)
         {
             return IsStrandPlus() ?
-                Exons.OrderBy(x => x.OneBasedStart).ToList() :
-                Exons.OrderByDescending(x => x.OneBasedEnd).ToList();
+                intervals.OrderBy(x => x.OneBasedStart).ToList() :
+                intervals.OrderByDescending(x => x.OneBasedEnd).ToList();
         }
 
         public ISequence SplicedRNA()
@@ -836,7 +861,7 @@ namespace Proteogenomics
             string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
             string annotations = String.Join(" ", VariantAnnotations);
             string accession = Translation.GetSafeProteinAccession(ProteinID);
-            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations);
+            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations, sequenceVariations: ProteinSequenceVariations);
             return protein;
         }
 
@@ -889,6 +914,86 @@ namespace Proteogenomics
         public bool IsProteinCoding()
         {
             return CodingDomainSequences.Count > 0;
+        }
+
+        /// <summary>
+        /// Fix transcripts having non-zero frames in first exon, used prior to making UTRs
+        /// </summary>
+        /// <returns></returns>
+        public void FrameCorrection()
+        {
+            // No coding domains? Nothing to do
+            if (CdsSortedStrand == null || CdsSortedStrand.Count == 0) { return; }
+
+            CDS cdsLast = CdsSortedStrand.Last();
+            if (cdsLast != null)
+            {
+                UTR3Prime utr = cdsLast.EndFrameCorrection(RetrieveCodingSequence().Count);
+                if (utr != null) { UTRs.Add(utr); }
+            }
+
+            _CodingSequence = null; // update this later after this frame update
+        }
+
+        /// <summary>
+        /// Get first coding exon
+        /// </summary>
+        public Exon GetFirstCodingExon()
+        {
+            List<CDS> cds = CdsSortedStrand;
+            if (cds.Count == 0) { return null; }
+            if (FirstCodingExon == null)
+            {
+                // Get transcription start position
+                long cstart = IsStrandPlus() ? cds.First().OneBasedStart : cds.First().OneBasedEnd;
+
+                // Pick exon intersecting cdsStart (TSS)
+                foreach (Exon exon in ExonsSortedStrand)
+                {
+                    if (exon.Intersects(cstart))
+                    {
+                        FirstCodingExon = exon;
+                    }
+                }
+
+                // Sanity check
+                if (FirstCodingExon == null)
+                {
+                    throw new ArgumentException("Error: Cannot find first coding exon for transcript:\n" + this);
+                }
+            }
+            return FirstCodingExon;
+        }
+
+        /// <summary>
+        /// Get the last coding exon
+        /// </summary>
+        /// <returns></returns>
+        public Exon GetLastCodingExon()
+        {
+            List<CDS> cds = CdsSortedStrand;
+            if (cds.Count == 0) { return null; }
+            if (LastCodingExon == null)
+            {
+                // Get transcription start position
+                long cend = IsStrandPlus() ? cds.Last().OneBasedEnd : cds.Last().OneBasedStart;
+
+                // Pick exon intersecting cdsStart (TSS)
+                foreach (Exon exon in ExonsSortedStrand)
+                {
+                    if (exon.Intersects(cend))
+                    {
+                        LastCodingExon = exon;
+                    }
+                }
+
+                // Sanity check
+                if (LastCodingExon == null)
+                {
+                    throw new ArgumentException("Error: Cannot find first coding exon for transcript:\n" + this);
+                }
+            }
+            return LastCodingExon;
         }
 
         #endregion Translate from Variant Nucleotide Sequences Methods

@@ -292,17 +292,20 @@ namespace Proteogenomics
         {
             // Create a new list of sorted intervals
             List<Interval> markersSort = fromEnd ?
-                new List<Interval>(markers).OrderBy(m => m.OneBasedEnd).ToList() :
+                new List<Interval>(markers).OrderByDescending(m => m.OneBasedEnd).ToList() :
                 new List<Interval>(markers).OrderBy(m => m.OneBasedStart).ToList();
 
             // Calculate distance
-            long len = 0, latest = -1;
+            long len = 0;
+            long latest = -1;
             foreach (Interval m in markersSort)
             {
                 // Initialize
                 if (latest < 0)
                 {
-                    latest = fromEnd ? m.OneBasedEnd + 1 : m.OneBasedStart - 1;
+                    latest = fromEnd ? 
+                        m.OneBasedEnd + 1 :
+                        m.OneBasedStart - 1;
                 }
 
                 if (fromEnd)

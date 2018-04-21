@@ -5,6 +5,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
 namespace Proteogenomics
@@ -109,12 +110,10 @@ namespace Proteogenomics
                     }
                 }
             }
-            CreateUTRsAndIntergenicRegions();
+            SetRegionsAndFrameCorrection(currentTranscript);
+            CreateIntergenicRegions();
             // possibly check transcript sanity here with Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t => t.SanityCheck());
-            foreach (Gene gene in Genes)
-            {
-                gene.TranscriptTree.Build();
-            }
+            Parallel.ForEach(Genes, gene => gene.TranscriptTree.Build());
             GenomeForest.Build();
         }
 
@@ -133,23 +132,39 @@ namespace Proteogenomics
             bool hasTranscriptVersion = attributes.TryGetValue("version", out string transcriptVersion) && hasTranscriptId;
             bool hasExonId = attributes.TryGetValue("exon_id", out string exonId);
             bool hasProteinId = attributes.TryGetValue("protein_id", out string proteinId);
-            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish);
-            if (!hasStrand)
-            {
-                return;
-            }
+            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish); // false if empty ("." in GFF format)
+            bool hasFrame = feature.SubItems.TryGetValue("frame", out List<string> framey); // false if empty ("." in GFF format)
+            if (!hasStrand) { return; } // strand is a required to do anything in this program
             string strand = strandish[0];
+            int frame = 0;
+            if (hasFrame) { int.TryParse(framey[0], out frame); }
+
+            // adjust start and end according to frame
+            long oneBasedStartAdj = oneBasedStart;
+            long oneBasedEndAdj = oneBasedEnd;
+            if (hasFrame)
+            {
+                if (currentTranscript.IsStrandPlus())
+                {
+                    oneBasedStartAdj += frame;
+                }
+                else
+                {
+                    oneBasedEndAdj -= frame;
+                }
+            }
 
             if (hasGeneId && (currentGene == null || hasGeneId && geneId != currentGene.ID))
             {
-                currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
+                currentGene = new Gene(geneId, chrom, strand, oneBasedStartAdj, oneBasedEndAdj, feature);
                 Genes.Add(currentGene);
                 GenomeForest.Add(currentGene);
             }
 
             if (hasTranscriptId && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
             {
-                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
+                SetRegionsAndFrameCorrection(currentTranscript);
+                currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStartAdj, oneBasedEndAdj, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
                 currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
@@ -157,16 +172,22 @@ namespace Proteogenomics
 
             if (hasExonId)
             {
-                ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStartAdj - 1, oneBasedEndAdj - oneBasedStartAdj + 1);
                 Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
-                    oneBasedStart, oneBasedEnd, chrom == null ? "" : chrom.ChromosomeID, strand, null);
-                currentTranscript.Exons.Add(exon);
+                    oneBasedStartAdj, oneBasedEndAdj, chrom == null ? "" : chrom.ChromosomeID, strand, null);
+                if (exon.Length() > 0)
+                {
+                    currentTranscript.Exons.Add(exon);
+                }
             }
             else if (hasProteinId)
             {
-                CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
-                currentTranscript.CodingDomainSequences.Add(cds);
-                currentTranscript.ProteinID = proteinId;
+                CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStartAdj, oneBasedEndAdj, null);
+                if (cds.Length() > 0)
+                {
+                    currentTranscript.CodingDomainSequences.Add(cds);
+                    currentTranscript.ProteinID = proteinId;
+                }
             }
             else
             { // nothing to do
@@ -195,7 +216,13 @@ namespace Proteogenomics
             bool hasExonNumber = attributes.TryGetValue("exon_number", out string exonNumber);
             bool hasNearestRef = attributes.TryGetValue("nearest_ref", out string nearestRef); // Cufflinks
             bool hasClassCode = attributes.TryGetValue("class_code", out string classCode); // Cufflinks
-            string strand = feature.SubItems["strand"][0];
+            bool hasStrand = feature.SubItems.TryGetValue("strand", out List<string> strandish);
+            bool hasFrameString = feature.SubItems.TryGetValue("frame", out List<string> framey);
+            if (!hasStrand) { return; } // strand is a requied field in both GTF and GFF
+            if (!hasFrameString) { return; } // frame is a requied field in both GTF and GFF
+            string strand = strandish[0];
+            int frame = 0;
+            bool hasFrame = framey[0] != "." && int.TryParse(framey[0], out frame);
 
             // Catch the transcript features before they go by if available, i.e. if the file doesn't just have exons
             if (feature.Key == "transcript" && (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID))
@@ -215,36 +242,65 @@ namespace Proteogenomics
 
             if (feature.Key == "exon" || feature.Key == "CDS")
             {
+                // adjust start and end according to frame
+                long oneBasedStartAdj = oneBasedStart;
+                long oneBasedEndAdj = oneBasedEnd;
+                if (hasFrame)
+                {
+                    if (currentTranscript.IsStrandPlus())
+                    {
+                        oneBasedStartAdj += frame;
+                    }
+                    else
+                    {
+                        oneBasedEndAdj -= frame;
+                    }
+                }
+
                 if (currentGene == null || hasGeneId && geneId != currentGene.ID)
                 {
-                    currentGene = new Gene(geneId, chrom, strand, oneBasedStart, oneBasedEnd, feature);
+                    currentGene = new Gene(geneId, chrom, strand, oneBasedStartAdj, oneBasedEndAdj, feature);
                     Genes.Add(currentGene);
                     GenomeForest.Add(currentGene);
                 }
 
                 if (currentTranscript == null || hasTranscriptId && transcriptId != currentTranscript.ID)
                 {
-                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
+                    SetRegionsAndFrameCorrection(currentTranscript);
+                    currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStartAdj, oneBasedEndAdj, null, null);
                     currentGene.Transcripts.Add(currentTranscript);
                     GenomeForest.Add(currentTranscript);
                 }
 
                 if (feature.Key == "exon")
                 {
-                    ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStart - 1, oneBasedEnd - oneBasedStart + 1);
+                    ISequence exon_dna = chrom.Sequence.GetSubSequence(oneBasedStartAdj - 1, oneBasedEndAdj - oneBasedStartAdj + 1);
                     Exon exon = new Exon(currentTranscript, currentTranscript.IsStrandPlus() ? exon_dna : exon_dna.GetReverseComplementedSequence(),
-                        oneBasedStart, oneBasedEnd, chrom.Sequence.ID, strand, null);
-                    currentTranscript.Exons.Add(exon);
+                        oneBasedStartAdj, oneBasedEndAdj, chrom.Sequence.ID, strand, null);
+                    if (exon.Length() > 0)
+                    {
+                        currentTranscript.Exons.Add(exon);
+                    }
                 }
                 else if (feature.Key == "CDS")
                 {
-                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null);
-                    currentTranscript.CodingDomainSequences.Add(cds);
+                    CDS cds = new CDS(currentTranscript, chrom.Sequence.ID, strand, oneBasedStartAdj, oneBasedEndAdj, null);
+                    if (cds.Length() > 0)
+                    {
+                        currentTranscript.CodingDomainSequences.Add(cds);
+                    }
                 }
                 else
                 { // nothing to do
                 }
             }
+        }
+
+        private void SetRegionsAndFrameCorrection(Transcript t)
+        {
+            if (t == null) { return; }
+            Transcript.SetRegions(t);
+            t.FrameCorrection();
         }
 
         private static Regex gffVersion = new Regex(@"(##gff-version\s+)(\d)");
@@ -290,7 +346,7 @@ namespace Proteogenomics
         /// <summary>
         /// Creates UTRs for transcripts and intergenic regions after reading gene model
         /// </summary>
-        public void CreateUTRsAndIntergenicRegions()
+        public void CreateIntergenicRegions()
         {
             foreach (IntervalTree it in GenomeForest.Forest.Values)
             {
@@ -323,12 +379,6 @@ namespace Proteogenomics
                     {
                         GenomeForest.Add(intergenic);
                     }
-
-                    // while we're here, set the regions of each transcript, too
-                    foreach (Transcript t in gene.Transcripts)
-                    {
-                        Transcript.SetRegions(t);
-                    }
                 }
             }
         }
@@ -340,18 +390,26 @@ namespace Proteogenomics
         public List<Transcript> ApplyVariants(List<Variant> variants)
         {
             // first, add variants to relevant genomic regions
-            foreach (Variant v in variants.OrderByDescending(v => v.OneBasedStart).ToList())
+            Parallel.ForEach(variants.OrderByDescending(v => v.OneBasedStart).ToList(), v =>
             {
-                List<Interval> intervals = GenomeForest.Forest[Chromosome.GetFriendlyChromosomeName(v.ChromosomeID)].Stab(v.OneBasedStart);
-                foreach (Interval i in intervals)
+                if (GenomeForest.Forest.TryGetValue(Chromosome.GetFriendlyChromosomeName(v.ChromosomeID), out var intervalTree))
                 {
-                    i.Variants.Add(v);
+                    foreach (Interval i in intervalTree.Stab(v.OneBasedStart))
+                    {
+                        lock (i) { i.Variants.Add(v); }
+                    }
                 }
-            }
+            });
 
             // then, apply them
-            return Genes.SelectMany(g => g.Transcripts)
-                .SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
+            //List<Transcript> variantTranscripts = new List<Transcript>();
+            //Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t =>
+            //{
+            //    List<Transcript> transcripts = ApplyVariantsCombinitorially(t);
+            //    lock (variantTranscripts) { variantTranscripts.AddRange(transcripts); }
+            //});
+            //return variantTranscripts;
+            return Genes.SelectMany(g => g.Transcripts).SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
         }
 
         /// <summary>
@@ -362,15 +420,27 @@ namespace Proteogenomics
         public static List<Transcript> ApplyVariantsCombinitorially(Transcript t)
         {
             List<Transcript> newTranscripts = new List<Transcript> { new Transcript(t) };
-            if (t.Variants.Count(v => v.GenotypeType == GenotypeType.HETEROZYGOUS) > 5) // avoid large combinitoric problems for now (heterozygous count > 5)
-            {
-                Transcript.combinatoricFailures.Add(t.ID + " " + t.ProteinID);
-                return newTranscripts;
-            }
+            int heterozygousNonsynonymousCount = 0;
             List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
             foreach (Variant v in transcriptVariants)
             {
-                newTranscripts = newTranscripts.SelectMany(nt => nt.ApplyVariantCombinitorics(v)).ToList(); // expands only when there is a heterozygous nonsynonymous variation
+                List<Transcript> newOnes = new List<Transcript>();
+                foreach (var nt in newTranscripts)
+                {
+                    var newerOnes = nt.ApplyVariantCombinitorics(v, out var effects); // expands only when there is a heterozygous nonsynonymous variation
+                    bool heterozygousNonsynonymous = v.GenotypeType == GenotypeType.HETEROZYGOUS && effects.Effects.Any(eff => eff.IsNonsynonymous());
+                    if (heterozygousNonsynonymous)
+                    {
+                        heterozygousNonsynonymousCount++;
+                    }
+                    if (heterozygousNonsynonymousCount > 5 && heterozygousNonsynonymous)
+                    {
+                        Transcript.combinatoricFailures.Add("Heterozygous nonsynonymous variant: transcript:" + v.ToString() + " wasn't included in transcript: " + t.ID + " or protein: " + t.ProteinID);
+                        break; // avoid large combinitoric problems for now (heterozygous, nonsynonymous count > 5), but still stick in the homozygous variation
+                    }
+                    newOnes.AddRange(newerOnes);
+                }
+                newTranscripts = newOnes;
             }
             return newTranscripts;
         }

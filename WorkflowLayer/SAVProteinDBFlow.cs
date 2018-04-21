@@ -146,22 +146,29 @@ namespace WorkflowLayer
             string proteinMetrics = outprefix + ".protein.metrics";
             using (StreamWriter writer = new StreamWriter(proteinMetrics))
             {
-                writer.WriteLine(Transcript.combinatoricFailures.Count > 0 ? String.Join(",", Transcript.combinatoricFailures) : "0" + "\ttranscripts had too many heterozygous variants for combinatorics");
                 Transcript.combinatoricFailures = new List<string>();
                 writer.WriteLine(proteinsToWrite.Count.ToString() + "\tprotein sequences");
                 writer.WriteLine(proteinsToWrite.Min(p => p.BaseSequence.Length).ToString() + "\tminimum length");
                 writer.WriteLine(proteinsToWrite.Max(p => p.BaseSequence.Length).ToString() + "\tmaxium length");
                 writer.WriteLine(proteinsToWrite.Average(p => p.BaseSequence.Length).ToString() + "\taverage length");
                 writer.WriteLine();
-                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf("missense") > 0).ToString() + "\tSAV sequences");
-                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace("missense", "").Length) / "missense".Length).ToList();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(FunctionalClass.MISSENSE.ToString()) > 0).ToString() + "\tSAV sequences");
+                List<int> instancesOfSavs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(FunctionalClass.MISSENSE.ToString(), "").Length) / FunctionalClass.MISSENSE.ToString().Length).ToList();
                 writer.WriteLine(instancesOfSavs.Max().ToString() + "\tmaximum SAVs in a sequence");
                 if (instancesOfSavs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSavs.Where(x => x > 0).Average().ToString() + "\taverage SAVs in sequence with one");
                 writer.WriteLine();
-                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf("synonymous") > 0).ToString() + "\tsequences with synonymous codon variation");
-                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace("synonymous", "").Length) / "synonymous".Length).ToList();
+                writer.WriteLine(proteinsToWrite.Count(p => p.FullName.IndexOf(FunctionalClass.SILENT.ToString()) > 0).ToString() + "\tsequences with synonymous codon variation");
+                List<int> instancesOfSynonymousSnvs = proteinsToWrite.Select(p => (p.FullName.Length - p.FullName.Replace(FunctionalClass.SILENT.ToString(), "").Length) / FunctionalClass.SILENT.ToString().Length).ToList();
                 writer.WriteLine(instancesOfSynonymousSnvs.Max().ToString() + "\tmaximum synonymous variations in a sequence");
                 if (instancesOfSynonymousSnvs.Count(x => x > 0) > 0) writer.WriteLine(instancesOfSynonymousSnvs.Where(x => x > 0).Average().ToString() + "\taverage synonymous variations in sequence with one");
+
+                writer.WriteLine();
+                writer.WriteLine("Skipped due to combinitoric explosion (> 5 heterozygous nonsynonymous variations):");
+                writer.WriteLine(Transcript.combinatoricFailures.Count.ToString() + "\theterozygous nonsynonymous variations skipped");
+                foreach (string failure in Transcript.combinatoricFailures)
+                {
+                    writer.WriteLine(failure);
+                }
             }
             return proteinMetrics;
         }

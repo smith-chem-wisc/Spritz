@@ -21,10 +21,10 @@ namespace ToolWrapperLayer
     {
         public static string IsoformResultsSuffix { get; } = ".isoforms.results";
         public static string GeneResultsSuffix { get; } = ".genes.results";
-        public static string TranscriptBamSuffix { get; } = ".transcript.sorted.bam"; // these implemented methods always sort after RSEM
-        public static string TranscriptBamIndexSuffix { get; } = ".transcript.sorted.bam.bai";
-        public static string GenomeBamSuffix { get; } = ".genome.sorted.bam";
-        public static string GenomeBamIndexSuffix { get; } = ".genome.sorted.bam.bai";
+        public static string TranscriptBamSuffix { get; } = ".transcript.bam";
+        public static string GenomeBamSuffix { get; } = ".genome.bam";
+        public static string GenomeSortedBamSuffix { get; } = ".genome.sorted.bam";
+        public static string GenomeSortedBamIndexSuffix { get; } = ".genome.sorted.bam.bai";
         public static string TimeSuffix { get; } = ".time";
         public static string StatDirectorySuffix { get; } = ".stat";
 
@@ -136,10 +136,16 @@ namespace ToolWrapperLayer
                     " " +
                     String.Join(",", fastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
-            string bamOption = doOuptutBam ?
-                "--output-genome-bam --sort-bam-by-coordinate --sort-bam-memory-per-thread " + SamtoolsWrapper.GetSamtoolsMemoryString() :
-                "--no-bam-output";
+            string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
             outputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]));
+
+            // RSEM likes to sort the transcript.bam file, which takes forever and isn't very useful, I've found. Just sort the genome.bam file instead
+            string samtoolsCommands = !doOuptutBam ? 
+                "" :
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(outputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(outputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
+                    "  " + SamtoolsWrapper.SortBam(binDirectory, outputPrefix + GenomeBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.IndexBamCommand(binDirectory, outputPrefix + GenomeSortedBamSuffix) + "\n" +
+                    "fi";
 
             // construct the commands
             var scriptStrings = new List<string>
@@ -156,7 +162,8 @@ namespace ToolWrapperLayer
                         inputOption + " " +
                         WrapperUtility.ConvertWindowsPath(referencePrefix) + " " +
                         WrapperUtility.ConvertWindowsPath(outputPrefix) +
-                "; fi"
+                "; fi",
+                samtoolsCommands
             };
             return scriptStrings;
         }

@@ -22,7 +22,7 @@ namespace Proteogenomics
 
         public static string GetFriendlyChromosomeName(string chromosomeID)
         {
-            return chromosomeID.Split(new string[] { ProteogenomicsUtility.ENSEMBL_FASTA_HEADER_DELIMETER }, StringSplitOptions.None)[0];
+            return chromosomeID.Split(new string[] { ProteogenomicsUtility.EnsemblFastaHeaderDelimeter }, StringSplitOptions.None)[0];
         }
     }
 }

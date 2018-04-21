@@ -57,6 +57,11 @@ namespace Test
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
 
+            // slncky
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
+            Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "lastz*").Length > 0);
+
             // snpeff
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "snpEff.jar")));
 
@@ -69,11 +74,6 @@ namespace Test
 
             // star-fusion
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
-
-            // slncky
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
-            Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "lastz*").Length > 0);
         }
 
         private string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa");
@@ -283,9 +283,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         [Test, Order(2)]
@@ -314,9 +314,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         [Test, Order(4)]
@@ -349,9 +349,9 @@ namespace Test
             Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamIndexSuffix));
             Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         // I'm having trouble getting RSEM to work with comma-separated inputs... I think it's because of STAR, which I have had trouble with in this respect in the past.

@@ -60,7 +60,7 @@ namespace Proteogenomics
                 }
                 else
                 {
-                    UTRs = UTRs.OrderBy(u => u.OneBasedEnd).ToList(); // Sort by end position (reversed)
+                    UTRs = UTRs.OrderByDescending(u => u.OneBasedEnd).ToList(); // Sort by end position (reversed)
                 }
             }
 
@@ -90,7 +90,7 @@ namespace Proteogenomics
         private static string startGained(char[] chars, long pos)
         {
             // Analyze all frames
-            for (long i = Math.Max(0, pos - 2); (i <= pos) && ((i + 2) < chars.Length); i++)
+            for (long i = Math.Max(0, pos - 2); i <= pos && i + 2 < chars.Length; i++)
             {
                 string codon = "" + chars[i] + chars[i + 1] + chars[i + 2];
                 if (CodonsStandard.START_CODONS.Contains(codon.ToUpper(CultureInfo.InvariantCulture)))
@@ -130,7 +130,7 @@ namespace Proteogenomics
         public override bool CreateVariantEffect(Variant variant, VariantEffects variantEffects)
         {
             // Has the whole UTR been deleted?
-            if (variant.Includes(this) && (variant.VarType == Variant.VariantType.DEL))
+            if (variant.Includes(this) && variant.VarType == Variant.VariantType.DEL)
             {
                 variantEffects.AddEffect(variant, this, EffectType.UTR_5_DELETED, ""); // A UTR was removed entirely
                 return true;

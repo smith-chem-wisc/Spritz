@@ -170,16 +170,15 @@ namespace Test
             Assert.IsTrue(proteinFastaLines[0].Contains("1:69666"));
         }
 
-        // Is this one just wrong?? It's as if they didn't reverse the order of the exons on the reverse strand
-        //[Test]
-        //public void TranslateReverseStrand()
-        //{
-        //    Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-        //    GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript_reverse.gtf"));
-        //    List<Protein> proteins_wo_variant = geneModel.Translate(true, false).ToList();
-        //    Assert.AreEqual("FFYFIIWSLTLLPRAGLELLTSSDPPASASQSVGITGVSHHAQ",
-        //        proteins_wo_variant[0].BaseSequence);
-        //}
+        [Test]
+        public void TranslateReverseStrand()
+        {
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript_reverse.gtf"));
+            List<Protein> proteins_wo_variant = geneModel.Translate(true).ToList();
+            Assert.AreEqual("FFYFIIWSLTLLPRAGLELLTSSDPPASASQSVGITGVSHHAQ",
+                proteins_wo_variant[0].BaseSequence);
+        }
 
         [Test]
         public void TranslateAnotherReverseStrand()
@@ -244,40 +243,41 @@ namespace Test
                 proteins[0].BaseSequence);
         }
 
-        //[Test]
-        //public void GetExonSeqsWithNearbyVariants()
-        //{
-        //    MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
-        //    Exon x = new Exon(null, new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 250).ToArray())), 0, 249, "1", "+");
-        //    VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "aFewNearby.vcf"));
-        //    x.Variants = vcf.Select(v => new Variant(x, v, null)).ToList();
-        //    List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);
-        //    Assert.AreEqual(4, h.Count);
-        //}
+        [Test]
+        public void ProblematicChr19Gene()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr19script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "problematicChr19Gene.gff3"));
+            geneModel.ApplyVariants(new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "chr19problematic.vcf")).Select(v => new Variant(null, v, genome.Chromosomes[0])).ToList());
+        }
 
-        //[Test]
-        //public void GetExonSeqsWithTonsNearby()
-        //{
-        //    MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
-        //    metadata.SubItems["strand"] = new List<string> { "+" };
-        //    Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 300).ToArray())), 0, 299, "1", metadata);
-        //    VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "tonsNearby.vcf"));
-        //    x.Variants = vcf.ToList();
-        //    List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101);
-        //    Assert.AreEqual(2, h.Count);
-        //}
 
-        //[Test]
-        //public void GetExonSeqsWithTonsFarApart()
-        //{
-        //    MetadataListItem<List<string>> metadata = new MetadataListItem<List<string>>("something", "somethingAgain");
-        //    metadata.SubItems["strand"] = new List<string> { "+" };
-        //    Exon x = new Exon(new Sequence(Alphabets.DNA, new string(Enumerable.Repeat('A', 4001).ToArray())), 0, 4000, "1", metadata);
-        //    VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "tonsFarApart.vcf"));
-        //    x.Variants = vcf.ToList();
-        //    List<Exon> h = x.GetExonSequences(10, true, 0.9, false, 101); // would produce 1024 combos without capping max combos
-        //    Assert.AreEqual(8, h.Count);
-        //}
+        [Test]
+        public void Chr19VariantTranscript()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr19script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.19.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "chr19variantTranscript.gff3"));
+            var variants = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "problematicChr19", "chr19problematic.vcf"))
+                .Select(v => new Variant(null, v, genome.Chromosomes[0]))
+                .Where(v => v.SecondAlleleString.Length == 1 && v.ReferenceAlleleString.Length == 1).ToList();
+            List <Transcript> transcripts = geneModel.ApplyVariants(variants).ToList();
+            List<Protein> proteins = transcripts.Select(t => t.Protein(null)).ToList();
+            int i = 0;
+        }
 
         // test todo: transcript with zero CodingSequenceExons and try to translate them to check that it doesn fail
         // test todo: multiple transcripts

@@ -122,6 +122,7 @@ namespace Proteogenomics
             : base(parent, variant.Chr, "+", variant.Start, variant.End, null)
         {
             Chromosome = chromosome;
+            VariantContext = variant;
             ReferenceAllele = variant.Reference;
             ReferenceAlleleString = variant.Reference.BaseString;
             Genotype = variant.Genotypes.First(); // assumes just one sample
