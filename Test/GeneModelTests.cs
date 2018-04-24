@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using Bio;
+using Bio.Extensions;
+using Bio.IO.FastA;
+using NUnit.Framework;
 using Proteogenomics;
 using Proteomics;
 using System.Collections.Generic;
@@ -95,6 +98,116 @@ namespace Test
         }
 
         [Test]
+        public void TranslateReverseStrand()
+        {
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_one_transcript_reverse.gtf"));
+            List<Protein> proteins_wo_variant = geneModel.Translate(true).ToList();
+            Assert.AreEqual("FFYFIIWSLTLLPRAGLELLTSSDPPASASQSVGITGVSHHAQ",
+                proteins_wo_variant[0].BaseSequence);
+        }
+
+        [Test]
+        public void TranslateAnotherReverseStrand()
+        {
+            // See http://useast.ensembl.org/Homo_sapiens/Transcript/Sequence_cDNA?db=core;g=ENSG00000233306;r=7:38362864-38363518;t=ENST00000426402
+
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr7script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.7.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.7.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.7.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.7.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.7.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.7.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr7_one_transcript_reverse.gtf"));
+            List<Protein> proteins = geneModel.Translate(true).ToList();
+            Assert.AreEqual("MQWALAVLLAFLSPASQKSSNLEGRTKSVIRQTGSSAEITCDLAEGSNGYIHWYLHQEGKAPQRLQYYDSYNSKVVLESGVSPGKYYTYASTRNNLRLILRNLIENDFGVYYCATWDG",
+                proteins[0].BaseSequence);
+        }
+
+        [Test]
+        public void TranslateHardReverseStrand()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr14script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.14.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.14.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.14.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.14.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.14.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.14.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "HardReverseStrand", "reverse.gff3"));
+            List<Protein> proteins = geneModel.Translate(true).ToList();
+            ISequence codingSequence = new FastAParser().Parse(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "HardReverseStrand", "codingSeq.fa")).First();
+            Assert.AreEqual(SequenceExtensions.ConvertToString(codingSequence),
+                SequenceExtensions.ConvertToString(geneModel.Genes[0].Transcripts[0].RetrieveCodingSequence()));
+            Assert.AreEqual("MNLQAQPKAQNKRKRCLFGGQEPAPKEQPPPLQPPQQSIRVKEEQYLGHEGPGGAVSTSQ" +
+                "PVELPPPSSLALLNSVVYGPERTSAAMLSQQVASVKWPNSVMAPGRGPERGGGGGVSDSS" +
+                "WQQQPGQPPPHSTWNCHSLSLYSATKGSPHPGVGVPTYYNHPEALKREKAGGPQLDRYVR" +
+                "PMMPQKVQLEVGRPQAPLNSFHAAKKPPNQSLPLQPFQLAFGHQVNRQVFRQGPPPPNPV" +
+                "AAFPPQKQQQQQQPQQQQQQQQAALPQMPLFENFYSMPQQPSQQPQDFGLQPAGPLGQSH" +
+                "LAHHSMAPYPFPPNPDMNPELRKALLQDSAPQPALPQVQIPFPRRSRRLSKEGILPPSAL" +
+                "DGAGTQPGQEATGNLFLHHWPLQQPPPGSLGQPHPEALGFPLELRESQLLPDGERLAPNG" +
+                "REREAPAMGSEEGMRAVSTGDCGQVLRGGVIQSTRRRRRASQEANLLTLAQKAVELASLQ" +
+                "NAKDGSGSEEKRKSVLASTTKCGVEFSEPSLATKRAREDSGMVPLIIPVSVPVRTVDPTE" +
+                "AAQAGGLDEDGKGPEQNPAEHKPSVIVTRRRSTRIPGTDAQAQAEDMNVKLEGEPSVRKP" +
+                "KQRPRPEPLIIPTKAGTFIAPPVYSNITPYQSHLRSPVRLADHPSERSFELPPYTPPPIL" +
+                "SPVREGSGLYFNAIISTSTIPAPPPITPKSAHRTLLRTNSAEVTPPVLSVMGEATPVSIE" +
+                "PRINVGSRFQAEIPLMRDRALAAADPHKADLVWQPWEDLESSREKQRQVEDLLTAACSSI" +
+                "FPGAGTNQELALHCLHESRGDILETLNKLLLKKPLRPHNHPLATYHYTGSDQWKMAERKL" +
+                "FNKGIAIYKKDFFLVQKLIQTKTVAQCVEFYYTYKKQVKIGRNGTLTFGDVDTSDEKSAQ" +
+                "EEVEVDIKTSQKFPRVPLPRRESPSEERLEPKREVKEPRKEGEEEVPEIQEKEEQEEGRE" +
+                "RSRRAAAVKATQTLQANESASDILILRSHESNAPGSAGGQASEKPREGTGKSRRALPFSE" +
+                "KKKKTETFSKTQNQENTFPCKKCGR",
+                proteins[0].BaseSequence);
+        }
+
+        [Test]
+        public void TranslateSelenocysteineContaining()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr5script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then wget ftp://ftp.ensembl.org/pub/release-81//fasta/homo_sapiens/pep/Homo_sapiens.GRCh38.pep.all.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.pep.all.fa ]; then gunzip " + EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename + ".gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.5.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.5.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.5.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.5.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.5.fa")),
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.pep.all.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.5.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr5_selenocysteineContaining.gff3"));
+            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+            List<Protein> proteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions).ToList();
+            Assert.AreEqual("MWRSLGLALALCLLPSGGTESQDQSSLCKQPPAWSIRDQDPMLNSNGSVTVVALLQASUYLCILQASKLEDLRVKLKKEGYSNISYIVVNHQGISSRLKYTHLKNKVSEHIPVYQQEENQTDVWTLLNGSKDDFLIYDRCGRLVYHLGLPFSFLTFPYVEEAIKIAYCEKKCGNCSLTTLKDEDFCKRVSLATVDKTVETPSPHYHHEHHHNHGHQHLGSSELSENQQPGAPNAPTHPAPPGLHHHHKHKGQHRQGHPENRDMPASEDLQDLQKKLCRKRCINQLLCKLPTDSELAPRSUCCHCRHLIFEKTGSAITUQCKENLPSLCSUQGLRAEENITESCQURLPPAAUQISQQLIPTEASASURUKNQAKKUEUPSN",
+                proteins[0].BaseSequence);
+        }
+
+        [Test]
+        public void TranslateMTSeq()
+        {
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr7script.bash"), new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.MT.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.MT.fa.gz; fi",
+                "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.MT.fa ]; then gunzip Homo_sapiens.GRCh38.dna.chromosome.MT.fa.gz; fi",
+                WrapperUtility.EnsureClosedFileCommands(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.MT.fa"))
+            }).WaitForExit();
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.MT.fa"));
+
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chrM_one_transcript_reverse.gtf"));
+            List<Protein> proteins = geneModel.Translate(true).ToList();
+            Assert.AreEqual("MPMANLLLLIVPILIAMAFLMLTERKILGYMQLRKGPNVVGPYGLLQPFADAMKLFTKEPLKPATSTITLYITAPTLALTIALLLWTPLPMPNPLVNLNLGLLFILATSSLAVYSILWSGWASNSNYALIGALRAVAQTISYEVTLAIILLSTLLMSGSFNLSTLITTQEHLWLLLPSWPLAMMWFISTLAETNRTPFDLAEGESELVSGFNIEYAAGPFALFFMAEYTNIIMMNTLTTTIFLGTTYDALSPELYTTYFVTKTLLLTSLFLWIRTAYPRFRYDQLMHLLWKNFLPLTLALLMWYVSMPITISSIPPQT",
+                proteins[0].BaseSequence);
+
+            geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chrM_one_transcript_reverse2.gtf"));
+            proteins = geneModel.Translate(true).ToList();
+            Assert.AreEqual("MNPLAQPVIYSTIFAGTLITALSSHWFFTWVGLEMNMLAFIPVLTKKMNPRSTEAAIKYFLTQATASMILLMAILFNNMLSGQWTMTNTTNQYSSLMIMMAMAMKLGMAPFHFWVPEVTQGTPLTSGLLLLTWQKLAPISIMYQISPSLNVSLLLTLSILSIMAGSWGGLNQTQLRKILAYSSITHMGWMMAVLPYNPNMTILNLTIYIILTTTAFLLLNLNSSTTTLLLSRTWNKLTWLTPLIPSTLLSLGGLPPLTGFLPKWAIIEEFTKNNSLIIPTIMATITLLNLYFYLRLIYSTSITLLPMSNNVKMKWQFEHTKPTPFLPTLIALTTLLLPISPFMLMIL",
+                proteins[0].BaseSequence);
+        }
+
+        [Test]
         public void SameProteins()
         {
             EnsemblDownloadsWrapper.DownloadReferences(
@@ -111,19 +224,18 @@ namespace Test
             Genome genome = new Genome(genomeFastaPath);
             GeneModel geneModel = new GeneModel(genome, gff);
             List<Protein> geneBasedProteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions);
-            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
+            List<Protein> pepDotAll = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 
-            foreach (Protein p in proteins)
+            foreach (Protein p in pepDotAll)
             {
                 // now handled with the badAccessions // && !p.BaseSequence.Contains('*') && !seq.Contains('*') && !p.BaseSequence.Contains('X'))
                 if (accSeq.TryGetValue(p.Accession, out string seq))
                 {
-                    Assert.AreEqual(p.BaseSequence.Substring(1), seq.Substring(1));
+                    Assert.AreEqual(p.BaseSequence, seq);
                 }
             }
         }
-
 
         //[Test]
         //public void TryMakingVariantDatabas()

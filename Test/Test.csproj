@@ -150,6 +150,12 @@
     <None Include="TestData\chrM_one_transcript_reverse2.gtf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="TestData\HardReverseStrand\codingSeq.fa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\HardReverseStrand\reverse.gff3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\headers.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

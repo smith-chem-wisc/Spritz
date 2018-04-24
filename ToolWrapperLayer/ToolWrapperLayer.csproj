@@ -111,6 +111,7 @@
     <Compile Include="LastzWrapper.cs" />
     <Compile Include="MeltingWrapper.cs" />
     <Compile Include="MfoldWrapper.cs" />
+    <Compile Include="NanonetWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RSEMWrapper.cs" />
     <Compile Include="RSeQCWrapper.cs" />

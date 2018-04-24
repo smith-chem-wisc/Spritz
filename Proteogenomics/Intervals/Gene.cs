@@ -19,15 +19,13 @@ namespace Proteogenomics
         /// <param name="oneBasedStart"></param>
         /// <param name="oneBasedEnd"></param>
         /// <param name="metadata"></param>
-        public Gene(string id, Chromosome chromosome, string strand, long oneBasedStart, long oneBasedEnd, MetadataListItem<List<string>> metadata)
+        public Gene(string id, Chromosome chromosome, string strand, long oneBasedStart, long oneBasedEnd)
             : base(chromosome, chromosome.Sequence.ID, strand, oneBasedStart, oneBasedEnd, null)
         {
             ID = id;
             Chromosome = chromosome;
-            Metadata = metadata;
         }
 
-        private MetadataListItem<List<string>> Metadata { get; set; }
         public string ID { get; set; }
         public Chromosome Chromosome { get; set; }
         public List<Transcript> Transcripts { get; set; } = new List<Transcript>();

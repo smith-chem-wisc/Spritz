@@ -76,6 +76,7 @@ namespace WorkflowLayer
             bool useReadSubset = false, int readSubset = 300000)
         {
             PrepareEnsemblGenomeFasta(genomeFasta, out Genome ensemblGenome, out string reorderedFasta);
+            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(binDirectory, geneModelGtfOrGff);
             STARAlignmentFlow.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
 
@@ -86,8 +87,13 @@ namespace WorkflowLayer
             List<string> annotatedVcfFilePaths = new List<string>();
             List<string> snpEffHtmlFilePaths = new List<string>();
             List<string> annotatedGenesSummaryPaths = new List<string>();
+            List<string> scapelVcfFilePaths = new List<string>();
+            List<string> annotatedScapelVcfFilePaths = new List<string>();
+            List<string> scalpelSnpEffHtmlFilePaths = new List<string>();
+            List<string> scalpelAnnotatedGenesSummaryPaths = new List<string>();
             foreach (string dedupedBam in dedupedBamFiles)
             {
+                // GATK
                 variantCallingCommands.AddRange(GATKWrapper.SplitNCigarReads(binDirectory, genomeFasta, dedupedBam, out string splitTrimBam));
                 variantCallingCommands.AddRange(GATKWrapper.VariantCalling(binDirectory, threads, reorderedFasta, splitTrimBam, Path.Combine(binDirectory, ensemblKnownSitesPath), out string vcfPath));
                 vcfFilePaths.Add(vcfPath);
@@ -95,6 +101,14 @@ namespace WorkflowLayer
                 annotatedVcfFilePaths.Add(annotatedVcfPath);
                 snpEffHtmlFilePaths.Add(htmlReport);
                 annotatedGenesSummaryPaths.Add(annotatedGenesSummaryPath);
+
+                // Scalpel -- findVariant command is failing right now for
+                //variantCallingCommands.AddRange(ScalpelWrapper.CallIndels(binDirectory, threads, genomeFasta, sortedBed12Path, splitTrimBam, Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + "_scalpelOut"), out string scalpelVcf));
+                //scapelVcfFilePaths.Add(scalpelVcf);
+                //variantCallingCommands.AddRange(SnpEffWrapper.PrimaryVariantAnnotation(binDirectory, reference, scalpelVcf, out string htmlReport2, out string annotatedScalpelVcfPath, out string annotatedGenesSummaryPath2));
+                //annotatedScapelVcfFilePaths.Add(annotatedScalpelVcfPath);
+                //scalpelSnpEffHtmlFilePaths.Add(htmlReport2);
+                //scalpelAnnotatedGenesSummaryPaths.Add(annotatedGenesSummaryPath2);
             }
             WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
 

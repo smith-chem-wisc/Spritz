@@ -775,7 +775,7 @@ namespace Proteogenomics
             }
 
             // Append all exon sequences
-            IAlphabet alphabet = null;
+            IAlphabet alphabet = Alphabets.DNA;
             bool missingSequence = false;
             foreach (Exon exon in exons)
             {
@@ -917,13 +917,20 @@ namespace Proteogenomics
         }
 
         /// <summary>
-        /// Fix transcripts having non-zero frames in first exon, used prior to making UTRs
+        /// Fix coding domain sequences that have end frames
         /// </summary>
         /// <returns></returns>
         public void FrameCorrection()
         {
             // No coding domains? Nothing to do
             if (CdsSortedStrand == null || CdsSortedStrand.Count == 0) { return; }
+
+            CDS cdsFirst = CdsSortedStrand.First();
+            if (cdsFirst != null)
+            {
+                UTR5Prime utr = cdsFirst.StartFrameCorrection();
+                if (utr != null) { UTRs.Add(utr); }
+            }
 
             CDS cdsLast = CdsSortedStrand.Last();
             if (cdsLast != null)
