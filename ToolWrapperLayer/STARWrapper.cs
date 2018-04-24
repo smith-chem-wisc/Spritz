@@ -296,10 +296,12 @@ namespace ToolWrapperLayer
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
                 "  STAR/source/STAR" + alignmentArguments,
                 overwriteStarAlignment ? "" : "fi",
+                SamtoolsWrapper.IndexBamCommand(binDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
                 "  STAR/source/STAR" + dedupArguments,
                 overwriteStarAlignment ? "" : "fi",
+                SamtoolsWrapper.IndexBamCommand(binDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
 
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
                     "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :

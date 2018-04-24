@@ -19,11 +19,11 @@ namespace Test
             Sequence seq = new Sequence(Alphabets.DNA, "AAA".Select(cc => (byte)cc).ToArray(), false);
             seq.ID = "1";
             Chromosome c = new Chromosome(seq, null);
-            Gene g = new Gene("", c, "+", 1, 3, null);
+            Gene g = new Gene("", c, "+", 1, 3);
             Transcript t = new Transcript("", "", g, "+", 1, 3, "", null);
             Exon x = new Exon(t, seq, 1, 3, seq.ID, "+", null);
             t.Exons = new List<Exon> { x };
-            CDS cds = new CDS(t, seq.ID, "+", 1, 3, null);
+            CDS cds = new CDS(t, seq.ID, "+", 1, 3, null, 0);
             t.CodingDomainSequences = new List<CDS> { cds };
 
             // Make a missense mutation

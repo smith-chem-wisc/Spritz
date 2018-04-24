@@ -10,7 +10,7 @@ namespace Proteogenomics
         /// <summary>
         /// All start codons are translated as "M", even if alternative start codons, since an different tRNA is used. https://en.wikipedia.org/wiki/Start_codon
         /// </summary>
-        public static readonly string DEFAULT_START_AA = "M";
+        public static readonly char DEFAULT_START_AA = 'M';
 
         /// <summary>
         /// Start codons for the vertebral mitochondrial genetic code.

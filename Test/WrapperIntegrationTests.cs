@@ -163,6 +163,13 @@ namespace Test
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed12")).Length > 0);
         }
 
+        [Test, Order(1)]
+        public void TestConvertGffToBed12()
+        {
+            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
+            Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", Path.GetFileNameWithoutExtension("sample_gff.gff3") + ".bed12")).Length > 0);
+        }
+
         #endregion BED conversion tests
 
         #region Minimal STAR alignment tests
@@ -548,7 +555,7 @@ namespace Test
             WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "gatkWorkflowTest.bash"), new List<string>
             (
                 GATKWrapper.PrepareBamAndFasta(TestContext.CurrentContext.TestDirectory,
-                8,
+                Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 "grch37",
@@ -575,7 +582,7 @@ namespace Test
                 //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.vcf"));
 
                 GATKWrapper.VariantCalling(TestContext.CurrentContext.TestDirectory,
-                8,
+                Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 splitTrimBam,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
@@ -607,7 +614,7 @@ namespace Test
             string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam");
             CufflinksWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
-                8,
+                Environment.ProcessorCount,
                 bamPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
@@ -628,13 +635,14 @@ namespace Test
         [Test, Order(4)]
         public void ScalpelCall()
         {
-            ScalpelWrapper.CallIndels(TestContext.CurrentContext.TestDirectory,
-                8,
+            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "scalpel.bash"),  
+                ScalpelWrapper.CallIndels(TestContext.CurrentContext.TestDirectory,
+                Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "scalpel_test_out"),
-                out string newVcf);
+                out string newVcf)).WaitForExit();
             Assert.IsTrue(File.Exists(newVcf));
         }
 
@@ -715,7 +723,7 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
-                8,
+                Environment.ProcessorCount,
                 new List<string[]>
                 {
                     new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq") },
@@ -751,7 +759,7 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
-                8,
+                Environment.ProcessorCount,
                 new List<string[]>
                 {
                     new string[] {
@@ -789,7 +797,7 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
-                8,
+                Environment.ProcessorCount,
                 "SRR6319804",
                 false,
                 false,
@@ -805,7 +813,7 @@ namespace Test
             foreach (string database in proteinDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                // Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant"))); no variants anymore with the filtering criteria
+                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));// no variants anymore with the filtering criteria
             }
         }
 

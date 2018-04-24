@@ -23,12 +23,28 @@ namespace Proteogenomics
         public static ISequence OneFrameTranslation(ISequence dnaSequence, bool mitochondrial)
         {
             ISequence rnaSequence = Transcription.Transcribe(dnaSequence);
-            ISequence proteinSequence = !mitochondrial ?
-                ProteinTranslation.Translate(rnaSequence) :
-                new Sequence(Alphabets.AmbiguousProtein, String.Join("", Enumerable.Range(0, (int)(rnaSequence.Count / 3))
-                    .Select(codonNum => CodonsVertebrateMitochondrial.TryLookup(rnaSequence, codonNum * 3, out byte aa) ?
-                        new string(new[] { (char)aa }) :
-                        "X")));
+            ISequence proteinSequence;
+            if (!mitochondrial)
+            {
+                proteinSequence = ProteinTranslation.Translate(rnaSequence);
+            }
+            else
+            {
+                List<byte> aminoAcidSequence = new List<byte>();
+                for (int codonNum = 0; codonNum < (int)(rnaSequence.Count / 3); codonNum++)
+                {
+                    // Check for start codon, and add 'M' if so
+                    if (aminoAcidSequence.Count == 0 &&
+                        CodonsVertebrateMitochondrial.START_CODONS.Contains(
+                            new string(dnaSequence.GetSubSequence(codonNum * 3, CodonChange.CODON_SIZE).Select(bp => (char)bp).ToArray())))
+                    {
+                        aminoAcidSequence.Add((byte)CodonsVertebrateMitochondrial.DEFAULT_START_AA);
+                        continue;
+                    }
+                    aminoAcidSequence.Add(CodonsVertebrateMitochondrial.TryLookup(rnaSequence, codonNum * 3, out byte aa) ? aa : (byte)'X');
+                }
+                proteinSequence = new Sequence(Alphabets.AmbiguousProtein, aminoAcidSequence.ToArray());
+            }
             return proteinSequence;
         }
 

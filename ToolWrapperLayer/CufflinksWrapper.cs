@@ -1,6 +1,7 @@
 ﻿using Proteogenomics;
 using System.Collections.Generic;
 using System.IO;
+using System;
 
 namespace ToolWrapperLayer
 {
@@ -107,6 +108,21 @@ namespace ToolWrapperLayer
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
                     (isStranded ? "--library-type fr-firststrand" : "") +
                     " $bam",
+            }).WaitForExit();
+        }
+
+        public static void GffToGtf(string binDirectory, string geneModelGffPath, out string geneModelGtfPath)
+        {
+            if (!Path.GetExtension(geneModelGffPath).StartsWith(".gff"))
+            {
+                throw new ArgumentException("Input gene model must be gff formatted to convert to gtf.");
+            }
+            geneModelGtfPath = Path.Combine(Path.GetDirectoryName(geneModelGffPath), Path.GetFileNameWithoutExtension(geneModelGffPath) + ".gtf");
+            string script_name = Path.Combine(binDirectory, "scripts", "gffToGtf.bash");
+            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cufflinks-2.2.1/gffread " + WrapperUtility.ConvertWindowsPath(geneModelGffPath) + " -T -o " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath)
             }).WaitForExit();
         }
 

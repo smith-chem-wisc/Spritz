@@ -47,20 +47,21 @@ namespace ToolWrapperLayer
 
         // Need to filter VCF by FILTER = PASS; there are several reasons they don't accept calls that I trust
         // There's an attribute "ZYG" for zygosity, either "het" or "homo" for heterozygous or homozygous
-        public static void CallIndels(string bin_directory, int threads, string genome_fasta, string bed, string bam, string outdir, out string new_vcf)
+        public static List<string> CallIndels(string bin_directory, int threads, string genome_fasta, string bed, string bam, string outdir, out string newVcf)
         {
-            new_vcf = Path.Combine(outdir, "variants.indel.vcf");
-            string script_path = Path.Combine(bin_directory, "scripts", "scalpel.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            newVcf = Path.Combine(outdir, "variants.indel.vcf");
+            return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(bin_directory),
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(newVcf) + " || ! -s " + WrapperUtility.ConvertWindowsPath(newVcf) + " ]]; then " +
                 "scalpel-0.5.3/scalpel-discovery --single " +
                     "--bam " + WrapperUtility.ConvertWindowsPath(bam) +
                     " --ref " + WrapperUtility.ConvertWindowsPath(genome_fasta) +
                     " --bed " + WrapperUtility.ConvertWindowsPath(bed) +
                     " --numprocs " + threads.ToString() +
-                    " --dir " + WrapperUtility.ConvertWindowsPath(outdir),
-            }).WaitForExit();
+                    " --dir " + WrapperUtility.ConvertWindowsPath(outdir) +
+                "; fi",
+            };
         }
 
         #endregion Public Method

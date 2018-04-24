@@ -48,6 +48,7 @@ namespace WorkflowLayer
             "python",
             "r-base-core",
             "python-dev",
+            "python3-dev",
             "python-setuptools",
             "libpython2.7-dev",
             "perl-doc",
