@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UsefulProteomicsDatabases;
+using Proteogenomics;
 
 namespace ToolWrapperLayer
 {
@@ -210,6 +211,16 @@ namespace ToolWrapperLayer
             HashSet<string> badOnes = new HashSet<string>(proteins.Where(p => p.BaseSequence.Contains('X') || p.BaseSequence.Contains('*')).SelectMany(p => new string[] { p.Accession, transcriptAccession.Match(p.FullName).Groups[2].Value }));
             badProteinAccessions = badOnes;
             selenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);
+        }
+
+        public static void FilterGeneModel(string binDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
+        {
+            string grepQuery = "\"^" + String.Join(@"\|^", genome.Chromosomes.Select(c => c.FriendlyName).Concat(new[] { "#" }).ToList()) + "\"";
+            filteredGeneModel = Path.Combine(Path.GetDirectoryName(geneModelGtfOrGff), Path.GetFileNameWithoutExtension(geneModelGtfOrGff)) + ".filtered" + Path.GetExtension(geneModelGtfOrGff);
+            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "FilterGeneModel.bash"), new List<string>
+            {
+                "grep " + grepQuery + " " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) + " > " + WrapperUtility.ConvertWindowsPath(filteredGeneModel)
+            }).WaitForExit();
         }
     }
 }

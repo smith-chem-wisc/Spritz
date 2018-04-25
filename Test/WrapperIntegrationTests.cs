@@ -678,39 +678,6 @@ namespace Test
 
         #endregion SnpEff tests
 
-        #region Bigger STAR tests
-
-        //[Test]
-        //public void big_genome_generate()
-        //{
-        //    STARWrapper.generate_genome_index(TestContext.CurrentContext.TestDirectory,
-        //        8,
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "chr1"),
-        //        new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","chr1.fa") },
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "chr1.gtf"));
-        //    Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "chr1")));
-        //}
-
-        //[Test]
-        //public void big_align()
-        //{
-        //    STARWrapper.basic_align_reads
-        //    (
-        //        TestContext.CurrentContext.TestDirectory,
-        //        8,
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "chr1"),
-        //        new string[]
-        //        {
-        //            @"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\bin\Debug\wgEncodeCshlLongRnaSeqMcf7CellPapFastqRd2Rep1.fastq.segment.fastq",
-        //            @"C:\Users\antho\Documents\GitHub\ProteoformDatabaseEngine\Test\bin\Debug\wgEncodeCshlLongRnaSeqMcf7CellPapFastqRd1Rep1.fastq.segment.fastq"
-        //        },
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "wgEncodeRep1.")
-        //    );
-        //    Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "wgEncodeRep1.Aligned.out.bam")));
-        //}
-
-        #endregion Bigger STAR tests
-
         #region Runner Tests
 
         /// <summary>

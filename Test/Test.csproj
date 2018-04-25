@@ -266,6 +266,12 @@
     <Content Include="TestData\tonsNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="TestData\UtrProblem\gene.gtf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Content Include="TestData\UtrProblem\vcf.vcf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestData\xml2.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
