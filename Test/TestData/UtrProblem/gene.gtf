@@ -1,0 +1,13 @@
+﻿#!genome-build GRCh37.p13
+#!genome-version GRCh37
+#!genome-date 2009-02
+#!genome-build-accession NCBI:GCA_000001405.14
+#!genebuild-last-updated 2013-09
+20	protein_coding	gene	55933496	55934878	.	-	.	gene_id "ENSG00000256222"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding";
+20	protein_coding	transcript	55933496	55934878	.	-	.	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476";
+20	protein_coding	exon	55933496	55934878	.	-	.	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; exon_number "1"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476"; exon_id "ENSE00002247089";
+20	protein_coding	CDS	55934024	55934095	.	-	0	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; exon_number "1"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476"; protein_id "ENSP00000443339";
+20	protein_coding	start_codon	55934093	55934095	.	-	0	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; exon_number "1"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476";
+20	protein_coding	stop_codon	55934021	55934023	.	-	0	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; exon_number "1"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476";
+20	protein_coding	UTR	55934096	55934878	.	-	.	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476";
+20	protein_coding	UTR	55933496	55934020	.	-	.	gene_id "ENSG00000256222"; transcript_id "ENST00000543500"; gene_name "MTRNR2L3"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "MTRNR2L3-001"; transcript_source "ensembl_havana"; tag "CCDS"; ccds_id "CCDS54476";

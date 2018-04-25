@@ -107,6 +107,19 @@ namespace Test
                 proteins_wo_variant[0].BaseSequence);
         }
 
+        [Test, Order(3)]
+        public void FilterTest()
+        {
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"));
+            EnsemblDownloadsWrapper.FilterGeneModel(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.gtf"), genome, out string filtered);
+            string[] filteredlines = File.ReadAllLines(filtered);
+            foreach (string a in filteredlines)
+            {
+                if (a.StartsWith("#")) { continue; }
+                Assert.IsTrue(new[] { "20", "21", "22" }.Contains(a.Split('\t')[0]));
+            }
+        }
+
         [Test]
         public void TranslateAnotherReverseStrand()
         {

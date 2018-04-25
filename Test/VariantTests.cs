@@ -160,6 +160,15 @@ namespace Test
             int i = 0;
         }
 
+        [Test, Order(3)]
+        public void ThereShouldBeUTRs()
+        {
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"));
+            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "UtrProblem", "gene.gtf"));
+            geneModel.ApplyVariants(new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "UtrProblem", "vcf.vcf")).Select(v => new Variant(null, v, genome.Chromosomes[0])).ToList());
+            Assert.IsTrue(geneModel.Genes[0].Transcripts[0].UTRs.Count > 0);
+        }
+
         // test todo: transcript with zero CodingSequenceExons and try to translate them to check that it doesn fail
         // test todo: multiple transcripts
     }

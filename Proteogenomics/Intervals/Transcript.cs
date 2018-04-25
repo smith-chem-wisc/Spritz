@@ -58,8 +58,8 @@ namespace Proteogenomics
         {
             VariantAnnotations = new List<string>(transcript.VariantAnnotations);
             ProteinSequenceVariations = new List<SequenceVariation>(transcript.ProteinSequenceVariations);
-            Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(x)));
-            CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(cds)));
+            Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(transcript, x.Sequence, x.OneBasedStart, x.OneBasedEnd, x.ChromosomeID, x.Strand, x.Variants)));
+            CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(transcript, cds.ChromosomeID, cds.Strand, cds.OneBasedStart, cds.OneBasedEnd, cds.Variants, cds.StartFrame)));
             SetRegions(this);
         }
 

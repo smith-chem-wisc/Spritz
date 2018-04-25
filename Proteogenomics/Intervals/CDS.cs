@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Proteogenomics
 {
@@ -8,7 +7,7 @@ namespace Proteogenomics
     {
         public CDS(Transcript parent, string chromID, string strand, long oneBasedStart, long oneBasedEnd, HashSet<Variant> variants, int startFrame)
             : base(parent, chromID, strand, oneBasedStart, oneBasedEnd, variants)
-        { 
+        {
             StartFrame = startFrame;
         }
 
