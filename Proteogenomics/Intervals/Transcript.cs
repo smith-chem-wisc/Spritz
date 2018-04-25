@@ -58,8 +58,8 @@ namespace Proteogenomics
         {
             VariantAnnotations = new List<string>(transcript.VariantAnnotations);
             ProteinSequenceVariations = new List<SequenceVariation>(transcript.ProteinSequenceVariations);
-            Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(transcript, x.Sequence, x.OneBasedStart, x.OneBasedEnd, x.ChromosomeID, x.Strand, x.Variants)));
-            CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(transcript, cds.ChromosomeID, cds.Strand, cds.OneBasedStart, cds.OneBasedEnd, cds.Variants, cds.StartFrame)));
+            Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(this, x.Sequence, x.OneBasedStart, x.OneBasedEnd, x.ChromosomeID, x.Strand, x.Variants)));
+            CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(this, cds.ChromosomeID, cds.Strand, cds.OneBasedStart, cds.OneBasedEnd, cds.Variants, cds.StartFrame)));
             SetRegions(this);
         }
 
@@ -245,6 +245,11 @@ namespace Proteogenomics
         public IEnumerable<Transcript> ApplyVariantCombinitorics(Variant variant, out VariantEffects variantEffects)
         {
             List<Transcript> result = new List<Transcript>();
+
+            if (variant.ToString() == "20:55934783_G/A_HOMOZYGOUS_ALT")
+            {
+                int i = 0;
+            }
 
             // annotate variant, and then check that functional effect is greater than missense (CompareTo greater than or equal to 0)
             variantEffects = AnnotateVariant(variant);
