@@ -61,6 +61,7 @@ namespace WorkflowLayer
         {
             // require root permissions
             new BEDOPSWrapper(),
+            new BedtoolsWrapper(),
             new BLASTWrapper(),
             new LastzWrapper(),
             new MeltingWrapper(),
@@ -68,7 +69,6 @@ namespace WorkflowLayer
             new SamtoolsWrapper(),
 
             // don't necessarily require root permissions
-            new BedtoolsWrapper(),
             new CufflinksWrapper(),
             new GATKWrapper(),
             new HISAT2Wrapper(),
@@ -117,7 +117,7 @@ namespace WorkflowLayer
 
             // python setup
             commands.Add("sudo easy_install pip");
-            commands.Add("sudo pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy"); // for RSeQC
+            commands.Add("sudo pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy h5py"); // for RSeQC
 
             // java8 setup
             commands.Add
@@ -141,7 +141,7 @@ namespace WorkflowLayer
             for (int i = 0; i < parallelScripts.Count; i++)
             {
                 commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");
-                commands.Add("bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &> " +
+                commands.Add("sudo bash " + WrapperUtility.ConvertWindowsPath(parallelScripts[i]) + " &> " +
                     WrapperUtility.ConvertWindowsPath(Path.Combine(installationLogsDirectory, Path.GetFileNameWithoutExtension(parallelScripts[i]) + ".log")) +
                     " &");
                 commands.Add("proc" + i.ToString() + "=$!");

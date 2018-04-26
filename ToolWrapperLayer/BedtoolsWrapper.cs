@@ -12,7 +12,7 @@ namespace ToolWrapperLayer
         #region Installation Methods
 
         /// <summary>
-        /// Writes an install script for bedtools.
+        /// Writes an install script for bedtools 
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <returns></returns>
@@ -23,11 +23,12 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "if [ ! -d bedtools2 ]; then",
-                "  wget --no-check https://github.com/arq5x/bedtools2/releases/download/v2.27.1/bedtools-2.27.1.tar.gz",
-                "  tar -xvf bedtools-2.27.1.tar.gz",
-                "  rm bedtools-2.27.1.tar.gz",
+                // (v2.24 is the highest slncky allows)
+                "  wget --no-check https://github.com/arq5x/bedtools2/releases/download/v2.24.0/bedtools-2.24.0.tar.gz",
+                "  tar -xvf bedtools-2.24.0.tar.gz",
+                "  rm bedtools-2.24.0.tar.gz",
                 "  cd bedtools2",
-                "  make",
+                "  make install",
                 "fi"
             });
             return scriptPath;

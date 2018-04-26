@@ -87,24 +87,54 @@ namespace CMD
                     throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
                 }
 
-                string[] fastqs1 = options.Fastq1.Split(',');
-                List<string[]> fastqsSeparated = options.Fastq2 == null ?
-                    fastqs1.Select(x => new string[] { x }).ToList() :
-                    fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
+                if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
+                {
+                    LncRNADiscoveryFlow.LncRNADiscoveryFromSra(
+                        options.BinDirectory,
+                        options.AnalysisDirectory,
+                        options.Reference,
+                        options.Threads,
+                        options.SraAccession,
+                        options.StrandSpecific,
+                        options.InferStrandSpecificity,
+                        options.OverwriteStarAlignments,
+                        options.GenomeStarIndexDirectory,
+                        options.GenomeFasta,
+                        proteinFastaPath,
+                        options.GeneModelGtfOrGff,
+                        true,
+                        out string slnckyOutPrefix,
+                        out string cuffmergeGtfPath,
+                        out List<string> rsemOutPrefixes,
+                        out List<string> cufflinksTranscriptModels);
+                }
+                else if (options.Fastq1 != null)
+                {
+                    string[] fastqs1 = options.Fastq1.Split(',');
+                    List<string[]> fastqsSeparated = options.Fastq2 == null ?
+                        fastqs1.Select(x => new string[] { x }).ToList() :
+                        fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                //LncRNADiscoveryFlow.RunLncRNADiscoveryFromFastq(
-                //    options.BinDirectory,
-                //    options.AnalysisDirectory,
-                //    options.Threads,
-                //    fastqsSeparated,
-                //    options.StrandSpecific,
-                //    options.InferStrandSpecificity,
-                //    options.OverwriteStarAlignments,
-                //    options.GenomeStarIndexDirectory,
-                //    options.GenomeFasta,
-                //    options.GeneModelGtfOrGff);
+                    LncRNADiscoveryFlow.LncRNADiscoveryFromFastqs(
+                         options.BinDirectory,
+                         options.AnalysisDirectory,
+                         options.Reference,
+                         options.Threads,
+                         fastqsSeparated,
+                         options.StrandSpecific,
+                         options.InferStrandSpecificity,
+                         options.OverwriteStarAlignments,
+                         options.GenomeStarIndexDirectory,
+                         options.GenomeFasta,
+                         proteinFastaPath,
+                         options.GeneModelGtfOrGff,
+                         true,
+                         out string slnckyOutPrefix,
+                         out string cuffmergeGtfPath,
+                         out List<string> rsemOutPrefixes,
+                         out List<string> cufflinksTranscriptModels);
+                }
 
-                // LncRNADiscoveryEngine.Test(options.BinDirectory);
                 return;
             }
 

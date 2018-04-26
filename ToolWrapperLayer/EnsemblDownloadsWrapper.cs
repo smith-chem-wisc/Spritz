@@ -1,11 +1,11 @@
-﻿using Proteomics;
+﻿using Proteogenomics;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UsefulProteomicsDatabases;
-using Proteogenomics;
 
 namespace ToolWrapperLayer
 {
@@ -195,6 +195,36 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
+        /// Converts the first column of a tab-separated file to UCSC chromosome names. Ignores rows starting with '#'.
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="reference"></param>
+        /// <param name="inputPath"></param>
+        /// <param name="outputPath"></param>
+        public static void ConvertFirstColumnEnsembl2UCSC(string binDirectory, string reference, string inputPath, out string outputPath)
+        {
+            var e2uMappings = Ensembl2UCSCChromosomeMappings(binDirectory, reference);
+            var u2eMappings = UCSC2EnsemblChromosomeMappings(binDirectory, reference);
+            outputPath = Path.Combine(Path.GetDirectoryName(inputPath), Path.GetFileNameWithoutExtension(inputPath)) + ".ucsc" + Path.GetExtension(inputPath);
+            using (StreamReader reader = new StreamReader(inputPath))
+            using (StreamWriter writer = new StreamWriter(outputPath))
+            {
+                while (true)
+                {
+                    string line = reader.ReadLine();
+                    if (line == null || line == "") { break; }
+                    if (line.StartsWith("#")) { continue; }
+                    string[] columns = line.Split('\t');
+                    if (columns.Length == 0) { break; }
+                    if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { columns[0] = ucscColumn; }
+                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) {  } // nothing to do
+                    else { continue; } // did not recognize this chromosome name; filter it out
+                    writer.WriteLine(String.Join("\t", columns));
+                }
+            }
+        }
+
+        /// <summary>
         /// Ensembl coding domain sequences (CDS) sometimes don't have start or stop codons annotated.
         /// The only way I can figure out how to tell which they are is to read in the protein FASTA and find the ones starting with X's or containing a stop codon '*'
         /// </summary>
@@ -221,6 +251,37 @@ namespace ToolWrapperLayer
             {
                 "grep " + grepQuery + " " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) + " > " + WrapperUtility.ConvertWindowsPath(filteredGeneModel)
             }).WaitForExit();
+        }
+
+        /// <summary>
+        /// Prepares an Ensembl genome fasta for alignment and all following analysis. The main issue is that Ensembl orders chromosomes lexigraphically, not karyotypically, like some software like GATK expects.
+        /// </summary>
+        /// <param name="genomeFasta"></param>
+        /// <param name="ensemblGenome"></param>
+        /// <param name="reorderedFasta"></param>
+        public static void PrepareEnsemblGenomeFasta(string genomeFasta, out Genome ensemblGenome, out string reorderedFasta)
+        {
+            if (Path.GetExtension(genomeFasta) == ".gz" || Path.GetExtension(genomeFasta) == ".tgz")
+            {
+                WrapperUtility.RunBashCommand("gunzip", WrapperUtility.ConvertWindowsPath(genomeFasta));
+                genomeFasta = Path.ChangeExtension(genomeFasta, null);
+            }
+
+            // We need to use the same fasta file throughout and have all the VCF and GTF chromosome reference IDs be the same as these.
+            // Right now this is based on ensembl references, so those are the chromosome IDs I will be using throughout
+            // TODO: try this with UCSC references to judge whether there's a difference in quality / yield / FDR etc in subsequent proteomics analysis
+            // This file needs to be in karyotypic order; this allows us not to have to reorder it for GATK analysis
+            reorderedFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".karyotypic.fa");
+            ensemblGenome = new Genome(genomeFasta);
+            if (!ensemblGenome.IsKaryotypic())
+            {
+                ensemblGenome.Chromosomes = ensemblGenome.KaryotypicOrder();
+                if (!File.Exists(reorderedFasta)) { Genome.WriteFasta(ensemblGenome.Chromosomes.Select(x => x.Sequence), reorderedFasta); }
+            }
+            else
+            {
+                reorderedFasta = genomeFasta;
+            }
         }
     }
 }

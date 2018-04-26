@@ -26,7 +26,6 @@ namespace WorkflowLayer
         /// <param name="reorderedFasta"></param>
         /// <param name="proteinFasta"></param>
         /// <param name="geneModelGtfOrGff"></param>
-        /// <param name="ensemblKnownSitesPath"></param>
         /// <param name="firstPassSpliceJunctions"></param>
         /// <param name="secondPassGenomeDirectory"></param>
         /// <param name="sortedBamFiles"></param>
@@ -37,7 +36,7 @@ namespace WorkflowLayer
         /// <param name="readSubset"></param>
         public static void PerformTwoPassAlignment(string bin, string analysisDirectory, string reference, int threads,
             List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string reorderedFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
+            string reorderedFasta, string proteinFasta, string geneModelGtfOrGff,
             out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles,
             out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles,
             bool useReadSubset = false, int readSubset = 30000)
