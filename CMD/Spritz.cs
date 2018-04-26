@@ -167,26 +167,45 @@ namespace CMD
                     throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
                 }
 
-                string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
                 Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
-                if (options.InferStrandSpecificity)
-                {
-                    var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
-                        fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
-                    strandedness = bamProps.Strandedness;
-                }
 
-                TranscriptQuantificationFlow.QuantifyTranscripts(
-                    options.BinDirectory,
-                    options.GenomeFasta,
-                    options.Threads,
-                    options.GeneModelGtfOrGff,
-                    RSEMAlignerOption.STAR,
-                    strandedness,
-                    fastqs,
-                    true,
-                    out string referencePrefix,
-                    out string outputPrefix);
+                if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
+                {
+                    TranscriptQuantificationFlow.QuantifyTranscriptsFromSra(
+                        options.BinDirectory,
+                        options.AnalysisDirectory,
+                        options.GenomeFasta,
+                        options.Threads,
+                        options.GeneModelGtfOrGff,
+                        RSEMAlignerOption.STAR,
+                        strandedness,
+                        options.SraAccession,
+                        true,
+                        out string referencePrefix,
+                        out string outputPrefix);
+                }
+                else if (options.Fastq1 != null)
+                {
+                    string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
+                    if (options.InferStrandSpecificity)
+                    {
+                        var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
+                            fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
+                        strandedness = bamProps.Strandedness;
+                    }
+
+                    TranscriptQuantificationFlow.QuantifyTranscripts(
+                        options.BinDirectory,
+                        options.GenomeFasta,
+                        options.Threads,
+                        options.GeneModelGtfOrGff,
+                        RSEMAlignerOption.STAR,
+                        strandedness,
+                        fastqs,
+                        true,
+                        out string referencePrefix,
+                        out string outputPrefix);
+                }
 
                 return;
             }
