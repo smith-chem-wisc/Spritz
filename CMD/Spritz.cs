@@ -29,7 +29,7 @@ namespace CMD
             // always download references that aren't present
             EnsemblDownloadsWrapper.DownloadReferences(
                 options.BinDirectory,
-                options.AnalysisDirectory,
+                options.BinDirectory,
                 options.Reference,
                 out string genomeFastaPath,
                 out string gtfGeneModelPath,
