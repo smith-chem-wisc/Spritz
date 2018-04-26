@@ -1,7 +1,8 @@
 ﻿using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System;
+using System.Linq;
 
 namespace ToolWrapperLayer
 {
@@ -33,6 +34,11 @@ namespace ToolWrapperLayer
         /// </summary>
         public static string GeneAbundanceFilename { get; } = "genes.fpkm_tracking";
 
+        /// <summary>
+        /// Output filename for cufflinks
+        /// </summary>
+        public static string CufflinksMergedFilename { get; } = "merged.gtf";
+
         #endregion Public Properties
 
         #region Installation Methods
@@ -53,6 +59,7 @@ namespace ToolWrapperLayer
                 "  tar -xvf cufflinks-2.2.1.Linux_x86_64.tar.gz",
                 "  rm cufflinks-2.2.1.Linux_x86_64.tar.gz",
                 "  mv cufflinks-2.2.1.Linux_x86_64 cufflinks-2.2.1",
+                "  cp cufflinks-2.2.1/* /usr/local/bin",
                 "fi"
             });
             return scriptPath;
@@ -83,7 +90,7 @@ namespace ToolWrapperLayer
         /// <param name="strandSpecific"></param>
         /// <param name="inferStrandSpecificity"></param>
         /// <param name="outputDirectory"></param>
-        public static void AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
+        public static List<string> AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
         {
             bool isStranded = strandSpecific;
             if (inferStrandSpecificity)
@@ -95,34 +102,86 @@ namespace ToolWrapperLayer
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksSortCheck");
             outputDirectory = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksOutput");
             string script_name = Path.Combine(binDirectory, "scripts", "cufflinksRun.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bamPath) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " + SamtoolsWrapper.SortBam(binDirectory, bamPath) + "; fi",
                 "bam=" +  WrapperUtility.ConvertWindowsPath(bamPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then bam=" + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + "; fi",
-                "cufflinks-2.2.1/cufflinks " +
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(outputDirectory, TranscriptsFilename)) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(outputDirectory, TranscriptsFilename)) + " ]]; then " +
+                    "cufflinks-2.2.1/cufflinks " +
                     " --num-threads " + threads.ToString() +
                     " --GTF-guide " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
                     (isStranded ? "--library-type fr-firststrand" : "") +
-                    " $bam",
-            }).WaitForExit();
+                    " $bam" +
+                "; fi",
+            };
         }
 
+        /// <summary>
+        /// Removes transcripts with zero abundance predictions
+        /// </summary>
+        /// <returns></returns>
+        public static List<string> RemoveZeroAbundanceCufflinksPredictionsCommand(string binDirectory, string transcriptGtfPath, out string filteredTranscriptGtfPath)
+        {
+            filteredTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(transcriptGtfPath), Path.GetFileNameWithoutExtension(transcriptGtfPath)) + ".filtered" + Path.GetExtension(transcriptGtfPath);
+            return new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "echo \"Removing zero-abundance transcripts from " + transcriptGtfPath + "\"",
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " ]]; then " +
+                    "grep -v 'FPKM \"0.0000000000\"' " + WrapperUtility.ConvertWindowsPath(transcriptGtfPath) + " > " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) +
+                "; fi"
+            };
+        }
+
+        /// <summary>
+        /// Merge multiple transcript models (GTF) into a single one (GTF)
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        public static List<string> Cuffmerge(string binDirectory, int threads, string geneModelGtfOrGff, string genomeFastaPath, List<string> transcriptGtfPaths, string combinedTranscriptGtfOutputPath)
+        {
+            string gtfListPath = Path.Combine(Path.GetDirectoryName(combinedTranscriptGtfOutputPath), Path.GetFileNameWithoutExtension(combinedTranscriptGtfOutputPath)) + "_gtflist.txt";
+            string mergedGtfPath = Path.Combine(combinedTranscriptGtfOutputPath, CufflinksMergedFilename);
+            return new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "cufflinks-2.2.1")),
+                "readlink -f \"" + String.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\" > " + WrapperUtility.ConvertWindowsPath(gtfListPath),
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(mergedGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mergedGtfPath) + " ]]; then " +
+                    "./cuffmerge" +
+                    " -p " + threads.ToString() +
+                    " -o " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) +
+                    " -g " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) +
+                    " -s " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) +
+                    " --min-isoform-fraction 0 " +
+                    WrapperUtility.ConvertWindowsPath(gtfListPath) +
+                "; fi"
+            };
+        }
+
+        /// <summary>
+        /// Converts a GFF formatted gene model to GTF
+        /// </summary>
+        /// <param name="binDirectory"></param>
+        /// <param name="geneModelGffPath"></param>
+        /// <param name="geneModelGtfPath"></param>
         public static void GffToGtf(string binDirectory, string geneModelGffPath, out string geneModelGtfPath)
         {
             if (!Path.GetExtension(geneModelGffPath).StartsWith(".gff"))
             {
                 throw new ArgumentException("Input gene model must be gff formatted to convert to gtf.");
             }
-            geneModelGtfPath = Path.Combine(Path.GetDirectoryName(geneModelGffPath), Path.GetFileNameWithoutExtension(geneModelGffPath) + ".gtf");
+            geneModelGtfPath = geneModelGffPath + ".converted.gtf";
             string script_name = Path.Combine(binDirectory, "scripts", "gffToGtf.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                "cufflinks-2.2.1/gffread " + WrapperUtility.ConvertWindowsPath(geneModelGffPath) + " -T -o " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath)
+                "echo \"Converting GFF to GTF: " + geneModelGffPath + " -> " + geneModelGtfPath + "\"",
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath) + " ]]; then " +
+                    "cufflinks-2.2.1/gffread " + WrapperUtility.ConvertWindowsPath(geneModelGffPath) + " -T -o " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath) +
+                "; fi"
             }).WaitForExit();
         }
 
