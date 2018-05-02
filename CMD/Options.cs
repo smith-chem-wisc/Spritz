@@ -43,6 +43,9 @@ namespace CMD
         [Option('r', "StarFusionReference", Required = false, HelpText = "Human reference for STAR fusion (GRCh37 or GRCh38)", Default = "GRCh38")]
         public string Reference { get; set; }
 
+        [Option('x', "UniProtProteinXml", Required = false, HelpText = "Protein XML UniProt Database for Homo sapiens")]
+        public string UniProtXml { get; set; }
+
         [Option("overwriteStarAlignments", Required = false, HelpText = "Overwrite STAR alignments if they already exist", Default = false)]
         public bool OverwriteStarAlignments { get; set; }
 

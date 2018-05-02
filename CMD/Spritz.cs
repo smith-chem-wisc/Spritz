@@ -60,9 +60,10 @@ namespace CMD
                     throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
                 }
 
+                LncRNADiscoveryFlow lncRNAdiscovery = new LncRNADiscoveryFlow();
                 if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
                 {
-                    LncRNADiscoveryFlow.LncRNADiscoveryFromSra(
+                    lncRNAdiscovery.LncRNADiscoveryFromSra(
                         options.BinDirectory,
                         options.AnalysisDirectory,
                         options.Reference,
@@ -75,11 +76,7 @@ namespace CMD
                         options.GenomeFasta,
                         proteinFastaPath,
                         options.GeneModelGtfOrGff,
-                        true,
-                        out string slnckyOutPrefix,
-                        out string cuffmergeGtfPath,
-                        out List<string> rsemOutPrefixes,
-                        out List<string> cufflinksTranscriptModels);
+                        true);
                 }
                 else if (options.Fastq1 != null)
                 {
@@ -88,7 +85,7 @@ namespace CMD
                         fastqs1.Select(x => new string[] { x }).ToList() :
                         fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                    LncRNADiscoveryFlow.LncRNADiscoveryFromFastqs(
+                    lncRNAdiscovery.LncRNADiscoveryFromFastqs(
                          options.BinDirectory,
                          options.AnalysisDirectory,
                          options.Reference,
@@ -101,11 +98,7 @@ namespace CMD
                          options.GenomeFasta,
                          proteinFastaPath,
                          options.GeneModelGtfOrGff,
-                         true,
-                         out string slnckyOutPrefix,
-                         out string cuffmergeGtfPath,
-                         out List<string> rsemOutPrefixes,
-                         out List<string> cufflinksTranscriptModels);
+                         true);
                 }
 
                 return;
@@ -142,9 +135,10 @@ namespace CMD
 
                 Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
 
+                TranscriptQuantificationFlow quantify = new TranscriptQuantificationFlow();
                 if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
                 {
-                    TranscriptQuantificationFlow.QuantifyTranscriptsFromSra(
+                    quantify.QuantifyTranscriptsFromSra(
                         options.BinDirectory,
                         options.AnalysisDirectory,
                         options.GenomeFasta,
@@ -153,9 +147,7 @@ namespace CMD
                         RSEMAlignerOption.STAR,
                         strandedness,
                         options.SraAccession,
-                        true,
-                        out string referencePrefix,
-                        out string outputPrefix);
+                        true);
                 }
                 else if (options.Fastq1 != null)
                 {
@@ -167,7 +159,7 @@ namespace CMD
                         strandedness = bamProps.Strandedness;
                     }
 
-                    TranscriptQuantificationFlow.QuantifyTranscripts(
+                    quantify.QuantifyTranscripts(
                         options.BinDirectory,
                         options.GenomeFasta,
                         options.Threads,
@@ -175,9 +167,7 @@ namespace CMD
                         RSEMAlignerOption.STAR,
                         strandedness,
                         fastqs,
-                        true,
-                        out string referencePrefix,
-                        out string outputPrefix);
+                        true);
                 }
 
                 return;
@@ -201,10 +191,11 @@ namespace CMD
             // run the program
 
             List<string> proteinDatabases = new List<string>();
+            SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
 
             if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
             {
-                SAVProteinDBFlow.GenerateSAVProteinsFromSra(
+                ssdbf.GenerateSAVProteinsFromSra(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -217,8 +208,8 @@ namespace CMD
                     options.GenomeFasta,
                     proteinFastaPath,
                     options.GeneModelGtfOrGff,
-                    options.ReferenceVcf,
-                    out proteinDatabases);
+                    options.ReferenceVcf);
+                proteinDatabases = ssdbf.ProteinVariantDatabases;
             }
             else if (options.Fastq1 != null)
             {
@@ -231,7 +222,7 @@ namespace CMD
                     fastqs1.Select(x => new string[] { x }).ToList() :
                     fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
 
-                SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
+                ssdbf.GenerateSAVProteinsFromFastqs(
                     options.BinDirectory,
                     options.AnalysisDirectory,
                     options.Reference,
@@ -244,15 +235,15 @@ namespace CMD
                     options.GenomeFasta,
                     proteinFastaPath,
                     options.GeneModelGtfOrGff,
-                    options.ReferenceVcf,
-                    out proteinDatabases);
+                    options.ReferenceVcf);
+                proteinDatabases = ssdbf.ProteinVariantDatabases;
             }
             else if (args.Contains("vcf2protein"))
             {
                 Genome genome = new Genome(options.GenomeFasta);
                 EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
                 GeneModel geneModel = new GeneModel(genome, options.GeneModelGtfOrGff);
-                proteinDatabases.Add(SAVProteinDBFlow.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, options.Reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
+                proteinDatabases.Add(ssdbf.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, options.Reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
             }
             else
             {

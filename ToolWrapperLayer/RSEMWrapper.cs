@@ -19,6 +19,9 @@ namespace ToolWrapperLayer
     public class RSEMWrapper :
         IInstallable
     {
+        public string ReferencePrefix { get; private set; }
+        public string OutputPrefix { get; private set; }
+
         public static string IsoformResultsSuffix { get; } = ".isoforms.results";
         public static string GeneResultsSuffix { get; } = ".genes.results";
         public static string TranscriptBamSuffix { get; } = ".transcript.bam";
@@ -77,7 +80,7 @@ namespace ToolWrapperLayer
         /// <param name="geneModelPath"></param>
         /// <param name="aligner"></param>
         /// <returns></returns>
-        public static List<string> PrepareReferenceCommands(string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, out string referencePrefix)
+        public List<string> PrepareReferenceCommands(string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner)
         {
             // make option strings, including putting reference files into a new directory
             string alignerOption = GetAlignerOption(binDirectory, aligner);
@@ -85,7 +88,7 @@ namespace ToolWrapperLayer
             string referencePrefixDirectory = Path.Combine(Path.GetDirectoryName(referenceFastaPath), Path.GetFileNameWithoutExtension(referenceFastaPath)) +
                 (aligner == RSEMAlignerOption.STAR ? "RsemStarReference" : "RsemBowtieReference") +
                 "_GeneModel" + geneModelPath.GetHashCode().ToString();
-            referencePrefix = Path.Combine(referencePrefixDirectory, Path.GetFileNameWithoutExtension(referenceFastaPath));
+            ReferencePrefix = Path.Combine(referencePrefixDirectory, Path.GetFileNameWithoutExtension(referenceFastaPath));
             string geneModelOption = Path.GetExtension(geneModelPath).StartsWith(".gff") ? "--gff3 " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
                 Path.GetExtension(geneModelPath) == ".gtf" ? "--gtf " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
                 null;
@@ -101,7 +104,7 @@ namespace ToolWrapperLayer
                         alignerOption + " " +
                         threadOption + " " +
                         WrapperUtility.ConvertWindowsPath(referenceFastaPath) + " " +
-                        WrapperUtility.ConvertWindowsPath(referencePrefix) +
+                        WrapperUtility.ConvertWindowsPath(ReferencePrefix) +
                 "; fi"
             };
             return scriptStrings;
@@ -112,7 +115,8 @@ namespace ToolWrapperLayer
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <returns></returns>
-        public static List<string> CalculateExpressionCommands(string binDirectory, string referencePrefix, int threads, RSEMAlignerOption aligner, Strandedness strandedness, string[] fastqPaths, bool doOuptutBam, out string outputPrefix)
+        public List<string> CalculateExpressionCommands(string binDirectory, string referencePrefix, int threads, RSEMAlignerOption aligner, Strandedness strandedness, 
+            string[] fastqPaths, bool doOuptutBam)
         {
             if (fastqPaths.Length < 1)
             {
@@ -138,21 +142,21 @@ namespace ToolWrapperLayer
                     String.Join(",", fastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
-            outputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]) + "_reference" + referencePrefix.GetHashCode().ToString());
+            OutputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]) + "_reference" + referencePrefix.GetHashCode().ToString());
 
             // RSEM likes to sort the transcript.bam file, which takes forever and isn't very useful, I've found. Just sort the genome.bam file instead
             string samtoolsCommands = !doOuptutBam ?
                 "" :
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(outputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(outputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
-                    "  " + SamtoolsWrapper.SortBam(binDirectory, outputPrefix + GenomeBamSuffix) + "\n" +
-                    "  " + SamtoolsWrapper.IndexBamCommand(binDirectory, outputPrefix + GenomeSortedBamSuffix) + "\n" +
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
+                    "  " + SamtoolsWrapper.SortBam(binDirectory, OutputPrefix + GenomeBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.IndexBamCommand(binDirectory, OutputPrefix + GenomeSortedBamSuffix) + "\n" +
                     "fi";
 
             // construct the commands
             var scriptStrings = new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "RSEM-1.3.0")),
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(outputPrefix + IsoformResultsSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(outputPrefix + IsoformResultsSuffix) + " ]]; then " +
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " ]]; then " +
                     "./rsem-calculate-expression " +
                         "--time " + // include timed results
                         "--calc-ci " + // posterior calculation of 95% confidence intervals
@@ -162,7 +166,7 @@ namespace ToolWrapperLayer
                         bamOption + " " +
                         inputOption + " " +
                         WrapperUtility.ConvertWindowsPath(referencePrefix) + " " +
-                        WrapperUtility.ConvertWindowsPath(outputPrefix) +
+                        WrapperUtility.ConvertWindowsPath(OutputPrefix) +
                 "; fi",
                 samtoolsCommands
             };

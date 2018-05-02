@@ -131,9 +131,10 @@ namespace Test
         [Test, Order(1)]
         public void TestDownloadSRA()
         {
-            SRAToolkitWrapper.Fetch(TestContext.CurrentContext.TestDirectory, "SRR6304532", TestContext.CurrentContext.TestDirectory, out string[] fastqs, out string log);
-            Assert.IsTrue(fastqs.All(f => File.Exists(f)));
-            Assert.IsTrue(File.Exists(log));
+            SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+            sratoolkit.Fetch(TestContext.CurrentContext.TestDirectory, "SRR6304532", TestContext.CurrentContext.TestDirectory);
+            Assert.IsTrue(sratoolkit.FastqPaths.All(f => File.Exists(f)));
+            Assert.IsTrue(File.Exists(sratoolkit.LogPath));
         }
 
         #endregion SRA download test
@@ -273,7 +274,8 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
             }
 
-            TranscriptQuantificationFlow.QuantifyTranscripts(
+            TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
+            quantification.QuantifyTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
@@ -281,18 +283,17 @@ namespace Test
                 RSEMAlignerOption.STAR,
                 Strandedness.None,
                 new[] { newMapper },
-                true,
-                out string referencePrefix,
-                out string outputPrefix);
+                true);
 
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
-            Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(quantification.RsemOutputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         [Test, Order(2)]
@@ -304,7 +305,8 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
             }
 
-            TranscriptQuantificationFlow.QuantifyTranscripts(
+            TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
+            quantification.QuantifyTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
@@ -312,18 +314,16 @@ namespace Test
                 RSEMAlignerOption.Bowtie2,
                 Strandedness.None,
                 new[] { newMapper },
-                true,
-                out string referencePrefix,
-                out string outputPrefix);
+                true);
 
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
-            Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(quantification.RsemOutputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         [Test, Order(4)]
@@ -335,7 +335,8 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq"), newMapper);
             }
 
-            TranscriptQuantificationFlow.QuantifyTranscripts(
+            TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
+            quantification.QuantifyTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
@@ -347,18 +348,16 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SRR6319804_1-trimmed-pair1.segment.fastq"),
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SRR6319804_1-trimmed-pair2.segment.fastq"),
                 },
-                true,
-                out string referencePrefix,
-                out string outputPrefix);
+                true);
 
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.IsoformResultsSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GeneResultsSuffix));
-            Assert.IsTrue(Directory.Exists(outputPrefix + RSEMWrapper.StatDirectorySuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TimeSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.TranscriptBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
-            Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(quantification.RsemOutputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
         }
 
         // I'm having trouble getting RSEM to work with comma-separated inputs... I think it's because of STAR, which I have had trouble with in this respect in the past.
@@ -735,7 +734,8 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
-            SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
+            SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
+            ssdbf.GenerateSAVProteinsFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -752,9 +752,8 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                out List<string> proteinDatabases);
-            foreach (string database in proteinDatabases)
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
+            foreach (string database in ssdbf.ProteinVariantDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
@@ -767,7 +766,8 @@ namespace Test
         [Test, Order(4)]
         public void LncRnaDiscoveryRunFromFastqs()
         {
-            LncRNADiscoveryFlow.LncRNADiscoveryFromFastqs(
+            LncRNADiscoveryFlow lncRNAdiscovery = new LncRNADiscoveryFlow();
+            lncRNAdiscovery.LncRNADiscoveryFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
@@ -783,20 +783,16 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
-                true,
-                out string slnckyOutPrefix,
-                out string cuffmergeGtfPath,
-                out List<string> rsemOutPrefixes,
-                out List<string> cufflinksTranscriptModels);
-            Assert.IsTrue(File.Exists(cuffmergeGtfPath));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.FilteredInfoSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.LncsBedSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.LncsInfoSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrthologsSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
+                true);
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.MergedGtfPath));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.FilteredInfoSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.LncsBedSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.LncsInfoSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.OrthologsSuffix));
+            Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
         }
 
         /// <summary>
@@ -809,7 +805,8 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
-            SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
+            SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
+            ssdbf.GenerateSAVProteinsFromFastqs(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -830,9 +827,8 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
-                out List<string> proteinDatabases);
-            foreach (string database in proteinDatabases)
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
+            foreach (string database in ssdbf.ProteinVariantDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any variations for this test set with variant filtering criteria
@@ -847,7 +843,8 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
-            SAVProteinDBFlow.GenerateSAVProteinsFromSra(
+            SampleSpecificProteinDBFlow ssdb = new SampleSpecificProteinDBFlow();
+            ssdb.GenerateSAVProteinsFromSra(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
@@ -861,10 +858,9 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
-                out List<string> proteinDatabases,
                 true,
                 5000);
-            foreach (string database in proteinDatabases)
+            foreach (string database in ssdb.ProteinVariantDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));// no variants anymore with the filtering criteria

@@ -129,11 +129,12 @@
     <Compile Include="LncRNADiscoveryFlow.cs" />
     <Compile Include="ManageToolsFlow.cs" />
     <Compile Include="Parameters\Parameters.cs" />
-    <Compile Include="SAVProteinDBFlow.cs" />
+    <Compile Include="SampleSpecificProteinDBFlow.cs" />
     <Compile Include="SpritzFlow.cs" />
     <Compile Include="STARAlignmentFlow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TranscriptQuantificationFlow.cs" />
+    <Compile Include="VariantCallingFlow.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">

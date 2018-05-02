@@ -15,6 +15,12 @@ namespace WorkflowLayer
         }
 
         public Parameters Parameters { get; set; }
+        public string SlnckyOutPrefix { get; private set; }
+        public string MergedGtfPath { get; private set; }
+        public List<string> RsemOutPrefixes { get; private set; } = new List<string>();
+        public List<string> ReconstructedTranscriptModels { get; private set; } = new List<string>();
+        public List<string> IsoformResultPaths { get; private set; } = new List<string>();
+        public List<string> GeneResultPaths { get; private set; } = new List<string>();
 
         /// <summary>
         /// Generate sample specific database starting with SRA accession number
@@ -35,27 +41,23 @@ namespace WorkflowLayer
         /// <param name="proteinVariantDatabases"></param>
         /// <param name="useReadSubset"></param>
         /// <param name="readSubset"></param>
-        public static void LncRNADiscoveryFromSra(
+        public void LncRNADiscoveryFromSra(
             string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession,
             bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
             string genomeFasta, string proteinFasta, string geneModelGtfOrGff, bool doOutputQuantificaitonBam,
-            out string slnckyOutPrefix, out string cuffmergeGtfPath, out List<string> rsemOutPrefixes, out List<string> cufflinksTranscriptModels,
             bool useReadSubset = false, int readSubset = 300000)
         {
             List<string[]> fastqs = new List<string[]>();
             string[] sras = sraAccession.Split(',');
             foreach (string sra in sras)
             {
-                SRAToolkitWrapper.Fetch(binDirectory, sra, analysisDirectory, out string[] fastqPaths, out string logPath);
-                fastqs.Add(fastqPaths);
+                SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+                sratoolkit.Fetch(binDirectory, sra, analysisDirectory);
+                fastqs.Add(sratoolkit.FastqPaths);
             }
             LncRNADiscoveryFromFastqs(
                 binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity,
-                overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, doOutputQuantificaitonBam,
-                out slnckyOutPrefix,
-                out cuffmergeGtfPath,
-                out rsemOutPrefixes,
-                out cufflinksTranscriptModels, useReadSubset, readSubset);
+                overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, doOutputQuantificaitonBam, useReadSubset, readSubset);
         }
 
         /// <summary>
@@ -80,44 +82,43 @@ namespace WorkflowLayer
         /// <param name="reconstructedTranscriptModels"></param>
         /// <param name="useReadSubset"></param>
         /// <param name="readSubset"></param>
-        public static void LncRNADiscoveryFromFastqs(
+        public void LncRNADiscoveryFromFastqs(
             string binDirectory, string analysisDirectory, string reference, int threads, List<string[]> fastqs,
             bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
             string genomeFasta, string proteinFasta, string geneModelGtfOrGff, bool doOutputQuantificaitonBam,
-            out string slnckyOutPrefix, out string mergedGtfPath, out List<string> rsemOutPrefixes, out List<string> reconstructedTranscriptModels,
             bool useReadSubset = false, int readSubset = 300000)
         {
             // Setup and Alignments
+            STARAlignmentFlow alignment = new STARAlignmentFlow();
             EnsemblDownloadsWrapper.PrepareEnsemblGenomeFasta(genomeFasta, out Genome ensemblGenome, out string reorderedFasta);
-            STARAlignmentFlow.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
+            alignment.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, useReadSubset, readSubset);
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
             EnsemblDownloadsWrapper.FilterGeneModel(binDirectory, geneModelGtfOrGff, ensemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(binDirectory, filteredGeneModelForScalpel, genomeFasta);
 
             // Transcript Reconstruction
-            StringTieWrapper.TranscriptReconstruction(binDirectory, analysisDirectory, threads, geneModelGtfOrGff, ensemblGenome, strandSpecific, inferStrandSpecificity,
-                sortedBamFiles, out reconstructedTranscriptModels, out mergedGtfPath);
+            StringTieWrapper stringtie = new StringTieWrapper();
+            stringtie.TranscriptReconstruction(binDirectory, analysisDirectory, threads, geneModelGtfOrGff, ensemblGenome, strandSpecific, inferStrandSpecificity, alignment.SortedBamFiles);
+            ReconstructedTranscriptModels = stringtie.TranscriptGtfPaths;
+            MergedGtfPath = stringtie.MergedGtfPath;
 
             // Transcript Quantification
-            rsemOutPrefixes = new List<string>();
-            List<string> isoformResultPaths = new List<string>();
-            List<string> geneResultPaths = new List<string>();
             foreach (var fastq in fastqs)
             {
-                TranscriptQuantificationFlow.QuantifyTranscripts(
-                    binDirectory, genomeFasta, threads, mergedGtfPath, RSEMAlignerOption.STAR,
+                TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
+                quantification.QuantifyTranscripts(
+                    binDirectory, genomeFasta, threads, MergedGtfPath, RSEMAlignerOption.STAR,
                     strandSpecific ? Strandedness.Forward : Strandedness.None,
-                    fastq, doOutputQuantificaitonBam,
-                    out string rsemReferencePrefix, out string rsemOutPrefix);
-                rsemOutPrefixes.Add(rsemOutPrefix);
-                isoformResultPaths.Add(rsemOutPrefix + RSEMWrapper.IsoformResultsSuffix);
-                geneResultPaths.Add(rsemOutPrefix + RSEMWrapper.GeneResultsSuffix);
+                    fastq, doOutputQuantificaitonBam);
+                RsemOutPrefixes.Add(quantification.RsemOutputPrefix);
+                IsoformResultPaths.Add(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix);
+                GeneResultPaths.Add(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix);
             }
 
             // Annotate lncRNAs
             string slnckyScriptName = Path.Combine(binDirectory, "scripts", "SlcnkyAnnotation.bash");
-            slnckyOutPrefix = Path.Combine(Path.GetDirectoryName(mergedGtfPath), Path.GetFileNameWithoutExtension(mergedGtfPath) + ".slnckyOut", "annotated");
-            WrapperUtility.GenerateAndRunScript(slnckyScriptName, SlnckyWrapper.Annotate(binDirectory, analysisDirectory, threads, mergedGtfPath, reference, slnckyOutPrefix)).WaitForExit();
+            SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".slnckyOut", "annotated");
+            WrapperUtility.GenerateAndRunScript(slnckyScriptName, SlnckyWrapper.Annotate(binDirectory, analysisDirectory, threads, MergedGtfPath, reference, SlnckyOutPrefix)).WaitForExit();
         }
 
         public static void Test(string test)

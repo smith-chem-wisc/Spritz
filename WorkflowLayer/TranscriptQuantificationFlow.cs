@@ -7,55 +7,66 @@ namespace WorkflowLayer
 {
     public class TranscriptQuantificationFlow
     {
-        public static void QuantifyTranscriptsFromSra(
+        public string RsemReferenceIndexPrefix { get; private set; }
+        public string RsemOutputPrefix { get; private set; }
+
+        public void QuantifyTranscriptsFromSra(
             string binDirectory, string analysisDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
-            string sraAccession, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
+            string sraAccession, bool doOutputBam)
         {
-            SRAToolkitWrapper.Fetch(binDirectory, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash"), new List<string>(
-                RSEMWrapper.PrepareReferenceCommands(
+            SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+            RSEMWrapper rsem = new RSEMWrapper();
+            sratoolkit.Fetch(binDirectory, sraAccession, analysisDirectory);
+            string scriptName = Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash");
+            WrapperUtility.GenerateAndRunScript(scriptName, new List<string>(
+                rsem.PrepareReferenceCommands(
                     binDirectory,
                     referenceFastaPath,
                     threads,
                     geneModelPath,
-                    aligner,
-                    out rsemReferencePrefix)
+                    aligner)
                 .Concat(
-                RSEMWrapper.CalculateExpressionCommands(
+                rsem.CalculateExpressionCommands(
                     binDirectory,
-                    rsemReferencePrefix,
+                    RsemReferenceIndexPrefix,
                     threads,
                     aligner,
                     strandedness,
-                    fastqPaths,
-                    doOutputBam,
-                    out outputPrefix))))
+                    sratoolkit.FastqPaths,
+                    doOutputBam))))
             .WaitForExit();
+
+            RsemReferenceIndexPrefix = rsem.ReferencePrefix;
+            RsemOutputPrefix = rsem.OutputPrefix;
         }
 
-        public static void QuantifyTranscripts(
+        public void QuantifyTranscripts(
             string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
-            string[] fastqPaths, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
+            string[] fastqPaths, bool doOutputBam)
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash"), new List<string>(
-                RSEMWrapper.PrepareReferenceCommands(
+            SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+            RSEMWrapper rsem = new RSEMWrapper();
+            string scriptName = Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash");
+            WrapperUtility.GenerateAndRunScript(scriptName, new List<string>(
+                rsem.PrepareReferenceCommands(
                     binDirectory,
                     referenceFastaPath,
                     threads,
                     geneModelPath,
-                    aligner,
-                    out rsemReferencePrefix)
+                    aligner)
                 .Concat(
-                RSEMWrapper.CalculateExpressionCommands(
+                rsem.CalculateExpressionCommands(
                     binDirectory,
-                    rsemReferencePrefix,
+                    RsemReferenceIndexPrefix,
                     threads,
                     aligner,
                     strandedness,
                     fastqPaths,
-                    doOutputBam,
-                    out outputPrefix))))
+                    doOutputBam))))
             .WaitForExit();
+
+            RsemReferenceIndexPrefix = rsem.ReferencePrefix;
+            RsemOutputPrefix = rsem.OutputPrefix;
         }
     }
 }

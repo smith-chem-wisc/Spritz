@@ -13,8 +13,10 @@ namespace WorkflowLayer
     /// <summary>
     /// Create a database of proteins with single amino acid variants (SAVs) using GATK and SnpEff.
     /// </summary>
-    public class SAVProteinDBFlow
+    public class SampleSpecificProteinDBFlow
     {
+        public List<string> ProteinVariantDatabases { get; private set; } = new List<string>();
+
         /// <summary>
         /// Generate sample specific database starting with SRA accession number
         /// </summary>
@@ -31,23 +33,23 @@ namespace WorkflowLayer
         /// <param name="proteinFasta"></param>
         /// <param name="geneModelGtfOrGff"></param>
         /// <param name="ensemblKnownSitesPath"></param>
-        /// <param name="proteinVariantDatabases"></param>
         /// <param name="useReadSubset"></param>
         /// <param name="readSubset"></param>
-        public static void GenerateSAVProteinsFromSra(
+        public void GenerateSAVProteinsFromSra(
             string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession,
             bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases,
+            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
             bool useReadSubset = false, int readSubset = 300000)
         {
             List<string[]> fastqs = new List<string[]>();
             string[] sras = sraAccession.Split(',');
             foreach (string sra in sras)
             {
-                SRAToolkitWrapper.Fetch(binDirectory, sra, analysisDirectory, out string[] fastqPaths, out string logPath);
-                fastqs.Add(fastqPaths);
+                SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+                sratoolkit.Fetch(binDirectory, sra, analysisDirectory);
+                fastqs.Add(sratoolkit.FastqPaths);
             }
-            GenerateSAVProteinsFromFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, out proteinVariantDatabases, useReadSubset, readSubset);
+            GenerateSAVProteinsFromFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, useReadSubset, readSubset);
         }
 
         /// <summary>
@@ -66,61 +68,36 @@ namespace WorkflowLayer
         /// <param name="proteinFasta"></param>
         /// <param name="geneModelGtfOrGff"></param>
         /// <param name="ensemblKnownSitesPath"></param>
-        /// <param name="proteinVariantDatabases"></param>
         /// <param name="useReadSubset"></param>
         /// <param name="readSubset"></param>
-        public static void GenerateSAVProteinsFromFastqs(
+        public void GenerateSAVProteinsFromFastqs(
             string binDirectory, string analysisDirectory, string reference, int threads, List<string[]> fastqs,
             bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath, out List<string> proteinVariantDatabases,
+            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
             bool useReadSubset = false, int readSubset = 300000)
         {
-            EnsemblDownloadsWrapper.PrepareEnsemblGenomeFasta(genomeFasta, out Genome ensemblGenome, out string reorderedFasta);
-            STARAlignmentFlow.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFasta, proteinFasta, geneModelGtfOrGff, out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles, out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles, useReadSubset, readSubset);
+            Genome ensemblGenome = null;
+            string reorderedFastaPath = null;
+            STARAlignmentFlow alignment = new STARAlignmentFlow();
+            EnsemblDownloadsWrapper.PrepareEnsemblGenomeFasta(genomeFasta, out ensemblGenome, out reorderedFastaPath);
+            alignment.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFastaPath, proteinFasta, geneModelGtfOrGff, useReadSubset, readSubset);
             EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
             EnsemblDownloadsWrapper.FilterGeneModel(binDirectory, geneModelGtfOrGff, ensemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(binDirectory, filteredGeneModelForScalpel);
 
             // Variant Calling
-            string scriptName = Path.Combine(binDirectory, "scripts", "variantCalling.bash");
-            List<string> variantCallingCommands = new List<string>();
-            List<string> vcfFilePaths = new List<string>();
-            List<string> annotatedVcfFilePaths = new List<string>();
-            List<string> snpEffHtmlFilePaths = new List<string>();
-            List<string> annotatedGenesSummaryPaths = new List<string>();
-            List<string> scapelVcfFilePaths = new List<string>();
-            List<string> annotatedScapelVcfFilePaths = new List<string>();
-            List<string> scalpelSnpEffHtmlFilePaths = new List<string>();
-            List<string> scalpelAnnotatedGenesSummaryPaths = new List<string>();
-            foreach (string dedupedBam in dedupedBamFiles)
-            {
-                // GATK
-                variantCallingCommands.AddRange(GATKWrapper.SplitNCigarReads(binDirectory, genomeFasta, dedupedBam, out string splitTrimBam));
-                variantCallingCommands.AddRange(GATKWrapper.VariantCalling(binDirectory, threads, reorderedFasta, splitTrimBam, Path.Combine(binDirectory, ensemblKnownSitesPath), out string vcfPath));
-                vcfFilePaths.Add(vcfPath);
-                variantCallingCommands.AddRange(SnpEffWrapper.PrimaryVariantAnnotation(binDirectory, reference, vcfPath, out string htmlReport, out string annotatedVcfPath, out string annotatedGenesSummaryPath));
-                annotatedVcfFilePaths.Add(annotatedVcfPath);
-                snpEffHtmlFilePaths.Add(htmlReport);
-                annotatedGenesSummaryPaths.Add(annotatedGenesSummaryPath);
-
-                // Scalpel
-                variantCallingCommands.AddRange(ScalpelWrapper.CallIndels(binDirectory, threads, genomeFasta, sortedBed12Path, splitTrimBam, Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + "_scalpelOut"), out string scalpelVcf));
-                scapelVcfFilePaths.Add(scalpelVcf);
-                variantCallingCommands.AddRange(SnpEffWrapper.PrimaryVariantAnnotation(binDirectory, reference, scalpelVcf, out string htmlReport2, out string annotatedScalpelVcfPath, out string annotatedGenesSummaryPath2));
-                annotatedScapelVcfFilePaths.Add(annotatedScalpelVcfPath);
-                scalpelSnpEffHtmlFilePaths.Add(htmlReport2);
-                scalpelAnnotatedGenesSummaryPaths.Add(annotatedGenesSummaryPath2);
-            }
-            WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
+            VariantCallingFlow variantCalling = new VariantCallingFlow();
+            variantCalling.CallVariants(binDirectory, reference, threads, genomeFasta, sortedBed12Path, ensemblKnownSitesPath, alignment.DedupedBamFiles, reorderedFastaPath);
 
             // Generate databases
             GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
-            proteinVariantDatabases = annotatedVcfFilePaths.Select(annotatedVcf =>
+            ProteinVariantDatabases = variantCalling.AnnotatedVcfFilePaths.Select(annotatedVcf =>
                 WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf))))
                 .ToList();
         }
 
-        public static string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces, HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
+        public string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces, 
+            HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
         {
             if (!File.Exists(vcfPath))
             {
@@ -172,9 +149,15 @@ namespace WorkflowLayer
             return proteinVariantDatabase;
         }
 
-        public static string WriteProteinFastaMetrics(string outprefix, List<Protein> proteinsToWrite)
+        /// <summary>
+        /// Writes out metrics regarding the combinitorial variants produced and entered into the fasta
+        /// </summary>
+        /// <param name="outprefix"></param>
+        /// <param name="proteinsToWrite"></param>
+        /// <returns></returns>
+        public string WriteProteinFastaMetrics(string outprefix, List<Protein> proteinsToWrite)
         {
-            string proteinMetrics = outprefix + ".protein.metrics";
+            string proteinMetrics = outprefix + ".variantprotein.fasta.metrics";
             using (StreamWriter writer = new StreamWriter(proteinMetrics))
             {
                 Transcript.combinatoricFailures = new List<string>();
