@@ -7,10 +7,11 @@ namespace WorkflowLayer
 {
     public class TranscriptQuantificationFlow
     {
-        public static void QuantifyTranscripts(
-            string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
-            string[] fastqPaths, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
+        public static void QuantifyTranscriptsFromSra(
+            string binDirectory, string analysisDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
+            string sraAccession, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
         {
+            SRAToolkitWrapper.Fetch(binDirectory, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
             WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash"), new List<string>(
                 RSEMWrapper.PrepareReferenceCommands(
                     binDirectory,
@@ -32,11 +33,10 @@ namespace WorkflowLayer
             .WaitForExit();
         }
 
-        public static void QuantifyTranscriptsFromSra(
-            string binDirectory, string analysisDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
-            string sraAccession, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
+        public static void QuantifyTranscripts(
+            string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
+            string[] fastqPaths, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
         {
-            SRAToolkitWrapper.Fetch(binDirectory, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
             WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash"), new List<string>(
                 RSEMWrapper.PrepareReferenceCommands(
                     binDirectory,

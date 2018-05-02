@@ -10,8 +10,6 @@ namespace WorkflowLayer
     /// </summary>
     public class ManageToolsFlow
     {
-        #region Private Field
-
         /// <summary>
         /// List of dependencies to fetch from aptitude using `sudo apt-get install`
         /// </summary>
@@ -63,13 +61,14 @@ namespace WorkflowLayer
             new BEDOPSWrapper(),
             new BedtoolsWrapper(),
             new BLASTWrapper(),
+            new CufflinksWrapper(),
             new LastzWrapper(),
             new MeltingWrapper(),
             new MfoldWrapper(),
             new SamtoolsWrapper(),
+            new StringTieWrapper(),
 
             // don't necessarily require root permissions
-            new CufflinksWrapper(),
             new GATKWrapper(),
             new HISAT2Wrapper(),
             new RSEMWrapper(),
@@ -83,10 +82,6 @@ namespace WorkflowLayer
             new STARFusionWrapper(),
             new TopHatWrapper()
         };
-
-        #endregion Private Field
-
-        #region Public Methods
 
         /// <summary>
         /// Installs packages and programs for analysis in Spritz.
@@ -191,7 +186,5 @@ namespace WorkflowLayer
             string scriptPath = Path.Combine(binDirectory, "scripts", "removalScripts", "installDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
-
-        #endregion Public Methods
     }
 }

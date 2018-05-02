@@ -36,14 +36,14 @@ namespace Proteogenomics
             foreach (int chr in Enumerable.Range(1, 22))
             {
                 Chromosome s = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chr" + chr : chr.ToString()));
-                if (s != null) orderedChromosomes[i++] = s;
+                if (s != null) { orderedChromosomes[i++] = s; }
             }
             Chromosome seqx = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chrX" : "X"));
-            if (seqx != null) orderedChromosomes[i++] = seqx;
+            if (seqx != null) { orderedChromosomes[i++] = seqx; }
             Chromosome seqy = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chrY" : "Y"));
-            if (seqy != null) orderedChromosomes[i++] = seqy;
+            if (seqy != null) { orderedChromosomes[i++] = seqy; }
             Chromosome seqm = Chromosomes.FirstOrDefault(x => x.FriendlyName == (ucsc ? "chrM" : "MT"));
-            if (seqm != null) orderedChromosomes[i++] = seqm;
+            if (seqm != null) { orderedChromosomes[i++] = seqm; }
 
             List<Chromosome> gl = Chromosomes.Where(x => x.FriendlyName.Contains("GL")).ToList();
             foreach (var g in gl)
@@ -81,16 +81,22 @@ namespace Proteogenomics
                 names.Add(name);
                 int s = ids.IndexOf(name);
                 if (s > 0)
+                {
                     i = s;
+                }
                 if (s > 0 && s <= i)
+                {
                     return false;
+                }
             }
             foreach (string chr in ids.Except(names))
             {
                 string name = ucsc ? "chr" + chr : chr.ToString() + (chr == "M" ? "T" : "");
                 int s = ids.IndexOf(name);
                 if (s > 0 && s <= i)
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -102,12 +108,14 @@ namespace Proteogenomics
                 formatter.Format(stream, sequences);
             using (StreamReader reader = new StreamReader(filePath))
             using (StreamWriter writer = new StreamWriter(filePath + ".tmp"))
+            {
                 while (true)
                 {
                     string line = reader.ReadLine();
-                    if (line == null) break;
+                    if (line == null) { break; }
                     writer.Write(line + '\n');
                 }
+            }
             File.Delete(filePath);
             File.Move(filePath + ".tmp", filePath);
         }

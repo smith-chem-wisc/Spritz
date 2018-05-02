@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace ToolWrapperLayer
 {
@@ -18,7 +14,7 @@ namespace ToolWrapperLayer
                 "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
                 "if [ ! -d nanonet ]; then",
                 "  git clone https://github.com/nanoporetech/nanonet.git",
-                "  cd nanoneet",
+                "  cd nanonet",
                 "  python setup.py install",
                 "fi"
             });

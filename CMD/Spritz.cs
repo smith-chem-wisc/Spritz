@@ -14,8 +14,6 @@ namespace CMD
     {
         public static void Main(string[] args)
         {
-            #region Setup
-
             // main setup involves installing tools
             if (args.Contains("setup"))
             {
@@ -26,32 +24,7 @@ namespace CMD
             Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
             Options options = result.Value;
 
-            // always download references that aren't present
-            EnsemblDownloadsWrapper.DownloadReferences(
-                options.BinDirectory,
-                options.AnalysisDirectory,
-                options.Reference,
-                out string genomeFastaPath,
-                out string gtfGeneModelPath,
-                out string gff3GeneModelPath,
-                out string proteinFastaPath);
-
-            if (options.GenomeStarIndexDirectory == null)
-            {
-                options.GenomeStarIndexDirectory = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
-            }
-
-            if (options.GenomeFasta == null)
-            {
-                options.GenomeFasta = genomeFastaPath;
-            }
-
-            if (options.GeneModelGtfOrGff == null)
-            {
-                options.GeneModelGtfOrGff = gff3GeneModelPath;
-            }
-
-            #endregion Setup
+            FinishSetup(options, out string genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath, out string proteinFastaPath);
 
             #region STAR Fusion Testing
 
@@ -167,26 +140,45 @@ namespace CMD
                     throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
                 }
 
-                string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
                 Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
-                if (options.InferStrandSpecificity)
-                {
-                    var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
-                        fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
-                    strandedness = bamProps.Strandedness;
-                }
 
-                TranscriptQuantificationFlow.QuantifyTranscripts(
-                    options.BinDirectory,
-                    options.GenomeFasta,
-                    options.Threads,
-                    options.GeneModelGtfOrGff,
-                    RSEMAlignerOption.STAR,
-                    strandedness,
-                    fastqs,
-                    true,
-                    out string referencePrefix,
-                    out string outputPrefix);
+                if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
+                {
+                    TranscriptQuantificationFlow.QuantifyTranscriptsFromSra(
+                        options.BinDirectory,
+                        options.AnalysisDirectory,
+                        options.GenomeFasta,
+                        options.Threads,
+                        options.GeneModelGtfOrGff,
+                        RSEMAlignerOption.STAR,
+                        strandedness,
+                        options.SraAccession,
+                        true,
+                        out string referencePrefix,
+                        out string outputPrefix);
+                }
+                else if (options.Fastq1 != null)
+                {
+                    string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
+                    if (options.InferStrandSpecificity)
+                    {
+                        var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
+                            fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
+                        strandedness = bamProps.Strandedness;
+                    }
+
+                    TranscriptQuantificationFlow.QuantifyTranscripts(
+                        options.BinDirectory,
+                        options.GenomeFasta,
+                        options.Threads,
+                        options.GeneModelGtfOrGff,
+                        RSEMAlignerOption.STAR,
+                        strandedness,
+                        fastqs,
+                        true,
+                        out string referencePrefix,
+                        out string outputPrefix);
+                }
 
                 return;
             }
@@ -202,7 +194,7 @@ namespace CMD
 
             if (options.ReferenceVcf == null)
             {
-                GATKWrapper.DownloadEnsemblKnownVariantSites(options.BinDirectory, options.AnalysisDirectory, true, options.Reference, out string ensemblVcfPath);
+                GATKWrapper.DownloadEnsemblKnownVariantSites(options.BinDirectory, options.BinDirectory, true, options.Reference, out string ensemblVcfPath);
                 options.ReferenceVcf = ensemblVcfPath;
             }
 
@@ -271,6 +263,20 @@ namespace CMD
             Console.ReadKey();
 
             #endregion Proteoform Database Engine
+        }
+
+        /// <summary>
+        /// Always download reference that aren't present and set default options
+        /// </summary>
+        /// <param name="options"></param>
+        public static void FinishSetup(Options options, out string genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath, out string proteinFastaPath)
+        {
+            EnsemblDownloadsWrapper.DownloadReferences(options.BinDirectory, options.BinDirectory, options.Reference,
+                out genomeFastaPath, out gtfGeneModelPath, out gff3GeneModelPath, out proteinFastaPath);
+
+            options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
+            options.GenomeFasta = options.GenomeFasta ?? genomeFastaPath;
+            options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? gff3GeneModelPath;
         }
     }
 }

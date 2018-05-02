@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System;
 
 namespace ToolWrapperLayer
 {
@@ -101,6 +100,35 @@ namespace ToolWrapperLayer
                 "gtfToGenePred " + WrapperUtility.ConvertWindowsPath(geneModelGtf) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
                 "genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
                 "sort -k1,1 -k2,2n " + WrapperUtility.ConvertWindowsPath(bed12Path) + " > " + WrapperUtility.ConvertWindowsPath(sortedBed12Path),
+            }).WaitForExit();
+            return sortedBed12Path;
+        }
+
+        /// <summary>
+        /// Converts a gene model file (GTF?) to a BED12 file with all 12 columns sometimes required of a BED file.
+        ///
+        /// see https://gist.github.com/gireeshkbogu/f478ad8495dca56545746cd391615b93
+        ///
+        /// </summary>
+        /// <param name="bin"></param>
+        /// <param name="filteredGeneModelGtfGffPath"></param>
+        /// <returns></returns>
+        public static string Gtf2Bed12(string bin, string filteredGeneModelGtfGffPath, string genomeFastaPath)
+        {
+            string geneModelGtf = filteredGeneModelGtfGffPath;
+            if (Path.GetExtension(filteredGeneModelGtfGffPath).StartsWith(".gff"))
+            {
+                CufflinksWrapper.GffToGtf(bin, filteredGeneModelGtfGffPath, out geneModelGtf);
+            }
+            string genePredPath = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".genePred");
+            string bed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".bed12");
+            string sortedBed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".sorted.bed12");
+            string scriptPath = Path.Combine(bin, "scripts", "bed12FaidxSortConversion.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            {
+                "gtfToGenePred " + WrapperUtility.ConvertWindowsPath(geneModelGtf) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
+                "genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
+                "bedtools sort -faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath + ".fai") + " -i " + WrapperUtility.ConvertWindowsPath(bed12Path) + " > " + WrapperUtility.ConvertWindowsPath(sortedBed12Path),
             }).WaitForExit();
             return sortedBed12Path;
         }
