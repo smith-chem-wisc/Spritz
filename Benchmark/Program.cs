@@ -34,7 +34,8 @@ namespace Benchmark
             Genome genome = new Genome(@"D:\GRCh37_canon\GRCh37_canon.fa");
             Console.WriteLine(genome.Chromosomes.Count + " chroms");
 
-            List<Protein> ensembl_seqs = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh37.87\Homo_sapiens.GRCh37.pep.all.fa", true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors).ToList();
+            List<Protein> ensembl_seqs = ProteinDbLoader.LoadProteinFasta(@"D:\GRCh37.87\Homo_sapiens.GRCh37.pep.all.fa", true, DecoyType.None, false,
+                ProteinDbLoader.EnsemblAccessionRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblGeneNameRegex, null, out List<string> errors).ToList();
             HashSet<string> incompletes = new HashSet<string>(ensembl_seqs.Where(p => 
                 p.BaseSequence.StartsWith("X") || p.BaseSequence.EndsWith("X") || p.BaseSequence.Contains("*")).Select(p => p.Accession.Split(' ')[0].Split('.')[0]));
 

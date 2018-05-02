@@ -606,7 +606,7 @@ namespace Test
 
         #endregion GATK tests
 
-        #region Cufflinks tests
+        #region Cufflinks and Stringtie tests
 
         [Test, Order(4)]
         public void CufflinksRun()
@@ -627,6 +627,25 @@ namespace Test
             Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, CufflinksWrapper.SkippedTranscriptsFilename)));
             Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, CufflinksWrapper.IsoformAbundanceFilename)));
             Assert.IsTrue(File.Exists(Path.Combine(outputDirectory, CufflinksWrapper.GeneAbundanceFilename)));
+        }
+
+        [Test, Order(4)]
+        public void StringtieRun()
+        {
+            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper-trimmedAligned.sortedByCoord.out.bam");
+            string script_name = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "stringtieRun.bash");
+            WrapperUtility.GenerateAndRunScript(script_name, StringTieWrapper.AssembleTranscripts(
+                TestContext.CurrentContext.TestDirectory,
+                Environment.ProcessorCount,
+                bamPath,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
+                Strandedness.None,
+                false,
+                out string outputGtf
+                )).WaitForExit();
+            Assert.IsTrue(File.Exists(outputGtf));
+            Assert.IsTrue(new FileInfo(outputGtf).Length > 0);
         }
 
         #endregion Cufflinks tests

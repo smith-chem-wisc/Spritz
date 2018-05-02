@@ -83,7 +83,8 @@ namespace ToolWrapperLayer
             string alignerOption = GetAlignerOption(binDirectory, aligner);
             string threadOption = "--num-threads " + threads.ToString();
             string referencePrefixDirectory = Path.Combine(Path.GetDirectoryName(referenceFastaPath), Path.GetFileNameWithoutExtension(referenceFastaPath)) +
-                (aligner == RSEMAlignerOption.STAR ? "RsemStarReference" : "RsemBowtieReference");
+                (aligner == RSEMAlignerOption.STAR ? "RsemStarReference" : "RsemBowtieReference") +
+                "_GeneModel" + geneModelPath.GetHashCode().ToString();
             referencePrefix = Path.Combine(referencePrefixDirectory, Path.GetFileNameWithoutExtension(referenceFastaPath));
             string geneModelOption = Path.GetExtension(geneModelPath).StartsWith(".gff") ? "--gff3 " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
                 Path.GetExtension(geneModelPath) == ".gtf" ? "--gtf " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
@@ -137,10 +138,10 @@ namespace ToolWrapperLayer
                     String.Join(",", fastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
-            outputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]));
+            outputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]) + "_reference" + referencePrefix.GetHashCode().ToString());
 
             // RSEM likes to sort the transcript.bam file, which takes forever and isn't very useful, I've found. Just sort the genome.bam file instead
-            string samtoolsCommands = !doOuptutBam ? 
+            string samtoolsCommands = !doOuptutBam ?
                 "" :
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(outputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(outputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
                     "  " + SamtoolsWrapper.SortBam(binDirectory, outputPrefix + GenomeBamSuffix) + "\n" +

@@ -237,7 +237,8 @@ namespace Test
             Genome genome = new Genome(genomeFastaPath);
             GeneModel geneModel = new GeneModel(genome, gff);
             List<Protein> geneBasedProteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions);
-            List<Protein> pepDotAll = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, ProteinDbLoader.ensembl_accession_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_fullName_expression, ProteinDbLoader.ensembl_gene_expression, ProteinDbLoader.uniprot_organism_expression, out List<string> errors);
+            List<Protein> pepDotAll = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, 
+                ProteinDbLoader.EnsemblAccessionRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblGeneNameRegex, null, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 
             foreach (Protein p in pepDotAll)
