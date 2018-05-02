@@ -19,7 +19,7 @@ namespace Proteogenomics
         /// <param name="message"></param>
         public void AddEffect(Variant variant, Interval marker, EffectType effectType, String message)
         {
-            AddEffect(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], message);
+            AddEffect(variant, marker, effectType, EffectTypeMethods.EffectDictionary[effectType], message);
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Proteogenomics
             }
             else
             {
-                AddEffect(variant, marker, effectType, VariantEffect.EffectDictionary[effectType], "");
+                AddEffect(variant, marker, effectType, EffectTypeMethods.EffectDictionary[effectType], "");
             }
         }
 
@@ -82,7 +82,7 @@ namespace Proteogenomics
         {
             VariantEffect veff = Get();
             if (veff == null) return false;
-            return veff.GetMarker() != null;
+            return veff.Marker != null;
         }
 
         public void SetMarker(Interval marker)

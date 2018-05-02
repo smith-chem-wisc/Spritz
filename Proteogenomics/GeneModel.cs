@@ -5,8 +5,8 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Proteogenomics
 {
@@ -183,7 +183,7 @@ namespace Proteogenomics
                 }
             }
             else // nothing to do
-            { 
+            {
             }
         }
 
@@ -355,6 +355,27 @@ namespace Proteogenomics
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Apply a list of variants to the intervals within this gene model
+        /// </summary>
+        /// <param name="variants"></param>
+        public List<Transcript> ApplyVariantAnnotationsOnly(List<Variant> variants)
+        {
+            // first, add variants to relevant genomic regions
+            Parallel.ForEach(variants.OrderByDescending(v => v.OneBasedStart).ToList(), v =>
+            {
+                if (GenomeForest.Forest.TryGetValue(Chromosome.GetFriendlyChromosomeName(v.ChromosomeID), out var intervalTree))
+                {
+                    foreach (Interval i in intervalTree.Stab(v.OneBasedStart))
+                    {
+                        lock (i) { i.Variants.Add(v); }
+                    }
+                }
+            });
+
+            return Genes.SelectMany(g => g.Transcripts).SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
         }
 
         /// <summary>

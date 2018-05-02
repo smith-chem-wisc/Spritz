@@ -13,93 +13,6 @@ namespace Proteogenomics
         // Don't show codon change sequences that are too long
         public static readonly int MAX_CODON_SEQUENCE_LEN = 100;
 
-        public static readonly Dictionary<EffectType, EffectImpact> EffectDictionary = new Dictionary<EffectType, EffectImpact>
-        {
-            // High impact
-            // Order: Highest impact first
-            { EffectType.CHROMOSOME_LARGE_DELETION, EffectImpact.HIGH }, //
-            { EffectType.CHROMOSOME_LARGE_INVERSION, EffectImpact.HIGH }, //
-            { EffectType.CHROMOSOME_LARGE_DUPLICATION, EffectImpact.HIGH }, //
-            { EffectType.GENE_REARRANGEMENT, EffectImpact.HIGH }, //
-            { EffectType.GENE_DELETED, EffectImpact.HIGH }, //
-            { EffectType.TRANSCRIPT_DELETED, EffectImpact.HIGH }, //
-            { EffectType.EXON_DELETED, EffectImpact.HIGH }, //
-            { EffectType.EXON_DELETED_PARTIAL, EffectImpact.HIGH }, //
-            { EffectType.GENE_FUSION, EffectImpact.HIGH }, //
-            { EffectType.GENE_FUSION_REVERESE, EffectImpact.HIGH }, //
-            { EffectType.GENE_FUSION_HALF, EffectImpact.HIGH }, //
-            { EffectType.FRAME_SHIFT, EffectImpact.HIGH }, //
-            { EffectType.STOP_GAINED, EffectImpact.HIGH }, //
-            { EffectType.STOP_LOST, EffectImpact.HIGH }, //
-            { EffectType.START_LOST, EffectImpact.HIGH }, //
-            { EffectType.SPLICE_SITE_ACCEPTOR, EffectImpact.HIGH }, //
-            { EffectType.SPLICE_SITE_DONOR, EffectImpact.HIGH }, //
-            { EffectType.RARE_AMINO_ACID, EffectImpact.HIGH }, //
-            { EffectType.EXON_DUPLICATION, EffectImpact.HIGH }, //
-            { EffectType.EXON_DUPLICATION_PARTIAL, EffectImpact.HIGH }, //
-            { EffectType.EXON_INVERSION, EffectImpact.HIGH }, //
-            { EffectType.EXON_INVERSION_PARTIAL, EffectImpact.HIGH }, //
-            { EffectType.PROTEIN_PROTEIN_INTERACTION_LOCUS, EffectImpact.HIGH }, //
-            { EffectType.PROTEIN_STRUCTURAL_INTERACTION_LOCUS, EffectImpact.HIGH }, //
-
-            // Moderate impact
-            // Order: Highest impact first
-            // Note: Method Codon.effect() relies on this order for effect
-            //       replacement (when 'allowReplace = true')
-            { EffectType.NON_SYNONYMOUS_CODING, EffectImpact.MODERATE }, //
-            { EffectType.GENE_DUPLICATION, EffectImpact.MODERATE }, //
-            { EffectType.TRANSCRIPT_DUPLICATION, EffectImpact.MODERATE }, //
-            { EffectType.UTR_5_DELETED, EffectImpact.MODERATE }, //
-            { EffectType.UTR_3_DELETED, EffectImpact.MODERATE }, //
-            { EffectType.SPLICE_SITE_BRANCH_U12, EffectImpact.MODERATE }, //
-            { EffectType.GENE_INVERSION, EffectImpact.MODERATE }, //
-            { EffectType.TRANSCRIPT_INVERSION, EffectImpact.MODERATE }, //
-            { EffectType.CODON_INSERTION, EffectImpact.MODERATE }, //
-            { EffectType.CODON_CHANGE_PLUS_CODON_INSERTION, EffectImpact.MODERATE }, //
-            { EffectType.CODON_DELETION, EffectImpact.MODERATE }, //
-            { EffectType.CODON_CHANGE_PLUS_CODON_DELETION, EffectImpact.MODERATE }, //
-
-            // Low impact
-            // Order: Highest impact first
-            { EffectType.NON_SYNONYMOUS_STOP, EffectImpact.LOW }, //
-            { EffectType.NON_SYNONYMOUS_START, EffectImpact.LOW }, //
-            { EffectType.SPLICE_SITE_REGION, EffectImpact.LOW }, //
-            { EffectType.SPLICE_SITE_BRANCH, EffectImpact.LOW }, //
-            { EffectType.SYNONYMOUS_CODING, EffectImpact.LOW }, //
-            { EffectType.SYNONYMOUS_START, EffectImpact.LOW }, //
-            { EffectType.SYNONYMOUS_STOP, EffectImpact.LOW }, //
-            { EffectType.CODON_CHANGE, EffectImpact.LOW }, //
-            { EffectType.START_GAINED, EffectImpact.LOW }, //
-            { EffectType.MOTIF, EffectImpact.LOW }, //
-            { EffectType.MOTIF_DELETED, EffectImpact.LOW }, //
-            { EffectType.FEATURE_FUSION, EffectImpact.LOW }, //
-
-            // Modifiers
-            // Order: Highest impact first
-            { EffectType.UTR_5_PRIME, EffectImpact.MODIFIER }, //
-            { EffectType.UTR_3_PRIME, EffectImpact.MODIFIER }, //
-            { EffectType.REGULATION, EffectImpact.MODIFIER }, //
-            { EffectType.MICRO_RNA, EffectImpact.MODIFIER }, //
-            { EffectType.UPSTREAM, EffectImpact.MODIFIER }, //
-            { EffectType.DOWNSTREAM, EffectImpact.MODIFIER }, //
-            { EffectType.NEXT_PROT, EffectImpact.MODIFIER }, //
-            { EffectType.INTRON_CONSERVED, EffectImpact.MODIFIER }, //
-            { EffectType.INTRON, EffectImpact.MODIFIER }, //
-            { EffectType.INTRAGENIC, EffectImpact.MODIFIER }, //
-            { EffectType.INTERGENIC_CONSERVED, EffectImpact.MODIFIER }, //
-            { EffectType.INTERGENIC, EffectImpact.MODIFIER }, //
-            { EffectType.CDS, EffectImpact.MODIFIER }, //
-            { EffectType.EXON, EffectImpact.MODIFIER }, //
-            { EffectType.TRANSCRIPT, EffectImpact.MODIFIER }, //
-            { EffectType.GENE, EffectImpact.MODIFIER }, //
-            { EffectType.SEQUENCE, EffectImpact.MODIFIER }, //
-            { EffectType.CHROMOSOME_ELONGATION, EffectImpact.MODIFIER }, //
-            { EffectType.CUSTOM, EffectImpact.MODIFIER }, //
-            { EffectType.CHROMOSOME, EffectImpact.MODIFIER }, //
-            { EffectType.GENOME, EffectImpact.MODIFIER }, //
-            { EffectType.NONE, EffectImpact.MODIFIER } //
-        };
-
         public VariantEffect(Variant variant)
         {
             Variant = variant;
@@ -118,174 +31,31 @@ namespace Proteogenomics
         }
 
         public Variant Variant { get; private set; }
-
+        public Interval Marker { get; private set; }
         public List<EffectType> EffectTypes { get; private set; }
-
         public string CodonsRef { get; private set; } = ""; // Codon change information
-
         public string CodonsAlt { get; private set; } = ""; // Codon change information
-
         public long CDnaPos { get; private set; } = -1; // Position in cDNA
-
         public int CodonNum { get; private set; } = -1; // Codon number (negative number mens 'information not available')
-
         public int CodonIndex { get; private set; } = -1; // Index within a codon (negative number mens 'information not available')
-
         public int CodonDegeneracy { get; private set; } = -1; // Codon degeneracy (negative number mens 'information not available')
-
         public string ReferenceAA { get; set; } = "";
-
         public string AlternateAA { get; private set; } = ""; // Amino acid changes
+        public long Distance { get; set; } = -1; // Distance metric
 
         protected List<EffectImpact> EffectImpacts { get; set; }
-
-        protected Interval Marker { get; set; }
-
         protected HashSet<ErrorWarningType> Error { get; set; } = new HashSet<ErrorWarningType>();
-
         protected HashSet<ErrorWarningType> Warning { get; set; } = new HashSet<ErrorWarningType>();
-
         protected string Message { get; set; } = ""; // Any message, warning or error?
-
         protected string CodonsAroundOld { get; private set; } = ""; // Codons around
-
         protected string CodonsAroundNew { get; private set; } = "";
-
-        protected long Distance = -1; // Distance metric
-
         protected string AroundOldAAs { get; set; } = "";
-
         protected string AroundNewAAs { get; set; } = ""; // Amino acids around
-
-        public static EffectType GetGeneRegion(EffectType type)
-        {
-            switch (type)
-            {
-                case EffectType.NONE:
-                case EffectType.CHROMOSOME:
-                case EffectType.CHROMOSOME_LARGE_DELETION:
-                case EffectType.CHROMOSOME_LARGE_DUPLICATION:
-                case EffectType.CHROMOSOME_LARGE_INVERSION:
-                case EffectType.CHROMOSOME_ELONGATION:
-                case EffectType.CUSTOM:
-                case EffectType.SEQUENCE:
-                    return EffectType.CHROMOSOME;
-
-                case EffectType.INTERGENIC:
-                case EffectType.INTERGENIC_CONSERVED:
-                case EffectType.FEATURE_FUSION:
-                    return EffectType.INTERGENIC;
-
-                case EffectType.UPSTREAM:
-                    return EffectType.UPSTREAM;
-
-                case EffectType.UTR_5_PRIME:
-                case EffectType.UTR_5_DELETED:
-                case EffectType.START_GAINED:
-                    return EffectType.UTR_5_PRIME;
-
-                case EffectType.SPLICE_SITE_ACCEPTOR:
-                    return EffectType.SPLICE_SITE_ACCEPTOR;
-
-                case EffectType.SPLICE_SITE_BRANCH_U12:
-                case EffectType.SPLICE_SITE_BRANCH:
-                    return EffectType.SPLICE_SITE_BRANCH;
-
-                case EffectType.SPLICE_SITE_DONOR:
-                    return EffectType.SPLICE_SITE_DONOR;
-
-                case EffectType.SPLICE_SITE_REGION:
-                    return EffectType.SPLICE_SITE_REGION;
-
-                case EffectType.TRANSCRIPT_DELETED:
-                case EffectType.TRANSCRIPT_DUPLICATION:
-                case EffectType.TRANSCRIPT_INVERSION:
-                case EffectType.INTRAGENIC:
-                case EffectType.NEXT_PROT:
-                case EffectType.TRANSCRIPT:
-                case EffectType.CDS:
-                    return EffectType.TRANSCRIPT;
-
-                case EffectType.GENE:
-                case EffectType.GENE_DELETED:
-                case EffectType.GENE_DUPLICATION:
-                case EffectType.GENE_FUSION:
-                case EffectType.GENE_FUSION_HALF:
-                case EffectType.GENE_FUSION_REVERESE:
-                case EffectType.GENE_INVERSION:
-                case EffectType.GENE_REARRANGEMENT:
-                    return EffectType.GENE;
-
-                case EffectType.EXON:
-                case EffectType.EXON_DELETED:
-                case EffectType.EXON_DELETED_PARTIAL:
-                case EffectType.EXON_DUPLICATION:
-                case EffectType.EXON_DUPLICATION_PARTIAL:
-                case EffectType.EXON_INVERSION:
-                case EffectType.EXON_INVERSION_PARTIAL:
-                case EffectType.NON_SYNONYMOUS_START:
-                case EffectType.NON_SYNONYMOUS_CODING:
-                case EffectType.SYNONYMOUS_CODING:
-                case EffectType.SYNONYMOUS_START:
-                case EffectType.FRAME_SHIFT:
-                case EffectType.CODON_CHANGE:
-                case EffectType.CODON_INSERTION:
-                case EffectType.CODON_CHANGE_PLUS_CODON_INSERTION:
-                case EffectType.CODON_DELETION:
-                case EffectType.CODON_CHANGE_PLUS_CODON_DELETION:
-                case EffectType.START_LOST:
-                case EffectType.STOP_GAINED:
-                case EffectType.SYNONYMOUS_STOP:
-                case EffectType.NON_SYNONYMOUS_STOP:
-                case EffectType.STOP_LOST:
-                case EffectType.RARE_AMINO_ACID:
-                case EffectType.PROTEIN_PROTEIN_INTERACTION_LOCUS:
-                case EffectType.PROTEIN_STRUCTURAL_INTERACTION_LOCUS:
-                    return EffectType.EXON;
-
-                case EffectType.INTRON:
-                case EffectType.INTRON_CONSERVED:
-                    return EffectType.INTRON;
-
-                case EffectType.UTR_3_PRIME:
-                case EffectType.UTR_3_DELETED:
-                    return EffectType.UTR_3_PRIME;
-
-                case EffectType.DOWNSTREAM:
-                    return EffectType.DOWNSTREAM;
-
-                case EffectType.REGULATION:
-                    return EffectType.REGULATION;
-
-                case EffectType.MOTIF:
-                case EffectType.MOTIF_DELETED:
-                    return EffectType.MOTIF;
-
-                case EffectType.MICRO_RNA:
-                    return EffectType.MICRO_RNA;
-
-                case EffectType.GENOME:
-                    return EffectType.GENOME;
-
-                default:
-                    throw new ArgumentException("Unknown gene region for effect type: '" + type + "'");
-            }
-        }
 
         public void AddEffect(EffectType effectType)
         {
-            AddEffectType(effectType);
-            AddEffectImpact(EffectDictionary[effectType]);
-        }
-
-        public void AddEffectImpact(EffectImpact effectImpact)
-        {
-            EffectImpacts.Add(effectImpact);
-        }
-
-        public void AddEffectType(EffectType effectType)
-        {
             EffectTypes.Add(effectType);
+            EffectImpacts.Add(EffectTypeMethods.EffectDictionary[effectType]);
         }
 
         /// <summary>
@@ -301,10 +71,10 @@ namespace Proteogenomics
         {
             if ((Marker == null) || (CodonNum < 0)) { return ""; }
 
-            if (!showAaChange) { return GetEffectTypeString(useFirstEffect); }
+            if (!showAaChange) { return EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes); }
 
             StringBuilder sb = new StringBuilder();
-            sb.Append(GetEffectTypeString(useFirstEffect));
+            sb.Append(EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes));
             sb.Append("(");
             sb.Append(GetAaChange());
             sb.Append(")");
@@ -392,14 +162,14 @@ namespace Proteogenomics
             //---
             // Marker based comparisons
             //---
-            Interval mThis = GetMarker();
-            Interval mOther = varEffOther.GetMarker();
+            Interval mThis = Marker;
+            Interval mOther = varEffOther.Marker;
 
             startThis = 0;
             endThis = 0;
             idThis = null;
             chrThis = null;
-            if (mThis != null)
+            if (Marker != null)
             {
                 //idThis = mThis.getId();
                 chrThis = mThis.ChromosomeID;
@@ -450,38 +220,37 @@ namespace Proteogenomics
         /// <returns></returns>
         public string Effect(bool shortFormat, bool showAaChange, bool showBioType, bool useSeqOntology, bool useFirstEffect)
         {
-            string e = "";
+            string effectString = "";
             string codonEffect = CodonEffect(showAaChange, showBioType, useFirstEffect); // Codon effect
 
-            // Create effect string
             if (codonEffect != "")
             {
-                e = codonEffect;
+                effectString = codonEffect;
             }
-            else if (IsIntergenic() || IsIntron() || IsSpliceSite())
+            else if (EffectTypeMethods.IsIntergenic(EffectTypes) || EffectTypeMethods.IsIntron(EffectTypes) || EffectTypeMethods.IsSpliceSite(EffectTypes))
             {
-                e = GetEffectTypeString(useFirstEffect);
+                effectString = EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes);
             }
             else if (Message != "")
             {
-                e = GetEffectTypeString(useFirstEffect) + ": " + Message;
+                effectString = EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes) + ": " + Message;
             }
             else if (Marker == null)
             {
                 // There are cases when no marker is associated (e.g. "Out of chromosome", "No such chromosome", etc.)
-                e = GetEffectTypeString(useFirstEffect);
+                effectString = EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes);
             }
             else
             {
-                e = GetEffectTypeString(useFirstEffect); // + ": " + marker.getId();
+                effectString = EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes); // + ": " + marker.getId();
             }
 
             if (shortFormat)
             {
-                e = e.Split(':')[0];
+                effectString = effectString.Split(':')[0];
             }
 
-            return e;
+            return effectString;
         }
 
         /// <summary>
@@ -569,38 +338,6 @@ namespace Proteogenomics
             return EffectTypes == null ? EffectType.NONE : EffectTypes.Min();
         }
 
-        public string GetEffectTypeString(bool useFirstEffect)
-        {
-            if (EffectTypes == null) { return ""; }
-
-            // Show all effects
-            StringBuilder sb = new StringBuilder();
-            EffectTypes.Sort();
-
-            // More than one effect? Check for repeats
-            HashSet<string> added = EffectTypes.Count > 1 && !useFirstEffect ? new HashSet<string>() : null;
-
-            // Create string
-            foreach (EffectType et in EffectTypes)
-            {
-                string eff = et.ToString();
-
-                // Make sure we don't add the same effect twice
-                if (added == null || added.Add(eff))
-                {
-                    sb.Append(sb.Length > 0 ? " " : eff);
-                }
-
-                // Only use first effect?
-                if (useFirstEffect)
-                {
-                    return sb.ToString();
-                }
-            }
-
-            return sb.ToString();
-        }
-
         public string GetError()
         {
             return String.Join(",", Error);
@@ -634,9 +371,9 @@ namespace Proteogenomics
                 if (!AlternateAA.Equals(ReferenceAA))
                 {
                     Translation.TranslateDnaCodon(CodonsAlt, out byte aa);
-                    if (aa == Alphabets.Protein.Ter) { return FunctionalClass.NONSENSE; }
-
-                    return FunctionalClass.MISSENSE;
+                    return aa == Alphabets.Protein.Ter ?
+                        FunctionalClass.NONSENSE :
+                        FunctionalClass.MISSENSE;
                 }
                 if (!CodonsAlt.Equals(CodonsRef))
                 {
@@ -668,8 +405,8 @@ namespace Proteogenomics
 
         public string GetGeneRegion()
         {
-            EffectType eff = GetGeneRegion(GetEffectType());
-            if (eff == EffectType.TRANSCRIPT && IsExon()) { eff = EffectType.EXON; }
+            EffectType eff = EffectTypeMethods.GetGeneRegion(GetEffectType());
+            if (eff == EffectType.TRANSCRIPT && EffectTypeMethods.IsExon(Marker, EffectTypes)) { eff = EffectType.EXON; }
             return eff.ToString();
         }
 
@@ -687,11 +424,6 @@ namespace Proteogenomics
             return null;
         }
 
-        public Interval GetMarker()
-        {
-            return Marker;
-        }
-
         public Transcript GetTranscript()
         {
             if (Marker != null)
@@ -702,97 +434,9 @@ namespace Proteogenomics
             return null;
         }
 
-        public Variant GetVariant()
-        {
-            return Variant;
-        }
-
         public string GetWarning()
         {
             return String.Join(",", Warning);
-        }
-
-        public bool HasEffectImpact(EffectImpact effectImpact)
-        {
-            foreach (EffectImpact effImp in EffectImpacts)
-            {
-                if (effImp == effectImpact) { return true; }
-            }
-            return false;
-        }
-
-        public bool HasEffectType(EffectType effectType)
-        {
-            foreach (EffectType effType in EffectTypes)
-            {
-                if (effType == effectType) { return true; }
-            }
-            return false;
-        }
-
-        public bool IsExon()
-        {
-            return Marker is Exon || HasEffectType(EffectType.EXON_DELETED);
-        }
-
-        public bool IsIntergenic()
-        {
-            return HasEffectType(EffectType.INTERGENIC) || HasEffectType(EffectType.INTERGENIC_CONSERVED);
-        }
-
-        public bool IsIntron()
-        {
-            return HasEffectType(EffectType.INTRON) || HasEffectType(EffectType.INTRON_CONSERVED);
-        }
-
-        public bool IsMotif()
-        {
-            return HasEffectType(EffectType.MOTIF);
-        }
-
-        public bool IsMultipleGenes()
-        {
-            return false;
-        }
-
-        public bool IsNextProt()
-        {
-            return HasEffectType(EffectType.NEXT_PROT);
-        }
-
-        public bool IsRegulation()
-        {
-            return HasEffectType(EffectType.REGULATION);
-        }
-
-        public bool IsSpliceSite()
-        {
-            return HasEffectType(EffectType.SPLICE_SITE_DONOR) //
-                    || HasEffectType(EffectType.SPLICE_SITE_ACCEPTOR) //
-                    || HasEffectType(EffectType.SPLICE_SITE_REGION) //
-                    || HasEffectType(EffectType.SPLICE_SITE_BRANCH) //
-                    || HasEffectType(EffectType.SPLICE_SITE_BRANCH_U12); //
-        }
-
-        public bool IsSpliceSiteCore()
-        {
-            return HasEffectType(EffectType.SPLICE_SITE_DONOR) //
-                    || HasEffectType(EffectType.SPLICE_SITE_ACCEPTOR); //
-        }
-
-        public bool IsSpliceSiteRegion()
-        {
-            return HasEffectType(EffectType.SPLICE_SITE_REGION);
-        }
-
-        public bool IsUtr3()
-        {
-            return HasEffectType(EffectType.UTR_3_PRIME) || HasEffectType(EffectType.UTR_3_DELETED);
-        }
-
-        public bool IsUtr5()
-        {
-            return HasEffectType(EffectType.UTR_5_PRIME) || HasEffectType(EffectType.UTR_5_DELETED);
         }
 
         public void Set(Interval marker, EffectType effectType, EffectImpact effectImpact, string message)
@@ -800,7 +444,7 @@ namespace Proteogenomics
             SetMarker(marker); // Use setter because it takes care of warnings
             SetEffectType(effectType);
             SetEffectImpact(effectImpact);
-            this.Message = message;
+            Message = message;
         }
 
         /// <summary>
@@ -859,11 +503,6 @@ namespace Proteogenomics
             AroundNewAAs = aasLeft.ToLower(CultureInfo.InvariantCulture) + AlternateAA.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
         }
 
-        public void SetDistance(long distance)
-        {
-            this.Distance = distance;
-        }
-
         /// <summary>
         /// Set effect using default impact
         /// </summary>
@@ -871,7 +510,7 @@ namespace Proteogenomics
         public void SetEffect(EffectType effectType)
         {
             SetEffectType(effectType);
-            SetEffectImpact(EffectDictionary[effectType]);
+            SetEffectImpact(EffectTypeMethods.EffectDictionary[effectType]);
         }
 
         public void SetEffectImpact(EffectImpact effectImpact)
@@ -1028,9 +667,9 @@ namespace Proteogenomics
         public string TranscriptAnnotation()
         {
             return "effect:" + GetFunctionalClass().ToString() + " " +
-                    GetEffectType().ToString() + " " +
-                    ReferenceAA + (CodonNum + 1).ToString() + AlternateAA + " " +
-                    CodonsRef.ToLower(CultureInfo.InvariantCulture) + CodonNum.ToString() + CodonsAlt;
+                GetEffectType().ToString() + " " +
+                ReferenceAA + (CodonNum + 1).ToString() + AlternateAA + " " +
+                CodonsRef.ToLower(CultureInfo.InvariantCulture) + CodonNum.ToString() + CodonsAlt;
         }
 
         /// <summary>

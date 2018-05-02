@@ -325,7 +325,7 @@ namespace Proteogenomics
 
         protected VariantEffect Effect(Interval marker, EffectType effectType, bool allowReplace)
         {
-            return Effect(marker, effectType, VariantEffect.EffectDictionary[effectType], CodonsReference, CodonsAlternate, CodonStartNumber, CodonStartIndex, allowReplace);
+            return Effect(marker, effectType, EffectTypeMethods.EffectDictionary[effectType], CodonsReference, CodonsAlternate, CodonStartNumber, CodonStartIndex, allowReplace);
         }
 
         /// <summary>
@@ -368,7 +368,7 @@ namespace Proteogenomics
 
         protected VariantEffect EffectNoCodon(Interval marker, EffectType effectType)
         {
-            return Effect(marker, effectType, VariantEffect.EffectDictionary[effectType], "", "", -1, -1, false);
+            return Effect(marker, effectType, EffectTypeMethods.EffectDictionary[effectType], "", "", -1, -1, false);
         }
 
         protected VariantEffect EffectNoCodon(Interval marker, EffectType effectType, EffectImpact effectImpact)
@@ -424,7 +424,10 @@ namespace Proteogenomics
             sb.Append("Effects    :\n");
             foreach (VariantEffect veff in VariantEffects.Effects)
             {
-                sb.Append("\t" + veff.GetEffectTypeString(false) + "\t" + veff.CodonsRef + "/" + veff.CodonsAlt + "\t" + veff.ReferenceAA + "/" + veff.AlternateAA + "\n");
+                sb.Append(
+                    "\t" + EffectTypeMethods.GetEffectTypeString(false, veff.EffectTypes) +
+                    "\t" + veff.CodonsRef + "/" + veff.CodonsAlt +
+                    "\t" + veff.ReferenceAA + "/" + veff.AlternateAA + "\n");
             }
 
             return sb.ToString();

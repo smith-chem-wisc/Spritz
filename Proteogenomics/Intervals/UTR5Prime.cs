@@ -140,8 +140,8 @@ namespace Proteogenomics
             Transcript tr = (Transcript)FindParent(typeof(Transcript));
             long distance = utrDistance(variant, tr);
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.Set(this, IntervalType, VariantEffect.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
-            variantEffect.SetDistance(distance);
+            variantEffect.Set(this, IntervalType, EffectTypeMethods.EffectDictionary[IntervalType], distance >= 0 ? distance + " bases from TSS" : "");
+            variantEffect.Distance = distance;
             variantEffects.AddEffect(variantEffect);
 
             // Start gained?

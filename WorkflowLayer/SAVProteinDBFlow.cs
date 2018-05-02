@@ -130,29 +130,45 @@ namespace WorkflowLayer
 
             // Parse VCF file
             VCFParser vcf = new VCFParser(vcfPath);
-            List<Protein> proteins = new List<Protein>();
             List<Variant> singleNucleotideVariants = vcf.Select(x => x)
                 .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
                 .Select(v => new Variant(null, v, genome)).ToList();
 
-            // Apply the variants and translate the variant transcripts
-            List<Transcript> transcripts = geneModel.ApplyVariants(singleNucleotideVariants);
-            for (int i = 0; i < transcripts.Count; i++)
+            // Apply the variants combinitorially, and translate the variant transcripts
+            List<Transcript> variantTranscripts = geneModel.ApplyVariants(singleNucleotideVariants);
+            List<Protein> variantProteins = new List<Protein>();
+            for (int i = 0; i < variantTranscripts.Count; i++)
             {
-                Console.WriteLine("Processing transcript " + i.ToString() + "/" + transcripts.Count.ToString() + " " + transcripts[i].ID + " " + transcripts[i].ProteinID);
-                if (badProteinAccessions.Contains(transcripts[i].ID) || badProteinAccessions.Contains(transcripts[i].ProteinID))
+                if (badProteinAccessions.Contains(variantTranscripts[i].ID) || badProteinAccessions.Contains(variantTranscripts[i].ProteinID))
                 {
                     continue;
                 }
-                proteins.Add(transcripts[i].Protein(selenocysteineContaininAccessions));
+                variantProteins.Add(variantTranscripts[i].Protein(selenocysteineContaininAccessions));
             }
-            int transcriptsWithVariants = transcripts.Count(t => t.CodingDomainSequences.Any(y => y.Variants.Count > 0));
-            string proteinVariantDatabase = outprefix + ".protein.fasta";
-            string proteinVariantDatabaseXml = outprefix + ".protein.xml";
-            List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
-            ProteinDbWriter.WriteFastaDatabase(proteinsToWrite, proteinVariantDatabase, "|");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinsToWrite, proteinVariantDatabaseXml);
-            WriteProteinFastaMetrics(outprefix, proteinsToWrite);
+
+            int transcriptsWithVariants = variantTranscripts.Count(t => t.CodingDomainSequences.Any(y => y.Variants.Count > 0));
+            string proteinVariantDatabase = outprefix + ".variantprotein.fasta";
+            string proteinVariantDatabaseXml = outprefix + ".variantprotein.xml";
+            List<Protein> variantProteinsToWrite = variantProteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
+            ProteinDbWriter.WriteFastaDatabase(variantProteinsToWrite, proteinVariantDatabase, "|");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), variantProteinsToWrite, proteinVariantDatabaseXml);
+            WriteProteinFastaMetrics(outprefix, variantProteinsToWrite);
+
+            // Apply the SNVs as annotations, and translate the variant transcripts
+            //List<Transcript> transcripts = geneModel.ApplyVariants(singleNucleotideVariants);
+            //List<Protein> proteins = new List<Protein>();
+            //for (int i = 0; i < transcripts.Count; i++)
+            //{
+            //    if (badProteinAccessions.Contains(transcripts[i].ID) || badProteinAccessions.Contains(transcripts[i].ProteinID))
+            //    {
+            //        continue;
+            //    }
+            //    proteins.Add(transcripts[i].Protein(selenocysteineContaininAccessions));
+            //}
+            //string proteinDatabaseXml = outprefix + ".protein.xml";
+            //List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
+            //ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinsToWrite, proteinDatabaseXml);
+
             return proteinVariantDatabase;
         }
 
