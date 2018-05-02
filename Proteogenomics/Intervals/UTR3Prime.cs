@@ -56,8 +56,8 @@ namespace Proteogenomics
             long distance = utrDistance(variant, tr);
 
             VariantEffect variantEffect = new VariantEffect(variant);
-            variantEffect.Set(this, EffectType.UTR_3_PRIME, VariantEffect.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
-            variantEffect.SetDistance(distance);
+            variantEffect.Set(this, EffectType.UTR_3_PRIME, EffectTypeMethods.EffectDictionary[EffectType.UTR_3_PRIME], distance >= 0 ? distance + " bases from CDS" : "");
+            variantEffect.Distance = distance;
             variantEffects.AddEffect(variantEffect);
 
             return true;

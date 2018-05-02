@@ -246,11 +246,6 @@ namespace Proteogenomics
         {
             List<Transcript> result = new List<Transcript>();
 
-            if (variant.ToString() == "20:55934783_G/A_HOMOZYGOUS_ALT")
-            {
-                int i = 0;
-            }
-
             // annotate variant, and then check that functional effect is greater than missense (CompareTo greater than or equal to 0)
             variantEffects = AnnotateVariant(variant);
             bool nonsynonymous = variantEffects.Effects.Any(eff => eff.IsNonsynonymous());
@@ -412,7 +407,7 @@ namespace Proteogenomics
                 ve.AddErrorWarningInfo(x.SanityCheck(variant));
             }
             ve.SetEffectType(type);
-            ve.SetEffectImpact(VariantEffect.EffectDictionary[type]);
+            ve.SetEffectImpact(EffectTypeMethods.EffectDictionary[type]);
             return ve;
         }
 

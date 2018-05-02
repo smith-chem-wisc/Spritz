@@ -126,7 +126,6 @@
     <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="Fastq2ProteinsFlow.cs" />
     <Compile Include="GeneFusionTranscriptFlow.cs" />
-    <Compile Include="IndelTranscriptFlow.cs" />
     <Compile Include="LncRNADiscoveryFlow.cs" />
     <Compile Include="ManageToolsFlow.cs" />
     <Compile Include="Parameters\Parameters.cs" />

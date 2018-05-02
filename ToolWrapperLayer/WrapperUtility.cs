@@ -45,7 +45,7 @@ namespace ToolWrapperLayer
             Directory.CreateDirectory(Path.GetDirectoryName(scriptPath));
             using (StreamWriter writer = new StreamWriter(scriptPath))
             {
-                writer.Write(AsciiArt() + "\n");
+                writer.Write(SpritzArt() + "\n");
                 foreach (string cmd in commands)
                 {
                     writer.Write(cmd + "\n");
@@ -68,7 +68,7 @@ namespace ToolWrapperLayer
 
         #region Private Method
 
-        private static string AsciiArt()
+        private static string OldAsciiArt()
         {
             return
                 "echo \"" + @"__________                __                _____                    " + "\"\n" +
@@ -89,6 +89,23 @@ namespace ToolWrapperLayer
                 "echo \"" + @" |        \   |  \/ /_/  >  |   |  \  ___/                           " + "\"\n" +
                 "echo \"" + @"/_______  /___|  /\___  /|__|___|  /\___  >                          " + "\"\n" +
                 "echo \"" + @"        \/     \//_____/         \/     \/                            " + "\"\n";
+        }
+
+        private static string SpritzArt()
+        {
+            return
+                "echo\n" +
+                "echo \"" + @"           _                               " + "\"\n" +
+                "echo \"" + @"         /' \`\                          /' " + "\"\n" +
+                "echo \"" + @"       /'   ._)                     --/'-- " + "\"\n" +
+                "echo \"" + @"      (____    ____     ____     O  /'____ " + "\"\n" +
+                "echo \"" + @"           ) /'    )--)'    )--/' /' '  _/'" + "\"\n" +
+                "echo \"" + @"         /'/'    /' /'       /' /'   _/'   " + "\"\n" +
+                "echo \"" + @"(_____,/'/(___,/' /'        (__(___/'__,   " + "\"\n" +
+                "echo \"" + @"       /'                                  " + "\"\n" +
+                "echo \"" + @"     /'                                    " + "\"\n" +
+                "echo \"" + @"   /'                                      " + "\"\n" +
+                "echo\n";
         }
 
         #endregion Private Method
