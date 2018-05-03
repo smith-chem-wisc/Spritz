@@ -75,7 +75,7 @@ namespace ToolWrapperLayer
         public static List<string> Annotate(string binDirectory, string analysisDirectory, int threads, string predictedGeneModelGtfPath, string reference, string slnckyOutPrefix)
         {
             string sortedBed12Cuffmerge = BEDOPSWrapper.Gtf2Bed12(binDirectory, predictedGeneModelGtfPath);
-            EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(binDirectory, reference, sortedBed12Cuffmerge, out string ucscCuffmergeBed);
+            string ucscCuffmergeBedPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(binDirectory, reference, sortedBed12Cuffmerge);
             Directory.CreateDirectory(Path.GetDirectoryName(slnckyOutPrefix));
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";
             return new List<string>
@@ -84,7 +84,7 @@ namespace ToolWrapperLayer
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " ]]; then " +
                     "./slncky.v1.0" +
                     " --threads " + threads.ToString() +
-                    " " + WrapperUtility.ConvertWindowsPath(ucscCuffmergeBed) +
+                    " " + WrapperUtility.ConvertWindowsPath(ucscCuffmergeBedPath) +
                     " " + ucscReference +
                     " " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix) +
                 "; fi"

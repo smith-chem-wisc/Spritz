@@ -100,8 +100,20 @@ namespace ToolWrapperLayer
 
         #endregion Protein Fasta URLs and Filenames
 
+        public string GenomeFastaPath { get; private set; }
+        public string GtfGeneModelPath { get; private set; }
+        public string Gff3GeneModelPath { get; private set; }
+        public string ProteinFastaPath { get; private set; }
+        public Dictionary<string, string> ProteinAccessionSequence { get; private set; }
+        public HashSet<string> BadProteinAccessions { get; private set; }
+        public Dictionary<string, string> SelenocysteineProteinAccessions { get; private set; }
+        public Genome EnsemblGenome { get; private set; }
+        public string ReorderedFastaPath { get; private set; }
+
         /// <summary>
         /// Downloads Ensembl references for GRCh37 or GRCh38.
+        ///
+        /// Sets GenomeFastaPath, GtfGeneModelPath, Gff3GeneModelPath, and ProteinFastaPath properties.
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <param name="targetDirectory"></param>
@@ -110,27 +122,27 @@ namespace ToolWrapperLayer
         /// <param name="gtfGeneModelPath"></param>
         /// <param name="gff3GeneModelPath"></param>
         /// <param name="proteinFastaPath"></param>
-        public static void DownloadReferences(string binDirectory, string targetDirectory, string reference, out string genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath, out string proteinFastaPath)
+        public void DownloadReferences(string binDirectory, string targetDirectory, string reference)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
 
-            genomeFastaPath = downloadGrch37 ?
+            GenomeFastaPath = downloadGrch37 ?
                 Path.Combine(targetDirectory, GRCh37PrimaryAssemblyFilename) :
                 downloadGrch38 ?
                     Path.Combine(targetDirectory, GRCh38PrimaryAssemblyFilename) :
                     "";
-            gtfGeneModelPath = downloadGrch37 ?
+            GtfGeneModelPath = downloadGrch37 ?
                 Path.Combine(targetDirectory, GRCh37GtfGeneModelFilename) :
                 downloadGrch38 ?
                     Path.Combine(targetDirectory, GRCh38GtfGeneModelFilename) :
                     "";
-            gff3GeneModelPath = downloadGrch37 ?
-                gtfGeneModelPath :
+            Gff3GeneModelPath = downloadGrch37 ?
+                GtfGeneModelPath :
                 downloadGrch38 ?
                     Path.Combine(targetDirectory, GRCh38Gff3GeneModelFilename) :
                     "";
-            proteinFastaPath = downloadGrch37 ?
+            ProteinFastaPath = downloadGrch37 ?
                 Path.Combine(targetDirectory, GRCh37ProteinFastaFilename) :
                 downloadGrch38 ?
                     Path.Combine(targetDirectory, GRCh38ProteinFastaFilename) :
@@ -143,14 +155,14 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
-                "if [ ! -f " + Path.GetFileName(genomeFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38PrimaryAssemblyUrl : GRCh37PrimaryAssemblyUrl) + "; fi",
-                "if [ -f " + Path.GetFileName(genomeFastaPath) + ".gz ]; then gunzip " + Path.GetFileName(genomeFastaPath) + ".gz; fi",
-                "if [ ! -f " + Path.GetFileName(gtfGeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38GtfGeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi",
-                "if [ -f " + Path.GetFileName(gtfGeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(gtfGeneModelPath) + ".gz; fi",
-                "if [ ! -f " + Path.GetFileName(gff3GeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38Gff3GeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi", // note GRCh37 calls the gtf url instead
-                "if [ -f " + Path.GetFileName(gff3GeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(gff3GeneModelPath) + ".gz; fi",
-                "if [ ! -f " + Path.GetFileName(proteinFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38ProteinFastaUrl : GRCh37ProteinFastaUrl) + "; fi", // note GRCh37 calls the gtf url instead
-                "if [ -f " + Path.GetFileName(proteinFastaPath) + ".gz ]; then gunzip " + Path.GetFileName(proteinFastaPath) + ".gz; fi",
+                "if [ ! -f " + Path.GetFileName(GenomeFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38PrimaryAssemblyUrl : GRCh37PrimaryAssemblyUrl) + "; fi",
+                "if [ -f " + Path.GetFileName(GenomeFastaPath) + ".gz ]; then gunzip " + Path.GetFileName(GenomeFastaPath) + ".gz; fi",
+                "if [ ! -f " + Path.GetFileName(GtfGeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38GtfGeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi",
+                "if [ -f " + Path.GetFileName(GtfGeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(GtfGeneModelPath) + ".gz; fi",
+                "if [ ! -f " + Path.GetFileName(Gff3GeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38Gff3GeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi", // note GRCh37 calls the gtf url instead
+                "if [ -f " + Path.GetFileName(Gff3GeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(Gff3GeneModelPath) + ".gz; fi",
+                "if [ ! -f " + Path.GetFileName(ProteinFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38ProteinFastaUrl : GRCh37ProteinFastaUrl) + "; fi", // note GRCh37 calls the gtf url instead
+                "if [ -f " + Path.GetFileName(ProteinFastaPath) + ".gz ]; then gunzip " + Path.GetFileName(ProteinFastaPath) + ".gz; fi",
             }).WaitForExit();
 
             //Genome.WriteFasta(new Genome(genomeFastaPath).KaryotypicOrder(), genomeFastaPath); // todo: try this for ordering contigs before alignments; does gtf then need to be reordered?
@@ -201,11 +213,11 @@ namespace ToolWrapperLayer
         /// <param name="reference"></param>
         /// <param name="inputPath"></param>
         /// <param name="outputPath"></param>
-        public static void ConvertFirstColumnEnsembl2UCSC(string binDirectory, string reference, string inputPath, out string outputPath)
+        public static string ConvertFirstColumnEnsembl2UCSC(string binDirectory, string reference, string inputPath)
         {
             var e2uMappings = Ensembl2UCSCChromosomeMappings(binDirectory, reference);
             var u2eMappings = UCSC2EnsemblChromosomeMappings(binDirectory, reference);
-            outputPath = Path.Combine(Path.GetDirectoryName(inputPath), Path.GetFileNameWithoutExtension(inputPath)) + ".ucsc" + Path.GetExtension(inputPath);
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath), Path.GetFileNameWithoutExtension(inputPath)) + ".ucsc" + Path.GetExtension(inputPath);
             using (StreamReader reader = new StreamReader(inputPath))
             using (StreamWriter writer = new StreamWriter(outputPath))
             {
@@ -217,11 +229,12 @@ namespace ToolWrapperLayer
                     string[] columns = line.Split('\t');
                     if (columns.Length == 0) { break; }
                     if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { columns[0] = ucscColumn; }
-                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) {  } // nothing to do
+                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { } // nothing to do
                     else { continue; } // did not recognize this chromosome name; filter it out
                     writer.WriteLine(String.Join("\t", columns));
                 }
             }
+            return outputPath;
         }
 
         /// <summary>
@@ -231,17 +244,17 @@ namespace ToolWrapperLayer
         /// <param name="binDirectory"></param>
         /// <param name="proteinFastaPath"></param>
         /// <returns></returns>
-        public static void GetImportantProteinAccessions(string binDirectory, string proteinFastaPath, out Dictionary<string, string> proteinAccessionSequence, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineProteinAccessions)
+        public void GetImportantProteinAccessions(string binDirectory, string proteinFastaPath)
         {
             Regex transcriptAccession = new Regex(@"(transcript:)([A-Za-z0-9_.]+)"); // need to include transcript accessions for when a GTF file is used and transcript IDs become the protein IDs
             List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFastaPath, true, DecoyType.None, false,
                 ProteinDbLoader.EnsemblAccessionRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblGeneNameRegex, null, out List<string> errors);
-            proteinAccessionSequence = proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence))
+            ProteinAccessionSequence = proteins.Select(p => new KeyValuePair<string, string>(p.Accession, p.BaseSequence))
                 .Concat(proteins.Select(p => new KeyValuePair<string, string>(transcriptAccession.Match(p.FullName).Groups[2].Value, p.BaseSequence)))
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
             HashSet<string> badOnes = new HashSet<string>(proteins.Where(p => p.BaseSequence.Contains('X') || p.BaseSequence.Contains('*')).SelectMany(p => new string[] { p.Accession, transcriptAccession.Match(p.FullName).Groups[2].Value }));
-            badProteinAccessions = badOnes;
-            selenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);
+            BadProteinAccessions = badOnes;
+            SelenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);
         }
 
         public static void FilterGeneModel(string binDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
@@ -260,7 +273,7 @@ namespace ToolWrapperLayer
         /// <param name="genomeFasta"></param>
         /// <param name="ensemblGenome"></param>
         /// <param name="reorderedFasta"></param>
-        public static void PrepareEnsemblGenomeFasta(string genomeFasta, out Genome ensemblGenome, out string reorderedFasta)
+        public void PrepareEnsemblGenomeFasta(string genomeFasta)
         {
             if (Path.GetExtension(genomeFasta) == ".gz" || Path.GetExtension(genomeFasta) == ".tgz")
             {
@@ -272,16 +285,16 @@ namespace ToolWrapperLayer
             // Right now this is based on ensembl references, so those are the chromosome IDs I will be using throughout
             // TODO: try this with UCSC references to judge whether there's a difference in quality / yield / FDR etc in subsequent proteomics analysis
             // This file needs to be in karyotypic order; this allows us not to have to reorder it for GATK analysis
-            reorderedFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".karyotypic.fa");
-            ensemblGenome = new Genome(genomeFasta);
-            if (!ensemblGenome.IsKaryotypic())
+            ReorderedFastaPath = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".karyotypic.fa");
+            EnsemblGenome = new Genome(genomeFasta);
+            if (!EnsemblGenome.IsKaryotypic())
             {
-                ensemblGenome.Chromosomes = ensemblGenome.KaryotypicOrder();
-                if (!File.Exists(reorderedFasta)) { Genome.WriteFasta(ensemblGenome.Chromosomes.Select(x => x.Sequence), reorderedFasta); }
+                EnsemblGenome.Chromosomes = EnsemblGenome.KaryotypicOrder();
+                if (!File.Exists(ReorderedFastaPath)) { Genome.WriteFasta(EnsemblGenome.Chromosomes.Select(x => x.Sequence), ReorderedFastaPath); }
             }
             else
             {
-                reorderedFasta = genomeFasta;
+                ReorderedFastaPath = genomeFasta;
             }
         }
     }

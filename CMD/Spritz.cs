@@ -1,5 +1,4 @@
 ﻿using CommandLine;
-using Proteogenomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,7 +14,7 @@ namespace CMD
         public static void Main(string[] args)
         {
             // main setup involves installing tools
-            if (args.Contains("setup"))
+            if (args.Contains(ManageToolsFlow.Command))
             {
                 ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
                 return;
@@ -24,7 +23,12 @@ namespace CMD
             Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
             Options options = result.Value;
 
-            FinishSetup(options, out string genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath, out string proteinFastaPath);
+            FinishSetup(options);
+
+            bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
+            List<string[]> fastqsSeparated = useSraMethod ?
+                SRAToolkitWrapper.GetFastqsFromSras(options.BinDirectory, options.AnalysisDirectory, options.SraAccession) :
+                SeparateFastqs(options.Fastq1, options.Fastq2);
 
             #region STAR Fusion Testing
 
@@ -53,61 +57,24 @@ namespace CMD
 
             #region lncRNA Discovery Workflow
 
-            if (options.Command.Equals("lncRNADiscovery", StringComparison.InvariantCultureIgnoreCase))
+            if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
-                {
-                    throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
-                }
-
-                if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
-                {
-                    LncRNADiscoveryFlow.LncRNADiscoveryFromSra(
+                LncRNADiscoveryFlow lncRNAdiscovery = new LncRNADiscoveryFlow();
+                lncRNAdiscovery.Parameters = new LncRNADiscoveryParameters(
                         options.BinDirectory,
                         options.AnalysisDirectory,
                         options.Reference,
                         options.Threads,
-                        options.SraAccession,
+                        fastqsSeparated,
                         options.StrandSpecific,
                         options.InferStrandSpecificity,
                         options.OverwriteStarAlignments,
                         options.GenomeStarIndexDirectory,
                         options.GenomeFasta,
-                        proteinFastaPath,
+                        options.ProteinFastaPath,
                         options.GeneModelGtfOrGff,
-                        true,
-                        out string slnckyOutPrefix,
-                        out string cuffmergeGtfPath,
-                        out List<string> rsemOutPrefixes,
-                        out List<string> cufflinksTranscriptModels);
-                }
-                else if (options.Fastq1 != null)
-                {
-                    string[] fastqs1 = options.Fastq1.Split(',');
-                    List<string[]> fastqsSeparated = options.Fastq2 == null ?
-                        fastqs1.Select(x => new string[] { x }).ToList() :
-                        fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
-
-                    LncRNADiscoveryFlow.LncRNADiscoveryFromFastqs(
-                         options.BinDirectory,
-                         options.AnalysisDirectory,
-                         options.Reference,
-                         options.Threads,
-                         fastqsSeparated,
-                         options.StrandSpecific,
-                         options.InferStrandSpecificity,
-                         options.OverwriteStarAlignments,
-                         options.GenomeStarIndexDirectory,
-                         options.GenomeFasta,
-                         proteinFastaPath,
-                         options.GeneModelGtfOrGff,
-                         true,
-                         out string slnckyOutPrefix,
-                         out string cuffmergeGtfPath,
-                         out List<string> rsemOutPrefixes,
-                         out List<string> cufflinksTranscriptModels);
-                }
-
+                        true);
+                lncRNAdiscovery.LncRNADiscoveryFromFastqs();
                 return;
             }
 
@@ -117,12 +84,9 @@ namespace CMD
 
             if (options.Command.Equals("strandedness"))
             {
-                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
-                {
-                    throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
-                }
-
-                string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
+                string[] fastqs = options.Fastq2 == null ?
+                    new[] { options.Fastq1 } :
+                    new[] { options.Fastq1, options.Fastq2 };
                 BAMProperties b = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
                         fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                 Console.WriteLine(b.ToString());
@@ -133,53 +97,29 @@ namespace CMD
 
             #region Transcript Quantification
 
-            if (options.Command.Equals("quantify", StringComparison.InvariantCultureIgnoreCase))
+            if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
+                foreach (string[] fastq in fastqsSeparated)
                 {
-                    throw new ArgumentException("Unequal count of fastq1 and fastq2 files.");
-                }
-
-                Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
-
-                if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
-                {
-                    TranscriptQuantificationFlow.QuantifyTranscriptsFromSra(
-                        options.BinDirectory,
-                        options.AnalysisDirectory,
-                        options.GenomeFasta,
-                        options.Threads,
-                        options.GeneModelGtfOrGff,
-                        RSEMAlignerOption.STAR,
-                        strandedness,
-                        options.SraAccession,
-                        true,
-                        out string referencePrefix,
-                        out string outputPrefix);
-                }
-                else if (options.Fastq1 != null)
-                {
-                    string[] fastqs = options.Fastq2 == null ? new[] { options.Fastq1 } : new[] { options.Fastq1, options.Fastq2 };
+                    Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
                     if (options.InferStrandSpecificity)
                     {
                         var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
-                            fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
+                            fastq, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                         strandedness = bamProps.Strandedness;
                     }
-
-                    TranscriptQuantificationFlow.QuantifyTranscripts(
+                    TranscriptQuantificationFlow quantify = new TranscriptQuantificationFlow();
+                    quantify.Parameters = new TranscriptQuantificationParameters(
                         options.BinDirectory,
                         options.GenomeFasta,
                         options.Threads,
                         options.GeneModelGtfOrGff,
                         RSEMAlignerOption.STAR,
                         strandedness,
-                        fastqs,
-                        true,
-                        out string referencePrefix,
-                        out string outputPrefix);
+                        fastq,
+                        true);
+                    quantify.QuantifyTranscripts();
                 }
-
                 return;
             }
 
@@ -199,67 +139,25 @@ namespace CMD
             }
 
             // run the program
+            SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
+            ssdbf.Parameters = new SampleSpecificProteinDBParameters(
+                options.BinDirectory,
+                options.AnalysisDirectory,
+                options.Reference,
+                options.Threads,
+                fastqsSeparated,
+                options.StrandSpecific,
+                options.InferStrandSpecificity,
+                options.OverwriteStarAlignments,
+                options.GenomeStarIndexDirectory,
+                options.GenomeFasta,
+                options.ProteinFastaPath,
+                options.GeneModelGtfOrGff,
+                options.ReferenceVcf);
 
-            List<string> proteinDatabases = new List<string>();
+            ssdbf.GenerateSAVProteinsFromFastqs();
 
-            if (options.SraAccession != null && options.SraAccession.StartsWith("SR"))
-            {
-                SAVProteinDBFlow.GenerateSAVProteinsFromSra(
-                    options.BinDirectory,
-                    options.AnalysisDirectory,
-                    options.Reference,
-                    options.Threads,
-                    options.SraAccession,
-                    options.StrandSpecific,
-                    options.InferStrandSpecificity,
-                    options.OverwriteStarAlignments,
-                    options.GenomeStarIndexDirectory,
-                    options.GenomeFasta,
-                    proteinFastaPath,
-                    options.GeneModelGtfOrGff,
-                    options.ReferenceVcf,
-                    out proteinDatabases);
-            }
-            else if (options.Fastq1 != null)
-            {
-                // Parse comma-separated fastq lists
-                if (options.Fastq2 != null && options.Fastq1.Count(x => x == ',') != options.Fastq2.Count(x => x == ','))
-                    return;
-
-                string[] fastqs1 = options.Fastq1.Split(',');
-                List<string[]> fastqsSeparated = options.Fastq2 == null ?
-                    fastqs1.Select(x => new string[] { x }).ToList() :
-                    fastqs1.Select(x => new string[] { x, options.Fastq2.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
-
-                SAVProteinDBFlow.GenerateSAVProteinsFromFastqs(
-                    options.BinDirectory,
-                    options.AnalysisDirectory,
-                    options.Reference,
-                    options.Threads,
-                    fastqsSeparated,
-                    options.StrandSpecific,
-                    options.InferStrandSpecificity,
-                    options.OverwriteStarAlignments,
-                    options.GenomeStarIndexDirectory,
-                    options.GenomeFasta,
-                    proteinFastaPath,
-                    options.GeneModelGtfOrGff,
-                    options.ReferenceVcf,
-                    out proteinDatabases);
-            }
-            else if (args.Contains("vcf2protein"))
-            {
-                Genome genome = new Genome(options.GenomeFasta);
-                EnsemblDownloadsWrapper.GetImportantProteinAccessions(options.BinDirectory, proteinFastaPath, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-                GeneModel geneModel = new GeneModel(genome, options.GeneModelGtfOrGff);
-                proteinDatabases.Add(SAVProteinDBFlow.WriteSampleSpecificFasta(options.ReferenceVcf, genome, geneModel, options.Reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(options.ReferenceVcf), Path.GetFileNameWithoutExtension(options.ReferenceVcf))));
-            }
-            else
-            {
-                proteinDatabases = new List<string> { "Error: no fastq or sequence read archive (SRA) was provided." };
-            }
-
-            Console.WriteLine("output databases to " + String.Join(", and ", proteinDatabases));
+            Console.WriteLine("output databases to " + String.Join(", and ", ssdbf.ProteinVariantDatabases));
             Console.ReadKey();
 
             #endregion Proteoform Database Engine
@@ -269,14 +167,39 @@ namespace CMD
         /// Always download reference that aren't present and set default options
         /// </summary>
         /// <param name="options"></param>
-        public static void FinishSetup(Options options, out string genomeFastaPath, out string gtfGeneModelPath, out string gff3GeneModelPath, out string proteinFastaPath)
+        public static void FinishSetup(Options options)
         {
-            EnsemblDownloadsWrapper.DownloadReferences(options.BinDirectory, options.BinDirectory, options.Reference,
-                out genomeFastaPath, out gtfGeneModelPath, out gff3GeneModelPath, out proteinFastaPath);
+            EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
+            downloadsWrapper.DownloadReferences(options.BinDirectory, options.BinDirectory, options.Reference);
 
-            options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath));
-            options.GenomeFasta = options.GenomeFasta ?? genomeFastaPath;
-            options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? gff3GeneModelPath;
+            options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? Path.Combine(Path.GetDirectoryName(downloadsWrapper.GenomeFastaPath), Path.GetFileNameWithoutExtension(downloadsWrapper.GenomeFastaPath));
+            options.GenomeFasta = options.GenomeFasta ?? downloadsWrapper.GenomeFastaPath;
+            options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? downloadsWrapper.Gff3GeneModelPath;
+            options.ProteinFastaPath = options.ProteinFastaPath ?? downloadsWrapper.ProteinFastaPath;
+        }
+
+        /// <summary>
+        /// Split the fastq lists into a list of paired strings
+        /// </summary>
+        /// <param name="fastq1string"></param>
+        /// <param name="fastq2string"></param>
+        /// <returns></returns>
+        private static List<string[]> SeparateFastqs(string fastq1string, string fastq2string)
+        {
+            List<string[]> fastqsSeparated = null;
+            if (fastq1string != null)
+            {
+                // Parse comma-separated fastq lists
+                if (fastq2string != null && fastq1string.Count(x => x == ',') != fastq1string.Count(x => x == ','))
+                {
+                    throw new ArgumentException("Error: There are a different number of first-strand and second-strand fastq files.");
+                }
+                string[] fastqs1 = fastq1string.Split(',');
+                fastqsSeparated = fastq2string == null ?
+                    fastqs1.Select(x => new string[] { x }).ToList() :
+                    fastqs1.Select(x => new string[] { x, fastq2string.Split(',')[fastqs1.ToList().IndexOf(x)] }).ToList();
+            }
+            return fastqsSeparated;
         }
     }
 }

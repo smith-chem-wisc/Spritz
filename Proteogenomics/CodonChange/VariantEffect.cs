@@ -52,161 +52,12 @@ namespace Proteogenomics
         protected string AroundOldAAs { get; set; } = "";
         protected string AroundNewAAs { get; set; } = ""; // Amino acids around
 
+        #region Effect Methods
+
         public void AddEffect(EffectType effectType)
         {
             EffectTypes.Add(effectType);
             EffectImpacts.Add(EffectTypeMethods.EffectDictionary[effectType]);
-        }
-
-        /// <summary>
-        /// Create a string for codon effect
-        /// @param showAaChange : If true, include codon change, biotype, etc.
-        /// </summary>
-        /// <param name="showAaChange"></param>
-        /// <param name="showBioType"></param>
-        /// <param name="useSeqOntology"></param>
-        /// <param name="useFirstEffect"></param>
-        /// <returns></returns>
-        private string CodonEffect(bool showAaChange, bool showBioType, bool useFirstEffect)
-        {
-            if ((Marker == null) || (CodonNum < 0)) { return ""; }
-
-            if (!showAaChange) { return EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes); }
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append(EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes));
-            sb.Append("(");
-            sb.Append(GetAaChange());
-            sb.Append(")");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Compare to another variantEffect
-        /// </summary>
-        /// <param name="variantEffect"></param>
-        /// <returns></returns>
-        public int CompareTo(VariantEffect varEffOther)
-        {
-            // Sort by impact
-            int comp = GetEffectImpact().CompareTo(varEffOther.GetEffectImpact());
-            if (comp != 0) return comp;
-
-            // Sort by effect
-            comp = GetEffectType().CompareTo(varEffOther.GetEffectType());
-            if (comp != 0) return comp;
-
-            //---
-            // Transcript based comparisons
-            //---
-            Transcript trThis = GetTranscript();
-            Transcript trOther = varEffOther.GetTranscript();
-
-            // This transcript data
-            //int tslThis = TranscriptSupportLevel.TSL_NULL_VALUE;
-            //int canonThis = 0;
-            long startThis = 0;
-            long endThis = 0;
-            string idThis = null;
-            string chrThis = null;
-            if (trThis != null)
-            {
-                //tslThis = TranscriptSupportLevel.tsl(trThis.getTranscriptSupportLevel());
-                //canonThis = trThis.isCanonical() ? 1 : 0;
-                idThis = trThis.ID;
-                chrThis = trThis.ChromosomeID;
-                startThis = trThis.OneBasedStart;
-                endThis = trThis.OneBasedEnd;
-            }
-
-            // Other transcript data
-            //int tslOther = TranscriptSupportLevel.TSL_NULL_VALUE;
-            //int canonOther = 0;
-            long startOther = 0;
-            long endOther = 0;
-            string idOther = null;
-            string chrOther = null;
-            if (trOther != null)
-            {
-                //tslOther = TranscriptSupportLevel.tsl(trOther.getTranscriptSupportLevel());
-                //canonOther = trOther.isCanonical() ? 1 : 0;
-                idOther = trOther.ID;
-                chrOther = trOther.ChromosomeID;
-                startOther = trOther.OneBasedStart;
-                endOther = trOther.OneBasedEnd;
-            }
-
-            // Compare by TSL: Smaller first
-            //comp = tslThis - tslOther;
-            //if (comp != 0) return comp;
-
-            // Compare by canonical transcript: Larger first
-            //comp = canonOther - canonThis;
-            //if (comp != 0) return comp;
-
-            // Compare genomic coordinate
-            comp = CompareNull(chrThis, chrOther);
-            if (comp != 0) { return comp; }
-
-            comp = startThis.CompareTo(startOther);
-            if (comp != 0) { return comp; }
-
-            comp = endThis.CompareTo(endOther);
-            if (comp != 0) { return comp; }
-
-            // Compare IDs
-            comp = CompareNull(idThis, idOther);
-            if (comp != 0) { return comp; }
-
-            //---
-            // Marker based comparisons
-            //---
-            Interval mThis = Marker;
-            Interval mOther = varEffOther.Marker;
-
-            startThis = 0;
-            endThis = 0;
-            idThis = null;
-            chrThis = null;
-            if (Marker != null)
-            {
-                //idThis = mThis.getId();
-                chrThis = mThis.ChromosomeID;
-                startThis = mThis.OneBasedStart;
-                endThis = mThis.OneBasedEnd;
-            }
-
-            startOther = 0;
-            endOther = 0;
-            idOther = null;
-            chrOther = null;
-            if (mOther != null)
-            {
-                //idOther = mOther.getId();
-                chrOther = mOther.ChromosomeID;
-                startOther = mOther.OneBasedStart;
-                endOther = mOther.OneBasedEnd;
-            }
-
-            // Compare genomic coordinate
-            comp = CompareNull(chrThis, chrOther);
-            if (comp != 0) { return comp; }
-
-            comp = startThis.CompareTo(startOther);
-            if (comp != 0) { return comp; }
-
-            comp = endThis.CompareTo(endOther);
-            if (comp != 0) { return comp; }
-
-            // Compare IDs
-            comp = CompareNull(idThis, idOther);
-            if (comp != 0) { return comp; }
-
-            //---
-            // Variant based comparison
-            //---
-            return Variant.CompareTo(varEffOther.Variant);
         }
 
         /// <summary>
@@ -251,6 +102,91 @@ namespace Proteogenomics
             }
 
             return effectString;
+        }
+
+        /// <summary>
+        /// Return functional class of this effect (i.e.  NONSENSE, MISSENSE, SILENT or NONE)
+        /// </summary>
+        /// <returns></returns>
+        public FunctionalClass GetFunctionalClass()
+        {
+            if (Variant.isSnv())
+            {
+                if (!AlternateAA.Equals(ReferenceAA))
+                {
+                    Translation.TranslateDnaCodon(CodonsAlt, out byte aa);
+                    return aa == Alphabets.Protein.Ter ?
+                        FunctionalClass.NONSENSE :
+                        FunctionalClass.MISSENSE;
+                }
+                if (!CodonsAlt.Equals(CodonsRef))
+                {
+                    return FunctionalClass.SILENT;
+                }
+            }
+
+            return FunctionalClass.NONE;
+        }
+
+        /// <summary>
+        /// Checks if this effect is nonsynonymous
+        /// </summary>
+        /// <returns></returns>
+        public bool IsNonsynonymous()
+        {
+            return GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0;
+        }
+
+        /// <summary>
+        /// Return impact of this effect
+        /// </summary>
+        /// <returns></returns>
+        public EffectImpact GetEffectImpact()
+        {
+            //if ((variant != null) && (!variant.VarType == Variant.VariantType.()))
+            //{
+            //    // Not a change? => Modifier
+            //    return EffectImpact.MODIFIER;
+            //}
+            return EffectImpacts.Min(); // Get effect's type highest impact
+        }
+
+        /// <summary>
+        /// Highest effect type
+        /// </summary>
+        /// <returns></returns>
+        public EffectType GetEffectType()
+        {
+            // Pick highest effect type
+            return EffectTypes == null ? EffectType.NONE : EffectTypes.Min();
+        }
+
+        #endregion Effect Methods
+
+        #region Codon and AA Change Methods
+
+        /// <summary>
+        /// Create a string for codon effect
+        /// @param showAaChange : If true, include codon change, biotype, etc.
+        /// </summary>
+        /// <param name="showAaChange"></param>
+        /// <param name="showBioType"></param>
+        /// <param name="useSeqOntology"></param>
+        /// <param name="useFirstEffect"></param>
+        /// <returns></returns>
+        private string CodonEffect(bool showAaChange, bool showBioType, bool useFirstEffect)
+        {
+            if ((Marker == null) || (CodonNum < 0)) { return ""; }
+
+            if (!showAaChange) { return EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes); }
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append(EffectTypeMethods.GetEffectTypeString(useFirstEffect, EffectTypes));
+            sb.Append("(");
+            sb.Append(GetAaChange());
+            sb.Append(")");
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -315,28 +251,64 @@ namespace Proteogenomics
         }
 
         /// <summary>
-        /// Return impact of this effect
+        /// Set codon change. Calculate effect type based on codon changes (for SNPs & MNPs)
         /// </summary>
-        /// <returns></returns>
-        public EffectImpact GetEffectImpact()
+        /// <param name="codonsOld"></param>
+        /// <param name="codonsNew"></param>
+        /// <param name="codonNum"></param>
+        /// <param name="codonIndex"></param>
+        public void SetCodons(string codonsOld, string codonsNew, int codonNum, int codonIndex)
         {
-            //if ((variant != null) && (!variant.VarType == Variant.VariantType.()))
-            //{
-            //    // Not a change? => Modifier
-            //    return EffectImpact.MODIFIER;
-            //}
-            return EffectImpacts.Min(); // Get effect's type highest impact
+            CodonsRef = codonsOld;
+            CodonsAlt = codonsNew;
+            CodonNum = codonNum;
+            CodonIndex = codonIndex;
+
+            // Calculate amino acids
+            if (codonsOld == "")
+            {
+                ReferenceAA = "";
+            }
+            else if (Translation.TranslateDnaCodon(codonsOld, out byte aa))
+            {
+                ReferenceAA = new string(new[] { (char)aa });
+                //codonDegeneracy = codonTable.degenerate(codonsOld, codonIndex); // Calculate codon degeneracy
+            }
+
+            if (codonsNew == "")
+            {
+                AlternateAA = "";
+            }
+            else if (Translation.TranslateDnaCodon(codonsNew, out byte aa))
+            {
+                AlternateAA = new string(new[] { (char)aa });
+            }
         }
 
         /// <summary>
-        /// Highest effect type
+        /// Set values for codons around change.
         /// </summary>
-        /// <returns></returns>
-        public EffectType GetEffectType()
+        /// <param name="codonsLeft"></param>
+        /// <param name="codonsRight"></param>
+        public void SetCodonsAround(string codonsLeft, string codonsRight)
         {
-            // Pick highest effect type
-            return EffectTypes == null ? EffectType.NONE : EffectTypes.Min();
+            CodonsAroundOld = codonsLeft.ToLower(CultureInfo.InvariantCulture) + CodonsRef.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
+            CodonsAroundNew = codonsLeft.ToLower(CultureInfo.InvariantCulture) + CodonsAlt.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
+
+            // Amino acids surrounding the ones changed
+            string aasLeft = Translation.TranslateDnaCodon(codonsLeft, out byte aa1) ?
+                new string(new char[] { (char)aa1 }) :
+                "";
+            string aasRigt = Translation.TranslateDnaCodon(codonsRight, out byte aa2) ?
+                new string(new char[] { (char)aa2 }) :
+                "";
+            AroundOldAAs = aasLeft.ToLower(CultureInfo.InvariantCulture) + ReferenceAA.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
+            AroundNewAAs = aasLeft.ToLower(CultureInfo.InvariantCulture) + AlternateAA.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
         }
+
+        #endregion Codon and AA Change Methods
+
+        #region Get and Set Helper Methods
 
         public string GetError()
         {
@@ -358,39 +330,6 @@ namespace Proteogenomics
                 return (Exon)Marker.FindParent(typeof(Exon));
             }
             return null;
-        }
-
-        /// <summary>
-        /// Return functional class of this effect (i.e.  NONSENSE, MISSENSE, SILENT or NONE)
-        /// </summary>
-        /// <returns></returns>
-        public FunctionalClass GetFunctionalClass()
-        {
-            if (Variant.isSnv())
-            {
-                if (!AlternateAA.Equals(ReferenceAA))
-                {
-                    Translation.TranslateDnaCodon(CodonsAlt, out byte aa);
-                    return aa == Alphabets.Protein.Ter ?
-                        FunctionalClass.NONSENSE :
-                        FunctionalClass.MISSENSE;
-                }
-                if (!CodonsAlt.Equals(CodonsRef))
-                {
-                    return FunctionalClass.SILENT;
-                }
-            }
-
-            return FunctionalClass.NONE;
-        }
-
-        /// <summary>
-        /// Checks if this effect is nonsynonymous
-        /// </summary>
-        /// <returns></returns>
-        public bool IsNonsynonymous()
-        {
-            return GetFunctionalClass().CompareTo(FunctionalClass.MISSENSE) >= 0;
         }
 
         public Gene GetGene()
@@ -445,62 +384,6 @@ namespace Proteogenomics
             SetEffectType(effectType);
             SetEffectImpact(effectImpact);
             Message = message;
-        }
-
-        /// <summary>
-        /// Set codon change. Calculate effect type based on codon changes (for SNPs & MNPs)
-        /// </summary>
-        /// <param name="codonsOld"></param>
-        /// <param name="codonsNew"></param>
-        /// <param name="codonNum"></param>
-        /// <param name="codonIndex"></param>
-        public void SetCodons(string codonsOld, string codonsNew, int codonNum, int codonIndex)
-        {
-            CodonsRef = codonsOld;
-            CodonsAlt = codonsNew;
-            CodonNum = codonNum;
-            CodonIndex = codonIndex;
-
-            // Calculate amino acids
-            if (codonsOld == "")
-            {
-                ReferenceAA = "";
-            }
-            else if (Translation.TranslateDnaCodon(codonsOld, out byte aa))
-            {
-                ReferenceAA = new string(new[] { (char)aa });
-                //codonDegeneracy = codonTable.degenerate(codonsOld, codonIndex); // Calculate codon degeneracy
-            }
-
-            if (codonsNew == "")
-            {
-                AlternateAA = "";
-            }
-            else if (Translation.TranslateDnaCodon(codonsNew, out byte aa))
-            {
-                AlternateAA = new string(new[] { (char)aa });
-            }
-        }
-
-        /// <summary>
-        /// Set values for codons around change.
-        /// </summary>
-        /// <param name="codonsLeft"></param>
-        /// <param name="codonsRight"></param>
-        public void SetCodonsAround(string codonsLeft, string codonsRight)
-        {
-            CodonsAroundOld = codonsLeft.ToLower(CultureInfo.InvariantCulture) + CodonsRef.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
-            CodonsAroundNew = codonsLeft.ToLower(CultureInfo.InvariantCulture) + CodonsAlt.ToUpper(CultureInfo.InvariantCulture) + codonsRight.ToLower(CultureInfo.InvariantCulture);
-
-            // Amino acids surrounding the ones changed
-            string aasLeft = Translation.TranslateDnaCodon(codonsLeft, out byte aa1) ?
-                new string(new char[] { (char)aa1 }) :
-                "";
-            string aasRigt = Translation.TranslateDnaCodon(codonsRight, out byte aa2) ?
-                new string(new char[] { (char)aa2 }) :
-                "";
-            AroundOldAAs = aasLeft.ToLower(CultureInfo.InvariantCulture) + ReferenceAA.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
-            AroundNewAAs = aasLeft.ToLower(CultureInfo.InvariantCulture) + AlternateAA.ToUpper(CultureInfo.InvariantCulture) + aasRigt.ToLower(CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -565,6 +448,10 @@ namespace Proteogenomics
                 Warning.Add(errwarn);
             }
         }
+
+        #endregion Get and Set Helper Methods
+
+        #region Information String Methods
 
         public string ToStr()
         {
@@ -694,6 +581,139 @@ namespace Proteogenomics
 
             return "NO EFFECT";
         }
+
+        #endregion Information String Methods
+
+        #region Comparison Method
+
+        /// <summary>
+        /// Compare to another variantEffect
+        /// </summary>
+        /// <param name="variantEffect"></param>
+        /// <returns></returns>
+        public int CompareTo(VariantEffect varEffOther)
+        {
+            // Sort by impact
+            int comp = GetEffectImpact().CompareTo(varEffOther.GetEffectImpact());
+            if (comp != 0) return comp;
+
+            // Sort by effect
+            comp = GetEffectType().CompareTo(varEffOther.GetEffectType());
+            if (comp != 0) return comp;
+
+            //---
+            // Transcript based comparisons
+            //---
+            Transcript trThis = GetTranscript();
+            Transcript trOther = varEffOther.GetTranscript();
+
+            // This transcript data
+            //int tslThis = TranscriptSupportLevel.TSL_NULL_VALUE;
+            //int canonThis = 0;
+            long startThis = 0;
+            long endThis = 0;
+            string idThis = null;
+            string chrThis = null;
+            if (trThis != null)
+            {
+                //tslThis = TranscriptSupportLevel.tsl(trThis.getTranscriptSupportLevel());
+                //canonThis = trThis.isCanonical() ? 1 : 0;
+                idThis = trThis.ID;
+                chrThis = trThis.ChromosomeID;
+                startThis = trThis.OneBasedStart;
+                endThis = trThis.OneBasedEnd;
+            }
+
+            // Other transcript data
+            //int tslOther = TranscriptSupportLevel.TSL_NULL_VALUE;
+            //int canonOther = 0;
+            long startOther = 0;
+            long endOther = 0;
+            string idOther = null;
+            string chrOther = null;
+            if (trOther != null)
+            {
+                //tslOther = TranscriptSupportLevel.tsl(trOther.getTranscriptSupportLevel());
+                //canonOther = trOther.isCanonical() ? 1 : 0;
+                idOther = trOther.ID;
+                chrOther = trOther.ChromosomeID;
+                startOther = trOther.OneBasedStart;
+                endOther = trOther.OneBasedEnd;
+            }
+
+            // Compare by TSL: Smaller first
+            //comp = tslThis - tslOther;
+            //if (comp != 0) return comp;
+
+            // Compare by canonical transcript: Larger first
+            //comp = canonOther - canonThis;
+            //if (comp != 0) return comp;
+
+            // Compare genomic coordinate
+            comp = CompareNull(chrThis, chrOther);
+            if (comp != 0) { return comp; }
+
+            comp = startThis.CompareTo(startOther);
+            if (comp != 0) { return comp; }
+
+            comp = endThis.CompareTo(endOther);
+            if (comp != 0) { return comp; }
+
+            // Compare IDs
+            comp = CompareNull(idThis, idOther);
+            if (comp != 0) { return comp; }
+
+            //---
+            // Marker based comparisons
+            //---
+            Interval mThis = Marker;
+            Interval mOther = varEffOther.Marker;
+
+            startThis = 0;
+            endThis = 0;
+            idThis = null;
+            chrThis = null;
+            if (Marker != null)
+            {
+                //idThis = mThis.getId();
+                chrThis = mThis.ChromosomeID;
+                startThis = mThis.OneBasedStart;
+                endThis = mThis.OneBasedEnd;
+            }
+
+            startOther = 0;
+            endOther = 0;
+            idOther = null;
+            chrOther = null;
+            if (mOther != null)
+            {
+                //idOther = mOther.getId();
+                chrOther = mOther.ChromosomeID;
+                startOther = mOther.OneBasedStart;
+                endOther = mOther.OneBasedEnd;
+            }
+
+            // Compare genomic coordinate
+            comp = CompareNull(chrThis, chrOther);
+            if (comp != 0) { return comp; }
+
+            comp = startThis.CompareTo(startOther);
+            if (comp != 0) { return comp; }
+
+            comp = endThis.CompareTo(endOther);
+            if (comp != 0) { return comp; }
+
+            // Compare IDs
+            comp = CompareNull(idThis, idOther);
+            if (comp != 0) { return comp; }
+
+            //---
+            // Variant based comparison
+            //---
+            return Variant.CompareTo(varEffOther.Variant);
+        }
+
+        #endregion Comparison Method
 
         private static int CompareNull(IComparable oThis, IComparable oThat)
         {

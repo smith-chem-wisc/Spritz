@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -7,8 +6,10 @@ namespace WorkflowLayer
 {
     public enum MyWorkflow
     {
-        Fastaq2Proteins,
-        LncRnaDiscovery
+        SampleSpecificProteinDB,
+        LncRnaDiscovery,
+        TranscriptQuantification,
+        STARAlignment,
     }
 
     public abstract class SpritzFlow
@@ -20,15 +21,15 @@ namespace WorkflowLayer
 
         public MyWorkflow WorkflowType { get; set; }
 
-        public void RunTask(string output_folder, List<string> genomeFastaList, List<string> geneSetList, List<string> rnaSeqFastqList, string displayName)
+        public void RunTask(string outputFolder, ISpritzParameters parameters, string displayName)
         {
             try
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
-                RunSpecific(output_folder, genomeFastaList, geneSetList, rnaSeqFastqList);
+                RunSpecific(parameters);
                 stopWatch.Stop();
-                var resultsFileName = Path.Combine(output_folder, "results.txt");
+                var resultsFileName = Path.Combine(outputFolder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine("Spritz: version ");
@@ -41,6 +42,6 @@ namespace WorkflowLayer
             }
         }
 
-        protected abstract void RunSpecific(string OutputFolder, List<string> genomeFastaList, List<string> geneSetList, List<string> rnaSeqFastqList);
+        protected abstract void RunSpecific(ISpritzParameters parameters);
     }
 }

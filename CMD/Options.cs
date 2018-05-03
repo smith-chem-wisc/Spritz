@@ -2,12 +2,20 @@
 using System;
 using System.IO;
 using System.Reflection;
+using WorkflowLayer;
 
 namespace CMD
 {
     internal class Options
     {
-        [Option('c', "command", Required = true, HelpText = "Command: (1) setup, (2) run, (3) vcf2protein, (4) starFusionTest, (5) lncRNADiscovery, (6) quantify")]
+        [Option('c', "command", Required = true, HelpText =
+            "Command:" +
+                " (1) " + ManageToolsFlow.Command +
+                " (2) " + SampleSpecificProteinDBFlow.Command +
+                " (3) " + LncRNADiscoveryFlow.Command +
+                " (4) " + TranscriptQuantificationFlow.Command +
+                " (5) strandedness" +
+                " (6) starFusionTest")]
         public string Command { get; set; }
 
         [Option('b', "binDirectory", Required = false, HelpText = "Bin directory for Proteoform Database Engine")]
@@ -43,6 +51,9 @@ namespace CMD
         [Option('r', "StarFusionReference", Required = false, HelpText = "Human reference for STAR fusion (GRCh37 or GRCh38)", Default = "GRCh38")]
         public string Reference { get; set; }
 
+        [Option('x', "UniProtProteinXml", Required = false, HelpText = "Protein XML UniProt Database for Homo sapiens")]
+        public string UniProtXml { get; set; }
+
         [Option("overwriteStarAlignments", Required = false, HelpText = "Overwrite STAR alignments if they already exist", Default = false)]
         public bool OverwriteStarAlignments { get; set; }
 
@@ -51,5 +62,7 @@ namespace CMD
 
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
+
+        public string ProteinFastaPath { get; set; }
     }
 }

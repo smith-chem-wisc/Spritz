@@ -10,14 +10,11 @@ namespace ToolWrapperLayer
     public class SRAToolkitWrapper :
         IInstallable
     {
-        #region Private Fields
+        private static string AscpDownloadLocation = "http://download.asperasoft.com/download/sw/connect/3.7.4/aspera-connect-3.7.4.147727-linux-64.tar.gz";
+        private static string DownloadLocation = "https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-ubuntu64.tar.gz";
 
-        private static string ascpDownloadLocation = "http://download.asperasoft.com/download/sw/connect/3.7.4/aspera-connect-3.7.4.147727-linux-64.tar.gz";
-        private static string downloadLocation = "https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-ubuntu64.tar.gz";
-
-        #endregion Private Fields
-
-        #region Installation Methods
+        public string[] FastqPaths { get; private set; }
+        public string LogPath { get; private set; }
 
         /// <summary>
         /// Writes an installation script for SRAToolkit.
@@ -33,12 +30,12 @@ namespace ToolWrapperLayer
                 "if ls sratoolkit* 1> /dev/null 2>&1; then", // if there are files listed matching the pattern sratoolkit*
                 "  echo \"Found SRAToolkit.\"",
                 "else",
-                "  wget " + downloadLocation,
+                "  wget " + DownloadLocation,
                 "  tar -xvf sratoolkit.current-ubuntu64.tar.gz",
                 "  rm sratoolkit.current-ubuntu64.tar.gz",
                 "fi"
 
-                //"wget " + ascpDownloadLocation,
+                //"wget " + AscpDownloadLocation,
                 //"tar -xvf aspera-connect*.tar.gz",
                 //"rm apera-connect*.tar.gz",
                 //"echo \"Installing Aspera ASCP Download Client\"",
@@ -58,17 +55,13 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
-        #region Public Methods
-
-        public static void Fetch(string bin, string sraAccession, string destinationDirectoryPath, out string[] fastqPaths, out string logPath)
+        public void Fetch(string bin, string sraAccession, string destinationDirectoryPath)
         {
-            logPath = Path.Combine(destinationDirectoryPath, sraAccession + "download.log");
-            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq");
-            if (fastqPaths.Length > 0) // already downloaded
+            LogPath = Path.Combine(destinationDirectoryPath, sraAccession + "download.log");
+            FastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq");
+            if (FastqPaths.Length > 0) // already downloaded
             {
-                fastqPaths = fastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();
+                FastqPaths = FastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();
                 return;
             };
             string scriptPath = Path.Combine(bin, "scripts", "download" + sraAccession + ".bash");
@@ -77,11 +70,29 @@ namespace ToolWrapperLayer
                 "echo \"Downloading " + sraAccession + "\"",
                 "cd " + WrapperUtility.ConvertWindowsPath(bin),
                 "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(destinationDirectoryPath) + "\" " +
-                    sraAccession + " >> " + WrapperUtility.ConvertWindowsPath(logPath),
+                    sraAccession + " >> " + WrapperUtility.ConvertWindowsPath(LogPath),
             }).WaitForExit();
-            fastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
+            FastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
         }
 
-        #endregion Public Methods
+        /// <summary>
+        /// Use this class to get fastqs from a comma separated list of SRA accessions
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="commaSeparatedSraAccessions"></param>
+        /// <returns></returns>
+        public static List<string[]> GetFastqsFromSras(string spritzDirectory, string analysisDirectory, string commaSeparatedSraAccessions)
+        {
+            List<string[]> fastqs = new List<string[]>();
+            string[] sras = commaSeparatedSraAccessions.Split(',');
+            foreach (string sra in sras)
+            {
+                SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+                sratoolkit.Fetch(spritzDirectory, sra, analysisDirectory);
+                fastqs.Add(sratoolkit.FastqPaths);
+            }
+            return fastqs;
+        }
     }
 }

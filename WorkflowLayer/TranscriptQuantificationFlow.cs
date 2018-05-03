@@ -6,56 +6,54 @@ using ToolWrapperLayer;
 namespace WorkflowLayer
 {
     public class TranscriptQuantificationFlow
+        : SpritzFlow
     {
-        public static void QuantifyTranscriptsFromSra(
-            string binDirectory, string analysisDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
-            string sraAccession, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
+        public const string Command = "quantify";
+
+        public TranscriptQuantificationFlow()
+            : base(MyWorkflow.TranscriptQuantification)
         {
-            SRAToolkitWrapper.Fetch(binDirectory, sraAccession, analysisDirectory, out string[] fastqPaths, out string logPath);
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash"), new List<string>(
-                RSEMWrapper.PrepareReferenceCommands(
-                    binDirectory,
-                    referenceFastaPath,
-                    threads,
-                    geneModelPath,
-                    aligner,
-                    out rsemReferencePrefix)
-                .Concat(
-                RSEMWrapper.CalculateExpressionCommands(
-                    binDirectory,
-                    rsemReferencePrefix,
-                    threads,
-                    aligner,
-                    strandedness,
-                    fastqPaths,
-                    doOutputBam,
-                    out outputPrefix))))
-            .WaitForExit();
         }
 
-        public static void QuantifyTranscripts(
-            string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner, Strandedness strandedness,
-            string[] fastqPaths, bool doOutputBam, out string rsemReferencePrefix, out string outputPrefix)
+        public TranscriptQuantificationParameters Parameters { get; set; }
+        public string RsemReferenceIndexPrefix { get; private set; }
+        public string RsemOutputPrefix { get; private set; }
+
+        public void QuantifyTranscripts()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "QuantifyTranscripts.bash"), new List<string>(
-                RSEMWrapper.PrepareReferenceCommands(
-                    binDirectory,
-                    referenceFastaPath,
-                    threads,
-                    geneModelPath,
-                    aligner,
-                    out rsemReferencePrefix)
-                .Concat(
-                RSEMWrapper.CalculateExpressionCommands(
-                    binDirectory,
-                    rsemReferencePrefix,
-                    threads,
-                    aligner,
-                    strandedness,
-                    fastqPaths,
-                    doOutputBam,
-                    out outputPrefix))))
-            .WaitForExit();
+            RSEMWrapper rsem = new RSEMWrapper();
+            string scriptName = Path.Combine(Parameters.SpritzDirectory, "scripts", "QuantifyTranscripts.bash");
+            var referenceCommands = rsem.PrepareReferenceCommands(
+                    Parameters.SpritzDirectory,
+                    Parameters.ReferenceFastaPath,
+                    Parameters.Threads,
+                    Parameters.GeneModelPath,
+                    Parameters.Aligner);
+            var calculateCommands = rsem.CalculateExpressionCommands(
+                    Parameters.SpritzDirectory,
+                    rsem.ReferenceIndexPrefix,
+                    Parameters.Threads,
+                    Parameters.Aligner,
+                    Parameters.Strandedness,
+                    Parameters.Fastq,
+                    Parameters.DoOutputQuantificationBam);
+            WrapperUtility.GenerateAndRunScript(scriptName, new List<string>(referenceCommands.Concat(calculateCommands))).WaitForExit();
+
+            RsemReferenceIndexPrefix = rsem.ReferenceIndexPrefix;
+            RsemOutputPrefix = rsem.OutputPrefix;
+
+            RsemReferenceIndexPrefix = rsem.ReferenceIndexPrefix;
+            RsemOutputPrefix = rsem.OutputPrefix;
+        }
+
+        /// <summary>
+        /// Run this workflow (for GUI)
+        /// </summary>
+        /// <param name="parameters"></param>
+        protected override void RunSpecific(ISpritzParameters parameters)
+        {
+            Parameters = (TranscriptQuantificationParameters)parameters;
+            QuantifyTranscripts();
         }
     }
 }

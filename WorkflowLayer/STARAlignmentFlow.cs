@@ -10,119 +10,68 @@ namespace WorkflowLayer
     /// Contains a workflow for running a 2-pass STAR alignment on a set of FASTQ files.
     /// </summary>
     public class STARAlignmentFlow
+        : SpritzFlow
     {
+        public STARAlignmentFlow()
+            : base(MyWorkflow.STARAlignment)
+        {
+        }
+
+        public STARAlignmentParameters Parameters { get; set; }
+        public List<string> FirstPassSpliceJunctions { get; private set; } = new List<string>();
+        public string SecondPassGenomeDirectory { get; private set; }
+        public List<string> SortedBamFiles { get; private set; } = new List<string>();
+        public List<string> DedupedBamFiles { get; private set; } = new List<string>();
+        public List<string> ChimericSamFiles { get; private set; } = new List<string>();
+        public List<string> ChimericJunctionFiles { get; private set; } = new List<string>();
+        public List<string[]> FastqsForAlignment { get; private set; } = new List<string[]>();
+        public List<bool> StrandSpecificities { get; private set; } = new List<bool>();
+
+        /// <summary>
+        /// There is a bug in STAR that requires a check if too many threads were used (leading to too many open files)
+        /// </summary>
+        private List<string> FirstPassThreadCheckPathPrefixes { get; set; } = new List<string>();
+
         /// <summary>
         /// Runs a two-pass alignment for a given set of fastq files.
         /// </summary>
-        /// <param name="bin"></param>
-        /// <param name="analysisDirectory"></param>
-        /// <param name="reference"></param>
-        /// <param name="threads"></param>
-        /// <param name="fastqs">List of fastq files, which may be paired in a string[].</param>
-        /// <param name="strandSpecific"></param>
-        /// <param name="inferStrandSpecificity"></param>
-        /// <param name="overwriteStarAlignment"></param>
-        /// <param name="genomeStarIndexDirectory"></param>
-        /// <param name="reorderedFasta"></param>
-        /// <param name="proteinFasta"></param>
-        /// <param name="geneModelGtfOrGff"></param>
-        /// <param name="firstPassSpliceJunctions"></param>
-        /// <param name="secondPassGenomeDirectory"></param>
-        /// <param name="sortedBamFiles"></param>
-        /// <param name="dedupedBamFiles"></param>
-        /// <param name="chimericSamFiles"></param>
-        /// <param name="chimericJunctionFiles"></param>
-        /// <param name="useReadSubset"></param>
-        /// <param name="readSubset"></param>
-        public static void PerformTwoPassAlignment(string bin, string analysisDirectory, string reference, int threads,
-            List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string reorderedFasta, string proteinFasta, string geneModelGtfOrGff,
-            out List<string> firstPassSpliceJunctions, out string secondPassGenomeDirectory, out List<string> sortedBamFiles,
-            out List<string> dedupedBamFiles, out List<string> chimericSamFiles, out List<string> chimericJunctionFiles,
-            bool useReadSubset = false, int readSubset = 30000)
+        public void PerformTwoPassAlignment()
         {
             // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "genomeGenerate.bash"),
-                STARWrapper.GenerateGenomeIndex(bin, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
+            WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "genomeGenerate.bash"),
+                STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, Parameters.Threads, Parameters.GenomeStarIndexDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff))
                 .WaitForExit();
 
-            List<string[]> fastqsForAlignment = new List<string[]>();
-            List<bool> strandSpecificities = new List<bool>();
-            firstPassSpliceJunctions = new List<string>();
-            sortedBamFiles = new List<string>();
-            dedupedBamFiles = new List<string>();
-            chimericSamFiles = new List<string>();
-            chimericJunctionFiles = new List<string>();
+            int threads = Parameters.Threads;
+            TwoPassAlignment(threads);
 
-            // Trimming and strand specificity
-            Genome genome = new Genome(reorderedFasta);
-            foreach (string[] fq in fastqs)
+            // STAR has this bug where the Linux environment runs out of room to open more files, see https://github.com/smith-chem-wisc/Spritz/issues/76
+            // It makes these temp files for each thread, and the last one is the one it ran out of room on
+            foreach (string file in FirstPassThreadCheckPathPrefixes)
             {
-                // Infer strand specificity before trimming because trimming can change read pairings
-                string[] fqForAlignment = fq;
-                bool localStrandSpecific = strandSpecific;
-                if (inferStrandSpecificity || useReadSubset)
+                string tmpdirectory = Path.GetDirectoryName(file);
+                if (Directory.Exists(tmpdirectory))
                 {
-                    STARWrapper.SubsetFastqs(bin, fqForAlignment, readSubset, analysisDirectory, out string[] subsetFastqs);
-                    if (useReadSubset)
-                    {
-                        fqForAlignment = subsetFastqs;
-                    }
-                    if (inferStrandSpecificity)
-                    {
-                        string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                        WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignSubset.bash"),
-                            STARWrapper.BasicAlignReadCommands(bin, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
-                            .WaitForExit();
-                        BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
-                        localStrandSpecific = bamProperties.Strandedness != Strandedness.None;
-                    }
+                    string[] tmpFiles = Directory.GetFiles(tmpdirectory);
+                    var tmpFileThreadNumbers = tmpFiles.Select(f => Path.GetFileName(f).Substring(STARWrapper.ThreadCheckFileSuffix.Length))
+                        .Where(x => int.TryParse(x, out int xx))
+                        .Select(x => int.Parse(x));
+                    threads = tmpFileThreadNumbers.Max() - 1;
                 }
-
-                SkewerWrapper.Trim(bin, threads, 19, fqForAlignment, out string[] trimmedFastqs, out string skewerLog);
-                fqForAlignment = trimmedFastqs;
-
-                strandSpecificities.Add(localStrandSpecific);
-                fastqsForAlignment.Add(fqForAlignment);
             }
 
-            // Alignment
-            List<string> alignmentCommands = new List<string>();
-            foreach (string[] fq in fastqsForAlignment)
+            // Rerun if the workaround above changed the number of threads
+            if (threads != Parameters.Threads)
             {
-                string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
-                if (!File.Exists(outPrefix + STARWrapper.SpliceJunctionFileSuffix) || overwriteStarAlignment)
-                {
-                    alignmentCommands.AddRange(STARWrapper.FirstPassAlignmentCommands(bin, threads, genomeStarIndexDirectory, fq, outPrefix, strandSpecificities[fastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
-                }
-                firstPassSpliceJunctions.Add(outPrefix + STARWrapper.SpliceJunctionFileSuffix);
+                TwoPassAlignment(threads);
             }
-            int uniqueSuffix = 1;
-            foreach (string f in fastqsForAlignment.SelectMany(f => f))
-            {
-                uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
-            }
-            alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, genomeStarIndexDirectory));
-            alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(firstPassSpliceJunctions, uniqueSuffix, out string spliceJunctionStartDatabase));
-            secondPassGenomeDirectory = genomeStarIndexDirectory + "SecondPass" + uniqueSuffix.ToString();
-            alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(bin, threads, secondPassGenomeDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff, spliceJunctionStartDatabase));
-            foreach (string[] fq in fastqsForAlignment)
-            {
-                string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
-                alignmentCommands.AddRange(STARWrapper.AlignRNASeqReadsForVariantCalling(bin, threads, secondPassGenomeDirectory, fq, outPrefix, overwriteStarAlignment, strandSpecificities[fastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
-                sortedBamFiles.Add(outPrefix + STARWrapper.SortedBamFileSuffix);
-                dedupedBamFiles.Add(outPrefix + STARWrapper.DedupedBamFileSuffix);
-                chimericSamFiles.Add(outPrefix + STARWrapper.ChimericSamFileSuffix);
-                chimericJunctionFiles.Add(outPrefix + STARWrapper.ChimericJunctionsFileSuffix);
-            }
-            alignmentCommands.AddRange(STARWrapper.RemoveGenome(bin, secondPassGenomeDirectory));
-            WrapperUtility.GenerateAndRunScript(Path.Combine(bin, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
         }
 
         /// <summary>
         /// Infers the strandedness of reads based on aligning a subset.
         /// </summary>
-        /// <param name="bin"></param>
+        /// <param name="binDirectory"></param>
+        /// <param name="analysisDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="fastqPaths"></param>
         /// <param name="genomeStarIndexDirectory"></param>
@@ -145,6 +94,100 @@ namespace WorkflowLayer
                 .WaitForExit();
             BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
             return bamProperties;
+        }
+        
+        /// <summary>
+        /// Run this workflow (for GUI)
+        /// </summary>
+        /// <param name="parameters"></param>
+        protected override void RunSpecific(ISpritzParameters parameters)
+        {
+            Parameters = (STARAlignmentParameters)parameters;
+            PerformTwoPassAlignment();
+        }
+
+        /// <summary>
+        /// Performs the bulk of two-pass alignments
+        /// </summary>
+        private void TwoPassAlignment(int threads)
+        {
+            // Trimming and strand specificity
+            Genome genome = new Genome(Parameters.ReorderedFasta);
+            foreach (string[] fq in Parameters.Fastqs)
+            {
+                // Infer strand specificity before trimming because trimming can change read pairings
+                string[] fqForAlignment = fq;
+                bool localStrandSpecific = Parameters.StrandSpecific;
+                if (Parameters.InferStrandSpecificity || Parameters.UseReadSubset)
+                {
+                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, fqForAlignment, Parameters.ReadSubset, Parameters.AnalysisDirectory, out string[] subsetFastqs);
+                    if (Parameters.UseReadSubset)
+                    {
+                        fqForAlignment = subsetFastqs;
+                    }
+                    if (Parameters.InferStrandSpecificity)
+                    {
+                        string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
+                        WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "alignSubset.bash"),
+                            STARWrapper.BasicAlignReadCommands(Parameters.SpritzDirectory, threads, Parameters.GenomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
+                            .WaitForExit();
+                        BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, Parameters.GeneModelGtfOrGff, new Genome(Parameters.ReorderedFasta), 0.8);
+                        localStrandSpecific = bamProperties.Strandedness != Strandedness.None;
+                    }
+                }
+
+                SkewerWrapper.Trim(Parameters.SpritzDirectory, threads, 19, fqForAlignment, out string[] trimmedFastqs, out string skewerLog);
+                fqForAlignment = trimmedFastqs;
+
+                StrandSpecificities.Add(localStrandSpecific);
+                FastqsForAlignment.Add(fqForAlignment);
+            }
+
+            // Alignment
+            List<string> alignmentCommands = new List<string>();
+            foreach (string[] fq in FastqsForAlignment)
+            {
+                string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
+                if (!File.Exists(outPrefix + STARWrapper.SpliceJunctionFileSuffix) || Parameters.OverWriteStarAlignment)
+                {
+                    alignmentCommands.AddRange(STARWrapper.FirstPassAlignmentCommands(Parameters.SpritzDirectory, threads, Parameters.GenomeStarIndexDirectory, fq, outPrefix, StrandSpecificities[FastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
+                }
+                FirstPassSpliceJunctions.Add(outPrefix + STARWrapper.SpliceJunctionFileSuffix);
+                FirstPassThreadCheckPathPrefixes.Add(Path.Combine(outPrefix + "_STARtmp", STARWrapper.ThreadCheckFileSuffix));
+            }
+            int uniqueSuffix = 1;
+            foreach (string f in FastqsForAlignment.SelectMany(f => f))
+            {
+                uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
+            }
+            alignmentCommands.AddRange(STARWrapper.RemoveGenome(Parameters.SpritzDirectory, Parameters.GenomeStarIndexDirectory));
+            alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(FirstPassSpliceJunctions, uniqueSuffix, out string spliceJunctionStartDatabase));
+            SecondPassGenomeDirectory = Parameters.GenomeStarIndexDirectory + "SecondPass" + uniqueSuffix.ToString();
+            alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, threads, SecondPassGenomeDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff, spliceJunctionStartDatabase));
+            foreach (string[] fq in FastqsForAlignment)
+            {
+                string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
+                alignmentCommands.AddRange(STARWrapper.AlignRNASeqReadsForVariantCalling(Parameters.SpritzDirectory, threads, SecondPassGenomeDirectory, fq, outPrefix, Parameters.OverWriteStarAlignment, StrandSpecificities[FastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
+                SortedBamFiles.Add(outPrefix + STARWrapper.SortedBamFileSuffix);
+                DedupedBamFiles.Add(outPrefix + STARWrapper.DedupedBamFileSuffix);
+                ChimericSamFiles.Add(outPrefix + STARWrapper.ChimericSamFileSuffix);
+                ChimericJunctionFiles.Add(outPrefix + STARWrapper.ChimericJunctionsFileSuffix);
+            }
+            alignmentCommands.AddRange(STARWrapper.RemoveGenome(Parameters.SpritzDirectory, SecondPassGenomeDirectory));
+            WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
+        }
+
+        private void Clear()
+        {
+            FirstPassSpliceJunctions.Clear();
+            SecondPassGenomeDirectory = null;
+            SortedBamFiles.Clear();
+            DedupedBamFiles.Clear();
+            ChimericSamFiles.Clear();
+            ChimericJunctionFiles.Clear();
+            FastqsForAlignment.Clear();
+            StrandSpecificities.Clear();
+            FirstPassThreadCheckPathPrefixes.Clear();
         }
     }
 }

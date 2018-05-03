@@ -10,6 +10,8 @@ namespace WorkflowLayer
     /// </summary>
     public class ManageToolsFlow
     {
+        public const string Command = "setup";
+
         /// <summary>
         /// List of dependencies to fetch from aptitude using `sudo apt-get install`
         /// </summary>

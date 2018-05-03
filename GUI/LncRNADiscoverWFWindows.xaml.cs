@@ -38,7 +38,7 @@ namespace SpritzGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            Parameters parameters = new Parameters();
+            //LncRNADiscoveryParameters parameters = new LncRNADiscoveryParameters();
 
             DialogResult = true;
         }

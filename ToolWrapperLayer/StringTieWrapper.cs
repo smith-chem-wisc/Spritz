@@ -9,6 +9,9 @@ namespace ToolWrapperLayer
     public class StringTieWrapper
         : IInstallable
     {
+        public List<string> TranscriptGtfPaths { get; private set; }
+        public string MergedGtfPath { get; private set; }
+
         #region Installation Methods
 
         /// <summary>
@@ -126,26 +129,25 @@ namespace ToolWrapperLayer
             };
         }
 
-        public static void TranscriptReconstruction(string binDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome, 
-            bool strandSpecific, bool inferStrandSpecificity,
-            List<string> sortedBamFiles, out List<string> reconstructedTranscriptModels, out string mergedGtfPath)
+        public void TranscriptReconstruction(string binDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome, 
+            bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles)
         {
             string scriptName = Path.Combine(binDirectory, "scripts", "TranscriptReconstruction.bash");
             List<string> reconstructionCommands = new List<string>();
-            reconstructedTranscriptModels = new List<string>();
+            TranscriptGtfPaths = new List<string>();
             foreach (string sortedBam in sortedBamFiles)
             {
                 reconstructionCommands.AddRange(AssembleTranscripts(binDirectory, threads, sortedBam, geneModelGtfOrGff, genome, strandSpecific ? Strandedness.Forward : Strandedness.None, inferStrandSpecificity, out string stringtieGtfTranscriptGtfPath));
                 reconstructionCommands.AddRange(RemoveZeroAbundanceCufflinksPredictionsCommand(binDirectory, stringtieGtfTranscriptGtfPath, out string filteredTranscriptModelGtfPath));
-                reconstructedTranscriptModels.Add(filteredTranscriptModelGtfPath);
+                TranscriptGtfPaths.Add(filteredTranscriptModelGtfPath);
             }
             int uniqueSuffix = 1;
-            foreach (string f in reconstructedTranscriptModels)
+            foreach (string f in TranscriptGtfPaths)
             {
                 uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
             }
-            mergedGtfPath = Path.Combine(analysisDirectory, "MergedStringtieModel" + uniqueSuffix + ".gtf");
-            reconstructionCommands.AddRange(MergeTranscriptPredictions(binDirectory, geneModelGtfOrGff, reconstructedTranscriptModels, mergedGtfPath));
+            MergedGtfPath = Path.Combine(analysisDirectory, "MergedStringtieModel" + uniqueSuffix + ".gtf");
+            reconstructionCommands.AddRange(MergeTranscriptPredictions(binDirectory, geneModelGtfOrGff, TranscriptGtfPaths, MergedGtfPath));
             WrapperUtility.GenerateAndRunScript(scriptName, reconstructionCommands).WaitForExit();
         }
 
