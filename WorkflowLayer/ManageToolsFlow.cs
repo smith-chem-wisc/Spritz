@@ -88,8 +88,8 @@ namespace WorkflowLayer
         /// <summary>
         /// Installs packages and programs for analysis in Spritz.
         /// </summary>
-        /// <param name="binDirectory"></param>
-        public static void Install(string binDirectory)
+        /// <param name="spritzDirectory"></param>
+        public static void Install(string spritzDirectory)
         {
             // get root permissions and update and upgrade the repositories
             List<string> commands = new List<string>
@@ -130,9 +130,9 @@ namespace WorkflowLayer
             );
 
             // write some scripts in parallel with root permissions
-            string installationLogsDirectory = Path.Combine(binDirectory, "scripts", "installLogs");
+            string installationLogsDirectory = Path.Combine(spritzDirectory, "scripts", "installLogs");
             Directory.CreateDirectory(installationLogsDirectory);
-            List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(binDirectory)).ToList();
+            List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(spritzDirectory)).ToList();
 
             // run scripts in background
             for (int i = 0; i < parallelScripts.Count; i++)
@@ -151,22 +151,22 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installDependencies.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 
         /// <summary>
         /// Cleans all programs installed by Spritz. Intentionally leaves packages installed from aptitude, since they're effectively only base packages, now.
         /// </summary>
-        /// <param name="binDirectory"></param>
-        public static void Clean(string binDirectory)
+        /// <param name="spritzDirectory"></param>
+        public static void Clean(string spritzDirectory)
         {
             List<string> commands = new List<string>();
 
             // write some scripts in parallel with root permissions
-            string toolRemovalLogs = Path.Combine(binDirectory, "scripts", "toolRemovalLogs");
+            string toolRemovalLogs = Path.Combine(spritzDirectory, "scripts", "toolRemovalLogs");
             Directory.CreateDirectory(toolRemovalLogs);
-            List<string> parallelScripts = tools.Select(t => t.WriteRemoveScript(binDirectory)).ToList();
+            List<string> parallelScripts = tools.Select(t => t.WriteRemoveScript(spritzDirectory)).ToList();
 
             // run scripts in background
             for (int i = 0; i < parallelScripts.Count; i++)
@@ -185,7 +185,7 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(binDirectory, "scripts", "removalScripts", "installDependencies.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "removalScripts", "installDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
     }

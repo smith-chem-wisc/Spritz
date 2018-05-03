@@ -54,7 +54,7 @@ namespace ToolWrapperLayer
 		///	2) strand_specific or not
 		///	3) if it is strand-specific, what's the strand_ness of the protocol
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="bamPath"></param>
         /// <param name="geneModelPath"></param>
         /// <param name="minFractionStrandSpecific"></param>

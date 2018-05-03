@@ -115,14 +115,14 @@ namespace ToolWrapperLayer
         ///
         /// Sets GenomeFastaPath, GtfGeneModelPath, Gff3GeneModelPath, and ProteinFastaPath properties.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="targetDirectory"></param>
         /// <param name="reference"></param>
         /// <param name="genomeFastaPath"></param>
         /// <param name="gtfGeneModelPath"></param>
         /// <param name="gff3GeneModelPath"></param>
         /// <param name="proteinFastaPath"></param>
-        public void DownloadReferences(string binDirectory, string targetDirectory, string reference)
+        public void DownloadReferences(string spritzDirectory, string targetDirectory, string reference)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
@@ -151,7 +151,7 @@ namespace ToolWrapperLayer
             if (!downloadGrch37 && !downloadGrch38)
                 return;
 
-            string scriptPath = Path.Combine(binDirectory, "scripts", "downloadEnsemblReference.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "downloadEnsemblReference.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
@@ -171,16 +171,16 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Converts UCSC chromosome names to Ensembl chromosome names.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="reference"></param>
         /// <returns></returns>
-        public static Dictionary<string, string> UCSC2EnsemblChromosomeMappings(string binDirectory, string reference)
+        public static Dictionary<string, string> UCSC2EnsemblChromosomeMappings(string spritzDirectory, string reference)
         {
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
-                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
-                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
+                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
+                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
                 .Select(line => line.Split('\t'))
                 .Where(x => x.Length > 1)
                 .ToDictionary(line => line[0], line => line[1]);
@@ -190,16 +190,16 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Converts Ensembl chromosome names to UCSC chromosome names.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="reference"></param>
         /// <returns></returns>
-        public static Dictionary<string, string> Ensembl2UCSCChromosomeMappings(string binDirectory, string reference)
+        public static Dictionary<string, string> Ensembl2UCSCChromosomeMappings(string spritzDirectory, string reference)
         {
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
-                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
-                Path.Combine(binDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
+                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
+                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
                 .Select(line => line.Split('\t'))
                 .Where(x => x.Length > 1)
                 .ToDictionary(line => line[0], line => line[1]);
@@ -209,14 +209,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Converts the first column of a tab-separated file to UCSC chromosome names. Ignores rows starting with '#'.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="reference"></param>
         /// <param name="inputPath"></param>
         /// <param name="outputPath"></param>
-        public static string ConvertFirstColumnEnsembl2UCSC(string binDirectory, string reference, string inputPath)
+        public static string ConvertFirstColumnEnsembl2UCSC(string spritzDirectory, string reference, string inputPath)
         {
-            var e2uMappings = Ensembl2UCSCChromosomeMappings(binDirectory, reference);
-            var u2eMappings = UCSC2EnsemblChromosomeMappings(binDirectory, reference);
+            var e2uMappings = Ensembl2UCSCChromosomeMappings(spritzDirectory, reference);
+            var u2eMappings = UCSC2EnsemblChromosomeMappings(spritzDirectory, reference);
             string outputPath = Path.Combine(Path.GetDirectoryName(inputPath), Path.GetFileNameWithoutExtension(inputPath)) + ".ucsc" + Path.GetExtension(inputPath);
             using (StreamReader reader = new StreamReader(inputPath))
             using (StreamWriter writer = new StreamWriter(outputPath))
@@ -241,10 +241,10 @@ namespace ToolWrapperLayer
         /// Ensembl coding domain sequences (CDS) sometimes don't have start or stop codons annotated.
         /// The only way I can figure out how to tell which they are is to read in the protein FASTA and find the ones starting with X's or containing a stop codon '*'
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="proteinFastaPath"></param>
         /// <returns></returns>
-        public void GetImportantProteinAccessions(string binDirectory, string proteinFastaPath)
+        public void GetImportantProteinAccessions(string spritzDirectory, string proteinFastaPath)
         {
             Regex transcriptAccession = new Regex(@"(transcript:)([A-Za-z0-9_.]+)"); // need to include transcript accessions for when a GTF file is used and transcript IDs become the protein IDs
             List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(proteinFastaPath, true, DecoyType.None, false,
@@ -257,11 +257,11 @@ namespace ToolWrapperLayer
             SelenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);
         }
 
-        public static void FilterGeneModel(string binDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
+        public static void FilterGeneModel(string spritzDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
         {
             string grepQuery = "\"^" + String.Join(@"\|^", genome.Chromosomes.Select(c => c.FriendlyName).Concat(new[] { "#" }).ToList()) + "\"";
             filteredGeneModel = Path.Combine(Path.GetDirectoryName(geneModelGtfOrGff), Path.GetFileNameWithoutExtension(geneModelGtfOrGff)) + ".filtered" + Path.GetExtension(geneModelGtfOrGff);
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "FilterGeneModel.bash"), new List<string>
+            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "FilterGeneModel.bash"), new List<string>
             {
                 "grep " + grepQuery + " " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) + " > " + WrapperUtility.ConvertWindowsPath(filteredGeneModel)
             }).WaitForExit();

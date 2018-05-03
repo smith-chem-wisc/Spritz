@@ -2,7 +2,7 @@
 {
     public interface IInstallable
     {
-        string WriteInstallScript(string binDirectory);
-        string WriteRemoveScript(string binDirectory);
+        string WriteInstallScript(string spritzDirectory);
+        string WriteRemoveScript(string spritzDirectory);
     }
 }

@@ -56,7 +56,15 @@ namespace WorkflowLayer
 
             // Variant Calling
             VariantCallingFlow variantCalling = new VariantCallingFlow();
-            variantCalling.CallVariants(Parameters.SpritzDirectory, Parameters.Reference, Parameters.Threads, Parameters.GenomeFasta, sortedBed12Path, Parameters.EnsemblKnownSitesPath, alignment.DedupedBamFiles, downloads.ReorderedFastaPath);
+            variantCalling.CallVariants(
+                Parameters.SpritzDirectory,
+                Parameters.Reference, 
+                Parameters.Threads, 
+                Parameters.GenomeFasta,
+                sortedBed12Path, 
+                Parameters.EnsemblKnownSitesPath, 
+                alignment.DedupedBamFiles, 
+                downloads.ReorderedFastaPath);
 
             // Generate databases
             GeneModel geneModel = new GeneModel(downloads.EnsemblGenome, Parameters.GeneModelGtfOrGff);

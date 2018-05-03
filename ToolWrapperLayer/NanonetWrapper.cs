@@ -6,12 +6,12 @@ namespace ToolWrapperLayer
     public class NanonetWrapper :
         IInstallable
     {
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installNanonet.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installNanonet.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d nanonet ]; then",
                 "  git clone https://github.com/nanoporetech/nanonet.git",
                 "  cd nanonet",
@@ -21,7 +21,7 @@ namespace ToolWrapperLayer
             return scriptPath;
         }
 
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return "";
         }

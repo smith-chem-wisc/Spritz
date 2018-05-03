@@ -27,20 +27,20 @@ namespace CMD
 
             bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
             List<string[]> fastqsSeparated = useSraMethod ?
-                SRAToolkitWrapper.GetFastqsFromSras(options.BinDirectory, options.AnalysisDirectory, options.SraAccession) :
+                SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.AnalysisDirectory, options.SraAccession) :
                 SeparateFastqs(options.Fastq1, options.Fastq2);
 
             #region STAR Fusion Testing
 
             // TODO make a star fusion 2 protein runner instead of this mess...
             //bool validStarFusionTest = options.AnalysisDirectory != null
-            //    && options.BinDirectory != null
+            //    && options.SpritzDirectory != null
             //    && (options.Fastq1 != null || options.st)
             //if (options.Command == "starFusionTest" && !starFusionRequirements.Any(x => x == null))
             //{
             //    Directory.CreateDirectory(Path.Combine(options.AnalysisDirectory, "fusion_out"));
-            //    STARFusionWrapper.Install(options.BinDirectory);
-            //    STARFusionWrapper.RunStarFusion(options.BinDirectory,
+            //    STARFusionWrapper.Install(options.SpritzDirectory);
+            //    STARFusionWrapper.RunStarFusion(options.SpritzDirectory,
             //        "grch37",
             //        8,
             //        Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR791578_hg19_Chimeric.out.junction"),
@@ -61,7 +61,7 @@ namespace CMD
             {
                 LncRNADiscoveryFlow lncRNAdiscovery = new LncRNADiscoveryFlow();
                 lncRNAdiscovery.Parameters = new LncRNADiscoveryParameters(
-                        options.BinDirectory,
+                        options.SpritzDirectory,
                         options.AnalysisDirectory,
                         options.Reference,
                         options.Threads,
@@ -87,7 +87,7 @@ namespace CMD
                 string[] fastqs = options.Fastq2 == null ?
                     new[] { options.Fastq1 } :
                     new[] { options.Fastq1, options.Fastq2 };
-                BAMProperties b = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
+                BAMProperties b = STARAlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
                         fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                 Console.WriteLine(b.ToString());
                 return;
@@ -104,13 +104,13 @@ namespace CMD
                     Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
                     if (options.InferStrandSpecificity)
                     {
-                        var bamProps = STARAlignmentFlow.InferStrandedness(options.BinDirectory, options.AnalysisDirectory, options.Threads,
+                        var bamProps = STARAlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
                             fastq, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                         strandedness = bamProps.Strandedness;
                     }
                     TranscriptQuantificationFlow quantify = new TranscriptQuantificationFlow();
                     quantify.Parameters = new TranscriptQuantificationParameters(
-                        options.BinDirectory,
+                        options.SpritzDirectory,
                         options.GenomeFasta,
                         options.Threads,
                         options.GeneModelGtfOrGff,
@@ -128,20 +128,20 @@ namespace CMD
             #region Proteoform Database Engine
 
             SnpEffWrapper.DownloadSnpEffDatabase(
-                options.BinDirectory,
+                options.SpritzDirectory,
                 options.Reference,
                 out string snpEffDatabaseListPath);
 
             if (options.ReferenceVcf == null)
             {
-                GATKWrapper.DownloadEnsemblKnownVariantSites(options.BinDirectory, options.BinDirectory, true, options.Reference, out string ensemblVcfPath);
+                GATKWrapper.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, options.SpritzDirectory, true, options.Reference, out string ensemblVcfPath);
                 options.ReferenceVcf = ensemblVcfPath;
             }
 
             // run the program
             SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
             ssdbf.Parameters = new SampleSpecificProteinDBParameters(
-                options.BinDirectory,
+                options.SpritzDirectory,
                 options.AnalysisDirectory,
                 options.Reference,
                 options.Threads,
@@ -170,7 +170,7 @@ namespace CMD
         public static void FinishSetup(Options options)
         {
             EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
-            downloadsWrapper.DownloadReferences(options.BinDirectory, options.BinDirectory, options.Reference);
+            downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference);
 
             options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? Path.Combine(Path.GetDirectoryName(downloadsWrapper.GenomeFastaPath), Path.GetFileNameWithoutExtension(downloadsWrapper.GenomeFastaPath));
             options.GenomeFasta = options.GenomeFasta ?? downloadsWrapper.GenomeFastaPath;

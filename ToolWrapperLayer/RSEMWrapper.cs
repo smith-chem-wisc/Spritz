@@ -36,14 +36,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for RSEM.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installRSEM.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installRSEM.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "wget https://github.com/deweylab/RSEM/archive/v1.3.0.tar.gz",
                 "tar -xvf v1.3.0.tar.gz",
                 "cd RSEM-1.3.0",
@@ -55,14 +55,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing RSEM.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "removeRSEM.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "removeRSEM.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "rm -rf RSEM-1.3.0",
             });
             return scriptPath;
@@ -73,17 +73,17 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Gets commands to prepare an RSEM reference
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="referenceFastaPath"></param>
         /// <param name="referencePrefix"></param>
         /// <param name="threads"></param>
         /// <param name="geneModelPath"></param>
         /// <param name="aligner"></param>
         /// <returns></returns>
-        public List<string> PrepareReferenceCommands(string binDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner)
+        public List<string> PrepareReferenceCommands(string spritzDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner)
         {
             // make option strings, including putting reference files into a new directory
-            string alignerOption = GetAlignerOption(binDirectory, aligner);
+            string alignerOption = GetAlignerOption(spritzDirectory, aligner);
             string threadOption = "--num-threads " + threads.ToString();
             string referencePrefixDirectory = Path.Combine(Path.GetDirectoryName(referenceFastaPath), Path.GetFileNameWithoutExtension(referenceFastaPath)) +
                 (aligner == RSEMAlignerOption.STAR ? "RsemStarReference" : "RsemBowtieReference") +
@@ -96,7 +96,7 @@ namespace ToolWrapperLayer
             // construct the commands
             var scriptStrings = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "RSEM-1.3.0")),
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "RSEM-1.3.0")),
                 "mkdir " + WrapperUtility.ConvertWindowsPath(referencePrefixDirectory),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(referencePrefixDirectory, "SA")) + " && ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(referencePrefixDirectory, "SA")) + " ]]; then " +
                     "./rsem-prepare-reference " +
@@ -113,9 +113,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Gets commands to calculate expression an RSEM reference
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public List<string> CalculateExpressionCommands(string binDirectory, string referencePrefix, int threads, RSEMAlignerOption aligner, Strandedness strandedness,
+        public List<string> CalculateExpressionCommands(string spritzDirectory, string referencePrefix, int threads, RSEMAlignerOption aligner, Strandedness strandedness,
             string[] fastqPaths, bool doOuptutBam)
         {
             if (fastqPaths.Length < 1)
@@ -127,7 +127,7 @@ namespace ToolWrapperLayer
                 throw new ArgumentOutOfRangeException("Too many fastq file types given for RSEM calculate expression.");
             }
 
-            string alignerOption = GetAlignerOption(binDirectory, aligner);
+            string alignerOption = GetAlignerOption(spritzDirectory, aligner);
             string threadOption = "--num-threads " + threads.ToString();
             string strandOption = "--strandedness " + strandedness.ToString().ToLowerInvariant();
             bool fastqIsGunzipped = fastqPaths[0].EndsWith(".gz");
@@ -148,14 +148,14 @@ namespace ToolWrapperLayer
             string samtoolsCommands = !doOuptutBam ?
                 "" :
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
-                    "  " + SamtoolsWrapper.SortBam(binDirectory, OutputPrefix + GenomeBamSuffix) + "\n" +
-                    "  " + SamtoolsWrapper.IndexBamCommand(binDirectory, OutputPrefix + GenomeSortedBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.SortBam(spritzDirectory, OutputPrefix + GenomeBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.IndexBamCommand(spritzDirectory, OutputPrefix + GenomeSortedBamSuffix) + "\n" +
                     "fi";
 
             // construct the commands
             var scriptStrings = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "RSEM-1.3.0")),
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "RSEM-1.3.0")),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " ]]; then " +
                     "./rsem-calculate-expression " +
                         "--time " + // include timed results
@@ -177,14 +177,14 @@ namespace ToolWrapperLayer
         /// Make sure the aligner is supported
         /// </summary>
         /// <param name="aligner"></param>
-        public static string GetAlignerOption(string binDirectory, RSEMAlignerOption aligner)
+        public static string GetAlignerOption(string spritzDirectory, RSEMAlignerOption aligner)
         {
             if (aligner == RSEMAlignerOption.Bowtie1)
             {
                 throw new NotSupportedException("Use of Bowtie1 is not supported. Use STAR or Bowtie2 instead.");
             }
-            string alignerOption = aligner == RSEMAlignerOption.STAR ? "--star --star-path " + WrapperUtility.ConvertWindowsPath(STARWrapper.GetStarDirectoryPath(binDirectory)) :
-                aligner == RSEMAlignerOption.Bowtie2 ? "--bowtie2 --bowtie2-path " + WrapperUtility.ConvertWindowsPath(TopHatWrapper.GetBowtie2DirectoryPath(binDirectory)) :
+            string alignerOption = aligner == RSEMAlignerOption.STAR ? "--star --star-path " + WrapperUtility.ConvertWindowsPath(STARWrapper.GetStarDirectoryPath(spritzDirectory)) :
+                aligner == RSEMAlignerOption.Bowtie2 ? "--bowtie2 --bowtie2-path " + WrapperUtility.ConvertWindowsPath(TopHatWrapper.GetBowtie2DirectoryPath(spritzDirectory)) :
                 null;
             return alignerOption;
         }

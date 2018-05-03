@@ -52,7 +52,7 @@ namespace WorkflowLayer
         /// <summary>
         /// Infers the strandedness of reads based on aligning a subset.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="analysisDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="fastqPaths"></param>
@@ -60,19 +60,19 @@ namespace WorkflowLayer
         /// <param name="reorderedFasta"></param>
         /// <param name="geneModelGtfOrGff"></param>
         /// <returns></returns>
-        public static BAMProperties InferStrandedness(string binDirectory, string analysisDirectory, int threads, string[] fastqPaths, string genomeStarIndexDirectory,
+        public static BAMProperties InferStrandedness(string spritzDirectory, string analysisDirectory, int threads, string[] fastqPaths, string genomeStarIndexDirectory,
             string reorderedFasta, string geneModelGtfOrGff)
         {
             // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "genomeGenerate.bash"),
-                STARWrapper.GenerateGenomeIndex(binDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
+            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "genomeGenerate.bash"),
+                STARWrapper.GenerateGenomeIndex(spritzDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
                 .WaitForExit();
 
-            STARWrapper.SubsetFastqs(binDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
+            STARWrapper.SubsetFastqs(spritzDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
 
             string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-            WrapperUtility.GenerateAndRunScript(Path.Combine(binDirectory, "scripts", "alignSubset.bash"),
-                STARWrapper.BasicAlignReadCommands(binDirectory, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
+            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "alignSubset.bash"),
+                STARWrapper.BasicAlignReadCommands(spritzDirectory, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
                 .WaitForExit();
             BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
             return bamProperties;

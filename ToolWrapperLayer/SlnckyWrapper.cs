@@ -32,14 +32,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for slncky.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installSlncky.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installSlncky.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "git clone https://github.com/slncky/slncky.git",
                 "cd slncky",
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
@@ -52,9 +52,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing slncky.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
@@ -66,21 +66,21 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Annotate predicted transcripts
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="predictedGeneModelUcscBedPath"></param>
         /// <param name="reference"></param>
         /// <param name="slnckyOutPrefix"></param>
         /// <returns></returns>
-        public static List<string> Annotate(string binDirectory, string analysisDirectory, int threads, string predictedGeneModelGtfPath, string reference, string slnckyOutPrefix)
+        public static List<string> Annotate(string spritzDirectory, string analysisDirectory, int threads, string predictedGeneModelGtfPath, string reference, string slnckyOutPrefix)
         {
-            string sortedBed12Cuffmerge = BEDOPSWrapper.Gtf2Bed12(binDirectory, predictedGeneModelGtfPath);
-            string ucscCuffmergeBedPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(binDirectory, reference, sortedBed12Cuffmerge);
+            string sortedBed12Cuffmerge = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, predictedGeneModelGtfPath);
+            string ucscCuffmergeBedPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(spritzDirectory, reference, sortedBed12Cuffmerge);
             Directory.CreateDirectory(Path.GetDirectoryName(slnckyOutPrefix));
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "slncky")),
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "slncky")),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " ]]; then " +
                     "./slncky.v1.0" +
                     " --threads " + threads.ToString() +

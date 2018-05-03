@@ -50,14 +50,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for TopHat and bowtie2.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installTophat.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installTophat.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d tophat-2.1.1 ]; then",
                 "  wget --no-check https://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.1.Linux_x86_64.tar.gz",
                 "  wget --no-check -O bowtie.zip https://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.3.4/bowtie2-2.3.4-linux-x86_64.zip/download",
@@ -74,9 +74,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing TopHat and bowtie2.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
@@ -98,20 +98,20 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Generates indices using bowtie2.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="genomeFasta"></param>
         /// <param name="bowtieIndexPrefix"></param>
-        public static void GenerateBowtieIndex(string binDirectory, string genomeFasta, out string bowtieIndexPrefix)
+        public static void GenerateBowtieIndex(string spritzDirectory, string genomeFasta, out string bowtieIndexPrefix)
         {
             bowtieIndexPrefix = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta));
             if (BowtieIndexExists(genomeFasta))
             {
                 return;
             }
-            string script_name = Path.Combine(binDirectory, "scripts", "bowtieIndices.bash");
+            string script_name = Path.Combine(spritzDirectory, "scripts", "bowtieIndices.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "bowtie2-2.3.4/bowtie2-build" +
                     " " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix)
@@ -121,22 +121,22 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Aligns reads in fastq files using TopHat2.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="bowtieIndexPrefix"></param>
         /// <param name="threads"></param>
         /// <param name="fastqPaths"></param>
         /// <param name="geneModelGtfOrGffPath"></param>
         /// <param name="strandSpecific"></param>
         /// <param name="outputDirectory"></param>
-        public static void Align(string binDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths, bool strandSpecific, out string outputDirectory)
+        public static void Align(string spritzDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths, bool strandSpecific, out string outputDirectory)
         {
             string tempDir = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), "tmpDir");
             outputDirectory = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), Path.GetFileNameWithoutExtension(fastqPaths[0]) + "TophatOut");
             Directory.CreateDirectory(tempDir);
-            string script_name = Path.Combine(binDirectory, "scripts", "tophatRun.bash");
+            string script_name = Path.Combine(spritzDirectory, "scripts", "tophatRun.bash");
             WrapperUtility.GenerateAndRunScript(script_name, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "tophat-2.1.1/tophat2" +
                     " --num-threads " + threads.ToString() +
                     " --output-dir " + WrapperUtility.ConvertWindowsPath(outputDirectory) +
@@ -152,11 +152,11 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Gets the Windows-formatted path to the directory containing bowtie2
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public static string GetBowtie2DirectoryPath(string binDirectory)
+        public static string GetBowtie2DirectoryPath(string spritzDirectory)
         {
-            return Path.Combine(binDirectory, "tophat-2.1.1");
+            return Path.Combine(spritzDirectory, "tophat-2.1.1");
         }
 
         #endregion Public Methods

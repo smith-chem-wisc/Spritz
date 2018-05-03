@@ -18,8 +18,8 @@ namespace CMD
                 " (6) starFusionTest")]
         public string Command { get; set; }
 
-        [Option('b', "binDirectory", Required = false, HelpText = "Bin directory for Proteoform Database Engine")]
-        public string BinDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        [Option('b', "spritzDirectory", Required = false, HelpText = "Bin directory for Spritz")]
+        public string SpritzDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
         [Option('a', "analysisDirectory", Required = false, HelpText = "Target directory for downloads and analysis")]
         public string AnalysisDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
