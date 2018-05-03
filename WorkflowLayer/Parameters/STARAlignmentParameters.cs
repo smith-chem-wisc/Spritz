@@ -7,7 +7,7 @@ namespace WorkflowLayer
     {
         public STARAlignmentParameters(string spritzDirectory, string analysisDirectory, string reference, int threads,
             List<string[]> fastqs, bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string reorderedFasta, string proteinFasta, string geneModelGtfOrGff,
+            string reorderedFasta, string geneModelGtfOrGff,
             bool useReadSubset = false, int readSubset = 30000)
         {
             SpritzDirectory = spritzDirectory;
@@ -20,7 +20,6 @@ namespace WorkflowLayer
             OverWriteStarAlignment = overwriteStarAlignment;
             GenomeStarIndexDirectory = genomeStarIndexDirectory;
             ReorderedFasta = reorderedFasta;
-            ProteinFasta = proteinFasta;
             GeneModelGtfOrGff = geneModelGtfOrGff;
             UseReadSubset = useReadSubset;
             ReadSubset = readSubset;
@@ -36,7 +35,6 @@ namespace WorkflowLayer
         public bool OverWriteStarAlignment { get; set; }
         public string GenomeStarIndexDirectory { get; set; }
         public string ReorderedFasta { get; set; }
-        public string ProteinFasta { get; set; }
         public string GeneModelGtfOrGff { get; set; }
         public string EnsemblKnownSitesPath { get; set; }
         public List<string> FirstPassSpliceJunctions { get; set; }

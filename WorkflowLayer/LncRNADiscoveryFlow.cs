@@ -31,7 +31,20 @@ namespace WorkflowLayer
             EnsemblDownloadsWrapper ensemblDownloads = new EnsemblDownloadsWrapper();
             ensemblDownloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
-            alignment.Parameters = new STARAlignmentParameters(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference, Parameters.Threads, Parameters.Fastqs, Parameters.StrandSpecific, Parameters.InferStrandSpecificity, Parameters.OverwriteStarAlignment, Parameters.GenomeStarIndexDirectory, ensemblDownloads.ReorderedFastaPath, Parameters.ProteinFasta, Parameters.GeneModelGtfOrGff, Parameters.UseReadSubset, Parameters.ReadSubset);
+            alignment.Parameters = new STARAlignmentParameters(
+                Parameters.SpritzDirectory, 
+                Parameters.AnalysisDirectory,
+                Parameters.Reference, 
+                Parameters.Threads,
+                Parameters.Fastqs, 
+                Parameters.StrandSpecific,
+                Parameters.InferStrandSpecificity, 
+                Parameters.OverwriteStarAlignment,
+                Parameters.GenomeStarIndexDirectory, 
+                ensemblDownloads.ReorderedFastaPath, 
+                Parameters.GeneModelGtfOrGff, 
+                Parameters.UseReadSubset, 
+                Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
