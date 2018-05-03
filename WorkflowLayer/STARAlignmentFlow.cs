@@ -18,6 +18,7 @@ namespace WorkflowLayer
         }
 
         public STARAlignmentParameters Parameters { get; set; }
+        public List<string> OutputPrefixes { get; set; } = new List<string>();
         public List<string> FirstPassSpliceJunctions { get; private set; } = new List<string>();
         public string SecondPassGenomeDirectory { get; private set; }
         public List<string> SortedBamFiles { get; private set; } = new List<string>();
@@ -26,11 +27,6 @@ namespace WorkflowLayer
         public List<string> ChimericJunctionFiles { get; private set; } = new List<string>();
         public List<string[]> FastqsForAlignment { get; private set; } = new List<string[]>();
         public List<bool> StrandSpecificities { get; private set; } = new List<bool>();
-
-        /// <summary>
-        /// There is a bug in STAR that requires a check if too many threads were used (leading to too many open files)
-        /// </summary>
-        private List<string> FirstPassThreadCheckPathPrefixes { get; set; } = new List<string>();
 
         /// <summary>
         /// Runs a two-pass alignment for a given set of fastq files.
@@ -42,27 +38,13 @@ namespace WorkflowLayer
                 STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, Parameters.Threads, Parameters.GenomeStarIndexDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff))
                 .WaitForExit();
 
-            int threads = Parameters.Threads;
-            TwoPassAlignment(threads);
-
-            // STAR has this bug where the Linux environment runs out of room to open more files, see https://github.com/smith-chem-wisc/Spritz/issues/76
-            // It makes these temp files for each thread, and the last one is the one it ran out of room on
-            foreach (string file in FirstPassThreadCheckPathPrefixes)
-            {
-                string tmpdirectory = Path.GetDirectoryName(file);
-                if (Directory.Exists(tmpdirectory))
-                {
-                    string[] tmpFiles = Directory.GetFiles(tmpdirectory);
-                    var tmpFileThreadNumbers = tmpFiles.Select(f => Path.GetFileName(f).Substring(STARWrapper.ThreadCheckFileSuffix.Length))
-                        .Where(x => int.TryParse(x, out int xx))
-                        .Select(x => int.Parse(x));
-                    threads = tmpFileThreadNumbers.Max() - 1;
-                }
-            }
+            TwoPassAlignment(Parameters.Threads);
 
             // Rerun if the workaround above changed the number of threads
-            if (threads != Parameters.Threads)
+            int threads = GetDebuggedThreadCount();
+            if (threads >= 0 && threads != Parameters.Threads)
             {
+                Clear();
                 TwoPassAlignment(threads);
             }
         }
@@ -95,6 +77,33 @@ namespace WorkflowLayer
             BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
             return bamProperties;
         }
+
+        /// <summary>
+        /// STAR has this bug where the Linux environment runs out of room to open more files, see https://github.com/smith-chem-wisc/Spritz/issues/76
+        /// It makes these temp files for each thread, numbered starting with 0, and the last one is the one it ran out of room on
+        /// </summary>
+        /// <returns></returns>
+        public int GetDebuggedThreadCount()
+        {
+            int threads = -1;
+            List<string> tmpFilePrefixes = OutputPrefixes.Select(p => Path.Combine(p + "_STARtmp", STARWrapper.ThreadCheckFilePrefix)).ToList();
+            foreach (string file in tmpFilePrefixes)
+            {
+                string tmpdirectory = Path.GetDirectoryName(file);
+                if (Directory.Exists(tmpdirectory))
+                {
+                    var tmpFiles = Directory.GetFiles(tmpdirectory);
+                    var tmpFileThreadNumbers = tmpFiles
+                        .Where(f => Path.GetFileName(f).StartsWith(STARWrapper.ThreadCheckFilePrefix))
+                        .Select(f => Path.GetFileName(f).Substring(STARWrapper.ThreadCheckFilePrefix.Length))
+                        .Where(x => int.TryParse(x, out int xx))
+                        .Select(x => int.Parse(x))
+                        .ToList();
+                    threads = tmpFileThreadNumbers.Max() - 1;
+                }
+            }
+            return threads;
+        }
         
         /// <summary>
         /// Run this workflow (for GUI)
@@ -109,7 +118,7 @@ namespace WorkflowLayer
         /// <summary>
         /// Performs the bulk of two-pass alignments
         /// </summary>
-        private void TwoPassAlignment(int threads)
+        public void TwoPassAlignment(int threads)
         {
             // Trimming and strand specificity
             Genome genome = new Genome(Parameters.ReorderedFasta);
@@ -153,7 +162,6 @@ namespace WorkflowLayer
                     alignmentCommands.AddRange(STARWrapper.FirstPassAlignmentCommands(Parameters.SpritzDirectory, threads, Parameters.GenomeStarIndexDirectory, fq, outPrefix, StrandSpecificities[FastqsForAlignment.IndexOf(fq)], STARGenomeLoadOption.LoadAndKeep));
                 }
                 FirstPassSpliceJunctions.Add(outPrefix + STARWrapper.SpliceJunctionFileSuffix);
-                FirstPassThreadCheckPathPrefixes.Add(Path.Combine(outPrefix + "_STARtmp", STARWrapper.ThreadCheckFileSuffix));
             }
             int uniqueSuffix = 1;
             foreach (string f in FastqsForAlignment.SelectMany(f => f))
@@ -187,7 +195,6 @@ namespace WorkflowLayer
             ChimericJunctionFiles.Clear();
             FastqsForAlignment.Clear();
             StrandSpecificities.Clear();
-            FirstPassThreadCheckPathPrefixes.Clear();
         }
     }
 }

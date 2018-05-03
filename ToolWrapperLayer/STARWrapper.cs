@@ -63,7 +63,7 @@ namespace ToolWrapperLayer
         /// <summary>
         /// File name used to check for too many open files bug, followed by an integer
         /// </summary>
-        public static string ThreadCheckFileSuffix { get; } = "Chimeric.out.junction.thread";
+        public static string ThreadCheckFilePrefix { get; } = "Chimeric.out.junction.thread";
 
         #endregion Public Properties
 

@@ -109,6 +109,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AlignmentTests.cs" />
     <Compile Include="GeneModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnpEffPortTests.cs" />
@@ -176,6 +177,30 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\problematicChr19\problematicChr19Gene.gff3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.junction.thread0">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.junction.thread1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.junction.thread2">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.junction.thread3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread0">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread2">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\read1.fastq">
