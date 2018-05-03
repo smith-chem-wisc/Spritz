@@ -191,8 +191,9 @@ namespace Test
             }).WaitForExit();
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh38.dna.chromosome.5.fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr5_selenocysteineContaining.gff3"));
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-            List<Protein> proteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions).ToList();
+            var d = new EnsemblDownloadsWrapper();
+            d.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename));
+            List<Protein> proteins = geneModel.Translate(true, d.BadProteinAccessions, d.SelenocysteineProteinAccessions).ToList();
             Assert.AreEqual("MWRSLGLALALCLLPSGGTESQDQSSLCKQPPAWSIRDQDPMLNSNGSVTVVALLQASUYLCILQASKLEDLRVKLKKEGYSNISYIVVNHQGISSRLKYTHLKNKVSEHIPVYQQEENQTDVWTLLNGSKDDFLIYDRCGRLVYHLGLPFSFLTFPYVEEAIKIAYCEKKCGNCSLTTLKDEDFCKRVSLATVDKTVETPSPHYHHEHHHNHGHQHLGSSELSENQQPGAPNAPTHPAPPGLHHHHKHKGQHRQGHPENRDMPASEDLQDLQKKLCRKRCINQLLCKLPTDSELAPRSUCCHCRHLIFEKTGSAITUQCKENLPSLCSUQGLRAEENITESCQURLPPAAUQISQQLIPTEASASURUKNQAKKUEUPSN",
                 proteins[0].BaseSequence);
         }
@@ -226,21 +227,17 @@ namespace Test
         [Test]
         public void SameProteins()
         {
-            EnsemblDownloadsWrapper.DownloadReferences(
+            EnsemblDownloadsWrapper downloads = new EnsemblDownloadsWrapper();
+            downloads.DownloadReferences(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                "grch38",
-                out string genomeFastaPath,
-                out string gtf,
-                out string gff,
-                out string proteinFasta
-            );
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename), out var proteinSeqs, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
+                "grch38");
+            downloads.GetImportantProteinAccessions(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh38ProteinFastaFilename));
 
-            Genome genome = new Genome(genomeFastaPath);
-            GeneModel geneModel = new GeneModel(genome, gff);
-            List<Protein> geneBasedProteins = geneModel.Translate(true, badProteinAccessions, selenocysteineContainingAccessions);
-            List<Protein> pepDotAll = ProteinDbLoader.LoadProteinFasta(proteinFasta, true, DecoyType.None, false, 
+            Genome genome = new Genome(downloads.GenomeFastaPath);
+            GeneModel geneModel = new GeneModel(genome, downloads.Gff3GeneModelPath);
+            List<Protein> geneBasedProteins = geneModel.Translate(true, downloads.BadProteinAccessions, downloads.SelenocysteineProteinAccessions);
+            List<Protein> pepDotAll = ProteinDbLoader.LoadProteinFasta(downloads.ProteinFastaPath, true, DecoyType.None, false, 
                 ProteinDbLoader.EnsemblAccessionRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblFullNameRegex, ProteinDbLoader.EnsemblGeneNameRegex, null, out List<string> errors);
             Dictionary<string, string> accSeq = geneBasedProteins.ToDictionary(p => p.Accession, p => p.BaseSequence);
 

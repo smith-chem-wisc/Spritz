@@ -124,11 +124,14 @@
     <Compile Include="EventArgs\StringEventArgs.cs" />
     <Compile Include="EventArgs\StringListEventArgs.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
-    <Compile Include="Fastq2ProteinsFlow.cs" />
     <Compile Include="GeneFusionTranscriptFlow.cs" />
     <Compile Include="LncRNADiscoveryFlow.cs" />
+    <Compile Include="Parameters\ISpritzParameters.cs" />
+    <Compile Include="Parameters\SampleSpecificProteinDBParameters.cs" />
+    <Compile Include="Parameters\TranscriptQuantificationParameters.cs" />
     <Compile Include="ManageToolsFlow.cs" />
-    <Compile Include="Parameters\Parameters.cs" />
+    <Compile Include="Parameters\LncRNADiscoveryParameters.cs" />
+    <Compile Include="Parameters\STARAlignmentParameters.cs" />
     <Compile Include="SampleSpecificProteinDBFlow.cs" />
     <Compile Include="SpritzFlow.cs" />
     <Compile Include="STARAlignmentFlow.cs" />

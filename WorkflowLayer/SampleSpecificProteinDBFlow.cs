@@ -14,89 +14,48 @@ namespace WorkflowLayer
     /// Create a database of proteins with single amino acid variants (SAVs) using GATK and SnpEff.
     /// </summary>
     public class SampleSpecificProteinDBFlow
+        : SpritzFlow
     {
-        public List<string> ProteinVariantDatabases { get; private set; } = new List<string>();
+        public const string Command = "proteins";
+        public static readonly int MinimumPeptideLength = 7;
 
-        /// <summary>
-        /// Generate sample specific database starting with SRA accession number
-        /// </summary>
-        /// <param name="binDirectory"></param>
-        /// <param name="analysisDirectory"></param>
-        /// <param name="reference"></param>
-        /// <param name="threads"></param>
-        /// <param name="sraAccession"></param>
-        /// <param name="strandSpecific"></param>
-        /// <param name="inferStrandSpecificity"></param>
-        /// <param name="overwriteStarAlignment"></param>
-        /// <param name="genomeStarIndexDirectory"></param>
-        /// <param name="genomeFasta"></param>
-        /// <param name="proteinFasta"></param>
-        /// <param name="geneModelGtfOrGff"></param>
-        /// <param name="ensemblKnownSitesPath"></param>
-        /// <param name="useReadSubset"></param>
-        /// <param name="readSubset"></param>
-        public void GenerateSAVProteinsFromSra(
-            string binDirectory, string analysisDirectory, string reference, int threads, string sraAccession,
-            bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
-            bool useReadSubset = false, int readSubset = 300000)
+        public SampleSpecificProteinDBFlow()
+            : base(MyWorkflow.SampleSpecificProteinDB)
         {
-            List<string[]> fastqs = new List<string[]>();
-            string[] sras = sraAccession.Split(',');
-            foreach (string sra in sras)
-            {
-                SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
-                sratoolkit.Fetch(binDirectory, sra, analysisDirectory);
-                fastqs.Add(sratoolkit.FastqPaths);
-            }
-            GenerateSAVProteinsFromFastqs(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, genomeFasta, proteinFasta, geneModelGtfOrGff, ensemblKnownSitesPath, useReadSubset, readSubset);
         }
+
+        public SampleSpecificProteinDBParameters Parameters { get; set; }
+        public List<string> ProteinVariantDatabases { get; private set; } = new List<string>();
 
         /// <summary>
         /// Generate sample specific protein database starting with fastq files
         /// </summary>
-        /// <param name="binDirectory"></param>
-        /// <param name="analysisDirectory"></param>
-        /// <param name="reference"></param>
-        /// <param name="threads"></param>
-        /// <param name="fastqs"></param>
-        /// <param name="strandSpecific"></param>
-        /// <param name="inferStrandSpecificity"></param>
-        /// <param name="overwriteStarAlignment"></param>
-        /// <param name="genomeStarIndexDirectory"></param>
-        /// <param name="genomeFasta"></param>
-        /// <param name="proteinFasta"></param>
-        /// <param name="geneModelGtfOrGff"></param>
-        /// <param name="ensemblKnownSitesPath"></param>
-        /// <param name="useReadSubset"></param>
-        /// <param name="readSubset"></param>
-        public void GenerateSAVProteinsFromFastqs(
-            string binDirectory, string analysisDirectory, string reference, int threads, List<string[]> fastqs,
-            bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
-            bool useReadSubset = false, int readSubset = 300000)
+        public void GenerateSAVProteinsFromFastqs()
         {
-            Genome ensemblGenome = null;
-            string reorderedFastaPath = null;
+            EnsemblDownloadsWrapper downloads = new EnsemblDownloadsWrapper();
+            downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
-            EnsemblDownloadsWrapper.PrepareEnsemblGenomeFasta(genomeFasta, out ensemblGenome, out reorderedFastaPath);
-            alignment.PerformTwoPassAlignment(binDirectory, analysisDirectory, reference, threads, fastqs, strandSpecific, inferStrandSpecificity, overwriteStarAlignment, genomeStarIndexDirectory, reorderedFastaPath, proteinFasta, geneModelGtfOrGff, useReadSubset, readSubset);
-            EnsemblDownloadsWrapper.GetImportantProteinAccessions(binDirectory, proteinFasta, out var proteinSequences, out HashSet<string> badProteinAccessions, out Dictionary<string, string> selenocysteineContainingAccessions);
-            EnsemblDownloadsWrapper.FilterGeneModel(binDirectory, geneModelGtfOrGff, ensemblGenome, out string filteredGeneModelForScalpel);
-            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(binDirectory, filteredGeneModelForScalpel);
+            alignment.Parameters = new STARAlignmentParameters(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference, Parameters.Threads,
+                Parameters.Fastqs, Parameters.StrandSpecific, Parameters.InferStrandSpecificity,
+                Parameters.OverwriteStarAlignment, Parameters.GenomeStarIndexDirectory, downloads.ReorderedFastaPath,
+                Parameters.ProteinFasta, Parameters.GeneModelGtfOrGff, Parameters.UseReadSubset, Parameters.ReadSubset);
+            alignment.PerformTwoPassAlignment();
+            downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
+            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.GeneModelGtfOrGff, downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
+            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, filteredGeneModelForScalpel);
 
             // Variant Calling
             VariantCallingFlow variantCalling = new VariantCallingFlow();
-            variantCalling.CallVariants(binDirectory, reference, threads, genomeFasta, sortedBed12Path, ensemblKnownSitesPath, alignment.DedupedBamFiles, reorderedFastaPath);
+            variantCalling.CallVariants(Parameters.SpritzDirectory, Parameters.Reference, Parameters.Threads, Parameters.GenomeFasta, sortedBed12Path, Parameters.EnsemblKnownSitesPath, alignment.DedupedBamFiles, downloads.ReorderedFastaPath);
 
             // Generate databases
-            GeneModel geneModel = new GeneModel(ensemblGenome, geneModelGtfOrGff);
+            GeneModel geneModel = new GeneModel(downloads.EnsemblGenome, Parameters.GeneModelGtfOrGff);
             ProteinVariantDatabases = variantCalling.AnnotatedVcfFilePaths.Select(annotatedVcf =>
-                WriteSampleSpecificFasta(annotatedVcf, ensemblGenome, geneModel, reference, proteinSequences, badProteinAccessions, selenocysteineContainingAccessions, 7, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf))))
+                WriteSampleSpecificFasta(annotatedVcf, downloads.EnsemblGenome, geneModel, Parameters.Reference, downloads.ProteinAccessionSequence, downloads.BadProteinAccessions, downloads.SelenocysteineProteinAccessions, MinimumPeptideLength, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf))))
                 .ToList();
         }
 
-        public string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces, 
+        public string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces,
             HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
         {
             if (!File.Exists(vcfPath))
@@ -185,6 +144,16 @@ namespace WorkflowLayer
                 }
             }
             return proteinMetrics;
-        }    
+        }
+
+        /// <summary>
+        /// Run this workflow (for GUI)
+        /// </summary>
+        /// <param name="parameters"></param>
+        protected override void RunSpecific(ISpritzParameters parameters)
+        {
+            Parameters = (SampleSpecificProteinDBParameters)parameters;
+            GenerateSAVProteinsFromFastqs();
+        }
     }
 }

@@ -45,9 +45,11 @@ namespace WorkflowLayer
                 var outputFolderForThisTask = Path.Combine(outputFolder, ok.Item1);
 
                 if (!Directory.Exists(outputFolderForThisTask))
+                {
                     Directory.CreateDirectory(outputFolderForThisTask);
+                }
 
-                ok.Item2.RunTask(outputFolderForThisTask, currentGenomeFilenameList, currentGeneSetFilenameList, currentRnaSeqFilenameList, ok.Item1);
+                //ok.Item2.RunTask(outputFolderForThisTask, currentGenomeFilenameList, currentGeneSetFilenameList, currentRnaSeqFilenameList, ok.Item1);
             }
         }
 

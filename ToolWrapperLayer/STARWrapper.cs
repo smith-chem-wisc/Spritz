@@ -60,6 +60,11 @@ namespace ToolWrapperLayer
         /// </summary>
         public static string ChimericJunctionsFileSuffix { get; } = "Chimeric.out.junction";
 
+        /// <summary>
+        /// File name used to check for too many open files bug, followed by an integer
+        /// </summary>
+        public static string ThreadCheckFileSuffix { get; } = "Chimeric.out.junction.thread";
+
         #endregion Public Properties
 
         #region Genome Index Methods

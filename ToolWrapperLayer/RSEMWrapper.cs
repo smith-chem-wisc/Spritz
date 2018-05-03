@@ -19,7 +19,7 @@ namespace ToolWrapperLayer
     public class RSEMWrapper :
         IInstallable
     {
-        public string ReferencePrefix { get; private set; }
+        public string ReferenceIndexPrefix { get; private set; }
         public string OutputPrefix { get; private set; }
 
         public static string IsoformResultsSuffix { get; } = ".isoforms.results";
@@ -88,7 +88,7 @@ namespace ToolWrapperLayer
             string referencePrefixDirectory = Path.Combine(Path.GetDirectoryName(referenceFastaPath), Path.GetFileNameWithoutExtension(referenceFastaPath)) +
                 (aligner == RSEMAlignerOption.STAR ? "RsemStarReference" : "RsemBowtieReference") +
                 "_GeneModel" + geneModelPath.GetHashCode().ToString();
-            ReferencePrefix = Path.Combine(referencePrefixDirectory, Path.GetFileNameWithoutExtension(referenceFastaPath));
+            ReferenceIndexPrefix = Path.Combine(referencePrefixDirectory, Path.GetFileNameWithoutExtension(referenceFastaPath));
             string geneModelOption = Path.GetExtension(geneModelPath).StartsWith(".gff") ? "--gff3 " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
                 Path.GetExtension(geneModelPath) == ".gtf" ? "--gtf " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
                 null;
@@ -104,7 +104,7 @@ namespace ToolWrapperLayer
                         alignerOption + " " +
                         threadOption + " " +
                         WrapperUtility.ConvertWindowsPath(referenceFastaPath) + " " +
-                        WrapperUtility.ConvertWindowsPath(ReferencePrefix) +
+                        WrapperUtility.ConvertWindowsPath(ReferenceIndexPrefix) +
                 "; fi"
             };
             return scriptStrings;
@@ -115,7 +115,7 @@ namespace ToolWrapperLayer
         /// </summary>
         /// <param name="binDirectory"></param>
         /// <returns></returns>
-        public List<string> CalculateExpressionCommands(string binDirectory, string referencePrefix, int threads, RSEMAlignerOption aligner, Strandedness strandedness, 
+        public List<string> CalculateExpressionCommands(string binDirectory, string referencePrefix, int threads, RSEMAlignerOption aligner, Strandedness strandedness,
             string[] fastqPaths, bool doOuptutBam)
         {
             if (fastqPaths.Length < 1)

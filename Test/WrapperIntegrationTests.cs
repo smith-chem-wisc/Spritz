@@ -81,15 +81,11 @@ namespace Test
         [Test, Order(1)]
         public void DownloadReferences()
         {
-            EnsemblDownloadsWrapper.DownloadReferences(
+            EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
+            downloadsWrapper.DownloadReferences(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                "grch37",
-                out genomeFastaPath,
-                out string gtf,
-                out string gff,
-                out string proteinFasta
-            );
+                "grch37");
 
             // - a basic set of chromosomes, fairly small ones
             string a = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa");
@@ -275,7 +271,7 @@ namespace Test
             }
 
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
-            quantification.QuantifyTranscripts(
+            quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
@@ -284,6 +280,7 @@ namespace Test
                 Strandedness.None,
                 new[] { newMapper },
                 true);
+            quantification.QuantifyTranscripts();
 
             Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
             Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
@@ -306,7 +303,7 @@ namespace Test
             }
 
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
-            quantification.QuantifyTranscripts(
+            quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
@@ -315,6 +312,7 @@ namespace Test
                 Strandedness.None,
                 new[] { newMapper },
                 true);
+            quantification.QuantifyTranscripts();
 
             Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
             Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
@@ -336,7 +334,7 @@ namespace Test
             }
 
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
-            quantification.QuantifyTranscripts(
+            quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
@@ -349,6 +347,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SRR6319804_1-trimmed-pair2.segment.fastq"),
                 },
                 true);
+            quantification.QuantifyTranscripts();
 
             Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
             Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
@@ -735,7 +734,7 @@ namespace Test
         public void FullProteinRunFromFastqs()
         {
             SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
-            ssdbf.GenerateSAVProteinsFromFastqs(
+            ssdbf.Parameters = new SampleSpecificProteinDBParameters(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -753,6 +752,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
+            ssdbf.GenerateSAVProteinsFromFastqs();
             foreach (string database in ssdbf.ProteinVariantDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
@@ -767,7 +767,7 @@ namespace Test
         public void LncRnaDiscoveryRunFromFastqs()
         {
             LncRNADiscoveryFlow lncRNAdiscovery = new LncRNADiscoveryFlow();
-            lncRNAdiscovery.LncRNADiscoveryFromFastqs(
+            lncRNAdiscovery.Parameters = new LncRNADiscoveryParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
@@ -784,6 +784,8 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 true);
+            lncRNAdiscovery.LncRNADiscoveryFromFastqs();
+
             Assert.IsTrue(File.Exists(lncRNAdiscovery.MergedGtfPath));
             Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
             Assert.IsTrue(File.Exists(lncRNAdiscovery.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
@@ -805,8 +807,9 @@ namespace Test
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "2000readsAgain_2.fastq"));
+
             SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
-            ssdbf.GenerateSAVProteinsFromFastqs(
+            ssdbf.Parameters = new SampleSpecificProteinDBParameters(
                 TestContext.CurrentContext.TestDirectory,
                 TestContext.CurrentContext.TestDirectory,
                 "grch37",
@@ -828,6 +831,8 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
+
+            ssdbf.GenerateSAVProteinsFromFastqs();
             foreach (string database in ssdbf.ProteinVariantDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
@@ -843,13 +848,14 @@ namespace Test
         [Test, Order(3)]
         public void FullProteinRunFromSRA()
         {
+            var fastqs = SRAToolkitWrapper.GetFastqsFromSras(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), "SRR6319804");
             SampleSpecificProteinDBFlow ssdb = new SampleSpecificProteinDBFlow();
-            ssdb.GenerateSAVProteinsFromSra(
+            ssdb.Parameters = new SampleSpecificProteinDBParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
                 Environment.ProcessorCount,
-                "SRR6319804",
+                fastqs,
                 false,
                 false,
                 false,
@@ -860,6 +866,8 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
                 true,
                 5000);
+            ssdb.GenerateSAVProteinsFromFastqs();
+                
             foreach (string database in ssdb.ProteinVariantDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);

@@ -2,12 +2,20 @@
 using System;
 using System.IO;
 using System.Reflection;
+using WorkflowLayer;
 
 namespace CMD
 {
     internal class Options
     {
-        [Option('c', "command", Required = true, HelpText = "Command: (1) setup, (2) run, (3) vcf2protein, (4) starFusionTest, (5) lncRNADiscovery, (6) quantify")]
+        [Option('c', "command", Required = true, HelpText =
+            "Command:" +
+                " (1) " + ManageToolsFlow.Command +
+                " (2) " + SampleSpecificProteinDBFlow.Command +
+                " (3) " + LncRNADiscoveryFlow.Command +
+                " (4) " + TranscriptQuantificationFlow.Command +
+                " (5) strandedness" +
+                " (6) starFusionTest")]
         public string Command { get; set; }
 
         [Option('b', "binDirectory", Required = false, HelpText = "Bin directory for Proteoform Database Engine")]
@@ -54,5 +62,7 @@ namespace CMD
 
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
+
+        public string ProteinFastaPath { get; set; }
     }
 }

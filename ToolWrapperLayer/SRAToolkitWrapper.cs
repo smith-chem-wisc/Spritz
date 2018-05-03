@@ -74,5 +74,25 @@ namespace ToolWrapperLayer
             }).WaitForExit();
             FastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
         }
+
+        /// <summary>
+        /// Use this class to get fastqs from a comma separated list of SRA accessions
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="commaSeparatedSraAccessions"></param>
+        /// <returns></returns>
+        public static List<string[]> GetFastqsFromSras(string spritzDirectory, string analysisDirectory, string commaSeparatedSraAccessions)
+        {
+            List<string[]> fastqs = new List<string[]>();
+            string[] sras = commaSeparatedSraAccessions.Split(',');
+            foreach (string sra in sras)
+            {
+                SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
+                sratoolkit.Fetch(spritzDirectory, sra, analysisDirectory);
+                fastqs.Add(sratoolkit.FastqPaths);
+            }
+            return fastqs;
+        }
     }
 }
