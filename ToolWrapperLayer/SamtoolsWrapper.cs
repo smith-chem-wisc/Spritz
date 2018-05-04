@@ -16,14 +16,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script to install samtools.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installSamtools.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installSamtools.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d samtools-1.6 ]; then",
                 "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2",
                 "  tar -jxvf samtools-1.6.tar.bz2",
@@ -40,9 +40,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing samtools.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
@@ -62,24 +62,24 @@ namespace ToolWrapperLayer
             return megabytes + "M";
         }
 
-        public static string SortBam(string binDirectory, string bamPath)
+        public static string SortBam(string spritzDirectory, string bamPath)
         {
             return "samtools sort -@ " + Environment.ProcessorCount.ToString() + " -m " + GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount) +
                 " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + " " +
                 WrapperUtility.ConvertWindowsPath(bamPath);
         }
 
-        public static string GenomeFastaIndexCommand(string binDirectory, string genomeFastaPath)
+        public static string GenomeFastaIndexCommand(string spritzDirectory, string genomeFastaPath)
         {
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then " +
-                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) +
+                WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "samtools-1.6", "samtools")) +
                 " faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
         }
 
-        public static string IndexBamCommand(string binDirectory, string bamPath)
+        public static string IndexBamCommand(string spritzDirectory, string bamPath)
         {
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then " +
-                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath) +
+                WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath) +
                 "; fi";
         }
 

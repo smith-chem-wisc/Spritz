@@ -9,6 +9,12 @@ namespace Test
     [TestFixture]
     public class AlignmentTests
     {
+        [Test]
+        public void CountReads()
+        {
+            Assert.AreEqual(3970, new FastqProperties(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq")).ReadCount);
+        }
+
         [Test, Order(1)]
         public void SubsetReadsCheck()
         {

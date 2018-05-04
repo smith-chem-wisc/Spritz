@@ -38,9 +38,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing skewer.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
@@ -49,7 +49,7 @@ namespace ToolWrapperLayer
 
         #region Public Method
 
-        public static void Trim(string binDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
+        public static void Trim(string spritzDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
         {
             log = "";
             readTrimmedPaths = new string[readPaths.Length];
@@ -68,15 +68,15 @@ namespace ToolWrapperLayer
             bool alreadyTrimmed = File.Exists(readTrimmedPaths[0]) && (readPaths.Length == 1 || File.Exists(readTrimmedPaths[1]));
             if (alreadyTrimmed) return;
 
-            string script_path = Path.Combine(binDirectory, "scripts", "skewered.bash");
+            string script_path = Path.Combine(spritzDirectory, "scripts", "skewered.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
-                WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "skewer-0.2.2", "skewer")) +
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "skewer-0.2.2", "skewer")) +
                     " -q " + qualityFilter +
                     " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]))) +
                     " -t " + threads.ToString() +
-                    " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "BBMap", "resources", "adapters.fa")) +
+                    " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "BBMap", "resources", "adapters.fa")) +
                     " " + WrapperUtility.ConvertWindowsPath(readPaths[0]) +
                     (readPaths.Length > 1 ? " " + WrapperUtility.ConvertWindowsPath(readPaths[1]) : ""),
             }).WaitForExit();

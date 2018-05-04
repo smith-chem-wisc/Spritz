@@ -60,14 +60,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an install script for BLAST+.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMelting.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installMelting.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d ncbi-blast-2.7.1+ ]; then",
                 "  wget --no-check ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz",
                 "  tar -xvf ncbi-blast-2.7.1+-x64-linux.tar.gz; rm ncbi-blast-2.7.1+-x64-linux",
@@ -80,9 +80,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing bedtools.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }

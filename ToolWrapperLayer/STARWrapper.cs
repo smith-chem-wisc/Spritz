@@ -72,7 +72,7 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Generates indices for STAR alignments.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="genomeDir"></param>
         /// <param name="genomeFastas"></param>
@@ -80,7 +80,7 @@ namespace ToolWrapperLayer
         /// <param name="sjdbFileChrStartEnd"></param>
         /// <param name="junctionOverhang"></param>
         /// <returns></returns>
-        public static List<string> GenerateGenomeIndex(string binDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
+        public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
             string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
@@ -95,7 +95,7 @@ namespace ToolWrapperLayer
 
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR/source/STAR" + arguments + "; fi"
             };
@@ -104,15 +104,15 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Removes genome indices from memory.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="genomeDir"></param>
         /// <returns></returns>
-        public static List<string> RemoveGenome(string binDirectory, string genomeDir)
+        public static List<string> RemoveGenome(string spritzDirectory, string genomeDir)
         {
-            string script_name = Path.Combine(binDirectory, "scripts", "removeGenome.bash");
+            string script_name = Path.Combine(spritzDirectory, "scripts", "removeGenome.bash");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() + " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir)
             };
         }
@@ -124,14 +124,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for STAR. Also installs seqtk, which is useful for subsetting fastq files.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStar.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installStar.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "git clone https://github.com/lh3/seqtk.git",
                 "cd seqtk; make",
                 "cd ..",
@@ -140,7 +140,7 @@ namespace ToolWrapperLayer
                 "  cd STAR/source",
                 "  make STAR",
                 "  cd ..",
-                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "STAR", "source")),
+                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "STAR", "source")),
                 "fi"
             });
             return scriptPath;
@@ -149,9 +149,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing STAR and seqtk.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
@@ -163,7 +163,7 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Aligns reads and outputs junctions of spliced alignments. Does not output an alignment map.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="genomeDir"></param>
         /// <param name="fastqFiles"></param>
@@ -171,9 +171,9 @@ namespace ToolWrapperLayer
         /// <param name="strandSpecific"></param>
         /// <param name="genomeLoad"></param>
         /// <returns></returns>
-        public static List<string> FirstPassAlignmentCommands(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
+        public static List<string> FirstPassAlignmentCommands(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
-            return BasicAlignReadCommands(binDirectory, threads, genomeDir, fastqFiles, outprefix, strandSpecific, genomeLoad, "None");
+            return BasicAlignReadCommands(spritzDirectory, threads, genomeDir, fastqFiles, outprefix, strandSpecific, genomeLoad, "None");
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace ToolWrapperLayer
         /// Aligns reads and outputs alignment map and chimeric alignments.
         /// Note: fastqs must have \n line endings, not \r\n.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="genomeDir"></param>
         /// <param name="fastqFiles"></param>
@@ -216,7 +216,7 @@ namespace ToolWrapperLayer
         /// <param name="genomeLoad"></param>
         /// <param name="outSamType"></param>
         /// <returns></returns>
-        public static List<string> BasicAlignReadCommands(string binDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory, string outSamType = "BAM Unsorted")
+        public static List<string> BasicAlignReadCommands(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory, string outSamType = "BAM Unsorted")
         {
             string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
             string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
@@ -241,7 +241,7 @@ namespace ToolWrapperLayer
             string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix) + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix);
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " ) ]]; then STAR/source/STAR" + arguments + "; fi",
                 File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             };
@@ -251,7 +251,7 @@ namespace ToolWrapperLayer
         /// Aligns reads and outputs alignment map and chimeric alignments. Duplicate reads are removed (deduped) from the alignment map, a step that's recommended for variant calling.
         /// Note: fastqs must have \n line endings, not \r\n.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="genomeDir"></param>
         /// <param name="fastqFiles"></param>
@@ -259,7 +259,7 @@ namespace ToolWrapperLayer
         /// <param name="strandSpecific"></param>
         /// <param name="genomeLoad"></param>
         /// <returns></returns>
-        public static List<string> AlignRNASeqReadsForVariantCalling(string binDirectory, int threads, string genomeDir, string[] fastqFiles,
+        public static List<string> AlignRNASeqReadsForVariantCalling(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles,
             string outprefix, bool overwriteStarAlignment, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
             string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
@@ -296,17 +296,17 @@ namespace ToolWrapperLayer
 
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
                 "  STAR/source/STAR" + alignmentArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(binDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(spritzDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
                 "  STAR/source/STAR" + dedupArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(binDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(spritzDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
 
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
                     "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
@@ -318,23 +318,23 @@ namespace ToolWrapperLayer
         /// Uses seqtk to get a subset of reads from a (pair of) fastq file(s).
         /// Note: fastqs must have \n line endings, not \r\n.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="fastqFiles"></param>
         /// <param name="reads"></param>
         /// <param name="currentDirectory"></param>
         /// <param name="newFfiles"></param>
         /// <param name="useSeed"></param>
         /// <param name="seed"></param>
-        public static void SubsetFastqs(string binDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
+        public static void SubsetFastqs(string spritzDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
         {
             newFfiles = new string[] { Path.Combine(Path.GetDirectoryName(fastqFiles[0]), Path.GetFileNameWithoutExtension(fastqFiles[0]) + ".segment.fastq") };
             if (fastqFiles.Length > 1)
                 newFfiles = new string[] { newFfiles[0], Path.Combine(Path.GetDirectoryName(fastqFiles[1]), Path.GetFileNameWithoutExtension(fastqFiles[1]) + ".segment.fastq") };
 
-            string script_path = Path.Combine(binDirectory, "scripts", "subsetReads.bash");
+            string script_path = Path.Combine(spritzDirectory, "scripts", "subsetReads.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(newFfiles[0]) + " ]; then",
                 "  echo \"Subsetting " + reads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
                 "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
@@ -346,11 +346,11 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Gets the Windows-formatted path to the STAR executable
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public static string GetStarDirectoryPath(string binDirectory)
+        public static string GetStarDirectoryPath(string spritzDirectory)
         {
-            return Path.Combine(binDirectory, "STAR", "source");
+            return Path.Combine(spritzDirectory, "STAR", "source");
         }
 
         #endregion Public Methods

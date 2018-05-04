@@ -14,14 +14,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for lastz.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installLastz.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installLastz.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d lastz-1.04.00 ]; then",
                 "  wget https://github.com/lastz/lastz/archive/1.04.00.tar.gz",
                 "  tar -xvf 1.04.00.tar.gz",
@@ -39,9 +39,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing lastz.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }

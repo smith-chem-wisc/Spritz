@@ -105,6 +105,7 @@
     <Compile Include="BLASTWrapper.cs" />
     <Compile Include="EnsemblDownloadsWrapper.cs" />
     <Compile Include="CufflinksWrapper.cs" />
+    <Compile Include="FastqProperties.cs" />
     <Compile Include="GATKWrapper.cs" />
     <Compile Include="HISAT2Wrapper.cs" />
     <Compile Include="IInstallable.cs" />

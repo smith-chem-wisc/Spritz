@@ -17,14 +17,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for installing cufflinks.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installStringTie.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installStringTie.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d stringtie-1.3.4d ]; then",
                 "  wget --no-check http://ccb.jhu.edu/software/stringtie/dl/stringtie-1.3.4d.Linux_x86_64.tar.gz",
                 "  tar -xvf stringtie-1.3.4d.Linux_x86_64.tar.gz",
@@ -39,9 +39,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing cufflinks.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
@@ -54,14 +54,14 @@ namespace ToolWrapperLayer
         /// Transcript assembly. Note that fragment bias estimation (--frag-bias-correct) and multi-read rescuing (--multi-read-correct) are not used.
         /// These take a lot of time, and they only provide better abundance estimates, which we use RSEM for.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <param name="threads"></param>
         /// <param name="bamPath"></param>
         /// <param name="geneModelGtfOrGffPath"></param>
         /// <param name="strandSpecific"></param>
         /// <param name="inferStrandSpecificity"></param>
         /// <param name="outputTranscriptGtfPath"></param>
-        public static List<string> AssembleTranscripts(string binDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome,
+        public static List<string> AssembleTranscripts(string spritzDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome,
             Strandedness strandSpecific, bool inferStrandSpecificity, out string outputTranscriptGtfPath)
         {
             Strandedness strandedness = strandSpecific;
@@ -75,9 +75,9 @@ namespace ToolWrapperLayer
             outputTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".gtf");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bamPath) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
-                "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " + SamtoolsWrapper.SortBam(binDirectory, bamPath) + "; fi",
+                "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " + SamtoolsWrapper.SortBam(spritzDirectory, bamPath) + "; fi",
                 "bam=" +  WrapperUtility.ConvertWindowsPath(bamPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then bam=" + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + "; fi",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(outputTranscriptGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outputTranscriptGtfPath) + " ]]; then",
@@ -94,13 +94,13 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Merge multiple transcript models (GTF) into a single one (GTF)
         /// </summary>
-        /// <param name="binDirectory"></param>
-        public static List<string> MergeTranscriptPredictions(string binDirectory, string geneModelGtfOrGffPath, List<string> transcriptGtfPaths, string combinedTranscriptGtfOutputPath)
+        /// <param name="spritzDirectory"></param>
+        public static List<string> MergeTranscriptPredictions(string spritzDirectory, string geneModelGtfOrGffPath, List<string> transcriptGtfPaths, string combinedTranscriptGtfOutputPath)
         {
             string gtfListPath = Path.Combine(Path.GetDirectoryName(combinedTranscriptGtfOutputPath), Path.GetFileNameWithoutExtension(combinedTranscriptGtfOutputPath)) + "_gtflist.txt";
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(binDirectory, "cufflinks-2.2.1")),
+                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "cufflinks-2.2.1")),
                 "readlink -f \"" + String.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\" > " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) + " ]]; then ",
                 "  echo \"Performing stringtie transcript merger on GTF list:" + gtfListPath + "\"",
@@ -116,12 +116,12 @@ namespace ToolWrapperLayer
         /// Removes transcripts with zero abundance predictions
         /// </summary>
         /// <returns></returns>
-        public static List<string> RemoveZeroAbundanceCufflinksPredictionsCommand(string binDirectory, string transcriptGtfPath, out string filteredTranscriptGtfPath)
+        public static List<string> RemoveZeroAbundanceCufflinksPredictionsCommand(string spritzDirectory, string transcriptGtfPath, out string filteredTranscriptGtfPath)
         {
             filteredTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(transcriptGtfPath), Path.GetFileNameWithoutExtension(transcriptGtfPath)) + ".filtered" + Path.GetExtension(transcriptGtfPath);
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "echo \"Removing zero-abundance transcripts from " + transcriptGtfPath + "\"",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " ]]; then " +
                     "grep -v 'FPKM \"0.000000\"' " + WrapperUtility.ConvertWindowsPath(transcriptGtfPath) + " > " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) +
@@ -129,16 +129,16 @@ namespace ToolWrapperLayer
             };
         }
 
-        public void TranscriptReconstruction(string binDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome, 
+        public void TranscriptReconstruction(string spritzDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome, 
             bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles)
         {
-            string scriptName = Path.Combine(binDirectory, "scripts", "TranscriptReconstruction.bash");
+            string scriptName = Path.Combine(spritzDirectory, "scripts", "TranscriptReconstruction.bash");
             List<string> reconstructionCommands = new List<string>();
             TranscriptGtfPaths = new List<string>();
             foreach (string sortedBam in sortedBamFiles)
             {
-                reconstructionCommands.AddRange(AssembleTranscripts(binDirectory, threads, sortedBam, geneModelGtfOrGff, genome, strandSpecific ? Strandedness.Forward : Strandedness.None, inferStrandSpecificity, out string stringtieGtfTranscriptGtfPath));
-                reconstructionCommands.AddRange(RemoveZeroAbundanceCufflinksPredictionsCommand(binDirectory, stringtieGtfTranscriptGtfPath, out string filteredTranscriptModelGtfPath));
+                reconstructionCommands.AddRange(AssembleTranscripts(spritzDirectory, threads, sortedBam, geneModelGtfOrGff, genome, strandSpecific ? Strandedness.Forward : Strandedness.None, inferStrandSpecificity, out string stringtieGtfTranscriptGtfPath));
+                reconstructionCommands.AddRange(RemoveZeroAbundanceCufflinksPredictionsCommand(spritzDirectory, stringtieGtfTranscriptGtfPath, out string filteredTranscriptModelGtfPath));
                 TranscriptGtfPaths.Add(filteredTranscriptModelGtfPath);
             }
             int uniqueSuffix = 1;
@@ -147,7 +147,7 @@ namespace ToolWrapperLayer
                 uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
             }
             MergedGtfPath = Path.Combine(analysisDirectory, "MergedStringtieModel" + uniqueSuffix + ".gtf");
-            reconstructionCommands.AddRange(MergeTranscriptPredictions(binDirectory, geneModelGtfOrGff, TranscriptGtfPaths, MergedGtfPath));
+            reconstructionCommands.AddRange(MergeTranscriptPredictions(spritzDirectory, geneModelGtfOrGff, TranscriptGtfPaths, MergedGtfPath));
             WrapperUtility.GenerateAndRunScript(scriptName, reconstructionCommands).WaitForExit();
         }
 

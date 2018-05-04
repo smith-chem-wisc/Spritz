@@ -7,8 +7,8 @@ namespace WorkflowLayer
     {
         public SampleSpecificProteinDBParameters(string spritzDirectory, string analysisDirectory, string reference, int threads, List<string[]> fastqs,
             bool strandSpecific, bool inferStrandSpecificity, bool overwriteStarAlignment, string genomeStarIndexDirectory,
-            string genomeFasta, string proteinFasta, string geneModelGtfOrGff, string ensemblKnownSitesPath,
-            bool useReadSubset = false, int readSubset = 300000)
+            string genomeFasta, string proteinFasta, string referenceGeneModelGtfOrGff, string ensemblKnownSitesPath, string newGeneModelGtfOrGff = null,
+            double readDepthPerMilliionVariantCutoff = 0.05, int minPeptideLength = 7, bool useReadSubset = false, int readSubset = 300000)
         {
             SpritzDirectory = spritzDirectory;
             AnalysisDirectory = analysisDirectory;
@@ -21,8 +21,11 @@ namespace WorkflowLayer
             GenomeStarIndexDirectory = genomeStarIndexDirectory;
             GenomeFasta = genomeFasta;
             ProteinFasta = proteinFasta;
-            GeneModelGtfOrGff = geneModelGtfOrGff;
+            ReferenceGeneModelGtfOrGff = referenceGeneModelGtfOrGff;
+            NewGeneModelGtfOrGff = newGeneModelGtfOrGff;
             EnsemblKnownSitesPath = ensemblKnownSitesPath;
+            ReadDepthPerMilliionVariantCutoff = readDepthPerMilliionVariantCutoff;
+            MinPeptideLength = minPeptideLength;
             UseReadSubset = useReadSubset;
             ReadSubset = readSubset;
         }
@@ -38,8 +41,11 @@ namespace WorkflowLayer
         public string GenomeStarIndexDirectory { get; }
         public string GenomeFasta { get; }
         public string ProteinFasta { get; }
-        public string GeneModelGtfOrGff { get; }
+        public string ReferenceGeneModelGtfOrGff { get; }
+        public string NewGeneModelGtfOrGff { get; }
         public string EnsemblKnownSitesPath { get; }
+        public double ReadDepthPerMilliionVariantCutoff { get; }
+        public int MinPeptideLength { get; }
         public bool UseReadSubset { get; }
         public int ReadSubset { get; } = 300000;
     }

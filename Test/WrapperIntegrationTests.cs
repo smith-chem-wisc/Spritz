@@ -665,7 +665,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
             ssdbf.GenerateSAVProteinsFromFastqs();
-            foreach (string database in ssdbf.ProteinVariantDatabases)
+            foreach (string database in ssdbf.VariantAppliedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
@@ -745,7 +745,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
 
             ssdbf.GenerateSAVProteinsFromFastqs();
-            foreach (string database in ssdbf.ProteinVariantDatabases)
+            foreach (string database in ssdbf.VariantAppliedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any variations for this test set with variant filtering criteria
@@ -761,8 +761,8 @@ namespace Test
         public void FullProteinRunFromSRA()
         {
             var fastqs = SRAToolkitWrapper.GetFastqsFromSras(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), "SRR6319804");
-            SampleSpecificProteinDBFlow ssdb = new SampleSpecificProteinDBFlow();
-            ssdb.Parameters = new SampleSpecificProteinDBParameters(
+            SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
+            ssdbf.Parameters = new SampleSpecificProteinDBParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37",
@@ -776,11 +776,14 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
+                null,
+                0.05,
+                7,
                 true,
                 5000);
-            ssdb.GenerateSAVProteinsFromFastqs();
+            ssdbf.GenerateSAVProteinsFromFastqs();
                 
-            foreach (string database in ssdb.ProteinVariantDatabases)
+            foreach (string database in ssdbf.VariantAppliedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));// no variants anymore with the filtering criteria

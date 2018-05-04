@@ -14,14 +14,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for mfold.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMfold.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installMfold.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d mfold-3.6 ]; then",
                 "  wget --no-check http://unafold.rna.albany.edu/download/mfold-3.6.tar.gz",
                 "  tar -xvf mfold-3.6.tar.gz",
@@ -38,9 +38,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing cufflinks.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }

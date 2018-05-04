@@ -14,14 +14,14 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes an installation script for the program MELTING.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string binDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(binDirectory, "scripts", "installScripts", "installMelting.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installMelting.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(binDirectory),
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d MELTING5.1.1 ]; then",
                 "  wget --no-check -O MELTING5.1.1.tar.gz http://sourceforge.net/projects/melting/files/meltingJava/melting5/MELTING5.1.1.tar.gz/download",
                 "  tar -xvf MELTING5.1.1.tar.gz; rm MELTING5.1.1.tar.gz",
@@ -35,9 +35,9 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Writes a script for removing cufflinks.
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public string WriteRemoveScript(string binDirectory)
+        public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
