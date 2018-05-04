@@ -118,7 +118,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlternateGeneModel2ProteinDBEngine.cs" />
     <Compile Include="CaptureOligoDesignFlow.cs" />
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
     <Compile Include="EventArgs\StringEventArgs.cs" />

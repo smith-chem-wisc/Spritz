@@ -17,7 +17,6 @@ namespace WorkflowLayer
         : SpritzFlow
     {
         public const string Command = "proteins";
-        public static readonly int MinimumPeptideLength = 7;
 
         public SampleSpecificProteinDBFlow()
             : base(MyWorkflow.SampleSpecificProteinDB)
@@ -25,15 +24,22 @@ namespace WorkflowLayer
         }
 
         public SampleSpecificProteinDBParameters Parameters { get; set; }
-        public List<string> ProteinVariantDatabases { get; private set; } = new List<string>();
+        public List<string> IndelAppliedProteinFastaDatabases { get; private set; } = new List<string>();
+        public List<string> IndelAppliedProteinXmlDatabases { get; private set; } = new List<string>();
+        public List<string> VariantAnnotatedProteinFastaDatabases { get; private set; } = new List<string>();
+        public List<string> VariantAnnotatedProteinXmlDatabases { get; private set; } = new List<string>();
+        public List<string> VariantAppliedProteinFastaDatabases { get; private set; } = new List<string>();
+        public List<string> VariantAppliedProteinXmlDatabases { get; private set; } = new List<string>();
+        private EnsemblDownloadsWrapper Downloads { get; set; } = new EnsemblDownloadsWrapper();
+
 
         /// <summary>
         /// Generate sample specific protein database starting with fastq files
         /// </summary>
         public void GenerateSAVProteinsFromFastqs()
         {
-            EnsemblDownloadsWrapper downloads = new EnsemblDownloadsWrapper();
-            downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
+            // Download references and align reads
+            Downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
             alignment.Parameters = new STARAlignmentParameters(
                 Parameters.SpritzDirectory, 
@@ -45,14 +51,18 @@ namespace WorkflowLayer
                 Parameters.InferStrandSpecificity,
                 Parameters.OverwriteStarAlignment, 
                 Parameters.GenomeStarIndexDirectory, 
-                downloads.ReorderedFastaPath,
-                Parameters.GeneModelGtfOrGff, 
+                Downloads.ReorderedFastaPath,
+                Parameters.ReferenceGeneModelGtfOrGff,
                 Parameters.UseReadSubset, 
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
-            downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
-            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.GeneModelGtfOrGff, downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
+            Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
+            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, filteredGeneModelForScalpel);
+            GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
+
+            // Merge new and reference gene models, if a new one is specified
+            Merge(referenceGeneModel, Parameters.NewGeneModelGtfOrGff);
 
             // Variant Calling
             VariantCallingFlow variantCalling = new VariantCallingFlow();
@@ -64,66 +74,89 @@ namespace WorkflowLayer
                 sortedBed12Path, 
                 Parameters.EnsemblKnownSitesPath, 
                 alignment.DedupedBamFiles, 
-                downloads.ReorderedFastaPath);
+                Downloads.ReorderedFastaPath);
 
-            // Generate databases
-            GeneModel geneModel = new GeneModel(downloads.EnsemblGenome, Parameters.GeneModelGtfOrGff);
-            ProteinVariantDatabases = variantCalling.AnnotatedVcfFilePaths.Select(annotatedVcf =>
-                WriteSampleSpecificFasta(annotatedVcf, downloads.EnsemblGenome, geneModel, Parameters.Reference, downloads.ProteinAccessionSequence, downloads.BadProteinAccessions, downloads.SelenocysteineProteinAccessions, MinimumPeptideLength, Path.Combine(Path.GetDirectoryName(annotatedVcf), Path.GetFileNameWithoutExtension(annotatedVcf))))
-                .ToList();
+            // Apply Variations
+            for (int i = 0; i < variantCalling.GatkVcfFilePaths.Count; i++)
+            {
+                // Indel database
+                //string indelVcf = variantCalling.ScalpelAnnotatedVcfFilePaths[i];
+                //var indelTranscripts = variantCalling.ApplyIndels(indelVcf, Downloads.EnsemblGenome, referenceGeneModel);
+                //string indelOutPrefix = Path.Combine(Path.GetDirectoryName(indelVcf), Path.GetFileNameWithoutExtension(indelVcf) + "_indel");
+                //(string, string, List<Protein>) indelDatabases = WriteSampleSpecificFasta(
+                //    indelTranscripts,
+                //    referenceGeneModel,
+                //    indelOutPrefix);
+                //IndelAppliedProteinFastaDatabases.Add(indelDatabases.Item1);
+                //IndelAppliedProteinXmlDatabases.Add(indelDatabases.Item2);
+
+                // Variant annotated database
+                string snvVcf = variantCalling.GatkAnnotatedVcfFilePaths[i];
+                variantCalling.AnnotateSAVs(snvVcf, Downloads.EnsemblGenome, referenceGeneModel);
+                string annotatedOutPrefix = Path.Combine(Path.GetDirectoryName(snvVcf), Path.GetFileNameWithoutExtension(snvVcf) + "_snvAnnotated");
+                (string, string, List<Protein>) annotatedDatabases = WriteSampleSpecificFasta(
+                    referenceGeneModel.Genes.SelectMany(g => g.Transcripts).ToList(), 
+                    referenceGeneModel,  
+                    annotatedOutPrefix);
+                VariantAnnotatedProteinFastaDatabases.Add(annotatedDatabases.Item1);
+                VariantAnnotatedProteinXmlDatabases.Add(annotatedDatabases.Item2);
+
+                // Variant applied database
+                var variantTranscripts = variantCalling.ApplySNVs(snvVcf, Downloads.EnsemblGenome, referenceGeneModel);
+                string appliedOutPrefix = Path.Combine(Path.GetDirectoryName(snvVcf), Path.GetFileNameWithoutExtension(snvVcf) + "_snvApplied");
+                (string, string, List<Protein>) appliedDatabases = WriteSampleSpecificFasta(
+                    variantTranscripts,
+                    referenceGeneModel,
+                    appliedOutPrefix);
+                VariantAnnotatedProteinFastaDatabases.Add(appliedDatabases.Item1);
+                VariantAnnotatedProteinXmlDatabases.Add(appliedDatabases.Item2);
+                WriteProteinFastaMetrics(appliedOutPrefix, appliedDatabases.Item3);
+            }
         }
 
-        public string WriteSampleSpecificFasta(string vcfPath, Genome genome, GeneModel geneModel, string reference, Dictionary<string, string> proteinSeqeunces,
-            HashSet<string> badProteinAccessions, Dictionary<string, string> selenocysteineContaininAccessions, int minPeptideLength, string outprefix)
+        /// <summary>
+        /// Read in a new gene model and merge it with this one
+        /// </summary>
+        /// <param name="alternativeGeneModelPath"></param>
+        private void Merge(GeneModel referenceGeneModel, string alternativeGeneModelPath)
         {
-            if (!File.Exists(vcfPath))
+            GeneModel newGeneModel = null;
+            if (alternativeGeneModelPath != null && File.Exists(alternativeGeneModelPath))
             {
-                Console.WriteLine("Error: VCF not found: " + vcfPath);
-                return "Error: VCF not found: " + vcfPath;
+                string newGeneModelPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(Parameters.SpritzDirectory, Parameters.Reference, Parameters.NewGeneModelGtfOrGff);
+                newGeneModel = new GeneModel(Downloads.EnsemblGenome, newGeneModelPath);
+                newGeneModel.CreateCDSFromAnnotatedStartCodons(referenceGeneModel);
             }
+            if (newGeneModel != null)
+            {
+                referenceGeneModel.Merge(newGeneModel);
+            }
+        }
 
-            // Parse VCF file
-            VCFParser vcf = new VCFParser(vcfPath);
-            List<Variant> singleNucleotideVariants = vcf.Select(x => x)
-                .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
-                .Select(v => new Variant(null, v, genome)).ToList();
-
+        /// <summary>
+        /// Write transcripts to protein fasta and xml databases
+        /// </summary>
+        /// <param name="transcripts"></param>
+        /// <param name="genome"></param>
+        /// <param name="geneModel"></param>
+        /// <param name="badProteinAccessions"></param>
+        /// <param name="selenocysteineContaininAccessions"></param>
+        /// <param name="minPeptideLength"></param>
+        /// <param name="outprefix"></param>
+        /// <returns></returns>
+        private (string, string, List<Protein>) WriteSampleSpecificFasta(List<Transcript> transcripts, GeneModel geneModel, string outprefix)
+        {
             // Apply the variants combinitorially, and translate the variant transcripts
-            List<Transcript> variantTranscripts = geneModel.ApplyVariants(singleNucleotideVariants);
-            List<Protein> variantProteins = new List<Protein>();
-            for (int i = 0; i < variantTranscripts.Count; i++)
-            {
-                if (badProteinAccessions.Contains(variantTranscripts[i].ID) || badProteinAccessions.Contains(variantTranscripts[i].ProteinID))
-                {
-                    continue;
-                }
-                variantProteins.Add(variantTranscripts[i].Protein(selenocysteineContaininAccessions));
-            }
+            List<Protein> variantProteins = transcripts
+                .Where(t => !Downloads.BadProteinAccessions.Contains(t.ID) && !Downloads.BadProteinAccessions.Contains(t.ProteinID))
+                .Select(t => t.Protein(Downloads.SelenocysteineProteinAccessions)).ToList();
 
-            int transcriptsWithVariants = variantTranscripts.Count(t => t.CodingDomainSequences.Any(y => y.Variants.Count > 0));
-            string proteinVariantDatabase = outprefix + ".variantprotein.fasta";
-            string proteinVariantDatabaseXml = outprefix + ".variantprotein.xml";
-            List<Protein> variantProteinsToWrite = variantProteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
-            ProteinDbWriter.WriteFastaDatabase(variantProteinsToWrite, proteinVariantDatabase, "|");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), variantProteinsToWrite, proteinVariantDatabaseXml);
-            WriteProteinFastaMetrics(outprefix, variantProteinsToWrite);
-
-            // Apply the SNVs as annotations, and translate the variant transcripts
-            //List<Transcript> transcripts = geneModel.ApplyVariants(singleNucleotideVariants);
-            //List<Protein> proteins = new List<Protein>();
-            //for (int i = 0; i < transcripts.Count; i++)
-            //{
-            //    if (badProteinAccessions.Contains(transcripts[i].ID) || badProteinAccessions.Contains(transcripts[i].ProteinID))
-            //    {
-            //        continue;
-            //    }
-            //    proteins.Add(transcripts[i].Protein(selenocysteineContaininAccessions));
-            //}
-            //string proteinDatabaseXml = outprefix + ".protein.xml";
-            //List<Protein> proteinsToWrite = proteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= minPeptideLength).ToList();
-            //ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinsToWrite, proteinDatabaseXml);
-
-            return proteinVariantDatabase;
+            string proteinFasta = outprefix + ".variantprotein.fasta";
+            string proteinXml = outprefix + ".variantprotein.xml";
+            List<Protein> variantProteinsToWrite = variantProteins.OrderBy(p => p.Accession).Where(p => p.BaseSequence.Length >= Parameters.MinPeptideLength).ToList();
+            ProteinDbWriter.WriteFastaDatabase(variantProteinsToWrite, proteinFasta, "|");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), variantProteinsToWrite, proteinXml);
+            return (proteinFasta, proteinXml, variantProteins);
         }
 
         /// <summary>

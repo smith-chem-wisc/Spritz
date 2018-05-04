@@ -60,8 +60,8 @@ namespace Test
         {
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             GeneModel additional = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_pacbio.gff3"));
-
-            List<Protein> proteins = additional.Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(geneModel, null, 7)).ToList();
+            geneModel.Merge(additional);
+            List<Protein> proteins = additional.Genes.SelectMany(g => g.Translate(true)).ToList();
 
             //Forward strand, single coding region
             Assert.AreEqual("PB2015.1.1", proteins[0].Accession);

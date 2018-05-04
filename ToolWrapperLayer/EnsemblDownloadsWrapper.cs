@@ -207,7 +207,7 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
-        /// Converts the first column of a tab-separated file to UCSC chromosome names. Ignores rows starting with '#'.
+        /// Converts the first column of a tab-separated file to UCSC chromosome names. Ignores rows starting with '#'. Ignores rows with UCSC accessions alredy.
         /// </summary>
         /// <param name="spritzDirectory"></param>
         /// <param name="reference"></param>
@@ -229,7 +229,38 @@ namespace ToolWrapperLayer
                     string[] columns = line.Split('\t');
                     if (columns.Length == 0) { break; }
                     if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { columns[0] = ucscColumn; }
-                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { } // nothing to do
+                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { } // nothing to do, already UCSC
+                    else { continue; } // did not recognize this chromosome name; filter it out
+                    writer.WriteLine(String.Join("\t", columns));
+                }
+            }
+            return outputPath;
+        }
+
+        /// <summary>
+        /// Converts the first column of a tab-separated file to UCSC chromosome names. Ignores rows starting with '#'. Ignores rows with Ensembl accessions already.
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="reference"></param>
+        /// <param name="inputPath"></param>
+        /// <param name="outputPath"></param>
+        public static string ConvertFirstColumnUCSC2Ensembl(string spritzDirectory, string reference, string inputPath)
+        {
+            var e2uMappings = Ensembl2UCSCChromosomeMappings(spritzDirectory, reference);
+            var u2eMappings = UCSC2EnsemblChromosomeMappings(spritzDirectory, reference);
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath), Path.GetFileNameWithoutExtension(inputPath)) + ".ucsc" + Path.GetExtension(inputPath);
+            using (StreamReader reader = new StreamReader(inputPath))
+            using (StreamWriter writer = new StreamWriter(outputPath))
+            {
+                while (true)
+                {
+                    string line = reader.ReadLine();
+                    if (line == null || line == "") { break; }
+                    if (line.StartsWith("#")) { continue; }
+                    string[] columns = line.Split('\t');
+                    if (columns.Length == 0) { break; }
+                    if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { columns[0] = ensemblColumn; }
+                    else if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { } // nothing to do, already Ensembl
                     else { continue; } // did not recognize this chromosome name; filter it out
                     writer.WriteLine(String.Join("\t", columns));
                 }

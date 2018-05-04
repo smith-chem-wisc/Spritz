@@ -2,9 +2,11 @@
 using Bio.IO.Gff;
 using Bio.VCF;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Bio.Extensions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -18,12 +20,17 @@ namespace Proteogenomics
         /// <summary>
         /// Gets the first instance of a word
         /// </summary>
-        private static Regex attributeKey = new Regex(@"([\w]+)");
+        private static Regex AttributeKey = new Regex(@"([\w]+)");
 
         /// <summary>
         /// Gets anything inside quotes
         /// </summary>
-        private static Regex attributeValue = new Regex(@"""([\w.]+)""");
+        private static Regex AttributeValue = new Regex(@"""([\w.]+)""");
+
+        /// <summary>
+        /// Used to check if variants were added before applying them
+        /// </summary>
+        private static List<Variant> PreviouslyAddedVariants;
 
         /// <summary>
         /// Constructs this GeneModel object from a Genome object and a corresponding GTF or GFF3 gene model file.
@@ -90,8 +97,8 @@ namespace Proteogenomics
                         }
                         else // GFF1 or GTF
                         {
-                            key = attributeKey.Match(attrib.TrimStart()).Groups[1].Value;
-                            val = attributeValue.Match(attrib.TrimStart()).Groups[1].Value;
+                            key = AttributeKey.Match(attrib.TrimStart()).Groups[1].Value;
+                            val = AttributeValue.Match(attrib.TrimStart()).Groups[1].Value;
                         }
 
                         if (!attributes.TryGetValue(key, out string x)) // sometimes there are two tags, so avoid adding twice
@@ -117,7 +124,6 @@ namespace Proteogenomics
             }
             CreateIntergenicRegions();
             // possibly check transcript sanity here with Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t => t.SanityCheck());
-            Parallel.ForEach(Genes, gene => gene.TranscriptTree.Build());
             GenomeForest.Build();
         }
 
@@ -159,7 +165,6 @@ namespace Proteogenomics
                 }
                 currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
-                currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
 
@@ -228,7 +233,6 @@ namespace Proteogenomics
 
                 currentTranscript = new Transcript(transcriptId, transcriptVersion, currentGene, strand, oneBasedStart, oneBasedEnd, null, null);
                 currentGene.Transcripts.Add(currentTranscript);
-                currentGene.TranscriptTree.Add(currentTranscript);
                 GenomeForest.Add(currentTranscript);
             }
 
@@ -315,7 +319,25 @@ namespace Proteogenomics
 
         #endregion Methods -- Read Gene Model File
 
-        #region Methods -- Applying Variants
+        #region Methods -- Applying Variants and Translation
+
+        /// <summary>
+        /// Create CDS for transcripts in this gene model, based on the translation from CDS in another model
+        /// </summary>
+        /// <param name="referenceGeneModel"></param>
+        public void CreateCDSFromAnnotatedStartCodons(GeneModel referenceGeneModel)
+        {
+            foreach (Gene g in Genes)
+            {
+                if (!referenceGeneModel.GenomeForest.Forest.TryGetValue(g.Chromosome.FriendlyName, out IntervalTree tree)) { continue; }
+                foreach (Transcript t in g.Transcripts)
+                {
+                    List<Transcript> referenceTranscripts = tree.Query(t).OfType<Transcript>().ToList();
+                    List<Transcript> referenceTranscriptsWithCDS = referenceTranscripts.Where(tt => tt.IsProteinCoding()).ToList();
+                    t.CreateCDSFromAnnotatedStartCodons(referenceTranscriptsWithCDS.FirstOrDefault());
+                }
+            }
+        }
 
         /// <summary>
         /// Creates UTRs for transcripts and intergenic regions after reading gene model
@@ -358,53 +380,53 @@ namespace Proteogenomics
         }
 
         /// <summary>
-        /// Apply a list of variants to the intervals within this gene model
+        /// Add variants to relevant genomic regions and annotate them if on transcripts
         /// </summary>
         /// <param name="variants"></param>
-        public List<Transcript> ApplyVariantAnnotationsOnly(List<Variant> variants)
+        public void AddVariantAnnotations(List<Variant> variants)
         {
-            // first, add variants to relevant genomic regions
             Parallel.ForEach(variants.OrderByDescending(v => v.OneBasedStart).ToList(), v =>
             {
                 if (GenomeForest.Forest.TryGetValue(Chromosome.GetFriendlyChromosomeName(v.ChromosomeID), out var intervalTree))
                 {
                     foreach (Interval i in intervalTree.Stab(v.OneBasedStart))
                     {
-                        lock (i) { i.Variants.Add(v); }
+                        lock (i)
+                        {
+                            i.Variants.Add(v);
+                            Transcript t = i as Transcript;
+                            if (t != null)
+                            {
+                                t.AnnotateWithVariant(v);
+                            }
+                        }
                     }
                 }
             });
-
-            return Genes.SelectMany(g => g.Transcripts).SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
         }
 
         /// <summary>
-        /// Apply a list of variants to the intervals within this gene model
+        /// Apply a list of variants to intervals within this gene model
         /// </summary>
         /// <param name="variants"></param>
+        /// <returns></returns>
         public List<Transcript> ApplyVariants(List<Variant> variants)
         {
-            // first, add variants to relevant genomic regions
-            Parallel.ForEach(variants.OrderByDescending(v => v.OneBasedStart).ToList(), v =>
+            // Must add variants before applying them to this gene model
+            if (PreviouslyAddedVariants != variants)
             {
-                if (GenomeForest.Forest.TryGetValue(Chromosome.GetFriendlyChromosomeName(v.ChromosomeID), out var intervalTree))
-                {
-                    foreach (Interval i in intervalTree.Stab(v.OneBasedStart))
-                    {
-                        lock (i) { i.Variants.Add(v); }
-                    }
-                }
-            });
+                AddVariantAnnotations(variants);
+            }
+            return ApplyVariants(variants, Genes.SelectMany(g => g.Transcripts).ToList());
+        }
 
-            // then, apply them
-            //List<Transcript> variantTranscripts = new List<Transcript>();
-            //Parallel.ForEach(Genes.SelectMany(g => g.Transcripts).ToList(), t =>
-            //{
-            //    List<Transcript> transcripts = ApplyVariantsCombinitorially(t);
-            //    lock (variantTranscripts) { variantTranscripts.AddRange(transcripts); }
-            //});
-            //return variantTranscripts;
-            return Genes.SelectMany(g => g.Transcripts).SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
+        /// <summary>
+        /// Apply variants to transcripts
+        /// </summary>
+        /// <param name="variants"></param>
+        public static List<Transcript> ApplyVariants(List<Variant> variants, List<Transcript> transcripts)
+        {
+            return transcripts.SelectMany(t => ApplyVariantsCombinitorially(t)).ToList();
         }
 
         /// <summary>
@@ -414,6 +436,10 @@ namespace Proteogenomics
         /// <returns></returns>
         public static List<Transcript> ApplyVariantsCombinitorially(Transcript t)
         {
+            // Clear out annotations from non-combinitoric add/annotate method
+            t.VariantAnnotations.Clear();
+            t.ProteinSequenceVariations.Clear();
+
             List<Transcript> newTranscripts = new List<Transcript> { new Transcript(t) };
             int heterozygousNonsynonymousCount = 0;
             List<Variant> transcriptVariants = t.Variants.OrderByDescending(v => v.OneBasedStart).ToList(); // reversed, so that the coordinates of each successive variant is not changed
@@ -440,20 +466,60 @@ namespace Proteogenomics
             return newTranscripts;
         }
 
-        #endregion Methods -- Applying Variants
-
-        #region Translation Methods
-
         public List<Protein> Translate(bool translateCodingDomains, HashSet<string> incompleteTranscriptAccessions = null, Dictionary<string, string> selenocysteineContaining = null)
         {
             return Genes.SelectMany(g => g.Translate(translateCodingDomains, incompleteTranscriptAccessions, selenocysteineContaining)).ToList();
         }
 
-        public List<Protein> TranslateUsingAnnotatedStartCodons(GeneModel genesWithCodingDomainSequences, Dictionary<string, string> selenocysteineContaining, int minPeptideLength = 7)
+        /// <summary>
+        /// Merges another gene model into this one
+        /// </summary>
+        /// <param name="model"></param>
+        public void Merge(GeneModel model)
         {
-            return Genes.SelectMany(g => g.TranslateUsingAnnotatedStartCodons(genesWithCodingDomainSequences, selenocysteineContaining, minPeptideLength)).ToList();
+            // Get the nearby intervals based on the interval forest before changing the forest
+            List<Tuple<Gene, List<Interval>>> nearbyReferenceIntervals = new List<Tuple<Gene, List<Interval>>>();
+            foreach (Gene g in model.Genes)
+            {
+                if (GenomeForest.Forest.TryGetValue(g.Chromosome.FriendlyName, out var tree))
+                {
+                    var nearbyIntervals = tree.Query(g).ToList();
+                    nearbyReferenceIntervals.Add(new Tuple<Gene, List<Interval>>(g, nearbyIntervals));
+                }
+            }
+
+            // Iterate over the possible new genes
+            foreach (var geneAndNearby in nearbyReferenceIntervals)
+            {
+                Gene newGene = geneAndNearby.Item1;
+                List<Gene> nearbyGenes = geneAndNearby.Item2.OfType<Gene>().ToList();
+                List<Transcript> nearbyTranscripts = geneAndNearby.Item2.OfType<Transcript>().ToList();
+
+                // If there are no nearby genes, add the gene
+                if (nearbyGenes.Count == 0)
+                {
+                    Genes.Add(newGene);
+                    GenomeForest.Add(newGene);
+                    foreach (var t in newGene.Transcripts)
+                    {
+                        GenomeForest.Add(t);
+                    }
+                    continue;
+                }
+
+                // Otherwise, check if the transcript is already in this reference (same # exons and mRNA sequence)
+                // Then, find the most similar gene, i.e. having the least overlap with this possible new gene
+                foreach (Transcript t in newGene.Transcripts)
+                {
+                    bool sameAsReference = nearbyTranscripts.Any(refT => refT.Exons.Count == t.Exons.Count && refT.SplicedRNA().ConvertToString() == t.SplicedRNA().ConvertToString());
+                    if (sameAsReference) { continue; }
+                    Gene mostSimilar = nearbyGenes.OrderBy(g => g.Minus(newGene).Sum(outside => outside.Length())).First();
+                    mostSimilar.Transcripts.Add(t);
+                    GenomeForest.Add(t);
+                }
+            }
         }
 
-        #endregion Translation Methods
+        #endregion Methods -- Applying Variants and Translation
     }
 }

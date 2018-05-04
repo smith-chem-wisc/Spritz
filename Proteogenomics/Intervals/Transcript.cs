@@ -211,6 +211,17 @@ namespace Proteogenomics
         }
 
         /// <summary>
+        /// Annotate variant effects
+        /// </summary>
+        /// <param name="variant"></param>
+        public void AnnotateWithVariant(Variant variant)
+        {
+            VariantEffects variantEffects = DetermineVariantEffects(variant);
+            VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
+            ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
+        }
+
+        /// <summary>
         /// Sets relevant regions for a transcript
         /// </summary>
         /// <param name="transcript"></param>
@@ -247,7 +258,7 @@ namespace Proteogenomics
             List<Transcript> result = new List<Transcript>();
 
             // annotate variant, and then check that functional effect is greater than missense (CompareTo greater than or equal to 0)
-            variantEffects = AnnotateVariant(variant);
+            variantEffects = DetermineVariantEffects(variant);
             bool nonsynonymous = variantEffects.Effects.Any(eff => eff.IsNonsynonymous());
 
             // if the variant is outside of this transcript, just return without change
@@ -288,7 +299,7 @@ namespace Proteogenomics
         /// Gets a string representing a variant applied to this transcript
         /// </summary>
         /// <param name="variant"></param>
-        public VariantEffects AnnotateVariant(Variant variant)
+        public VariantEffects DetermineVariantEffects(Variant variant)
         {
             // Then in translation, make a simple method to look up the bad accessions
             //      (could also try to assess this from the sequence itself using the warnings and errors)
@@ -450,14 +461,14 @@ namespace Proteogenomics
         public long BaseNumber2MRnaPos(long pos)
         {
             long count = 0;
-            foreach (Exon eint in ExonsSortedStrand)
+            foreach (Exon x in ExonsSortedStrand)
             {
-                if (eint.Intersects(pos))
+                if (x.Intersects(pos))
                 {
                     // Intersect this exon? Calculate the number of bases from the beginning
                     long dist = IsStrandPlus() ?
-                        pos - eint.OneBasedStart :
-                        eint.OneBasedEnd - pos;
+                        pos - x.OneBasedStart :
+                        x.OneBasedEnd - pos;
 
                     // Sanity check
                     if (dist < 0)
@@ -468,7 +479,7 @@ namespace Proteogenomics
                     return count + dist;
                 }
 
-                count += eint.Length();
+                count += x.Length();
             }
             return -1;
         }
@@ -852,10 +863,10 @@ namespace Proteogenomics
                 new HashSet<int>() :
                 new HashSet<int>(Enumerable.Range(0, selenocysteineContainingSeq.Length).Where(i => selenocysteineContainingSeq[i] == 'U'));
 
+            // Translate protein sequence, and replace amber stop codons with selenocysteines where appropriate
             ISequence proteinSequence = Translation.OneFrameTranslation(dnaSeq, Gene.Chromosome.Mitochondrial);
             string proteinBases = !hasSelenocysteine ?
                 SequenceExtensions.ConvertToString(proteinSequence) :
-                // replace amber stop codons with selenocysteines where appropriate
                 new string(Enumerable.Range(0, (int)proteinSequence.Count).Select(i => uIndices.Contains(i) && proteinSequence[i] == Alphabets.Protein.Ter ? (char)Alphabets.Protein.U : (char)proteinSequence[i]).ToArray());
 
             string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
@@ -865,52 +876,70 @@ namespace Proteogenomics
             return protein;
         }
 
-        public IEnumerable<Protein> TranslateUsingAnnotatedStartCodons(Dictionary<Tuple<string, string, long>, List<CDS>> binnedCodingStarts,
-            Dictionary<string, string> selenocysteineContaining, int indexBinSize, int minLength)
+        /// <summary>
+        /// Creates coding domains based on another annotated transcript
+        /// </summary>
+        /// <param name="withCDS"></param>
+        public void CreateCDSFromAnnotatedStartCodons(Transcript withCDS)
         {
-            List<CDS> annotatedStarts = new List<CDS>();
-            for (long i = Exons.Min(x => x.OneBasedStart) / indexBinSize; i < Exons.Max(x => x.OneBasedEnd) + 1; i++)
+            // Nothing to do if null input
+            if (withCDS == null)
             {
-                if (binnedCodingStarts.TryGetValue(new Tuple<string, string, long>(Gene.ChromosomeID, Strand, i * indexBinSize), out List<CDS> cds))
+                return;
+            }
+
+            // Figure out the start position
+            CDS firstCds = withCDS.CdsSortedStrand.First();
+            long cdsStartInChrom = IsStrandPlus() ? firstCds.OneBasedStart : firstCds.OneBasedEnd;
+            long cdsStartInMrna = BaseNumber2MRnaPos(cdsStartInChrom);
+
+            // Figure out the stop codon from translation
+            ISequence spliced = SplicedRNA();
+            ISequence translateThis = spliced.GetSubSequence(cdsStartInMrna, spliced.Count - cdsStartInMrna + 1);
+            ISequence proteinSequence = Translation.OneFrameTranslation(translateThis, Gene.Chromosome.Mitochondrial);
+            int stopIdx = proteinSequence.Select(x => x).ToList().IndexOf(Alphabets.Protein.Ter);
+            if (stopIdx < 0) { return; } // no stop codon in sight
+            long endInMrna = cdsStartInMrna +  stopIdx * CodonChange.CODON_SIZE - 1;
+            long lengthInMrna = endInMrna - cdsStartInMrna + 1;
+
+            // Figure out the stop index on the chromosome
+            long cdsEndInChrom = cdsStartInChrom;
+            long utr5ishstart = IsStrandPlus() ? Exons.Min(x => x.OneBasedStart) : cdsStartInChrom - 1;
+            long utr5ishend = IsStrandPlus() ?  cdsStartInChrom + 1 : Exons.Max(x => x.OneBasedEnd);
+            Interval utr5ish = new Interval(null, "", Strand, utr5ishstart, utr5ishend, null);
+            var intervals = SortedStrand(Exons.SelectMany(x => x.Minus(utr5ish)).ToList());
+            long lengthSoFar = 0;
+            foreach (Interval y in intervals)
+            {
+                long lengthSum = lengthSoFar + y.Length();
+                if (lengthSum <= lengthInMrna) // add this whole interval
                 {
-                    annotatedStarts.AddRange(cds.Where(x =>
-                        Exons.Any(xx => xx.Includes(IsStrandPlus() ? x.OneBasedStart : x.OneBasedEnd) // must include the start of the stop codon
-                            && xx.Includes(IsStrandPlus() ? x.OneBasedStart + 2 : x.OneBasedEnd - 2)))); // and the end of the stop codon
+                    var toAdd = new CDS(this, ChromosomeID, Strand, y.OneBasedStart, y.OneBasedEnd, null, 0);
+                    CodingDomainSequences.Add(toAdd);
+                    lengthSoFar += toAdd.Length();
+                }
+                else if (lengthSoFar < lengthInMrna) // chop off part of this interval
+                {
+                    long chopLength = lengthSum - lengthInMrna;
+                    long start = IsStrandPlus() ? 
+                        y.OneBasedStart : 
+                        y.OneBasedStart + chopLength;
+                    long end = IsStrandPlus() ? 
+                        y.OneBasedEnd - chopLength : 
+                        y.OneBasedEnd;
+                    var toAdd = new CDS(this, ChromosomeID, Strand, start, end, null, 0);
+                    CodingDomainSequences.Add(toAdd);
+                    lengthSoFar += toAdd.Length();
                 }
             }
 
-            char terminatingCharacter = ProteinAlphabet.Instance.GetFriendlyName(Alphabets.Protein.Ter)[0];
-            if (annotatedStarts.Count > 0)
-            {
-                foreach (CDS annotatedStart in annotatedStarts)
-                {
-                    long startCodonStart = IsStrandPlus() ? annotatedStart.OneBasedStart : annotatedStart.OneBasedEnd; // CDS on the reverse strand have start and end switched
-                    ISequence cds;
-                    if (IsStrandPlus())
-                    {
-                        long exonLengthBeforeCodingStart = Exons.Where(x => x.OneBasedEnd < annotatedStart.OneBasedStart).Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
-                        long exonZeroBasedCodingStart = startCodonStart - Exons.FirstOrDefault(x => x.Includes(annotatedStart.OneBasedStart)).OneBasedStart;
-                        long zeroBasedCodingStart = exonLengthBeforeCodingStart + exonZeroBasedCodingStart;
-                        long lengthAfterCodingStart = Exons.Sum(x => x.Length()) - zeroBasedCodingStart;
-                        cds = SplicedRNA().GetSubSequence(zeroBasedCodingStart, lengthAfterCodingStart);
-                    }
-                    else
-                    {
-                        long length = Exons.Sum(x => x.OneBasedEnd - x.OneBasedStart + 1);
-                        long chop = Exons.Where(x => x.OneBasedEnd >= annotatedStart.OneBasedEnd).Sum(x => annotatedStart.OneBasedEnd < x.OneBasedStart ? x.OneBasedEnd - x.OneBasedStart + 1 : x.OneBasedEnd - annotatedStart.OneBasedEnd);
-                        long lengthAfterCodingStart = length - chop;
-                        cds = SplicedRNA().GetReversedSequence().GetSubSequence(0, lengthAfterCodingStart).GetReversedSequence();
-                    }
-                    Protein p = Protein(cds, selenocysteineContaining);
-                    if (p.BaseSequence.Length >= minLength)
-                    {
-                        yield return p;
-                    }
-                }
-            }
-            //return Translation.ThreeFrameTranslation(Exons, ProteinID);
+            SetRegions(this);
         }
 
+        /// <summary>
+        /// Checks if this transcript is protein coding
+        /// </summary>
+        /// <returns></returns>
         public bool IsProteinCoding()
         {
             return CodingDomainSequences.Count > 0;

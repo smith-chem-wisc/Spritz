@@ -157,8 +157,8 @@ namespace CMD
 
             ssdbf.GenerateSAVProteinsFromFastqs();
 
-            Console.WriteLine("output databases to " + String.Join(", and ", ssdbf.ProteinVariantDatabases));
-            Console.ReadKey();
+            Console.WriteLine("output databases to " + String.Join(", and ", 
+                ssdbf.VariantAnnotatedProteinXmlDatabases.Concat(ssdbf.VariantAppliedProteinXmlDatabases.Concat(ssdbf.IndelAppliedProteinXmlDatabases))));
 
             #endregion Proteoform Database Engine
         }
