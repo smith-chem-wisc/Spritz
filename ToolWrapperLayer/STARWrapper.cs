@@ -102,6 +102,18 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
+        /// Gets a star index directory name that's unique for the fasta and gene model
+        /// </summary>
+        /// <param name="genomeFastaPath"></param>
+        /// <param name="geneModelPath"></param>
+        /// <returns></returns>
+        public static string GetGenomeStarIndexDirectoryPath(string genomeFastaPath, string geneModelPath)
+        {
+            return Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) +
+                "_" + Path.GetExtension(geneModelPath).Substring(1).ToUpperInvariant() + geneModelPath.GetHashCode().ToString());
+        }
+
+        /// <summary>
         /// Removes genome indices from memory.
         /// </summary>
         /// <param name="spritzDirectory"></param>
@@ -346,11 +358,11 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Gets the Windows-formatted path to the STAR executable
         /// </summary>
-        /// <param name="spritzDirectory"></param>
+        /// <param name="binDirectory"></param>
         /// <returns></returns>
-        public static string GetStarDirectoryPath(string spritzDirectory)
+        public static string GetStarDirectoryPath(string binDirectory)
         {
-            return Path.Combine(spritzDirectory, "STAR", "source");
+            return Path.Combine(binDirectory, "STAR", "source");
         }
 
         #endregion Public Methods

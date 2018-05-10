@@ -73,7 +73,7 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "skewer-0.2.2", "skewer")) +
-                    " -q " + qualityFilter +
+                    " -q " + qualityFilter.ToString() +
                     " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]))) +
                     " -t " + threads.ToString() +
                     " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "BBMap", "resources", "adapters.fa")) +

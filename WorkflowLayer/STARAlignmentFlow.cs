@@ -35,7 +35,12 @@ namespace WorkflowLayer
         {
             // Alignment preparation
             WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "genomeGenerate.bash"),
-                STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, Parameters.Threads, Parameters.GenomeStarIndexDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff))
+                STARWrapper.GenerateGenomeIndex(
+                    Parameters.SpritzDirectory, 
+                    Parameters.Threads, 
+                    Parameters.GenomeStarIndexDirectory,
+                    new string[] { Parameters.ReorderedFasta }, 
+                    Parameters.GeneModelGtfOrGff))
                 .WaitForExit();
 
             TwoPassAlignment(Parameters.Threads);

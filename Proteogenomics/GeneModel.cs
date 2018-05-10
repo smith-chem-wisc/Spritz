@@ -403,6 +403,7 @@ namespace Proteogenomics
                     }
                 }
             });
+            PreviouslyAddedVariants = variants;
         }
 
         /// <summary>
@@ -413,10 +414,7 @@ namespace Proteogenomics
         public List<Transcript> ApplyVariants(List<Variant> variants)
         {
             // Must add variants before applying them to this gene model
-            if (PreviouslyAddedVariants != variants)
-            {
-                AddVariantAnnotations(variants);
-            }
+            if (PreviouslyAddedVariants != variants) {  AddVariantAnnotations(variants); }
             return ApplyVariants(variants, Genes.SelectMany(g => g.Transcripts).ToList());
         }
 

@@ -127,38 +127,39 @@ namespace CMD
 
             #region Proteoform Database Engine
 
-            SnpEffWrapper.DownloadSnpEffDatabase(
-                options.SpritzDirectory,
-                options.Reference,
-                out string snpEffDatabaseListPath);
-
-            if (options.ReferenceVcf == null)
+            if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                GATKWrapper.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, options.SpritzDirectory, true, options.Reference, out string ensemblVcfPath);
-                options.ReferenceVcf = ensemblVcfPath;
+                new SnpEffWrapper().DownloadSnpEffDatabase(options.SpritzDirectory, options.Reference);
+
+                if (options.ReferenceVcf == null)
+                {
+                    var gatk = new GATKWrapper();
+                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, options.SpritzDirectory, true, options.Reference);
+                    options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
+                }
+
+                // run the program
+                SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
+                ssdbf.Parameters = new SampleSpecificProteinDBParameters(
+                    options.SpritzDirectory,
+                    options.AnalysisDirectory,
+                    options.Reference,
+                    options.Threads,
+                    fastqsSeparated,
+                    options.StrandSpecific,
+                    options.InferStrandSpecificity,
+                    options.OverwriteStarAlignments,
+                    options.GenomeStarIndexDirectory,
+                    options.GenomeFasta,
+                    options.ProteinFastaPath,
+                    options.GeneModelGtfOrGff,
+                    options.ReferenceVcf);
+
+                ssdbf.GenerateSAVProteinsFromFastqs();
+
+                Console.WriteLine("output databases to " + String.Join(", and ",
+                    ssdbf.VariantAnnotatedProteinXmlDatabases.Concat(ssdbf.VariantAppliedProteinXmlDatabases.Concat(ssdbf.IndelAppliedProteinXmlDatabases))));
             }
-
-            // run the program
-            SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
-            ssdbf.Parameters = new SampleSpecificProteinDBParameters(
-                options.SpritzDirectory,
-                options.AnalysisDirectory,
-                options.Reference,
-                options.Threads,
-                fastqsSeparated,
-                options.StrandSpecific,
-                options.InferStrandSpecificity,
-                options.OverwriteStarAlignments,
-                options.GenomeStarIndexDirectory,
-                options.GenomeFasta,
-                options.ProteinFastaPath,
-                options.GeneModelGtfOrGff,
-                options.ReferenceVcf);
-
-            ssdbf.GenerateSAVProteinsFromFastqs();
-
-            Console.WriteLine("output databases to " + String.Join(", and ", 
-                ssdbf.VariantAnnotatedProteinXmlDatabases.Concat(ssdbf.VariantAppliedProteinXmlDatabases.Concat(ssdbf.IndelAppliedProteinXmlDatabases))));
 
             #endregion Proteoform Database Engine
         }
@@ -172,9 +173,9 @@ namespace CMD
             EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
             downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference);
 
-            options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? Path.Combine(Path.GetDirectoryName(downloadsWrapper.GenomeFastaPath), Path.GetFileNameWithoutExtension(downloadsWrapper.GenomeFastaPath));
             options.GenomeFasta = options.GenomeFasta ?? downloadsWrapper.GenomeFastaPath;
             options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? downloadsWrapper.Gff3GeneModelPath;
+            options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? STARWrapper.GetGenomeStarIndexDirectoryPath(options.GenomeFasta, options.GeneModelGtfOrGff);
             options.ProteinFastaPath = options.ProteinFastaPath ?? downloadsWrapper.ProteinFastaPath;
         }
 

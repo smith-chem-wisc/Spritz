@@ -17,7 +17,12 @@ namespace ToolWrapperLayer
     public class SnpEffWrapper :
         IInstallable
     {
-        #region Installation Methods
+        public string DatabaseListPath { get; private set; }
+        public string HtmlReportPath { get; private set; }
+        public string AnnotatedVcfPath { get; private set; }
+        public string AnnotatedGenesSummaryPath { get; private set; }
+        public string VariantProteinFastaPath { get; private set; }
+        public string VariantProteinXmlPath { get; private set; }
 
         /// <summary>
         /// Writes a script for installing SnpEff.
@@ -26,13 +31,22 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "snpEffInstaller.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installSnpEff.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                "if [ ! -d snpEff ]; then wget http://sourceforge.net/projects/snpeff/files/snpEff_latest_core.zip; fi",
-                "if [ ! -d snpEff ]; then unzip snpEff_latest_core.zip; fi",
-                "if [ ! -d snpEff ]; then rm snpEff_latest_core.zip; fi",
+                "if [ ! -d SnpEff ]; then git clone --depth=1 https://github.com/smith-chem-wisc/SnpEff; fi",
+                "if [ ! -f SnpEff/snpEff.jar ]; then",
+                "  cd SnpEff",
+                "  mvn install:install-file -Dfile=lib/antlr-4.5.1-complete.jar -DgroupId=org.antlr -DartifactId=antlr -Dversion=4.5.1 -Dpackaging=jar",
+                "  mvn install:install-file -Dfile=lib/biojava3-core-3.0.7.jar -DgroupId=org.biojava -DartifactId=biojava3-core -Dversion=3.0.7 -Dpackaging=jar",
+                "  mvn install:install-file -Dfile=lib/biojava3-structure-3.0.7.jar -DgroupId=org.biojava -DartifactId=biojava3-structure -Dversion=3.0.7 -Dpackaging=jar",
+                "  export VERSION=4.3",
+                "  export VERSION_UND=`echo $VERSION | tr '.' '_'`",
+                "  mvn clean compile assembly:assembly",
+                "  mvn install:install-file -Dfile=target/SnpEff-$VERSION.jar -DgroupId=org.snpeff -DartifactId=SnpEff -Dversion=$VERSION -Dpackaging=jar -DgeneratePom=true --quiet",
+                "  cp target/SnpEff-$VERSION-jar-with-dependencies.jar snpEff.jar",
+                "fi"
             });
             return scriptPath;
         }
@@ -47,47 +61,48 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string reference, string vcfPath)
+        {
+            string outPrefix = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath));
+            AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
+            HtmlReportPath = outPrefix + ".snpEffAnnotated.html";
+            AnnotatedGenesSummaryPath = outPrefix + ".snpEffAnnotated.genes.txt";
+            VariantProteinFastaPath = outPrefix + ".snpEffAnnotated.protein.fasta";
+            VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
+            string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "snpEff", "data"));
+            if (File.Exists(AnnotatedVcfPath)) return new List<string>();
+            string scriptPath = Path.Combine(spritzDirectory, "scripts", "snpEffAnnotation.bash");
+            return new List<string>
+            {
+                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
+                    " -fastaProt " + WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath) +
+                    " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
+                    " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
+                    " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
+                    " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
 
-        #region Public Methods
+                // remove the annotated VCF file if snpEff didn't work, e.g. if there was no VCF file to annotate
+                "if [[ ( -f " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath) + " && ! -s " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath) + " ) ]]; then",
+                "  rm " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
+                "fi",
+            };
+        }
 
         public static string SnpEff()
         {
             var performance = new PerformanceCounter("Memory", "Available MBytes");
             var memory = performance.NextValue();
-            return "java -Xmx" + Math.Floor(memory) + "M -jar snpEff/snpEff.jar";
-        }
-
-        public static List<string> PrimaryVariantAnnotation(string spritzDirectory, string reference, string vcfPath, out string htmlReport, out string annotatedVcfPath, out string annotatedGenesSummaryPath)
-        {
-            annotatedVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".snpEffAnnotated.vcf");
-            htmlReport = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".snpEffAnnotated.html");
-            annotatedGenesSummaryPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".snpEffAnnotated.genes.txt");
-            string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "snpEff", "data"));
-            if (File.Exists(annotatedVcfPath)) return new List<string>();
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "snpEffAnnotation.bash");
-            return new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(htmlReport) +
-                    " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
-                    " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
-                    " > " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath),
-
-                // remove the annotated VCF file if snpEff didn't work, e.g. if there was no VCF file to annotate
-                "if [[ ( -f " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath) + " && ! -s " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath) + " ) ]]; then",
-                "  rm " + WrapperUtility.ConvertWindowsPath(annotatedVcfPath),
-                "fi",
-            };
+            return "java -Xmx" + Math.Floor(memory) + "M -jar SnpEff/snpEff.jar";
         }
 
         // see here for how to generate them from scratch: http://lab.loman.net/2012/11/16/how-to-get-snpeff-working-with-bacterial-genomes-from-ncbi/
-        public static void DownloadSnpEffDatabase(string spritzDirectory, string reference, out string databaseListPath)
+        public void DownloadSnpEffDatabase(string spritzDirectory, string reference)
         {
-            databaseListPath = Path.Combine(spritzDirectory, "snpEffDatabases.txt");
+            DatabaseListPath = Path.Combine(spritzDirectory, "snpEffDatabases.txt");
 
             // check for existing list and database
-            bool databaseListExists = File.Exists(databaseListPath);
+            bool databaseListExists = File.Exists(DatabaseListPath);
             string databaseDirectory = Path.Combine(spritzDirectory, "snpEff", "data");
             string[] existingDatabases = Directory.Exists(databaseDirectory) ? Directory.GetDirectories(databaseDirectory) : new string[0];
             bool databaseExists = existingDatabases.Any(d => Path.GetFileName(d).StartsWith(reference, true, null));
@@ -100,12 +115,12 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "echo \"Downloading list of SnpEff references\"",
-                SnpEff() + " databases > " + WrapperUtility.ConvertWindowsPath(databaseListPath),
-                WrapperUtility.EnsureClosedFileCommands(databaseListPath)
+                SnpEff() + " databases > " + WrapperUtility.ConvertWindowsPath(DatabaseListPath),
+                WrapperUtility.EnsureClosedFileCommands(DatabaseListPath)
             }).WaitForExit();
 
             List<string> databases = new List<string>();
-            using (StreamReader reader = new StreamReader(databaseListPath))
+            using (StreamReader reader = new StreamReader(DatabaseListPath))
             {
                 while (true)
                 {
@@ -129,7 +144,5 @@ namespace ToolWrapperLayer
                 "echo \"\t" + snpeffReference + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "snpEff", "snpEff.config")),
             }).WaitForExit();
         }
-
-        #endregion Public Methods
     }
 }

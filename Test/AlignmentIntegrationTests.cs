@@ -7,12 +7,12 @@ using System.Collections.Generic;
 namespace Test
 {
     [TestFixture]
-    public class AlignmentTests
+    public class AlignmentIntegrationTests
     {
         [Test]
         public void CountReads()
         {
-            Assert.AreEqual(3970, new FastqProperties(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mapper.fastq")).ReadCount);
+            Assert.AreEqual(3970, new FastqProperties(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "mapper.fastq")).ReadCount);
         }
 
         [Test, Order(1)]
@@ -24,8 +24,8 @@ namespace Test
                 TestContext.CurrentContext.TestDirectory,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read1.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "read2.fastq")
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "read1.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "read2.fastq")
                 },
                 100,
                 TestContext.CurrentContext.TestDirectory,
@@ -62,12 +62,12 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sampleGenomeDir"),
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","read1.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","read2.fastq")
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "read1.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "read2.fastq")
                 },
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "r.")
             )).WaitForExit();
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "r.Aligned.out.bam")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "r.Aligned.out.bam")));
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace Test
                 8,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "TestFastqs", "mapper.fastq"),
                 },
                 true,
                 out string tophatOutDirectory

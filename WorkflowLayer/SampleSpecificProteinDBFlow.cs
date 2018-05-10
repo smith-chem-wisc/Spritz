@@ -32,7 +32,6 @@ namespace WorkflowLayer
         public List<string> VariantAppliedProteinXmlDatabases { get; private set; } = new List<string>();
         private EnsemblDownloadsWrapper Downloads { get; set; } = new EnsemblDownloadsWrapper();
 
-
         /// <summary>
         /// Generate sample specific protein database starting with fastq files
         /// </summary>
@@ -91,26 +90,26 @@ namespace WorkflowLayer
                 //IndelAppliedProteinXmlDatabases.Add(indelDatabases.Item2);
 
                 // Variant annotated database
-                string snvVcf = variantCalling.GatkAnnotatedVcfFilePaths[i];
-                variantCalling.AnnotateSAVs(snvVcf, Downloads.EnsemblGenome, referenceGeneModel);
-                string annotatedOutPrefix = Path.Combine(Path.GetDirectoryName(snvVcf), Path.GetFileNameWithoutExtension(snvVcf) + "_snvAnnotated");
-                (string, string, List<Protein>) annotatedDatabases = WriteSampleSpecificFasta(
-                    referenceGeneModel.Genes.SelectMany(g => g.Transcripts).ToList(), 
-                    referenceGeneModel,  
-                    annotatedOutPrefix);
-                VariantAnnotatedProteinFastaDatabases.Add(annotatedDatabases.Item1);
-                VariantAnnotatedProteinXmlDatabases.Add(annotatedDatabases.Item2);
+                //string snvVcf = variantCalling.GatkAnnotatedVcfFilePaths[i];
+                //variantCalling.AnnotateSAVs(snvVcf, Downloads.EnsemblGenome, referenceGeneModel);
+                //string annotatedOutPrefix = Path.Combine(Path.GetDirectoryName(snvVcf), Path.GetFileNameWithoutExtension(snvVcf) + "_snvAnnotated");
+                //(string, string, List<Protein>) annotatedDatabases = WriteSampleSpecificFasta(
+                //    referenceGeneModel.Genes.SelectMany(g => g.Transcripts).ToList(), 
+                //    referenceGeneModel,  
+                //    annotatedOutPrefix);
+                //VariantAnnotatedProteinFastaDatabases.Add(annotatedDatabases.Item1);
+                //VariantAnnotatedProteinXmlDatabases.Add(annotatedDatabases.Item2);
 
                 // Variant applied database
-                var variantTranscripts = variantCalling.ApplySNVs(snvVcf, Downloads.EnsemblGenome, referenceGeneModel);
-                string appliedOutPrefix = Path.Combine(Path.GetDirectoryName(snvVcf), Path.GetFileNameWithoutExtension(snvVcf) + "_snvApplied");
-                (string, string, List<Protein>) appliedDatabases = WriteSampleSpecificFasta(
-                    variantTranscripts,
-                    referenceGeneModel,
-                    appliedOutPrefix);
-                VariantAnnotatedProteinFastaDatabases.Add(appliedDatabases.Item1);
-                VariantAnnotatedProteinXmlDatabases.Add(appliedDatabases.Item2);
-                WriteProteinFastaMetrics(appliedOutPrefix, appliedDatabases.Item3);
+                //var variantTranscripts = variantCalling.ApplySNVs(snvVcf, Downloads.EnsemblGenome, referenceGeneModel);
+                //string appliedOutPrefix = Path.Combine(Path.GetDirectoryName(snvVcf), Path.GetFileNameWithoutExtension(snvVcf) + "_snvApplied");
+                //(string, string, List<Protein>) appliedDatabases = WriteSampleSpecificFasta(
+                //    variantTranscripts,
+                //    referenceGeneModel,
+                //    appliedOutPrefix);
+                //VariantAnnotatedProteinFastaDatabases.Add(appliedDatabases.Item1);
+                //VariantAnnotatedProteinXmlDatabases.Add(appliedDatabases.Item2);
+                //WriteProteinFastaMetrics(appliedOutPrefix, appliedDatabases.Item3);
             }
         }
 
@@ -147,7 +146,7 @@ namespace WorkflowLayer
         private (string, string, List<Protein>) WriteSampleSpecificFasta(List<Transcript> transcripts, GeneModel geneModel, string outprefix)
         {
             // Apply the variants combinitorially, and translate the variant transcripts
-            List<Protein> variantProteins = transcripts
+           List<Protein> variantProteins = transcripts
                 .Where(t => !Downloads.BadProteinAccessions.Contains(t.ID) && !Downloads.BadProteinAccessions.Contains(t.ProteinID))
                 .Select(t => t.Protein(Downloads.SelenocysteineProteinAccessions)).ToList();
 

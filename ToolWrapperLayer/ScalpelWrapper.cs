@@ -9,7 +9,9 @@ namespace ToolWrapperLayer
     public class ScalpelWrapper :
         IInstallable
     {
-        #region Installation Methods
+        public string IndelVcfPath { get; private set; }
+
+        public string FilteredIndelVcfPath { get; private set; }
 
         /// <summary>
         /// Write an installation script for scalpel. Requires cmake.
@@ -41,19 +43,16 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
-        #region Public Method
-
         // Need to filter VCF by FILTER = PASS; there are several reasons they don't accept calls that I trust
         // There's an attribute "ZYG" for zygosity, either "het" or "homo" for heterozygous or homozygous
-        public static List<string> CallIndels(string spritzDirectory, int threads, string genomeFastaP, string bedPath, string bamPath, string outdir, out string newVcf)
+        public List<string> CallIndels(string spritzDirectory, int threads, string genomeFastaP, string bedPath, string bamPath, string outdir)
         {
-            newVcf = Path.Combine(outdir, "variants.indel.vcf");
-            return new List<string>
+            var vcftools = new VcfToolsWrapper();
+            IndelVcfPath = Path.Combine(outdir, "variants.indel.vcf");
+            var commands = new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(newVcf) + " || ! -s " + WrapperUtility.ConvertWindowsPath(newVcf) + " ]]; then " +
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " ]]; then " +
                 "scalpel-0.5.3/scalpel-discovery --single " +
                     "--bam " + WrapperUtility.ConvertWindowsPath(bamPath) +
                     " --ref " + WrapperUtility.ConvertWindowsPath(genomeFastaP) +
@@ -61,9 +60,10 @@ namespace ToolWrapperLayer
                     " --numprocs " + threads.ToString() +
                     " --dir " + WrapperUtility.ConvertWindowsPath(outdir) +
                 "; fi",
+                vcftools.RemoveAllSnvs(spritzDirectory, IndelVcfPath, false, true) // vcf-concat doesn't keep all INFO header lines, so just dump the INFO from each variant
             };
+            FilteredIndelVcfPath = vcftools.VcfWithoutSnvsPath;
+            return commands;
         }
-
-        #endregion Public Method
     }
 }

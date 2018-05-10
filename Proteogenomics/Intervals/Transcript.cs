@@ -57,7 +57,7 @@ namespace Proteogenomics
             : this(transcript.ID, transcript.Version, transcript.Gene, transcript.Strand, transcript.OneBasedStart, transcript.OneBasedEnd, transcript.ProteinID, transcript.Variants)
         {
             VariantAnnotations = new List<string>(transcript.VariantAnnotations);
-            ProteinSequenceVariations = new List<SequenceVariation>(transcript.ProteinSequenceVariations);
+            ProteinSequenceVariations = new HashSet<SequenceVariation>(transcript.ProteinSequenceVariations);
             Exons = new List<Exon>(transcript.Exons.Select(x => new Exon(this, x.Sequence, x.OneBasedStart, x.OneBasedEnd, x.ChromosomeID, x.Strand, x.Variants)));
             CodingDomainSequences = new List<CDS>(transcript.CodingDomainSequences.Select(cds => new CDS(this, cds.ChromosomeID, cds.Strand, cds.OneBasedStart, cds.OneBasedEnd, cds.Variants, cds.StartFrame)));
             SetRegions(this);
@@ -171,7 +171,7 @@ namespace Proteogenomics
         /// <summary>
         /// List of protein sequence variations for annotating XML files
         /// </summary>
-        public List<SequenceVariation> ProteinSequenceVariations { get; set; } = new List<SequenceVariation>();
+        public HashSet<SequenceVariation> ProteinSequenceVariations { get; set; } = new HashSet<SequenceVariation>();
 
         /// <summary>
         /// Apply the second (alternate) allele of this variant and adjust the start and stop indices
@@ -205,7 +205,7 @@ namespace Proteogenomics
                 }
             }
             transcript.VariantAnnotations = new List<string>(VariantAnnotations);
-            transcript.ProteinSequenceVariations = new List<SequenceVariation>(ProteinSequenceVariations);
+            transcript.ProteinSequenceVariations = new HashSet<SequenceVariation>(ProteinSequenceVariations);
             SetRegions(transcript);
             return transcript;
         }
@@ -218,7 +218,10 @@ namespace Proteogenomics
         {
             VariantEffects variantEffects = DetermineVariantEffects(variant);
             VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
-            ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
+            foreach (var s in variantEffects.ProteinSequenceVariation())
+            {
+                ProteinSequenceVariations.Add(s);
+            }
         }
 
         /// <summary>
@@ -271,7 +274,10 @@ namespace Proteogenomics
             // apply the variant
             Transcript altTranscript = ApplyVariant(variant) as Transcript;
             altTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
-            altTranscript.ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
+            foreach (var s in variantEffects.ProteinSequenceVariation())
+            {
+                altTranscript.ProteinSequenceVariations.Add(s);
+            }
             result.Add(altTranscript);
 
             // if heterozygous and nonsynonymous, do combinitorics: determine which is the other allele (reference or another alternate),
@@ -287,7 +293,10 @@ namespace Proteogenomics
                 {
                     anotherTranscript = ApplyFirstAllele(variant) as Transcript;
                     anotherTranscript.VariantAnnotations.Add(variantEffects.TranscriptAnnotation());
-                    anotherTranscript.ProteinSequenceVariations.AddRange(variantEffects.ProteinSequenceVariation());
+                    foreach (var s in variantEffects.ProteinSequenceVariation())
+                    {
+                        anotherTranscript.ProteinSequenceVariations.Add(s);
+                    }
                 }
                 result.Add(anotherTranscript);
             }
@@ -872,7 +881,7 @@ namespace Proteogenomics
             string proteinSequenceString = proteinBases.Split((char)Alphabets.Protein.Ter)[0];
             string annotations = String.Join(" ", VariantAnnotations);
             string accession = Translation.GetSafeProteinAccession(ProteinID);
-            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations, sequenceVariations: ProteinSequenceVariations);
+            protein = new Protein(proteinSequenceString, accession, organism: "Homo sapiens", name: annotations, full_name: annotations, sequenceVariations: ProteinSequenceVariations.ToList());
             return protein;
         }
 

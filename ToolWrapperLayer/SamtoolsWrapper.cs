@@ -25,10 +25,14 @@ namespace ToolWrapperLayer
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "if [ ! -d samtools-1.6 ]; then",
-                "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2",
-                "  tar -jxvf samtools-1.6.tar.bz2",
-                "  rm samtools-1.6.tar.bz2",
+                "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2 https://github.com/samtools/htslib/releases/download/1.8/htslib-1.8.tar.bz2",
+                "  tar -jxvf samtools-1.6.tar.bz2 htslib-1.8.tar.bz2",
+                "  rm samtools-1.6.tar.bz2 htslib-1.8.tar.bz2",
                 "  cd samtools-1.6",
+                "  ./configure", // configures install to /usr/local/bin and /usr/local/share
+                "  make",
+                "  make install",
+                "  cd ../htslib-1.8",
                 "  ./configure", // configures install to /usr/local/bin and /usr/local/share
                 "  make",
                 "  make install",

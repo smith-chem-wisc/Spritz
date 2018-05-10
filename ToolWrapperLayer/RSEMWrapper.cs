@@ -87,7 +87,7 @@ namespace ToolWrapperLayer
             string threadOption = "--num-threads " + threads.ToString();
             string referencePrefixDirectory = Path.Combine(Path.GetDirectoryName(referenceFastaPath), Path.GetFileNameWithoutExtension(referenceFastaPath)) +
                 (aligner == RSEMAlignerOption.STAR ? "RsemStarReference" : "RsemBowtieReference") +
-                "_GeneModel" + geneModelPath.GetHashCode().ToString();
+                "_" + Path.GetExtension(geneModelPath).Substring(1).ToUpperInvariant() + geneModelPath.GetHashCode().ToString();
             ReferenceIndexPrefix = Path.Combine(referencePrefixDirectory, Path.GetFileNameWithoutExtension(referenceFastaPath));
             string geneModelOption = Path.GetExtension(geneModelPath).StartsWith(".gff") ? "--gff3 " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
                 Path.GetExtension(geneModelPath) == ".gtf" ? "--gtf " + WrapperUtility.ConvertWindowsPath(geneModelPath) :
