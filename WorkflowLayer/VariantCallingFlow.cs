@@ -22,23 +22,24 @@ namespace WorkflowLayer
         public List<string> CombinedAnnotatedProteinFastaPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinXmlPaths { get; private set; } = new List<string>();
 
-        public void CallVariants(string spritzDirectory, string reference, int threads, string genomeFasta, string sortedBed12Path, string ensemblKnownSitesPath,
+        public void CallVariants(string spritzDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
             List<string> dedupedBamFiles, string reorderedFastaPath)
         {
+            new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, reference);
             List<string> variantCallingCommands = new List<string>();
             string scriptName = Path.Combine(spritzDirectory, "scripts", "variantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)
             {
                 // GATK
                 var gatk = new GATKWrapper();
-                variantCallingCommands.AddRange(gatk.SplitNCigarReads(spritzDirectory, genomeFasta, dedupedBam));
+                variantCallingCommands.AddRange(gatk.SplitNCigarReads(spritzDirectory, reorderedFastaPath, dedupedBam));
                 variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, threads, reorderedFastaPath, gatk.SplitTrimBamPath, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
                 GatkVcfFilePaths.Add(gatk.HaplotypeCallerVcfPath);
                 GatkFilteredVcfFilePaths.Add(gatk.FilteredHaplotypeCallerVcfPath);
 
                 // Scalpel
                 var scalpel = new ScalpelWrapper();
-                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, genomeFasta, sortedBed12Path, gatk.SplitTrimBamPath, Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath) + "_scalpelOut")));
+                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, gatk.SplitTrimBamPath, Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath) + "_scalpelOut")));
                 ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
                 ScalpelFilteredlVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
 
@@ -46,7 +47,7 @@ namespace WorkflowLayer
                 var vcftools = new VcfToolsWrapper();
                 var outprefix = Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath));
                 variantCallingCommands.Add(vcftools.Concatenate(spritzDirectory, new string[] { gatk.FilteredHaplotypeCallerVcfPath, scalpel.FilteredIndelVcfPath }, outprefix));
-                variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, vcftools.VcfConcatenatedPath, genomeFasta));
+                variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, vcftools.VcfConcatenatedPath, reorderedFastaPath));
                 CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
                 CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
                 var snpEff = new SnpEffWrapper();
@@ -57,43 +58,6 @@ namespace WorkflowLayer
                 CombinedAnnotatedProteinXmlPaths.Add(snpEff.VariantProteinXmlPath);
             }
             WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
-        }
-
-        public List<Transcript> ApplyIndels(string indelVcfPath, Genome genome, GeneModel geneModel)
-        {
-            if (!File.Exists(indelVcfPath)) { throw new ArgumentException("Error: VCF not found: " + indelVcfPath); }
-
-            // Parse Indels from VCF file
-            VCFParser vcf = new VCFParser(indelVcfPath);
-            List<Variant> indels = vcf.Select(x => x)
-                .Where(x => x.AlternateAlleles.All(a => a.Length != x.Reference.Length))
-                .Select(v => new Variant(null, v, genome)).ToList();
-            return geneModel.ApplyVariants(indels);
-        }
-
-        // Code in and annotate 
-        public List<Transcript> ApplySNVs(string snvVcfPath, Genome genome, GeneModel geneModel)
-        {
-            if (!File.Exists(snvVcfPath)) { throw new ArgumentException("Error: VCF not found: " + snvVcfPath); }
-
-            // Parse SNVs from VCF file
-            VCFParser vcf = new VCFParser(snvVcfPath);
-            List<Variant> singleNucleotideVariants = vcf.Select(x => x)
-                .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
-                .Select(v => new Variant(null, v, genome)).ToList();
-            return geneModel.ApplyVariants(singleNucleotideVariants);
-        }
-
-        public void AnnotateSAVs(string snvVcfPath, Genome genome, GeneModel geneModel)
-        {
-            if (!File.Exists(snvVcfPath)) { throw new ArgumentException("Error: VCF not found: " + snvVcfPath); }
-
-            // Parse SNVs from VCF file
-            VCFParser vcf = new VCFParser(snvVcfPath);
-            List<Variant> singleNucleotideVariants = vcf.Select(x => x)
-                .Where(x => x.AlternateAlleles.All(a => a.Length == x.Reference.Length && a.Length == 1))
-                .Select(v => new Variant(null, v, genome)).ToList();
-            geneModel.AddVariantAnnotations(singleNucleotideVariants);
         }
     }
 }

@@ -48,27 +48,15 @@ namespace ToolWrapperLayer
         #endregion dbSNP URLs
 
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
-
         private static Regex getISequenceHeaderSequenceName = new Regex(@"([\w\d\.\-]+)(.+)");
-
         public string UcscKnownSitesPath { get; private set; }
-
         public string EnsemblKnownSitesPath { get; private set; }
-
-        public string ConvertedEnsemblVcfPath { get; private set; }
-
         public string SplitTrimBamPath { get; private set; }
-
         public string HaplotypeCallerVcfPath { get; private set; }
-
         public string FilteredHaplotypeCallerVcfPath { get; private set; }
-
         public string PreparedBamPath { get; private set; }
-
         public string RealignedIndelBamPath { get; private set; }
-
         public string RecalibrationTablePath { get; private set; }
-
         public string SortedVcfPath { get; private set; }
 
         /// <summary>
@@ -190,7 +178,7 @@ namespace ToolWrapperLayer
             };
         }
 
-        public void DownloadUCSCKnownVariantSites(string spritzDirectory, string targetDirectory, bool commonOnly, string reference)
+        public string DownloadUCSCKnownVariantSites(string spritzDirectory, string targetDirectory, bool commonOnly, string reference)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
@@ -212,12 +200,13 @@ namespace ToolWrapperLayer
                     "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz"
                 }).WaitForExit();
             }
+            return UcscKnownSitesPath;
         }
 
-        public void DownloadEnsemblKnownVariantSites(string spritzDirectory, string targetDirectory, bool commonOnly, string reference)
+        public string DownloadEnsemblKnownVariantSites(string spritzDirectory, string targetDirectory, bool commonOnly, string reference)
         {
             DownloadUCSCKnownVariantSites(spritzDirectory, targetDirectory, commonOnly, reference);
-            ConvertVCFChromosomesUCSC2Ensembl(spritzDirectory, UcscKnownSitesPath, reference);
+            EnsemblKnownSitesPath = ConvertVCFChromosomesUCSC2Ensembl(spritzDirectory, UcscKnownSitesPath, reference);
 
             // indexing is used for most GATK tools
             string scriptPath = Path.Combine(spritzDirectory, "scripts", "indexKnownVariantSites.bash");
@@ -227,15 +216,16 @@ namespace ToolWrapperLayer
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + "; fi",
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + "; fi",
             }).WaitForExit();
+            return EnsemblKnownSitesPath;
         }
 
-        public void ConvertVCFChromosomesUCSC2Ensembl(string spritzDirectory, string vcfPath, string reference)
+        public string ConvertVCFChromosomesUCSC2Ensembl(string spritzDirectory, string vcfPath, string reference)
         {
-            ConvertedEnsemblVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".ensembl.vcf");
-            if (File.Exists(ConvertedEnsemblVcfPath)) return;
+            string convertedEnsemblVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".ensembl.vcf");
+            if (File.Exists(convertedEnsemblVcfPath)) { return convertedEnsemblVcfPath; }
             Dictionary<string, string> ucsc2EnsemblChromosomeMappings = EnsemblDownloadsWrapper.UCSC2EnsemblChromosomeMappings(spritzDirectory, reference);
             using (StreamReader reader = new StreamReader(vcfPath))
-            using (StreamWriter writer = new StreamWriter(ConvertedEnsemblVcfPath))
+            using (StreamWriter writer = new StreamWriter(convertedEnsemblVcfPath))
             {
                 while (true)
                 {
@@ -256,6 +246,7 @@ namespace ToolWrapperLayer
                     }
                 }
             }
+            return convertedEnsemblVcfPath;
         }
 
         /// <summary>

@@ -153,7 +153,8 @@ namespace CMD
                     options.GenomeFasta,
                     options.ProteinFastaPath,
                     options.GeneModelGtfOrGff,
-                    options.ReferenceVcf);
+                    options.ReferenceVcf,
+                    options.UniProtXml);
 
                 ssdbf.GenerateSAVProteinsFromFastqs();
 

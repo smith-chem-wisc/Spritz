@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace ToolWrapperLayer
 {
@@ -69,7 +70,7 @@ namespace ToolWrapperLayer
             AnnotatedGenesSummaryPath = outPrefix + ".snpEffAnnotated.genes.txt";
             VariantProteinFastaPath = outPrefix + ".snpEffAnnotated.protein.fasta";
             VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
-            string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "snpEff", "data"));
+            string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "SnpEff", "data"));
             if (File.Exists(AnnotatedVcfPath)) return new List<string>();
             string scriptPath = Path.Combine(spritzDirectory, "scripts", "snpEffAnnotation.bash");
             return new List<string>

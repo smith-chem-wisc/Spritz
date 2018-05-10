@@ -120,6 +120,9 @@
     <Compile Include="WrapperIntegrationTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="TestData\Homo_sapiens_202022.xml.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\TestFastqs\2000reads_1.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

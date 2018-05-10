@@ -39,7 +39,8 @@ namespace Test
                 genomeFastaPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 geneModelPath,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz"));
             ssdbf.GenerateSAVProteinsFromFastqs();
             foreach (string database in ssdbf.VariantAnnotatedProteinFastaDatabases)
             {
@@ -130,7 +131,8 @@ namespace Test
                 genomeFastaPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 geneModelPath,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz"));
 
             ssdbf.GenerateSAVProteinsFromFastqs();
             foreach (string database in ssdbf.VariantAnnotatedProteinFastaDatabases)
@@ -173,6 +175,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename),
                 geneModelPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"), // there is no equivalent of the patch; just checking that that works
+                null,
                 null,
                 0.05,
                 7,
