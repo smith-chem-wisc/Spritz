@@ -17,7 +17,7 @@ namespace Test
         public void OneTranscriptOneHomozygous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_missense.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_homozygous_missense.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -45,7 +45,7 @@ namespace Test
         public void OneTranscriptOneHeterozygous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_missense.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_heterozygous_missense.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -73,7 +73,7 @@ namespace Test
         public void OneTranscriptOneHeterozygousSynonymous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_heterozygous_synonymous.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -89,7 +89,7 @@ namespace Test
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(GenotypeType.HETEROZYGOUS.ToString()))); // synonymous
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
 
-            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_heterozygous_synonymous.fasta");
+            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_heterozygous_synonymous.fasta");
             ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
             string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
             Assert.IsTrue(proteinFastaLines[0].Contains(FunctionalClass.SILENT.ToString())); // synonymous
@@ -100,7 +100,7 @@ namespace Test
         public void OneTranscriptOneHomozygousSynonymous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr_1_one_homozygous_synonymous.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_homozygous_synonymous.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 

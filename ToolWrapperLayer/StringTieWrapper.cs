@@ -21,10 +21,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installStringTie.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallStringTie.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d stringtie-1.3.4d ]; then",
                 "  wget --no-check http://ccb.jhu.edu/software/stringtie/dl/stringtie-1.3.4d.Linux_x86_64.tar.gz",
                 "  tar -xvf stringtie-1.3.4d.Linux_x86_64.tar.gz",
@@ -75,7 +75,7 @@ namespace ToolWrapperLayer
             outputTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".gtf");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bamPath) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " + SamtoolsWrapper.SortBam(spritzDirectory, bamPath) + "; fi",
                 "bam=" +  WrapperUtility.ConvertWindowsPath(bamPath),
@@ -121,7 +121,7 @@ namespace ToolWrapperLayer
             filteredTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(transcriptGtfPath), Path.GetFileNameWithoutExtension(transcriptGtfPath)) + ".filtered" + Path.GetExtension(transcriptGtfPath);
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Removing zero-abundance transcripts from " + transcriptGtfPath + "\"",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " ]]; then " +
                     "grep -v 'FPKM \"0.000000\"' " + WrapperUtility.ConvertWindowsPath(transcriptGtfPath) + " > " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) +
@@ -132,7 +132,6 @@ namespace ToolWrapperLayer
         public void TranscriptReconstruction(string spritzDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome, 
             bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles)
         {
-            string scriptName = Path.Combine(spritzDirectory, "scripts", "TranscriptReconstruction.bash");
             List<string> reconstructionCommands = new List<string>();
             TranscriptGtfPaths = new List<string>();
             foreach (string sortedBam in sortedBamFiles)
@@ -148,7 +147,7 @@ namespace ToolWrapperLayer
             }
             MergedGtfPath = Path.Combine(analysisDirectory, "MergedStringtieModel" + uniqueSuffix + ".gtf");
             reconstructionCommands.AddRange(MergeTranscriptPredictions(spritzDirectory, geneModelGtfOrGff, TranscriptGtfPaths, MergedGtfPath));
-            WrapperUtility.GenerateAndRunScript(scriptName, reconstructionCommands).WaitForExit();
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "TranscriptReconstruction.bash"), reconstructionCommands).WaitForExit();
         }
 
         #endregion Public Method

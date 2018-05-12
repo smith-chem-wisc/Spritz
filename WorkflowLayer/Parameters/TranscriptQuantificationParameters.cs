@@ -5,10 +5,11 @@ namespace WorkflowLayer
     public class TranscriptQuantificationParameters
         : ISpritzParameters
     {
-        public TranscriptQuantificationParameters(string spritzDirectory, string referenceFastaPath, int threads, string geneModelPath, RSEMAlignerOption aligner,
-            Strandedness strandedness, string[] fastq, bool doOutputBam)
+        public TranscriptQuantificationParameters(string spritzDirectory, string analysisDirectory, string referenceFastaPath, int threads, string geneModelPath, 
+            RSEMAlignerOption aligner, Strandedness strandedness, string[] fastq, bool doOutputBam)
         {
             SpritzDirectory = spritzDirectory;
+            AnalysisDirectory = analysisDirectory;
             ReferenceFastaPath = referenceFastaPath;
             Threads = threads;
             GeneModelPath = geneModelPath;
@@ -19,6 +20,7 @@ namespace WorkflowLayer
         }
 
         public string SpritzDirectory { get; }
+        public string AnalysisDirectory { get; }
         public string ReferenceFastaPath { get; }
         public int Threads { get; }
         public string GeneModelPath { get; }

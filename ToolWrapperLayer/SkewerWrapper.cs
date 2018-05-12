@@ -17,12 +17,12 @@ namespace ToolWrapperLayer
         /// </summary>
         /// <param name="currentDirectory"></param>
         /// <returns></returns>
-        public string WriteInstallScript(string currentDirectory)
+        public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(currentDirectory, "scripts", "installScripts", "installSkewer.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallSkewer.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(currentDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d BBMap ]; then git clone https://github.com/BioInfoTools/BBMap.git; fi", // has adapter sequences in the resources file
                 "if [ ! -d skewer-0.2.2 ]; then",
                 "  wget https://github.com/relipmoc/skewer/archive/0.2.2.tar.gz",
@@ -49,7 +49,7 @@ namespace ToolWrapperLayer
 
         #region Public Method
 
-        public static void Trim(string spritzDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
+        public static void Trim(string spritzDirectory, string analysisDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
         {
             log = "";
             readTrimmedPaths = new string[readPaths.Length];
@@ -68,12 +68,12 @@ namespace ToolWrapperLayer
             bool alreadyTrimmed = File.Exists(readTrimmedPaths[0]) && (readPaths.Length == 1 || File.Exists(readTrimmedPaths[1]));
             if (alreadyTrimmed) return;
 
-            string script_path = Path.Combine(spritzDirectory, "scripts", "skewered.bash");
+            string script_path = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Skewered.bash");
             WrapperUtility.GenerateAndRunScript(script_path, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "skewer-0.2.2", "skewer")) +
-                    " -q " + qualityFilter +
+                    " -q " + qualityFilter.ToString() +
                     " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]))) +
                     " -t " + threads.ToString() +
                     " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "BBMap", "resources", "adapters.fa")) +

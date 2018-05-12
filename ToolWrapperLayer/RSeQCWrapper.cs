@@ -30,10 +30,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installRSeQC.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallRSeQC.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d RSeQC-2.6.4 ]; then",
                 "  wget https://downloads.sourceforge.net/project/rseqc/RSeQC-2.6.4.tar.gz",
                 "  tar -xvf RSeQC-2.6.4.tar.gz", // infer_experiment.py is in the scripts folder
@@ -58,11 +58,11 @@ namespace ToolWrapperLayer
 
         #endregion Installation Methods
 
-        public static int InferInnerDistance(string spritzDirectory, string bamPath, string geneModelPath, out string[] outputFiles)
+        public static int InferInnerDistance(string spritzDirectory, string analysisDirectory, string bamPath, string geneModelPath, out string[] outputFiles)
         {
             if (Path.GetExtension(geneModelPath) != ".bed")
             {
-                geneModelPath = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, geneModelPath);
+                geneModelPath = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, analysisDirectory, geneModelPath);
             }
 
             outputFiles = new string[]
@@ -72,10 +72,9 @@ namespace ToolWrapperLayer
                 Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath)) + InnerDistanceDistanceTableSuffix
             };
 
-            string script_path = Path.Combine(spritzDirectory, "scripts", "inferInnerDistance.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "InferInnerDistance.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "python RSeQC-2.6.4/scripts/inner_distance.py" +
                     " -i " + WrapperUtility.ConvertWindowsPath(bamPath) + // input
                     " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath))) + // out prefix

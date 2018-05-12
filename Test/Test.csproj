@@ -11,7 +11,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Test</RootNamespace>
     <AssemblyName>Test</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -49,40 +49,43 @@
       <HintPath>..\packages\Bio.VCF.ajc.0.0.55\lib\net461\Bio.VCF.dll</HintPath>
     </Reference>
     <Reference Include="Chemistry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\Chemistry.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\Chemistry.dll</HintPath>
+    </Reference>
+    <Reference Include="Chromatography, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\Chromatography.dll</HintPath>
     </Reference>
     <Reference Include="FlashLFQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\FlashLFQ.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\FlashLFQ.dll</HintPath>
     </Reference>
-    <Reference Include="ManagedThermoHelperLayer, Version=1.0.299.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\ManagedThermoHelperLayer.dll</HintPath>
+    <Reference Include="ManagedThermoHelperLayer, Version=1.0.305.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\ManagedThermoHelperLayer.dll</HintPath>
     </Reference>
     <Reference Include="MassSpectrometry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\MassSpectrometry.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\MassSpectrometry.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.4.4.0\lib\net461\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=4.4.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.4.4.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="mzIdentML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\mzIdentML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\mzIdentML.dll</HintPath>
     </Reference>
     <Reference Include="MzLibUtil, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\MzLibUtil.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\MzLibUtil.dll</HintPath>
     </Reference>
     <Reference Include="MzML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\MzML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\MzML.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=3.10.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
       <HintPath>..\packages\NUnit.3.10.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="pepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\pepXML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\pepXML.dll</HintPath>
     </Reference>
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\Proteomics.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\Proteomics.dll</HintPath>
     </Reference>
     <Reference Include="Spectra, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\Spectra.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\Spectra.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -97,11 +100,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Thermo, Version=1.0.299.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\Thermo.dll</HintPath>
+    <Reference Include="Thermo, Version=1.0.305.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\Thermo.dll</HintPath>
     </Reference>
     <Reference Include="UsefulProteomicsDatabases, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.299\lib\net45\UsefulProteomicsDatabases.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.305\lib\net471\UsefulProteomicsDatabases.dll</HintPath>
     </Reference>
     <Reference Include="Zlib.Portable, Version=1.11.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Zlib.Portable.1.11.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>
@@ -109,19 +112,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlignmentTests.cs" />
+    <Compile Include="AlignmentIntegrationTests.cs" />
     <Compile Include="GeneModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WorkflowTests.cs" />
+    <Compile Include="RSEMIntegrationTests.cs" />
     <Compile Include="SnpEffPortTests.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
     <Compile Include="VariantTests.cs" />
     <Compile Include="WrapperIntegrationTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TestData\2000reads_1.fastq">
+    <None Include="TestData\Homo_sapiens_202022.xml.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\2000reads_2.fastq">
+    <None Include="TestData\TestFastqs\2000reads_1.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\TestFastqs\2000reads_2.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\chr1_one_fake_transcript_little_exon.gtf">
@@ -163,11 +171,11 @@
     <None Include="TestData\headersShort.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\mapper.fastq">
+    <None Include="TestData\TestFastqs\mapper.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <None Include="TestData\mapperAgain.fastq">
+    <None Include="TestData\TestFastqs\mapperAgain.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\paired_end.bam">
@@ -203,16 +211,16 @@
     <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\read1.fastq">
+    <None Include="TestData\TestFastqs\read1.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\read1.fastq.gz">
+    <None Include="TestData\TestFastqs\read1.fastq.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\read2.fastq">
+    <None Include="TestData\TestFastqs\read2.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\read2.fastq.gz">
+    <None Include="TestData\TestFastqs\read2.fastq.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\sample_gff.gff3">
@@ -246,49 +254,49 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TestData\aFewNearby.vcf">
+    <Content Include="TestData\TestVcfs\aFewNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\problematicChr19\chr19problematic.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr1Ucsc.vcf">
+    <Content Include="TestData\TestVcfs\chr1Ucsc.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_400001.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_400001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_400000.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_400000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_100001.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_100001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_100000.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_100000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_99999.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_99999.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\ugh.vcf">
+    <Content Include="TestData\TestVcfs\ugh.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_heterozygous_missense.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_heterozygous_missense.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_heterozygous_synonymous.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_heterozygous_synonymous.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_homozygous_missense.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_homozygous_missense.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\chr_1_one_homozygous_synonymous.vcf">
+    <Content Include="TestData\TestVcfs\chr_1_one_homozygous_synonymous.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\tonsFarApart.vcf">
+    <Content Include="TestData\TestVcfs\tonsFarApart.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\tonsNearby.vcf">
+    <Content Include="TestData\TestVcfs\tonsNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="TestData\UtrProblem\gene.gtf">
@@ -311,9 +319,9 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\NUnit.3.10.1\build\NUnit.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit.3.10.1\build\NUnit.props'))" />
     <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.10.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.10.0\build\net35\NUnit3TestAdapter.props'))" />
-    <Error Condition="!Exists('..\packages\mzLib.1.0.299\build\net45\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.299\build\net45\mzLib.targets'))" />
+    <Error Condition="!Exists('..\packages\mzLib.1.0.305\build\net471\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.305\build\net471\mzLib.targets'))" />
   </Target>
-  <Import Project="..\packages\mzLib.1.0.299\build\net45\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.299\build\net45\mzLib.targets')" />
+  <Import Project="..\packages\mzLib.1.0.305\build\net471\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.305\build\net471\mzLib.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

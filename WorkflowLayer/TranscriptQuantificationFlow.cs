@@ -22,7 +22,7 @@ namespace WorkflowLayer
         public void QuantifyTranscripts()
         {
             RSEMWrapper rsem = new RSEMWrapper();
-            string scriptName = Path.Combine(Parameters.SpritzDirectory, "scripts", "QuantifyTranscripts.bash");
+            string scriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "QuantifyTranscripts.bash");
             var referenceCommands = rsem.PrepareReferenceCommands(
                     Parameters.SpritzDirectory,
                     Parameters.ReferenceFastaPath,

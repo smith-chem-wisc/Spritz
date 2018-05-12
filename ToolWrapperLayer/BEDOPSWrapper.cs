@@ -18,10 +18,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installBedops.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallBedops.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d bedops ]; then wget https://github.com/bedops/bedops/releases/download/v2.4.29/bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
                 "if [ ! -d bedops ]; then tar -jxvf bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
                 "if [ ! -d bedops ]; then rm bedops_linux_x86_64-v2.4.29.tar.bz2; fi",
@@ -57,18 +57,17 @@ namespace ToolWrapperLayer
         /// <param name="spritzDirectory"></param>
         /// <param name="gtfOrGffPath"></param>
         /// <returns></returns>
-        public static string GtfOrGff2Bed6(string spritzDirectory, string gtfOrGffPath)
+        public static string GtfOrGff2Bed6(string spritzDirectory, string analysisDirectory, string gtfOrGffPath)
         {
             string extension = Path.GetExtension(gtfOrGffPath);
             string bedPath = Path.Combine(Path.GetDirectoryName(gtfOrGffPath), Path.GetFileNameWithoutExtension(gtfOrGffPath) + ".bed");
             if (!File.Exists(bedPath) || new FileInfo(bedPath).Length == 0)
             {
-                string scriptPath = Path.Combine(spritzDirectory, "scripts", "bed6conversion.bash");
-                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Bed6Conversion.bash"), new List<string>
                 {
-                    "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                     (extension == ".gtf" ? "awk '{ if ($0 ~ \"transcript_id\") print $0; else print $0\" transcript_id \\\"\\\";\"; }' " : "cat ") + WrapperUtility.ConvertWindowsPath(gtfOrGffPath)
-                        + " | " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "bedops", extension == ".gtf" ? "gtf2bed" : "gff2bed")) +
+                    WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                    (extension == ".gtf" ? "awk '{ if ($0 ~ \"transcript_id\") print $0; else print $0\" transcript_id \\\"\\\";\"; }' " : "cat ") + WrapperUtility.ConvertWindowsPath(gtfOrGffPath)
+                        + " | " + WrapperUtility.ConvertWindowsPath(Path.Combine("bedops", extension == ".gtf" ? "gtf2bed" : "gff2bed")) +
                         " - > " + WrapperUtility.ConvertWindowsPath(bedPath),
                 }).WaitForExit();
             }
@@ -84,18 +83,17 @@ namespace ToolWrapperLayer
         /// <param name="spritzDirectory"></param>
         /// <param name="geneModelGtfOrGff"></param>
         /// <returns></returns>
-        public static string Gtf2Bed12(string spritzDirectory, string geneModelGtfOrGff)
+        public static string Gtf2Bed12(string spritzDirectory, string analysisDirectory, string geneModelGtfOrGff)
         {
             string geneModelGtf = geneModelGtfOrGff;
             if (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff"))
             {
-                CufflinksWrapper.GffToGtf(spritzDirectory, geneModelGtfOrGff, out geneModelGtf);
+                CufflinksWrapper.GffToGtf(spritzDirectory, analysisDirectory, geneModelGtfOrGff, out geneModelGtf);
             }
             string genePredPath = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".genePred");
             string bed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".bed12");
             string sortedBed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".sorted.bed12");
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "bed12conversion.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Bed12conversion.bash"), new List<string>
             {
                 "gtfToGenePred " + WrapperUtility.ConvertWindowsPath(geneModelGtf) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
                 "genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
@@ -113,18 +111,17 @@ namespace ToolWrapperLayer
         /// <param name="spritzDirectory"></param>
         /// <param name="filteredGeneModelGtfGffPath"></param>
         /// <returns></returns>
-        public static string Gtf2Bed12(string spritzDirectory, string filteredGeneModelGtfGffPath, string genomeFastaPath)
+        public static string Gtf2Bed12(string spritzDirectory, string analysisDirectory, string filteredGeneModelGtfGffPath, string genomeFastaPath)
         {
             string geneModelGtf = filteredGeneModelGtfGffPath;
             if (Path.GetExtension(filteredGeneModelGtfGffPath).StartsWith(".gff"))
             {
-                CufflinksWrapper.GffToGtf(spritzDirectory, filteredGeneModelGtfGffPath, out geneModelGtf);
+                CufflinksWrapper.GffToGtf(spritzDirectory, analysisDirectory, filteredGeneModelGtfGffPath, out geneModelGtf);
             }
             string genePredPath = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".genePred");
             string bed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".bed12");
             string sortedBed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".sorted.bed12");
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "bed12FaidxSortConversion.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Bed12FaidxSortConversion.bash"), new List<string>
             {
                 "gtfToGenePred " + WrapperUtility.ConvertWindowsPath(geneModelGtf) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
                 "genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),

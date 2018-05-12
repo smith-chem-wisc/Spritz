@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
@@ -24,6 +25,7 @@ namespace WorkflowLayer
             "make",
             "cmake",
             "build-essential",
+            "pkg-config",
             //"clang", // needed for some tools, but not any in these workflows
 
             // file compression
@@ -69,6 +71,7 @@ namespace WorkflowLayer
             new MfoldWrapper(),
             new SamtoolsWrapper(),
             new StringTieWrapper(),
+            new VcfToolsWrapper(),
 
             // don't necessarily require root permissions
             new GATKWrapper(),
@@ -82,7 +85,7 @@ namespace WorkflowLayer
             new SRAToolkitWrapper(),
             new STARWrapper(),
             new STARFusionWrapper(),
-            new TopHatWrapper()
+            new TopHatWrapper(),
         };
 
         /// <summary>
@@ -114,7 +117,7 @@ namespace WorkflowLayer
 
             // python setup
             commands.Add("sudo easy_install pip");
-            commands.Add("sudo pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy h5py"); // for RSeQC
+            commands.Add("sudo -H pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy h5py scipy");
 
             // java8 setup
             commands.Add
@@ -135,6 +138,7 @@ namespace WorkflowLayer
             List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(spritzDirectory)).ToList();
 
             // run scripts in background
+            commands.Add(WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory).Replace("cd", "mkdir"));
             for (int i = 0; i < parallelScripts.Count; i++)
             {
                 commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");

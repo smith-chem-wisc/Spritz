@@ -25,7 +25,7 @@ namespace Proteogenomics
         /// Translate 3 byte representations of DNA bases to an amino acid
         /// </summary>
         /// <param name="mitochondrial"></param>
-        /// <param name="base1"></param>
+        /// <param name="base1"></param>ec
         /// <param name="base2"></param>
         /// <param name="base3"></param>
         /// <param name="aminoAcid"></param>

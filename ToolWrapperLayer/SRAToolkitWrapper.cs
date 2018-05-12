@@ -23,10 +23,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installSRAToolkit.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallSRAToolkit.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if ls sratoolkit* 1> /dev/null 2>&1; then", // if there are files listed matching the pattern sratoolkit*
                 "  echo \"Found SRAToolkit.\"",
                 "else",
@@ -55,24 +55,24 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public void Fetch(string spritzDirectory, string sraAccession, string destinationDirectoryPath)
+        public void Fetch(string spritzDirectory, string analysisDirectory, string sraAccession)
         {
-            LogPath = Path.Combine(destinationDirectoryPath, sraAccession + "download.log");
-            FastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq");
+            LogPath = Path.Combine(analysisDirectory, sraAccession + "download.log");
+            FastqPaths = Directory.GetFiles(analysisDirectory, sraAccession + "*.fastq");
             if (FastqPaths.Length > 0) // already downloaded
             {
                 FastqPaths = FastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();
                 return;
             };
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "download" + sraAccession + ".bash");
+            string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Download" + sraAccession + ".bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "echo \"Downloading " + sraAccession + "\"",
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(destinationDirectoryPath) + "\" " +
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(analysisDirectory) + "\" " +
                     sraAccession + " >> " + WrapperUtility.ConvertWindowsPath(LogPath),
             }).WaitForExit();
-            FastqPaths = Directory.GetFiles(destinationDirectoryPath, sraAccession + "*.fastq").ToArray();
+            FastqPaths = Directory.GetFiles(analysisDirectory, sraAccession + "*.fastq").ToArray();
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace ToolWrapperLayer
             foreach (string sra in sras)
             {
                 SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
-                sratoolkit.Fetch(spritzDirectory, sra, analysisDirectory);
+                sratoolkit.Fetch(spritzDirectory, analysisDirectory, sra);
                 fastqs.Add(sratoolkit.FastqPaths);
             }
             return fastqs;

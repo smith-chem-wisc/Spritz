@@ -50,10 +50,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installCufflinks.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallCufflinks.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d cufflinks-2.2.1 ]; then",
                 "  wget --no-check http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz",
                 "  tar -xvf cufflinks-2.2.1.Linux_x86_64.tar.gz",
@@ -90,7 +90,7 @@ namespace ToolWrapperLayer
         /// <param name="strandSpecific"></param>
         /// <param name="inferStrandSpecificity"></param>
         /// <param name="outputDirectory"></param>
-        public static List<string> AssembleTranscripts(string spritzDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
+        public static List<string> AssembleTranscripts(string spritzDirectory, string analysisDirectory, int threads, string bamPath, string geneModelGtfOrGffPath, Genome genome, bool strandSpecific, bool inferStrandSpecificity, out string outputDirectory)
         {
             bool isStranded = strandSpecific;
             if (inferStrandSpecificity)
@@ -101,7 +101,7 @@ namespace ToolWrapperLayer
 
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksSortCheck");
             outputDirectory = Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".cufflinksOutput");
-            string script_name = Path.Combine(spritzDirectory, "scripts", "cufflinksRun.bash");
+            string script_name = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "CufflinksRun.bash");
             return new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
@@ -167,15 +167,16 @@ namespace ToolWrapperLayer
         /// <param name="spritzDirectory"></param>
         /// <param name="geneModelGffPath"></param>
         /// <param name="geneModelGtfPath"></param>
-        public static void GffToGtf(string spritzDirectory, string geneModelGffPath, out string geneModelGtfPath)
+        public static void GffToGtf(string spritzDirectory, string analysisDirectory, string geneModelGffPath, out string geneModelGtfPath)
         {
             if (!Path.GetExtension(geneModelGffPath).StartsWith(".gff"))
             {
                 throw new ArgumentException("Input gene model must be gff formatted to convert to gtf.");
             }
+
             geneModelGtfPath = geneModelGffPath + ".converted.gtf";
-            string script_name = Path.Combine(spritzDirectory, "scripts", "gffToGtf.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "GffToGtf.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                 "echo \"Converting GFF to GTF: " + geneModelGffPath + " -> " + geneModelGtfPath + "\"",
