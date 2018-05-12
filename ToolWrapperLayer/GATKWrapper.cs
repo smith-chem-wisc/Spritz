@@ -77,7 +77,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string WriteGitCloneInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installGatk.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
@@ -99,10 +99,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installGatk.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d gatk ]; then",
                 "  wget --no-check https://github.com/broadinstitute/gatk/releases/download/4.0.0.0/gatk-4.0.0.0.zip",
                 "  unzip gatk-4.0.0.0.zip",
@@ -134,12 +134,11 @@ namespace ToolWrapperLayer
         /// <param name="genomeFasta"></param>
         /// <param name="genomeRegion"></param>
         /// <param name="outputBam"></param>
-        public void SubsetBam(string spritzDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
+        public void SubsetBam(string spritzDirectory, string analysisDirectory, int threads, string bam, string genomeFasta, string genomeRegion, string outputBam)
         {
-            string script_name = Path.Combine(spritzDirectory, "scripts", "subset_bam.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SubsetBam.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 Gatk() +
                     " PrintReads" +
                     " --num_threads " + threads.ToString() +
@@ -157,16 +156,15 @@ namespace ToolWrapperLayer
         /// <param name="vcfPath"></param>
         /// <param name="genomeFastaPath"></param>
         /// <param name="sortedVcfPath"></param>
-        public List<string> SortVCF(string spritzDirectory, string vcfPath, string genomeFastaPath)
+        public List<string> SortVCF(string spritzDirectory, string analysisDirectory, string vcfPath, string genomeFastaPath)
         {
             SortedVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath)) + ".sorted.vcf";
             string tmpDir = Path.Combine(spritzDirectory, "tmp");
             Directory.CreateDirectory(tmpDir);
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "sortVcf.bash");
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 GenomeDictionaryIndexCommand(genomeFastaPath),
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(SortedVcfPath) + " ]; then " +
                     Gatk() + // formerly picard
@@ -178,7 +176,7 @@ namespace ToolWrapperLayer
             };
         }
 
-        public string DownloadUCSCKnownVariantSites(string spritzDirectory, string targetDirectory, bool commonOnly, string reference)
+        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
@@ -187,14 +185,13 @@ namespace ToolWrapperLayer
                     (downloadGrch37 ? CommonGRCh37UCSC : CommonGRCh38UCSC) :
                     (downloadGrch37 ? AllGRCh37UCSC : AllGRCh38UCSC);
             string ucscKnownSitesFilename = targetFileLocation.Split('/').Last();
-            UcscKnownSitesPath = Path.Combine(targetDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
+            UcscKnownSitesPath = Path.Combine(spritzDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
 
             if ((downloadGrch37 || downloadGrch38) && !File.Exists(UcscKnownSitesPath))
             {
-                string scriptPath = Path.Combine(spritzDirectory, "scripts", "downloadUcscVariants.bash");
-                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "DownloadUcscVariants.bash"), new List<string>
                 {
-                    "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
+                    "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                     "wget " + targetFileLocation,
                     "gunzip " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz",
                     "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz"
@@ -203,16 +200,15 @@ namespace ToolWrapperLayer
             return UcscKnownSitesPath;
         }
 
-        public string DownloadEnsemblKnownVariantSites(string spritzDirectory, string targetDirectory, bool commonOnly, string reference)
+        public string DownloadEnsemblKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
         {
-            DownloadUCSCKnownVariantSites(spritzDirectory, targetDirectory, commonOnly, reference);
+            DownloadUCSCKnownVariantSites(spritzDirectory, commonOnly, reference);
             EnsemblKnownSitesPath = ConvertVCFChromosomesUCSC2Ensembl(spritzDirectory, UcscKnownSitesPath, reference);
 
             // indexing is used for most GATK tools
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "indexKnownVariantSites.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "IndexKnownVariantSites.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + "; fi",
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + "; fi",
             }).WaitForExit();
@@ -301,7 +297,7 @@ namespace ToolWrapperLayer
 
             List<string> commands = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
@@ -337,7 +333,7 @@ namespace ToolWrapperLayer
 
             List<string> commands = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
@@ -403,7 +399,7 @@ namespace ToolWrapperLayer
             string scriptName2 = Path.Combine(spritzDirectory, "scripts", "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
             List<string> commands = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
 
                 SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
@@ -456,14 +452,14 @@ namespace ToolWrapperLayer
         /// <param name="bam"></param>
         /// <param name="knownSitesVcf"></param>
         /// <param name="realignedIndelBam"></param>
-        public void RealignIndels(string spritzDirectory, int threads, string genomeFasta, string bam, string knownSitesVcf = "")
+        public void RealignIndels(string spritzDirectory, string analysisDirectory, int threads, string genomeFasta, string bam, string knownSitesVcf = "")
         {
             string realignerTable = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".forIndelRealigner.intervals");
             RealignedIndelBamPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".realigned.bam");
-            string script_name = Path.Combine(spritzDirectory, "scripts", "realign_indels.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "RealignIndels.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
@@ -498,13 +494,13 @@ namespace ToolWrapperLayer
         /// <param name="bam"></param>
         /// <param name="recalibrationTablePath"></param>
         /// <param name="knownSitesVcf"></param>
-        public void BaseRecalibration(string spritzDirectory, string genomeFasta, string bam, string knownSitesVcf)
+        public void BaseRecalibration(string spritzDirectory, string analysisDirectory, string genomeFasta, string bam, string knownSitesVcf)
         {
             RecalibrationTablePath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "base_recalibration.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "BaseRecalibration.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 

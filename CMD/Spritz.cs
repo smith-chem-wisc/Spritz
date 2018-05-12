@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using ToolWrapperLayer;
 using WorkflowLayer;
+using Proteogenomics;
 
 namespace CMD
 {
@@ -13,6 +14,11 @@ namespace CMD
     {
         public static void Main(string[] args)
         {
+            if (!WrapperUtility.CheckBashSetup())
+            {
+                throw new FileNotFoundException("The Windows Subsystem for Windows has not been enabled. Please see https://smith-chem-wisc.github.io/Spritz/ for more details.");
+            }
+
             // main setup involves installing tools
             if (args.Contains(ManageToolsFlow.Command))
             {
@@ -95,6 +101,18 @@ namespace CMD
 
             #endregion Infering Strandedness
 
+            #region Infering Strandedness
+
+            if (options.Command.Equals(TransferModificationsFlow.Command))
+            {
+                string[] xmls = options.UniProtXml.Split(',');
+                TransferModificationsFlow transfer = new TransferModificationsFlow();
+                transfer.TransferModifications(options.SpritzDirectory, xmls[0], xmls[1]);
+                return;
+            }
+
+            #endregion Infering Strandedness
+
             #region Transcript Quantification
 
             if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
@@ -111,6 +129,7 @@ namespace CMD
                     TranscriptQuantificationFlow quantify = new TranscriptQuantificationFlow();
                     quantify.Parameters = new TranscriptQuantificationParameters(
                         options.SpritzDirectory,
+                        options.AnalysisDirectory,
                         options.GenomeFasta,
                         options.Threads,
                         options.GeneModelGtfOrGff,
@@ -129,12 +148,12 @@ namespace CMD
 
             if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                new SnpEffWrapper().DownloadSnpEffDatabase(options.SpritzDirectory, options.Reference);
+                new SnpEffWrapper().DownloadSnpEffDatabase(options.SpritzDirectory, options.AnalysisDirectory, options.Reference);
 
                 if (options.ReferenceVcf == null)
                 {
                     var gatk = new GATKWrapper();
-                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, options.SpritzDirectory, true, options.Reference);
+                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
                     options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
                 }
 
@@ -171,9 +190,9 @@ namespace CMD
         /// <param name="options"></param>
         public static void FinishSetup(Options options)
         {
+            // Download ensembl references and set default paths
             EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
             downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference);
-
             options.GenomeFasta = options.GenomeFasta ?? downloadsWrapper.GenomeFastaPath;
             options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? downloadsWrapper.Gff3GeneModelPath;
             options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? STARWrapper.GetGenomeStarIndexDirectoryPath(options.GenomeFasta, options.GeneModelGtfOrGff);

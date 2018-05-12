@@ -13,8 +13,6 @@ namespace ToolWrapperLayer
     public class STARWrapper :
         IInstallable
     {
-        #region Public Properties
-
         /// <summary>
         /// Output BAM file. Suffix tagged onto the output prefix
         /// </summary>
@@ -65,7 +63,40 @@ namespace ToolWrapperLayer
         /// </summary>
         public static string ThreadCheckFilePrefix { get; } = "Chimeric.out.junction.thread";
 
-        #endregion Public Properties
+        /// <summary>
+        /// Writes an installation script for STAR. Also installs seqtk, which is useful for subsetting fastq files.
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public string WriteInstallScript(string spritzDirectory)
+        {
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallStar.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "git clone https://github.com/lh3/seqtk.git",
+                "cd seqtk; make",
+                "cd ..",
+                "if [ ! -d STAR ]; then ",
+                "  git clone https://github.com/alexdobin/STAR.git",
+                "  cd STAR/source",
+                "  make STAR",
+                "  cd ..",
+                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "STAR", "source")),
+                "fi"
+            });
+            return scriptPath;
+        }
+
+        /// <summary>
+        /// Writes a script for removing STAR and seqtk.
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public string WriteRemoveScript(string spritzDirectory)
+        {
+            return null;
+        }
 
         #region Genome Index Methods
 
@@ -95,7 +126,7 @@ namespace ToolWrapperLayer
 
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR/source/STAR" + arguments + "; fi"
             };
@@ -124,51 +155,12 @@ namespace ToolWrapperLayer
             string script_name = Path.Combine(spritzDirectory, "scripts", "removeGenome.bash");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() + " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir)
             };
         }
 
         #endregion Genome Index Methods
-
-        #region Installation Methods
-
-        /// <summary>
-        /// Writes an installation script for STAR. Also installs seqtk, which is useful for subsetting fastq files.
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <returns></returns>
-        public string WriteInstallScript(string spritzDirectory)
-        {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installStar.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                "git clone https://github.com/lh3/seqtk.git",
-                "cd seqtk; make",
-                "cd ..",
-                "if [ ! -d STAR ]; then ",
-                "  git clone https://github.com/alexdobin/STAR.git",
-                "  cd STAR/source",
-                "  make STAR",
-                "  cd ..",
-                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "STAR", "source")),
-                "fi"
-            });
-            return scriptPath;
-        }
-
-        /// <summary>
-        /// Writes a script for removing STAR and seqtk.
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <returns></returns>
-        public string WriteRemoveScript(string spritzDirectory)
-        {
-            return null;
-        }
-
-        #endregion Installation Methods
 
         #region First-Pass Alignment Methods
 
@@ -243,9 +235,9 @@ namespace ToolWrapperLayer
                 " --readFilesIn " + reads_in +
                 " --outSAMtype " + outSamType +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
-                (strandSpecific ? "" : " --outSAMstrandField intronMotif") + // puts in XS attribute for unstranded data, which is used by Cufflinks
                 " --chimSegmentMin 12" +
                 " --chimJunctionOverhangMin 12" +
+                " --outSAMstrandField intronMotif" + // adds XS tag to all alignments that contain a splice junction
                 " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
@@ -253,7 +245,7 @@ namespace ToolWrapperLayer
             string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix) + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix);
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " ) ]]; then STAR/source/STAR" + arguments + "; fi",
                 File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             };
@@ -289,9 +281,9 @@ namespace ToolWrapperLayer
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
-                (strandSpecific ? "" : " --outSAMstrandField intronMotif") + // puts in XS attribute for unstranded data, which is used by Cufflinks
                 " --chimSegmentMin 12" +
                 " --chimJunctionOverhangMin 12" +
+                " --outSAMstrandField intronMotif" + // adds XS tag to all alignments that contain a splice junction
                 " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
                 " --outSAMattrRGline ID:1 PU:platform  PL:illumina SM:sample LB:library" + // this could shorten the time for samples that aren't multiplexed in preprocessing for GATK
                 " --outSAMmapqUnique 60" + // this could be used to ensure compatibility with GATK without having to use the GATK hacks
@@ -308,7 +300,7 @@ namespace ToolWrapperLayer
 
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
                 "  STAR/source/STAR" + alignmentArguments,
@@ -337,16 +329,15 @@ namespace ToolWrapperLayer
         /// <param name="newFfiles"></param>
         /// <param name="useSeed"></param>
         /// <param name="seed"></param>
-        public static void SubsetFastqs(string spritzDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
+        public static void SubsetFastqs(string spritzDirectory, string analysisDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
         {
             newFfiles = new string[] { Path.Combine(Path.GetDirectoryName(fastqFiles[0]), Path.GetFileNameWithoutExtension(fastqFiles[0]) + ".segment.fastq") };
             if (fastqFiles.Length > 1)
                 newFfiles = new string[] { newFfiles[0], Path.Combine(Path.GetDirectoryName(fastqFiles[1]), Path.GetFileNameWithoutExtension(fastqFiles[1]) + ".segment.fastq") };
 
-            string script_path = Path.Combine(spritzDirectory, "scripts", "subsetReads.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SubsetReads.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(newFfiles[0]) + " ]; then",
                 "  echo \"Subsetting " + reads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
                 "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),

@@ -20,10 +20,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installStarFusion.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallStarFusion.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d STAR-Fusion_v1.1.0 ]; then",
                 "  wget https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v1.1.0/STAR-Fusion_v1.1.0.tar.gz",
                 "  tar -xvf STAR-Fusion_v1.1.0.tar.gz",
@@ -49,14 +49,14 @@ namespace ToolWrapperLayer
 
         #region Public Methods
 
-        public static void RunStarFusion(string spritzDirectory, string reference, int threads, string chemericOutJunction, string[] fastq_files, string outdir)
+        public static void RunStarFusion(string spritzDirectory, string analysisDirectory, string reference, int threads, string chemericOutJunction, string[] fastq_files, string outdir)
         {
             bool g37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool g38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
 
             if (!g37 && !g38) return;
 
-            DownloadFusionPlugNPlay(spritzDirectory, reference);
+            DownloadFusionPlugNPlay(spritzDirectory, analysisDirectory, reference);
 
             string read_command = fastq_files.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
@@ -74,21 +74,19 @@ namespace ToolWrapperLayer
                         WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "STAR-Fusion_v1.1.0", "GRCh38_gencode_v26_CTAT_lib_July192017.plug-n-play"))) +
                 " --chimeric_junction " + WrapperUtility.ConvertWindowsPath(chemericOutJunction);
 
-            string script_name = Path.Combine(spritzDirectory, "scripts", "star_fusion.bash");
-            WrapperUtility.GenerateAndRunScript(script_name, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "StarFusion.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "STAR-Fusion_v1.1.0/STAR-Fusion" + arguments
             }).WaitForExit();
         }
 
-        public static void DownloadFusionPlugNPlay(string spritzDirectory, string reference)
+        public static void DownloadFusionPlugNPlay(string spritzDirectory, string analysisDirectory, string reference)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase) && !Directory.Exists(Path.Combine(spritzDirectory, "STAR-Fusion_v1.1.0", "GRCh37_gencode_v19_CTAT_lib_July192017.plug-n-play"));
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase) && !Directory.Exists(Path.Combine(spritzDirectory, "STAR-Fusion_v1.1.0", "GRCh38_gencode_v26_CTAT_lib_July192017.plug-n-play"));
 
-            string script_path = Path.Combine(spritzDirectory, "scripts", "downloadFusionPlugNPlay.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "DownloadFusionPlugNPlay.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "STAR-Fusion_v1.1.0")),
 

@@ -34,7 +34,7 @@ namespace WorkflowLayer
         public void PerformTwoPassAlignment()
         {
             // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "genomeGenerate.bash"),
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "GenomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(
                     Parameters.SpritzDirectory, 
                     Parameters.Threads, 
@@ -73,7 +73,7 @@ namespace WorkflowLayer
                 STARWrapper.GenerateGenomeIndex(spritzDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
                 .WaitForExit();
 
-            STARWrapper.SubsetFastqs(spritzDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
+            STARWrapper.SubsetFastqs(spritzDirectory, analysisDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
 
             string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
             WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "alignSubset.bash"),
@@ -134,7 +134,7 @@ namespace WorkflowLayer
                 bool localStrandSpecific = Parameters.StrandSpecific;
                 if (Parameters.InferStrandSpecificity || Parameters.UseReadSubset)
                 {
-                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, fqForAlignment, Parameters.ReadSubset, Parameters.AnalysisDirectory, out string[] subsetFastqs);
+                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, fqForAlignment, Parameters.ReadSubset, Parameters.AnalysisDirectory, out string[] subsetFastqs);
                     if (Parameters.UseReadSubset)
                     {
                         fqForAlignment = subsetFastqs;
@@ -142,7 +142,7 @@ namespace WorkflowLayer
                     if (Parameters.InferStrandSpecificity)
                     {
                         string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-                        WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "alignSubset.bash"),
+                        WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "AlignSubset.bash"),
                             STARWrapper.BasicAlignReadCommands(Parameters.SpritzDirectory, threads, Parameters.GenomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
                             .WaitForExit();
                         BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, Parameters.GeneModelGtfOrGff, new Genome(Parameters.ReorderedFasta), 0.8);
@@ -150,7 +150,7 @@ namespace WorkflowLayer
                     }
                 }
 
-                SkewerWrapper.Trim(Parameters.SpritzDirectory, threads, 19, fqForAlignment, out string[] trimmedFastqs, out string skewerLog);
+                SkewerWrapper.Trim(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, threads, 19, fqForAlignment, out string[] trimmedFastqs, out string skewerLog);
                 fqForAlignment = trimmedFastqs;
 
                 StrandSpecificities.Add(localStrandSpecific);
@@ -187,7 +187,7 @@ namespace WorkflowLayer
                 ChimericJunctionFiles.Add(outPrefix + STARWrapper.ChimericJunctionsFileSuffix);
             }
             alignmentCommands.AddRange(STARWrapper.RemoveGenome(Parameters.SpritzDirectory, SecondPassGenomeDirectory));
-            WrapperUtility.GenerateAndRunScript(Path.Combine(Parameters.SpritzDirectory, "scripts", "alignReads.bash"), alignmentCommands).WaitForExit();
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "AlignReads.bash"), alignmentCommands).WaitForExit();
         }
 
         private void Clear()

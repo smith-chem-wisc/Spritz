@@ -8,21 +8,23 @@ namespace ToolWrapperLayer
 {
     public static class WrapperUtility
     {
-        #region Private Fields
-
         private static Regex driveName = new Regex(@"([A-Z]:)");
-
         private static Regex forwardSlashes = new Regex(@"(\\)");
 
-        #endregion Private Fields
-
-        #region Public Methdos
-
+        /// <summary>
+        /// Checks if ubuntu bash has been installed
+        /// </summary>
+        /// <returns></returns>
         public static bool CheckBashSetup()
         {
             return File.Exists(@"C:\Windows\System32\bash.exe");
         }
 
+        /// <summary>
+        /// Converts a Windows-formatted path to UNIX-formatted path
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public static string ConvertWindowsPath(string path)
         {
             if (path == null) return null;
@@ -31,6 +33,12 @@ namespace ToolWrapperLayer
             return "/mnt/" + Char.ToLowerInvariant(path[0]) + driveName.Replace(forwardSlashes.Replace(path, "/"), "");
         }
 
+        /// <summary>
+        /// Runs a single bash command from the Ubuntu bash commandline
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
         public static Process RunBashCommand(string command, string arguments)
         {
             Process proc = new Process();
@@ -40,6 +48,11 @@ namespace ToolWrapperLayer
             return proc;
         }
 
+        /// <summary>
+        /// Generates a bash script file
+        /// </summary>
+        /// <param name="scriptPath"></param>
+        /// <param name="commands"></param>
         public static void GenerateScript(string scriptPath, List<string> commands)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(scriptPath));
@@ -53,21 +66,64 @@ namespace ToolWrapperLayer
             }
         }
 
+        /// <summary>
+        /// Generates a script file and runs it in Ubuntu bash commandline
+        /// </summary>
+        /// <param name="scriptPath"></param>
+        /// <param name="commands"></param>
+        /// <returns></returns>
         public static Process GenerateAndRunScript(string scriptPath, List<string> commands)
         {
             GenerateScript(scriptPath, commands);
             return RunBashCommand(@"bash", ConvertWindowsPath(scriptPath));
         }
 
+        /// <summary>
+        /// Gets command to change to the Spritz tools directory
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public static string ChangeToToolsDirectoryCommand(string spritzDirectory)
+        {
+            return "cd " + ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools"));
+        }
+
+        /// <summary>
+        /// Gets path for an analysis script
+        /// </summary>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="scriptName"></param>
+        /// <returns></returns>
+        public static string GetAnalysisScriptPath(string analysisDirectory, string scriptName)
+        {
+            return Path.Combine(analysisDirectory, "Scripts", scriptName);
+        }
+
+        /// <summary>
+        /// Gets path for an installation script
+        /// </summary>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="scriptName"></param>
+        /// <returns></returns>
+        public static string GetInstallationScriptPath(string spritzDirectory, string scriptName)
+        {
+            return Path.Combine(spritzDirectory, "Scripts", "InstallScripts", scriptName);
+        }
+
+        /// <summary>
+        /// Generates a bash command to check that a file has been closed
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public static string EnsureClosedFileCommands(string path)
         {
             return "exec 3<> " + ConvertWindowsPath(path) + "; exec 3>&-";
         }
 
-        #endregion Public Methdos
-
-        #region Private Method
-
+        /// <summary>
+        /// Generates some nice art for the original name of this program
+        /// </summary>
+        /// <returns></returns>
         private static string OldAsciiArt()
         {
             return
@@ -91,6 +147,10 @@ namespace ToolWrapperLayer
                 "echo \"" + @"        \/     \//_____/         \/     \/                            " + "\"\n";
         }
 
+        /// <summary>
+        /// Generates some nice art for Spritz
+        /// </summary>
+        /// <returns></returns>
         private static string SpritzArt()
         {
             return
@@ -107,7 +167,5 @@ namespace ToolWrapperLayer
                 "echo \"" + @"   /'                                      " + "\"\n" +
                 "echo\n";
         }
-
-        #endregion Private Method
     }
 }

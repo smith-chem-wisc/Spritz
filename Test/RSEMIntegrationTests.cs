@@ -21,6 +21,7 @@ namespace Test
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
             quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
@@ -53,6 +54,7 @@ namespace Test
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
             quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
@@ -84,6 +86,7 @@ namespace Test
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
             quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
                 Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),

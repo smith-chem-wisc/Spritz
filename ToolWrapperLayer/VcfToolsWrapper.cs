@@ -23,10 +23,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installVcfTools.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallVcfTools.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d vcftools-0.1.15 ]; then",
                 "  wget --no-check https://github.com/vcftools/vcftools/releases/download/v0.1.15/vcftools-0.1.15.tar.gz",
                 "  tar -xvf vcftools-0.1.15.tar.gz",

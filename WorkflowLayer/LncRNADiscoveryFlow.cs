@@ -62,7 +62,7 @@ namespace WorkflowLayer
             {
                 TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
                 quantification.Parameters = new TranscriptQuantificationParameters(
-                    Parameters.SpritzDirectory, Parameters.GenomeFasta, Parameters.Threads, MergedGtfPath, RSEMAlignerOption.STAR,
+                    Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.GenomeFasta, Parameters.Threads, MergedGtfPath, RSEMAlignerOption.STAR,
                     Parameters.StrandSpecific ? Strandedness.Forward : Strandedness.None,
                     fastq, Parameters.DoOutputQuantificationBam);
                 quantification.QuantifyTranscripts();
@@ -72,7 +72,7 @@ namespace WorkflowLayer
             }
 
             // Annotate lncRNAs
-            string slnckyScriptName = Path.Combine(Parameters.SpritzDirectory, "scripts", "SlcnkyAnnotation.bash");
+            string slnckyScriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "SlcnkyAnnotation.bash");
             SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".slnckyOut", "annotated");
             WrapperUtility.GenerateAndRunScript(slnckyScriptName, SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
                 MergedGtfPath, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();

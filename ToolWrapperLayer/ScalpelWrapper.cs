@@ -20,10 +20,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installScalpel.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallScalpel.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d scalpel-0.5.3 ]; then",
                 "  wget --no-check http://sourceforge.net/projects/scalpel/files/scalpel-0.5.3.tar.gz; tar zxvf scalpel-0.5.3.tar.gz; cd scalpel-0.5.3; make",
                 "  cd ..",
@@ -51,7 +51,7 @@ namespace ToolWrapperLayer
             IndelVcfPath = Path.Combine(outdir, "variants.indel.vcf");
             var commands = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " ]]; then " +
                 "scalpel-0.5.3/scalpel-discovery --single " +
                     "--bam " + WrapperUtility.ConvertWindowsPath(bamPath) +

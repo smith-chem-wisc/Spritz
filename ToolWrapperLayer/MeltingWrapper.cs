@@ -18,10 +18,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installMelting.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallMelting.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d MELTING5.1.1 ]; then",
                 "  wget --no-check -O MELTING5.1.1.tar.gz http://sourceforge.net/projects/melting/files/meltingJava/melting5/MELTING5.1.1.tar.gz/download",
                 "  tar -xvf MELTING5.1.1.tar.gz; rm MELTING5.1.1.tar.gz",

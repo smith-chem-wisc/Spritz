@@ -1,6 +1,8 @@
 ﻿using Proteomics;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using UsefulProteomicsDatabases;
 
 namespace Proteogenomics
 {
@@ -18,12 +20,16 @@ namespace Proteogenomics
             Dictionary<string, List<Protein>> dictSource = ProteinDictionary(source);
             Dictionary<string, List<Protein>> dictDestination = ProteinDictionary(destination);
 
-            List<string> commonSeqs = dictDestination.Keys.Intersect(dictDestination.Keys).ToList();
-            foreach (string seq in commonSeqs)
+            List<string> seqsInCommon = dictDestination.Keys.Intersect(dictSource.Keys).ToList();
+            List<string> destinationOnlySeqs = dictDestination.Keys.Except(dictSource.Keys).ToList();
+            List<string> sourceOnlySeqs = dictSource.Keys.Except(dictDestination.Keys).ToList();
+
+            foreach (string seq in seqsInCommon)
             {
                 dictSource.TryGetValue(seq, out var sourceProteins);
                 dictDestination.TryGetValue(seq, out var destinationProteins);
-                if (sourceProteins == null || destinationProteins == null) { continue; }
+                if (sourceProteins == null || destinationProteins == null) { continue; } // shouldn't happen
+                foreach (var ds in sourceProteins.SelectMany(s => s.DisulfideBonds)) { ds.Description = ds.Description ?? ""; } // shouldn't need this, and fixing in mzLib
                 foreach (var destinationProtein in destinationProteins)
                 {
                     newProteins.Add(
@@ -50,9 +56,14 @@ namespace Proteogenomics
                 }
             }
 
-            List<string> destinationOnly = dictDestination.Keys.Except(dictSource.Keys).ToList();
-            List<string> sourceOnly = dictSource.Keys.Except(dictDestination.Keys).ToList();
-            return newProteins;
+            return newProteins.Concat(destinationOnlySeqs.SelectMany(s => dictDestination[s])).ToList();
+        }
+
+        public static List<ModificationWithLocation> GetUniProtMods(string spritzDirectory)
+        {
+            Loaders.LoadElements(Path.Combine(spritzDirectory, "elements.dat"));
+            var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(spritzDirectory, "PSI-MOD.obo.xml"));
+            return Loaders.LoadUniprot(Path.Combine(spritzDirectory, "ptmlist.txt"), Loaders.GetFormalChargesDictionary(psiModDeserialized)).ToList();
         }
 
         /// <summary>

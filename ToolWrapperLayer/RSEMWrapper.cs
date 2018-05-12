@@ -40,10 +40,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installRSEM.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallRSEM.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "wget https://github.com/deweylab/RSEM/archive/v1.3.0.tar.gz",
                 "tar -xvf v1.3.0.tar.gz",
                 "cd RSEM-1.3.0",
@@ -59,10 +59,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteRemoveScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "removeRSEM.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "RemoveRSEM.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "rm -rf RSEM-1.3.0",
             });
             return scriptPath;

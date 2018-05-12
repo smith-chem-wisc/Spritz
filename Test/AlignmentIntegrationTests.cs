@@ -22,6 +22,7 @@ namespace Test
 
             STARWrapper.SubsetFastqs(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs"),
                 new string[]
                 {
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "read1.fastq"),
@@ -83,12 +84,14 @@ namespace Test
         {
             TopHatWrapper.GenerateBowtieIndex(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"),
                 out string bowtieIndexPrefix);
             Assert.IsTrue(TopHatWrapper.BowtieIndexExists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa")));
 
             TopHatWrapper.Align(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 bowtieIndexPrefix,
                 8,
                 new string[]

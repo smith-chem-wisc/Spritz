@@ -22,10 +22,10 @@ namespace WorkflowLayer
         public List<string> CombinedAnnotatedProteinFastaPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinXmlPaths { get; private set; } = new List<string>();
 
-        public void CallVariants(string spritzDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
+        public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
             List<string> dedupedBamFiles, string reorderedFastaPath)
         {
-            new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, reference);
+            new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, analysisDirectory, reference);
             List<string> variantCallingCommands = new List<string>();
             string scriptName = Path.Combine(spritzDirectory, "scripts", "variantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)
@@ -47,7 +47,7 @@ namespace WorkflowLayer
                 var vcftools = new VcfToolsWrapper();
                 var outprefix = Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath));
                 variantCallingCommands.Add(vcftools.Concatenate(spritzDirectory, new string[] { gatk.FilteredHaplotypeCallerVcfPath, scalpel.FilteredIndelVcfPath }, outprefix));
-                variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, vcftools.VcfConcatenatedPath, reorderedFastaPath));
+                variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, analysisDirectory, vcftools.VcfConcatenatedPath, reorderedFastaPath));
                 CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
                 CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
                 var snpEff = new SnpEffWrapper();

@@ -131,7 +131,7 @@ namespace Test
         public void TestDownloadSRA()
         {
             SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
-            sratoolkit.Fetch(TestContext.CurrentContext.TestDirectory, "SRR6304532", TestContext.CurrentContext.TestDirectory);
+            sratoolkit.Fetch(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, "SRR6304532");
             Assert.IsTrue(sratoolkit.FastqPaths.All(f => File.Exists(f)));
             Assert.IsTrue(File.Exists(sratoolkit.LogPath));
         }
@@ -143,7 +143,7 @@ namespace Test
         [Test, Order(1)]
         public void TestConvertGff()
         {
-            string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
+            string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.IsTrue(new FileInfo(bedPath).Length > 0);
             File.Delete(bedPath);
         }
@@ -151,7 +151,7 @@ namespace Test
         [Test, Order(1)]
         public void TestConvertGtf()
         {
-            string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
+            string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(bedPath).Length > 0);
             File.Delete(bedPath);
         }
@@ -159,14 +159,14 @@ namespace Test
         [Test, Order(1)]
         public void TestConvertGtf12()
         {
-            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
+            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed12")).Length > 0);
         }
 
         [Test, Order(1)]
         public void TestConvertGffToBed12()
         {
-            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
+            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", Path.GetFileNameWithoutExtension("sample_gff.gff3") + ".bed12")).Length > 0);
         }
 
@@ -191,6 +191,7 @@ namespace Test
         {
             Assert.AreEqual(132, RSeQCWrapper.InferInnerDistance(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "paired_end.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
                 out string[] outputFiles));
@@ -204,6 +205,7 @@ namespace Test
         public void SkewerSingle()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs"),
                 1,
                 19,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs", "read1.fastq") },
@@ -219,6 +221,7 @@ namespace Test
         public void SkewerPaired()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs"),
                 19,
                 1,
                 new string[]
@@ -240,6 +243,7 @@ namespace Test
         public void SkewerPairedGz()
         {
             SkewerWrapper.Trim(TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestFastqs"),
                 19,
                 1,
                 new string[]
@@ -267,7 +271,6 @@ namespace Test
             var gatk = new GATKWrapper();
             gatk.DownloadEnsemblKnownVariantSites(
                 TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 true,
                 "grch37");
             Assert.IsTrue(File.Exists(gatk.EnsemblKnownSitesPath));
@@ -333,11 +336,11 @@ namespace Test
         public void convertVcf()
         {
             var gatk = new GATKWrapper();
-            gatk.ConvertVCFChromosomesUCSC2Ensembl(
+            var newvcf = gatk.ConvertVCFChromosomesUCSC2Ensembl(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1Ucsc.vcf"),
                 "grch37");
-            Assert.IsTrue(File.Exists(gatk.ConvertedEnsemblVcfPath) && new FileInfo(gatk.ConvertedEnsemblVcfPath).Length > 0);
+            Assert.IsTrue(File.Exists(newvcf) && new FileInfo(newvcf).Length > 0);
         }
 
         #endregion GATK tests
@@ -351,6 +354,7 @@ namespace Test
             string script_name = Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "cufflinksRun.bash");
             WrapperUtility.GenerateAndRunScript(script_name, CufflinksWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Environment.ProcessorCount,
                 bamPath,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
@@ -444,6 +448,7 @@ namespace Test
             var snpeff = new SnpEffWrapper();
             snpeff.DownloadSnpEffDatabase(
                 TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 "grch37");
             Assert.IsTrue(File.Exists(snpeff.DatabaseListPath));
             string[] databases = Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "snpEff", "data"));

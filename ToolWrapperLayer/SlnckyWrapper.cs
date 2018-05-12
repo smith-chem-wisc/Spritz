@@ -27,8 +27,6 @@ namespace ToolWrapperLayer
 
         public static string OrthologsSuffix { get; } = ".orthologs.txt";
 
-        #region Installation Methods
-
         /// <summary>
         /// Writes an installation script for slncky.
         /// </summary>
@@ -36,10 +34,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installSlncky.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallSlncky.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "git clone https://github.com/slncky/slncky.git",
                 "cd slncky",
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
@@ -59,10 +57,6 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
-        #region Public Methods
-
         /// <summary>
         /// Annotate predicted transcripts
         /// </summary>
@@ -74,7 +68,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> Annotate(string spritzDirectory, string analysisDirectory, int threads, string predictedGeneModelGtfPath, string reference, string slnckyOutPrefix)
         {
-            string sortedBed12Cuffmerge = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, predictedGeneModelGtfPath);
+            string sortedBed12Cuffmerge = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, analysisDirectory, predictedGeneModelGtfPath);
             string ucscCuffmergeBedPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(spritzDirectory, reference, sortedBed12Cuffmerge);
             Directory.CreateDirectory(Path.GetDirectoryName(slnckyOutPrefix));
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";
@@ -90,7 +84,5 @@ namespace ToolWrapperLayer
                 "; fi"
             };
         }
-
-        #endregion Public Methods
     }
 }

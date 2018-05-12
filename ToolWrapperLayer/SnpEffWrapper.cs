@@ -32,10 +32,10 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installSnpEff.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallSnpEff.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d SnpEff ]; then git clone --depth=1 https://github.com/smith-chem-wisc/SnpEff; fi",
                 "if [ ! -f SnpEff/snpEff.jar ]; then",
                 "  cd SnpEff",
@@ -75,7 +75,7 @@ namespace ToolWrapperLayer
             string scriptPath = Path.Combine(spritzDirectory, "scripts", "snpEffAnnotation.bash");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
                     " -fastaProt " + WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath) +
                     " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
@@ -98,7 +98,7 @@ namespace ToolWrapperLayer
         }
 
         // see here for how to generate them from scratch: http://lab.loman.net/2012/11/16/how-to-get-snpeff-working-with-bacterial-genomes-from-ncbi/
-        public void DownloadSnpEffDatabase(string spritzDirectory, string reference)
+        public void DownloadSnpEffDatabase(string spritzDirectory, string analysisDirectory, string reference)
         {
             DatabaseListPath = Path.Combine(spritzDirectory, "snpEffDatabases.txt");
 
@@ -111,10 +111,10 @@ namespace ToolWrapperLayer
                 return;
 
             // download database list
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "snpEffDatabaseDownload.bash");
+            string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffDatabaseDownloadList.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Downloading list of SnpEff references\"",
                 SnpEff() + " databases > " + WrapperUtility.ConvertWindowsPath(DatabaseListPath),
                 WrapperUtility.EnsureClosedFileCommands(DatabaseListPath)
@@ -133,9 +133,10 @@ namespace ToolWrapperLayer
             string snpeffReference = databases.FirstOrDefault(d => d.StartsWith(reference, true, CultureInfo.InvariantCulture));
 
             // download database
+            scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffDatabaseDownload.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Downloading " + snpeffReference + " snpEff reference\"",
                 SnpEff() + " download " + snpeffReference,
                 "echo \"\n# " + snpeffReference + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "snpEff", "snpEff.config")),

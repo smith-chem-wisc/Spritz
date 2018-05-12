@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
@@ -137,6 +138,7 @@ namespace WorkflowLayer
             List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(spritzDirectory)).ToList();
 
             // run scripts in background
+            commands.Add(WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory).Replace("cd", "mkdir"));
             for (int i = 0; i < parallelScripts.Count; i++)
             {
                 commands.Add("echo \"Running " + parallelScripts[i] + " in the background.\"");

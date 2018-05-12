@@ -14,8 +14,9 @@ namespace CMD
                 " (2) " + SampleSpecificProteinDBFlow.Command +
                 " (3) " + LncRNADiscoveryFlow.Command +
                 " (4) " + TranscriptQuantificationFlow.Command +
-                " (5) strandedness" +
-                " (6) starFusionTest")]
+                " (5) " + TransferModificationsFlow.Command +
+                " (6) strandedness" +
+                " (7) starFusionTest")]
         public string Command { get; set; }
 
         [Option('b', "spritzDirectory", Required = false, HelpText = "Bin directory for Spritz")]

@@ -57,7 +57,7 @@ namespace WorkflowLayer
             alignment.PerformTwoPassAlignment();
             Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
-            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, filteredGeneModelForScalpel);
+            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
             GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
 
             // Merge new and reference gene models, if a new one is specified
@@ -67,6 +67,7 @@ namespace WorkflowLayer
             VariantCallingFlow variantCalling = new VariantCallingFlow();
             variantCalling.CallVariants(
                 Parameters.SpritzDirectory,
+                Parameters.AnalysisDirectory,
                 Parameters.Reference, 
                 Parameters.Threads, 
                 sortedBed12Path, 
@@ -75,17 +76,8 @@ namespace WorkflowLayer
                 Downloads.ReorderedFastaPath);
 
             // Transfer features from UniProt
-            Loaders.LoadElements(Path.Combine(Parameters.SpritzDirectory, "elements.dat"));
-            var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(Parameters.SpritzDirectory, "PSI-MOD.obo.xml"));
-            var uniprotPtms = Loaders.LoadUniprot(Path.Combine(Parameters.SpritzDirectory, "ptmlist.txt"), Loaders.GetFormalChargesDictionary(psiModDeserialized)).ToList();
-            if (!File.Exists(Parameters.UniProtXmlPath)) { return; }
-            var uniprot = ProteinDbLoader.LoadProteinXML(Parameters.UniProtXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out Dictionary<string, Modification> un);
-            foreach (var xml in variantCalling.CombinedAnnotatedProteinXmlPaths)
-            {
-                string outxml = Path.Combine(Path.GetDirectoryName(xml), Path.GetFileNameWithoutExtension(xml) + ".withmods.xml");
-                var newProts = ProteinAnnotation.TransferModifications(uniprot, ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, new List<string>(), out un));
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), newProts, outxml);
-            }
+            TransferModificationsFlow transfer = new TransferModificationsFlow();
+            transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths);
         }
 
         /// <summary>
