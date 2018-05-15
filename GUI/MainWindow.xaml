@@ -10,8 +10,10 @@
         Loaded="Window_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
-            <MenuItem Header="Help" Click="MenuItem_Help_Click"/>
-            <MenuItem Header="Contact" Click="MenuItem_Contact_Click" />
+            <MenuItem Header="Help">
+                <MenuItem Header="Open Wiki Page" Click="MenuItem_Wiki_Click"/>
+                <MenuItem Header="Contact" Click="MenuItem_Contact_Click" />
+            </MenuItem>
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -152,6 +154,7 @@
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="BtnSTARAlignment" Content="STAR Alignment" Click="BtnSTARAlignment_Click"/>
                             <Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />
                             <Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>
                         </StackPanel>
