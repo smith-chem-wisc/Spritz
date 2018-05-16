@@ -44,10 +44,12 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "wget https://github.com/deweylab/RSEM/archive/v1.3.0.tar.gz",
-                "tar -xvf v1.3.0.tar.gz",
-                "cd RSEM-1.3.0",
-                "make",
+                "if [ ! -d RSEM-1.3.0 ]; then",
+                "  wget https://github.com/deweylab/RSEM/archive/v1.3.0.tar.gz",
+                "  tar -xvf v1.3.0.tar.gz; rm v1.3.0.tar.gz",
+                "  cd RSEM-1.3.0",
+                "  make",
+                "fi"
             });
             return scriptPath;
         }

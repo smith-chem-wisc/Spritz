@@ -74,15 +74,19 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "git clone https://github.com/lh3/seqtk.git",
-                "cd seqtk; make",
-                "cd ..",
+                "if [ ! -d seqtk ]; then ",
+                "  git clone https://github.com/lh3/seqtk.git",
+                "  cd seqtk; make",
+                "fi",
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d STAR ]; then ",
                 "  git clone https://github.com/alexdobin/STAR.git",
                 "  cd STAR/source",
                 "  make STAR",
-                "  cd ..",
-                "  export PATH=$PATH:" + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "STAR", "source")),
+                "  cp STAR /usr/local/bin",
+                "  make clean",
+                "  make STARlong",
+                "  cp STARlong /usr/local/bin",
                 "fi"
             });
             return scriptPath;
@@ -95,7 +99,13 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteRemoveScript(string spritzDirectory)
         {
-            return null;
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "RemoveStar.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "rm -rf seqtk STAR /usr/local/bin/STAR /usr/local/bin/STARlong",
+            });
+            return scriptPath;
         }
 
         #region Genome Index Methods
@@ -152,11 +162,9 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> RemoveGenome(string spritzDirectory, string genomeDir)
         {
-            string script_name = Path.Combine(spritzDirectory, "scripts", "removeGenome.bash");
             return new List<string>
             {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() + " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir)
+                "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() + " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir)
             };
         }
 
@@ -246,8 +254,8 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " ) ]]; then STAR/source/STAR" + arguments + "; fi",
-                File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fileToCheck) + " ) ]]; then STAR" + arguments + "; fi",
+                File.Exists(outprefix + BamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ? "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() : ""
             };
         }
 
@@ -281,12 +289,23 @@ namespace ToolWrapperLayer
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
-                " --chimSegmentMin 12" +
-                " --chimJunctionOverhangMin 12" +
+
+                // chimeric junction settings
+                //" --chimSegmentMin 12" +
+                //" --chimJunctionOverhangMin 12" +
+                //" --alignSJDBoverhangMin 10" +
+                //" --alignMatesGapMax 100000" +
+                //" --alignIntronMax 100000" +
+                //" --chimSegmentReadGapMax 3" +
+                //" --alignSJstitchMismatchNmax 5 -1 5 5" +
+
+                // stringtie parameters
                 " --outSAMstrandField intronMotif" + // adds XS tag to all alignments that contain a splice junction
                 " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
+
+                // gatk parameters
                 " --outSAMattrRGline ID:1 PU:platform  PL:illumina SM:sample LB:library" + // this could shorten the time for samples that aren't multiplexed in preprocessing for GATK
-                " --outSAMmapqUnique 60" + // this could be used to ensure compatibility with GATK without having to use the GATK hacks
+                " --outSAMmapqUnique 60" + // this is used to ensure compatibility with GATK without having to use the GATK hacks
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command; // note in the future, two sets of reads can be comma separated here, and the RGline can also be comma separated to distinguish them later
 
@@ -302,18 +321,19 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
 
-                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
-                "  STAR/source/STAR" + alignmentArguments,
+                overwriteStarAlignment ? "" :
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
+                    "  STAR" + alignmentArguments,
                 overwriteStarAlignment ? "" : "fi",
                 SamtoolsWrapper.IndexBamCommand(spritzDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
-                "  STAR/source/STAR" + dedupArguments,
+                    "  STAR" + dedupArguments,
                 overwriteStarAlignment ? "" : "fi",
                 SamtoolsWrapper.IndexBamCommand(spritzDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
 
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
-                    "STAR/source/STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
+                    "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
                     "",
             };
         }
@@ -349,11 +369,11 @@ namespace ToolWrapperLayer
         /// <summary>
         /// Gets the Windows-formatted path to the STAR executable
         /// </summary>
-        /// <param name="binDirectory"></param>
+        /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public static string GetStarDirectoryPath(string binDirectory)
+        public static string GetStarDirectoryPath(string spritzDirectory)
         {
-            return Path.Combine(binDirectory, "STAR", "source");
+            return Path.Combine(spritzDirectory, "Tools", "STAR", "source");
         }
 
         #endregion Public Methods

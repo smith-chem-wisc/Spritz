@@ -111,7 +111,11 @@ namespace Test
         public void FilterTest()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"));
-            EnsemblDownloadsWrapper.FilterGeneModel(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.gtf"), genome, out string filtered);
+            EnsemblDownloadsWrapper.FilterGeneModel(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.gtf"), 
+                genome, 
+                out string filtered);
             string[] filteredlines = File.ReadAllLines(filtered);
             foreach (string a in filteredlines)
             {

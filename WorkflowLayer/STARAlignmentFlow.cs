@@ -69,14 +69,14 @@ namespace WorkflowLayer
             string reorderedFasta, string geneModelGtfOrGff)
         {
             // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "genomeGenerate.bash"),
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "genomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(spritzDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
                 .WaitForExit();
 
             STARWrapper.SubsetFastqs(spritzDirectory, analysisDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
 
             string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "alignSubset.bash"),
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "alignSubset.bash"),
                 STARWrapper.BasicAlignReadCommands(spritzDirectory, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
                 .WaitForExit();
             BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
@@ -108,16 +108,6 @@ namespace WorkflowLayer
                 }
             }
             return threads;
-        }
-        
-        /// <summary>
-        /// Run this workflow (for GUI)
-        /// </summary>
-        /// <param name="parameters"></param>
-        protected override void RunSpecific(ISpritzParameters parameters)
-        {
-            Parameters = (STARAlignmentParameters)parameters;
-            PerformTwoPassAlignment();
         }
 
         /// <summary>
@@ -188,6 +178,16 @@ namespace WorkflowLayer
             }
             alignmentCommands.AddRange(STARWrapper.RemoveGenome(Parameters.SpritzDirectory, SecondPassGenomeDirectory));
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "AlignReads.bash"), alignmentCommands).WaitForExit();
+        }
+
+        /// <summary>
+        /// Run this workflow (for GUI)
+        /// </summary>
+        /// <param name="parameters"></param>
+        protected override void RunSpecific(ISpritzParameters parameters)
+        {
+            Parameters = (STARAlignmentParameters)parameters;
+            PerformTwoPassAlignment();
         }
 
         private void Clear()

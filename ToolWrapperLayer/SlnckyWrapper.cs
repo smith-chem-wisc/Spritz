@@ -38,7 +38,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "git clone https://github.com/slncky/slncky.git",
+                "if [ ! -d slncky ]; then git clone https://github.com/slncky/slncky.git; fi",
                 "cd slncky",
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
                 "if [ ! -d annotations ]; then tar -xvf annotations.tar.gz; fi",

@@ -151,8 +151,7 @@ namespace ToolWrapperLayer
             if (!downloadGrch37 && !downloadGrch38)
                 return;
 
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "downloadEnsemblReference.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(targetDirectory, "DownloadEnsemblReference.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
                 "if [ ! -f " + Path.GetFileName(GenomeFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38PrimaryAssemblyUrl : GRCh37PrimaryAssemblyUrl) + "; fi",
@@ -288,11 +287,11 @@ namespace ToolWrapperLayer
             SelenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);
         }
 
-        public static void FilterGeneModel(string spritzDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
+        public static void FilterGeneModel(string analysisDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
         {
             string grepQuery = "\"^" + String.Join(@"\|^", genome.Chromosomes.Select(c => c.FriendlyName).Concat(new[] { "#" }).ToList()) + "\"";
             filteredGeneModel = Path.Combine(Path.GetDirectoryName(geneModelGtfOrGff), Path.GetFileNameWithoutExtension(geneModelGtfOrGff)) + ".filtered" + Path.GetExtension(geneModelGtfOrGff);
-            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "FilterGeneModel.bash"), new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "FilterGeneModel.bash"), new List<string>
             {
                 "grep " + grepQuery + " " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) + " > " + WrapperUtility.ConvertWindowsPath(filteredGeneModel)
             }).WaitForExit();

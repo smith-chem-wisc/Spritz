@@ -22,58 +22,63 @@ namespace Test
             ManageToolsFlow.Install(TestContext.CurrentContext.TestDirectory);
 
             // bedops
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedops")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "bedops")));
 
             // bedtools
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "bedtools2", "bin", "bedtools")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "bedtools2", "bin", "bedtools")));
 
             // cufflinks
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "cufflinks-2.2.1")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "cufflinks-2.2.1")));
 
             // gatk
-            Assert.IsTrue(Directory.GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "gatk"), "gatk*local.jar").Length > 0);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "ChromosomeMappings")));
+            Assert.IsTrue(Directory.GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "gatk"), "gatk*local.jar").Length > 0);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "ChromosomeMappings")));
 
             // hisat2
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "hisat2-2.1.0", "hisat2")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "hisat2-2.1.0", "hisat2")));
 
             // mfold
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "mfold-3.6", "scripts", "mfold")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "mfold-3.6", "scripts", "mfold")));
 
             // rsem
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSEM-1.3.0", "rsem-prepare-reference")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSEM-1.3.0", "rsem-calculate-expression")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSEM-1.3.0", "rsem-prepare-reference")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSEM-1.3.0", "rsem-calculate-expression")));
 
             // rseqc
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "RSeQC-2.6.4")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSeQC-2.6.4")));
 
             // samtools
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "samtools-1.6", "samtools")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "samtools-1.6", "samtools")));
 
             // scalpel
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "scalpel-0.5.3")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "scalpel-0.5.3")));
 
             // skewer
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "skewer-0.2.2")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "BBMap")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "skewer-0.2.2")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "BBMap")));
 
             // slncky
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "slncky", "annotations")));
-            Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "lastz*").Length > 0);
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "slncky")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "slncky", "annotations")));
+            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "lastz*").Length > 0);
 
             // snpeff
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "SnpEff", "snpEff.jar")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "SnpEff", "snpEff.jar")));
 
             // sratoolkit
-            Assert.IsTrue(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "sratoolkit*").Length > 0);
-            Assert.IsTrue(Directory.GetFiles(Directory.GetDirectories(Directory.GetDirectories(TestContext.CurrentContext.TestDirectory, "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0);
+            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "sratoolkit*").Length > 0);
+            Assert.IsTrue(Directory.GetFiles(
+                Directory.GetDirectories(
+                    Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0);
 
             // star
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "STAR")));
 
             // star-fusion
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "STAR-Fusion_v1.1.0")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "STAR-Fusion-v1.4.0", "STAR-Fusion")));
+
+            // trinity
+            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "trinity*").Length > 0);
         }
 
         private string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa");

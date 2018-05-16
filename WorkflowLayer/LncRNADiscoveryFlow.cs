@@ -14,7 +14,7 @@ namespace WorkflowLayer
         {
         }
 
-        public LncRNADiscoveryParameters Parameters { get; set; }
+        public LncRNADiscoveryParameters Parameters { get; set; } = new LncRNADiscoveryParameters();
         public string SlnckyOutPrefix { get; private set; }
         public string MergedGtfPath { get; private set; }
         public List<string> RsemOutPrefixes { get; private set; } = new List<string>();
@@ -47,7 +47,7 @@ namespace WorkflowLayer
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
-            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
+            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, filteredGeneModelForScalpel, Parameters.GenomeFasta);
 
             // Transcript Reconstruction

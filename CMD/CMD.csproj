@@ -36,17 +36,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Bio.Core, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Bio.Desktop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Desktop.dll</HintPath>
-    </Reference>
-    <Reference Include="Bio.Platform.Helpers, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Platform.Helpers.dll</HintPath>
-    </Reference>
-    <Reference Include="Bio.VCF, Version=0.0.55.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Bio.VCF.ajc.0.0.55\lib\net461\Bio.VCF.dll</HintPath>
+    <Reference Include="Bio.VCF.ajc, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Bio.VCF.ajc.0.0.56\lib\net471\Bio.VCF.ajc.dll</HintPath>
     </Reference>
     <Reference Include="Chemistry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\Chemistry.dll</HintPath>
@@ -149,10 +140,6 @@
     <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">
       <Project>{7f0b5697-1bbb-4ff5-9bf2-434f0a9c2c60}</Project>
       <Name>ToolWrapperLayer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Proteogenomics\Proteogenomics.csproj">
-      <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
-      <Name>Proteogenomics</Name>
     </ProjectReference>
     <ProjectReference Include="..\WorkflowLayer\WorkflowLayer.csproj">
       <Project>{3f662a6d-c8c6-466e-a8f3-8bed397cb5f8}</Project>

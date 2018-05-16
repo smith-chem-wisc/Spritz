@@ -46,6 +46,9 @@ namespace CMD
         [Option('g', "geneModelGtfOrGff", Required = false, HelpText = "Gene model, either GTF, GFF2, or GFF3 (default = downloaded from Ensembl based on reference)")]
         public string GeneModelGtfOrGff { get; set; }
 
+        [Option('h', "newGeneModelGtfOrGff", Required = false, HelpText = "Alternate gene model with possibly new transcripts.")]
+        public string NewGeneModelGtfOrGff { get; set; }
+
         [Option('v', "dbsnpVcfReference", Required = false, HelpText = "VCF reference file from dbSNP")]
         public string ReferenceVcf { get; set; }
 

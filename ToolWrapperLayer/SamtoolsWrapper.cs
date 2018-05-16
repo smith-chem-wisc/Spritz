@@ -11,6 +11,9 @@ namespace ToolWrapperLayer
     public class SamtoolsWrapper :
         IInstallable
     {
+
+        public string SamtoolsVersion { get; set; } = "1.8";
+
         #region Installation Methods
 
         /// <summary>
@@ -24,22 +27,16 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d samtools-1.6 ]; then",
-                "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-1.6.tar.bz2",
-                "  tar -jxvf samtools-1.6.tar.bz2",
-                "  rm samtools-1.6.tar.bz2",
-                "  cd samtools-1.6",
+                "if [ ! -d samtools-" + SamtoolsVersion + " ]; then",
+                "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-" + SamtoolsVersion + ".tar.bz2",
+                "  tar -jxvf samtools-" + SamtoolsVersion + ".tar.bz2",
+                "  rm samtools-" + SamtoolsVersion + ".tar.bz2",
+                "  cd samtools-" + SamtoolsVersion + "/htslib-" + SamtoolsVersion,
                 "  ./configure", // configures install to /usr/local/bin and /usr/local/share
                 "  make",
                 "  make install",
-                "fi",
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d htslib-1.8 ]; then",
-                "  wget --no-check https://github.com/samtools/htslib/releases/download/1.8/htslib-1.8.tar.bz2",
-                "  tar -jxvf htslib-1.8.tar.bz2",
-                "  rm htslib-1.8.tar.bz2",
-                "  cd htslib-1.8",
-                "  ./configure", // configures install to /usr/local/bin and /usr/local/share
+                "  cd ..",
+                "  ./configure",
                 "  make",
                 "  make install",
                 "fi",

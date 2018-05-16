@@ -22,7 +22,7 @@ namespace WorkflowLayer
         public string SpritzDirectory { get; }
         public string AnalysisDirectory { get; }
         public string ReferenceFastaPath { get; }
-        public int Threads { get; }
+        public int Threads { get; } = 1;
         public string GeneModelPath { get; }
         public RSEMAlignerOption Aligner { get; }
         public Strandedness Strandedness { get; }
