@@ -178,8 +178,8 @@ namespace ToolWrapperLayer
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
                 .Select(line => line.Split('\t'))
                 .Where(x => x.Length > 1)
                 .ToDictionary(line => line[0], line => line[1]);
@@ -197,8 +197,8 @@ namespace ToolWrapperLayer
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
                 .Select(line => line.Split('\t'))
                 .Where(x => x.Length > 1)
                 .ToDictionary(line => line[0], line => line[1]);

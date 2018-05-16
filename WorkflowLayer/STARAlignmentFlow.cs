@@ -124,7 +124,8 @@ namespace WorkflowLayer
                 bool localStrandSpecific = Parameters.StrandSpecific;
                 if (Parameters.InferStrandSpecificity || Parameters.UseReadSubset)
                 {
-                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, fqForAlignment, Parameters.ReadSubset, Parameters.AnalysisDirectory, out string[] subsetFastqs);
+                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, fqForAlignment, 
+                        Parameters.ReadSubset, Parameters.AnalysisDirectory, out string[] subsetFastqs);
                     if (Parameters.UseReadSubset)
                     {
                         fqForAlignment = subsetFastqs;

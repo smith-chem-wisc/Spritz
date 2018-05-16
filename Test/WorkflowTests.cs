@@ -74,7 +74,6 @@ namespace Test
             flow.Parameters.GenomeFasta = genomeFastaPath;
             flow.Parameters.ProteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
             flow.Parameters.GeneModelGtfOrGff = geneModelPath;
-            flow.Parameters.UseReadSubset = true;
             flow.LncRNADiscoveryFromFastqs();
 
             Assert.IsTrue(File.Exists(flow.MergedGtfPath));

@@ -58,7 +58,7 @@ namespace ToolWrapperLayer
         public void Fetch(string spritzDirectory, string analysisDirectory, string sraAccession)
         {
             LogPath = Path.Combine(analysisDirectory, sraAccession + "download.log");
-            FastqPaths = Directory.GetFiles(analysisDirectory, sraAccession + "*.fastq");
+            FastqPaths = new[] { sraAccession + "_1.fastq", sraAccession + "_2.fastq"}.Select(f => Path.Combine(analysisDirectory, f)).Where(f => File.Exists(f)).ToArray();
             if (FastqPaths.Length > 0) // already downloaded
             {
                 FastqPaths = FastqPaths.Where(x => x != null && !x.Contains("trimmed") && x.EndsWith(".fastq")).ToArray();
