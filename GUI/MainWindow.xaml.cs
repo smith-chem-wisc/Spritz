@@ -66,6 +66,7 @@ namespace SpritzGUI
                     dataGridGeneSet.Items.Refresh();
                     dataGridRnaSeqFastq.Items.Refresh();
                 }
+            UpdateOutputFolderTextbox();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -121,9 +122,10 @@ namespace SpritzGUI
                 dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].spritzWorkflow.WorkflowType.ToString(), staticTasksObservableCollection[i].spritzWorkflow));
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzFlow>(b.DisplayName, b.workflow)).ToList(), genomeFastaCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), geneSetCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), rnaSeqFastqCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), OutputFolderTextBox.Text);
-            var t = new Task(a.Run);
-            t.Start();
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzFlow>(b.DisplayName, b.workflow)).ToList(), OutputFolderTextBox.Text);
+            a.Run();
+            //var t = new Task(a.Run);
+            //t.Start();
         }
 
         private void DataGridCell_MouseDoubleClick(object sender, MouseButtonEventArgs e)

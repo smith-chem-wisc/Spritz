@@ -9,18 +9,11 @@ namespace WorkflowLayer
     {
         private readonly List<Tuple<string, SpritzFlow>> taskList;
         private string outputFolder;
-        private List<string> currentRnaSeqFilenameList;
-        private List<string> currentGenomeFilenameList;
-        private List<string> currentGeneSetFilenameList;
 
-        public EverythingRunnerEngine(List<Tuple<string, SpritzFlow>> taskList, List<string> startingGenomeFilenameList, List<string> startingGeneSetFilenameList, List<string> startingRnaSeqFilenameList, string outputFolder)
+        public EverythingRunnerEngine(List<Tuple<string, SpritzFlow>> taskList, string outputFolder)
         {
             this.taskList = taskList;
             this.outputFolder = outputFolder;
-
-            currentGenomeFilenameList = startingGenomeFilenameList;
-            currentGeneSetFilenameList = startingGeneSetFilenameList;
-            currentRnaSeqFilenameList = startingRnaSeqFilenameList;
         }
 
         public static event EventHandler<StringListEventArgs> NewRnaSeqFastqHandler;
@@ -31,12 +24,18 @@ namespace WorkflowLayer
 
             outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
-            //Used for test
+#if DEBUG
             var writtenFile = Path.Combine(outputFolder, "test.txt");
+
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("What a day!");
             }
+
+#endif
 
             for (int i = 0; i < taskList.Count; i++)
             {
@@ -47,15 +46,11 @@ namespace WorkflowLayer
                 if (!Directory.Exists(outputFolderForThisTask))
                 {
                     Directory.CreateDirectory(outputFolderForThisTask);
-                }
+                }                
 
-                //ok.Item2.RunTask(outputFolderForThisTask, currentGenomeFilenameList, currentGeneSetFilenameList, currentRnaSeqFilenameList, ok.Item1);
+                ok.Item2.RunTask(outputFolderForThisTask, ok.Item2.SpritzParameters ,ok.Item1);
             }
         }
 
-        private void NewRnaSeqFastq(List<string> newRnaSeqFastq)
-        {
-            NewRnaSeqFastqHandler?.Invoke(this, new StringListEventArgs(newRnaSeqFastq));
-        }
     }
 }

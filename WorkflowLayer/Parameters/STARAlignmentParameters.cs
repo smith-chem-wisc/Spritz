@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace WorkflowLayer
 {
@@ -23,6 +24,21 @@ namespace WorkflowLayer
             GeneModelGtfOrGff = geneModelGtfOrGff;
             UseReadSubset = useReadSubset;
             ReadSubset = readSubset;
+        }
+
+        public STARAlignmentParameters()
+        {
+            AnalysisDirectory = Path.Combine("AnalysisDirectory");
+            Reference = null;
+            Threads = 12;
+            StrandSpecific = false;
+            InferStrandSpecificity = false;
+            OverWriteStarAlignment = false;
+            GenomeStarIndexDirectory = Path.Combine("GenomeStarIndex");
+            ReorderedFasta = Path.Combine("ReorderedFasta");
+            EnsemblKnownSitesPath = Path.Combine("EnsemblKnownSites");
+            UseReadSubset = false;
+            ReadSubset = 300000;
         }
 
         public string SpritzDirectory { get; set; }
