@@ -345,7 +345,7 @@ namespace Test
             var gatk = new GATKWrapper();
             var newvcf = gatk.ConvertVCFChromosomesUCSC2Ensembl(
                 TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1Ucsc.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr1Ucsc.vcf"),
                 "grch37");
             Assert.IsTrue(File.Exists(newvcf) && new FileInfo(newvcf).Length > 0);
         }
@@ -399,30 +399,32 @@ namespace Test
 
         #region Slncky tests
 
-        [Test, Order(5)]
-        public void SlnckyRun()
-        {
-            string cufflinksTranscripts = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.cufflinksOutput", CufflinksWrapper.TranscriptsFilename);
-            string slnckyOutPrefix = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "cuffmergeModel848835768.slnckyOut", "annotated"); // strange folder, so that it covers the same test as the lncRNAdiscovery run
-            string scriptName = Path.Combine(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "SlnckyRun.bash"));
-            WrapperUtility.GenerateAndRunScript(scriptName, 
-                SlnckyWrapper.Annotate(
-                    TestContext.CurrentContext.TestDirectory,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                    Environment.ProcessorCount,
-                    cufflinksTranscripts,
-                    "GRCh37",
-                    slnckyOutPrefix
-                )).WaitForExit();
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.FilteredInfoSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.LncsBedSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.LncsInfoSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrthologsSuffix));
-            Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
-        }
+        // covered by lncRNAdiscovery workflow test
+
+        //[Test, Order(5)]
+        //public void SlnckyRun()
+        //{
+        //    string cufflinksTranscripts = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.cufflinksOutput", CufflinksWrapper.TranscriptsFilename);
+        //    string slnckyOutPrefix = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "cuffmergeModel848835768.slnckyOut", "annotated"); // strange folder, so that it covers the same test as the lncRNAdiscovery run
+        //    string scriptName = Path.Combine(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "SlnckyRun.bash"));
+        //    WrapperUtility.GenerateAndRunScript(scriptName, 
+        //        SlnckyWrapper.Annotate(
+        //            TestContext.CurrentContext.TestDirectory,
+        //            Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+        //            Environment.ProcessorCount,
+        //            cufflinksTranscripts,
+        //            "GRCh37",
+        //            slnckyOutPrefix
+        //        )).WaitForExit();
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.FilteredInfoSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.LncsBedSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.LncsInfoSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrthologsSuffix));
+        //    Assert.IsTrue(File.Exists(slnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
+        //}
 
         #endregion Slncky tests
 
@@ -826,8 +828,8 @@ namespace Test
                 Strandedness.None,
                 new[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "SRR6319804_1-trimmed-pair1.segment.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "SRR6319804_1-trimmed-pair2.segment.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR6319804", "SRR6319804_1.segment-trimmed-pair1.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR6319804", "SRR6319804_1.segment-trimmed-pair2.fastq"),
                 },
                 true);
             quantification.QuantifyTranscripts();
