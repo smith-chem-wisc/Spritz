@@ -27,7 +27,7 @@ namespace WorkflowLayer
         {
             new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, analysisDirectory, reference);
             List<string> variantCallingCommands = new List<string>();
-            string scriptName = Path.Combine(spritzDirectory, "scripts", "variantCalling.bash");
+            string scriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "VariantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)
             {
                 // GATK
@@ -51,7 +51,7 @@ namespace WorkflowLayer
                 CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
                 CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
                 var snpEff = new SnpEffWrapper();
-                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.SortedVcfPath));
+                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.SortedVcfPath));
                 CombinedAnnotatedVcfFilePaths.Add(snpEff.AnnotatedVcfPath);
                 CombinedSnpEffHtmlFilePaths.Add(snpEff.HtmlReportPath);
                 CombinedAnnotatedProteinFastaPaths.Add(snpEff.VariantProteinFastaPath);

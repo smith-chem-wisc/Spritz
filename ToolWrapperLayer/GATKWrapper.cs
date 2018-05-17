@@ -80,7 +80,7 @@ namespace ToolWrapperLayer
             string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -f gatk/build/libs/gatk.jar ]; then",
                 "  git clone https://github.com/broadinstitute/gatk.git",
                 "  cd gatk",
@@ -385,7 +385,7 @@ namespace ToolWrapperLayer
         /// <param name="reference"></param>
         /// <param name="newBam"></param>
         /// <param name="convertToUCSC"></param>
-        public List<string> PrepareBamAndFasta(string spritzDirectory, int threads, string bam, string genomeFasta, string reference)
+        public List<string> PrepareBamAndFasta(string spritzDirectory, string analysisDirectory, int threads, string bam, string genomeFasta, string reference)
         {
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
             string readGroupedCheckfile = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerReadGrouped");
@@ -396,7 +396,7 @@ namespace ToolWrapperLayer
 
             string tmpDir = Path.Combine(spritzDirectory, "tmp");
             Directory.CreateDirectory(tmpDir);
-            string scriptName2 = Path.Combine(spritzDirectory, "scripts", "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
+            string scriptName2 = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
             List<string> commands = new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -557,53 +557,3 @@ namespace ToolWrapperLayer
         #endregion Private Methods
     }
 }
-
-// from PrepareBam originally
-// check if sorted and grouped and rename chromosomes
-//newBam = bam;
-//string ucscBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".UCSC.bam");
-//if (convertToUCSC && !File.Exists(ucscBam))
-//{
-//    newBam = ucscBam;
-//    Dictionary<string, string> chromMappings = EnsemblDownloadsWrapper.Ensembl2UCSCChromosomeMappings(spritzDirectory, reference);
-
-//    // future speedup: could check BAM header to only convert the chroms that are there
-//    // future speedup: divide up amongst ProcessorCount # of python scripts and pipe them together
-//    using (StreamWriter writer = new StreamWriter(Path.Combine(spritzDirectory, "scripts", "convertChromNamesOnTheFly.py")))
-//    {
-//        writer.Write("import sys\n");
-//        writer.Write("for line in sys.stdin:\n");
-//        writer.Write("  new = line\n");
-//        foreach (var a in chromMappings.Where(x => x.Key.Length > 2 && x.Value.Length > 0)) // anything longer than MT is one of the weird contigs
-//        {
-//            writer.Write("  new = new.replace(\"chr" + a.Key + "\", \"" + a.Value + "\")\n");
-//        }
-//        writer.Write("  sys.stdout.write(new)\n");
-//    }
-
-//    // reheader genomeFasta with UCSC chromsome names; remove the ones that aren't in the UCSC universe
-//    Genome ucscGenome = new Genome(genomeFasta);
-//    ucscGenome.Chromosomes = ucscGenome.Chromosomes
-//        .Where(x => chromMappings.TryGetValue(getISequenceHeaderSequenceName.Match(x.ID).Groups[1].Value, out string chr) && chr.Length > 0).ToList();
-//    foreach (ISequence chrom in ucscGenome.Chromosomes)
-//    {
-//        string sequenceName = getISequenceHeaderSequenceName.Match(chrom.ID).Groups[1].Value;
-//        if (chromMappings.TryGetValue(sequenceName, out string chr))
-//        {
-//            chrom.ID = getISequenceHeaderSequenceName.Replace(chrom.ID, m => chr + m.Groups[2]);
-//        }
-//    }
-
-//    ucscGenomeFasta = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".UCSC.fa");
-//    Genome.WriteFasta(ucscGenome.KaryotypicOrder(), ucscGenomeFasta);
-//}
-
-//// sort
-//"if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(sortedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(sortedBam) + " ) && " +
-//    " ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ) && " +
-//    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) && " +
-//    " ( ! -f " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(splitTrimBam) + " ) && " +
-//    " ( ! -f " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mapQReassigned) + " ) ]]; then " +
-//    "samtools sort -f -@ " + Environment.ProcessorCount.ToString() + " -m " + Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue()) + "M " +
-//        WrapperUtility.ConvertWindowsPath(bam) + " " + WrapperUtility.ConvertWindowsPath(sortedBam) +
-//        "; fi",

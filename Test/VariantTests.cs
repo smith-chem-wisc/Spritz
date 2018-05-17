@@ -17,7 +17,7 @@ namespace Test
         public void OneTranscriptOneHomozygous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_homozygous_missense.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr_1_one_homozygous_missense.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -45,7 +45,7 @@ namespace Test
         public void OneTranscriptOneHeterozygous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_heterozygous_missense.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr_1_one_heterozygous_missense.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -73,7 +73,7 @@ namespace Test
         public void OneTranscriptOneHeterozygousSynonymous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_heterozygous_synonymous.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr_1_one_heterozygous_synonymous.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -89,7 +89,7 @@ namespace Test
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains(GenotypeType.HETEROZYGOUS.ToString()))); // synonymous
             Assert.IsTrue(proteins.Any(p => p.FullName.Contains("1:69666")));
 
-            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_heterozygous_synonymous.fasta");
+            string proteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr_1_one_heterozygous_synonymous.fasta");
             ProteinDbWriter.WriteFastaDatabase(proteins, proteinFasta, " ");
             string[] proteinFastaLines = File.ReadLines(proteinFasta).ToArray();
             Assert.IsTrue(proteinFastaLines[0].Contains(FunctionalClass.SILENT.ToString())); // synonymous
@@ -100,7 +100,7 @@ namespace Test
         public void OneTranscriptOneHomozygousSynonymous()
         {
             Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"));
-            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TestVcfs", "chr_1_one_homozygous_synonymous.vcf"));
+            VCFParser vcf = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr_1_one_homozygous_synonymous.vcf"));
             List<Variant> variants = vcf.Select(x => new Variant(null, x, genome)).ToList();
             Assert.AreEqual(1, variants.Count);
 
@@ -127,7 +127,7 @@ namespace Test
         [Test]
         public void ProblematicChr19Gene()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr19script.bash"), new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "chr19script.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
                 "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
@@ -143,7 +143,7 @@ namespace Test
         [Test]
         public void Chr19VariantTranscript()
         {
-            WrapperUtility.GenerateAndRunScript(Path.Combine(TestContext.CurrentContext.TestDirectory, "scripts", "chr19script.bash"), new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "chr19script.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
                 "if [ ! -f Homo_sapiens.GRCh38.dna.chromosome.19.fa ]; then wget ftp://ftp.ensembl.org/pub/release-91/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz; fi",
@@ -158,15 +158,6 @@ namespace Test
             List <Transcript> transcripts = geneModel.ApplyVariants(variants).ToList();
             List<Protein> proteins = transcripts.Select(t => t.Protein(null)).ToList();
             int i = 0;
-        }
-
-        [Test, Order(3)]
-        public void ThereShouldBeUTRs()
-        {
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"));
-            GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "UtrProblem", "gene.gtf"));
-            geneModel.ApplyVariants(new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "UtrProblem", "vcf.vcf")).Select(v => new Variant(null, v, genome.Chromosomes[0])).ToList());
-            Assert.IsTrue(geneModel.Genes[0].Transcripts[0].UTRs.Count > 0);
         }
 
         // test todo: transcript with zero CodingSequenceExons and try to translate them to check that it doesn fail

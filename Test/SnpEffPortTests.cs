@@ -30,7 +30,7 @@ namespace Test
             // ugh.vcf has a homozygous variation that should change the codon from AAA to AGA, which code for K and R
             // # CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample
             // 1   2 .   A   G   64.77 . info   GT:AD:DP:GQ:PL  1/1:2,3:5:69:93,0,69
-            List<Variant> variants = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ugh.vcf")).Select(v => new Variant(null, v, new Chromosome(seq, null))).ToList();
+            List<Variant> variants = new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "ugh.vcf")).Select(v => new Variant(null, v, new Chromosome(seq, null))).ToList();
 
             // Make sure it makes it into the DNA sequence
             t.Variants = new HashSet<Variant>(variants);

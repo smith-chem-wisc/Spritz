@@ -74,7 +74,8 @@ namespace ToolWrapperLayer
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "slncky")),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd slncky",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " ]]; then " +
                     "./slncky.v1.0" +
                     " --threads " + threads.ToString() +

@@ -62,7 +62,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string reference, string vcfPath)
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string vcfPath)
         {
             string outPrefix = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath));
             AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
@@ -70,9 +70,9 @@ namespace ToolWrapperLayer
             AnnotatedGenesSummaryPath = outPrefix + ".snpEffAnnotated.genes.txt";
             VariantProteinFastaPath = outPrefix + ".snpEffAnnotated.protein.fasta";
             VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
-            string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "SnpEff", "data"));
+            string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             if (File.Exists(AnnotatedVcfPath)) return new List<string>();
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "snpEffAnnotation.bash");
+            string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -104,7 +104,7 @@ namespace ToolWrapperLayer
 
             // check for existing list and database
             bool databaseListExists = File.Exists(DatabaseListPath);
-            string databaseDirectory = Path.Combine(spritzDirectory, "snpEff", "data");
+            string databaseDirectory = Path.Combine(spritzDirectory, "Tools", "SnpEff", "data");
             string[] existingDatabases = Directory.Exists(databaseDirectory) ? Directory.GetDirectories(databaseDirectory) : new string[0];
             bool databaseExists = existingDatabases.Any(d => Path.GetFileName(d).StartsWith(reference, true, null));
             if (databaseListExists && databaseExists)

@@ -29,7 +29,7 @@ namespace WorkflowLayer
                 string scriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "GeneFusionWorkflow.bash");
                 var referenceCommands = fusion.DownloadPrecompiledReference(Parameters.SpritzDirectory, Parameters.Reference);
                 var calculateCommands = fusion.RunStarFusion(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, fastqs);
-                WrapperUtility.GenerateAndRunScript(scriptName, new List<string>(referenceCommands.Concat(calculateCommands))).WaitForExit();
+                WrapperUtility.GenerateAndRunScript(scriptName, referenceCommands.Concat(calculateCommands).ToList()).WaitForExit();
 
                 // Process results
                 FusionProteins.AddRange(fusion.ParseCodingEffect(Path.Combine(fusion.OutputDirectoryPath, fusion.CodingEffectFilename),

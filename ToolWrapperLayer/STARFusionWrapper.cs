@@ -17,6 +17,7 @@ namespace ToolWrapperLayer
         private readonly string Grch38SourceDataUrl = "https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_v27_CTAT_lib_Feb092018.source_data.tar.gz";
         private readonly string Grch38ReferenceUrl = "https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_v27_CTAT_lib_Feb092018.plug-n-play.tar.gz";
         private readonly string PfamDataUrl = "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.dat.gz";
+        private readonly string StarFusionDirectoryName = "STAR-Fusion-v1.4.0";
 
         public string ReferenceLibraryDirectory { get; private set; }
         public string OutputDirectoryPath { get; private set; }
@@ -33,7 +34,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d STAR-Fusion-v1.4.0 ]; then",
+                "if [ ! -d " + StarFusionDirectoryName + " ]; then",
                 "  wget https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.4.0/STAR-Fusion-v1.4.0.FULL.tar.gz",
                 "  tar -xvf STAR-Fusion-v1.4.0.FULL.tar.gz",
                 "  rm STAR-Fusion-v1.4.0.FULL.tar.gz",
@@ -77,7 +78,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "rm -rf STAR-Fusion-v1.4.0"
+                "rm -rf " + StarFusionDirectoryName
             });
             return scriptPath;
         }
@@ -95,19 +96,18 @@ namespace ToolWrapperLayer
             string referenceUrl = grch37 ? Grch37ReferenceUrl : Grch38ReferenceUrl;
             string referenceTarGz = referenceUrl.Split('/').Last();
             string referenceFolderName = referenceTarGz.Split('.').First();
-            ReferenceLibraryDirectory = Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", "data", referenceFolderName);
+            ReferenceLibraryDirectory = Path.Combine(spritzDirectory, "Tools", StarFusionDirectoryName, "ctat_genome_lib_build_dir");
 
-            bool downloadGrch37 = grch37 && !Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", "data", ReferenceLibraryDirectory));
-            bool downloadGrch38 = grch38 && !Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", "data", ReferenceLibraryDirectory));
+            bool downloadGrch37 = grch37 && !Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", ReferenceLibraryDirectory));
+            bool downloadGrch38 = grch38 && !Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", ReferenceLibraryDirectory));
 
             if (!downloadGrch37 && !downloadGrch38) { return new List<string>(); }
 
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "cd STAR-Fusion_v1.4.0",
-                "mkdir data; cd data",
-                "wget " + referenceUrl,
+                "cd " + StarFusionDirectoryName,
+                "if [ ! f " + referenceTarGz + " ]; then wget " + referenceUrl + "; fi",
                 "tar xvf " + referenceTarGz + "; rm " + referenceTarGz,
             };
         }
@@ -124,9 +124,9 @@ namespace ToolWrapperLayer
         public List<string> PrepareReference(string spritzDirectory, int threads, string reference, string genomeFastaPath, string geneModelGtfPath)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase) &&
-                !Directory.Exists(Path.Combine(spritzDirectory, "STAR-Fusion_v1.4.0", "data", "GRCh37_v19_CTAT_lib_Feb092018.source_data"));
+                !Directory.Exists(Path.Combine(spritzDirectory, StarFusionDirectoryName, "data", "GRCh37_v19_CTAT_lib_Feb092018.source_data"));
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase) &&
-                !Directory.Exists(Path.Combine(spritzDirectory, "STAR-Fusion_v1.4.0", "data", "GRCh38_v27_CTAT_lib_Feb092018.source_data"));
+                !Directory.Exists(Path.Combine(spritzDirectory, StarFusionDirectoryName, "data", "GRCh38_v27_CTAT_lib_Feb092018.source_data"));
 
             if (!downloadGrch37 && !downloadGrch38) { return new List<string>(); }
 
@@ -134,7 +134,7 @@ namespace ToolWrapperLayer
             string sourceDataUrl = downloadGrch37 ? Grch37SourceDataUrl : Grch38SourceDataUrl;
             string sourceDataTarGz = sourceDataUrl.Split('/').Last();
             string sourceDataFolderName = sourceDataTarGz.Split('.').First();
-            ReferenceLibraryDirectory = Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", "data", sourceDataFolderName);
+            ReferenceLibraryDirectory = Path.Combine(spritzDirectory, "Tools", StarFusionDirectoryName, "data", sourceDataFolderName);
 
             // pfam data
             string pfamFilenameGz = PfamDataUrl.Split('/').Last();
@@ -143,7 +143,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "cd STAR-Fusion_v1.4.0",
+                "cd " + StarFusionDirectoryName,
                 "mkdir data; cd data",
                 "wget " + PfamDataUrl + " " + sourceDataUrl,
                 "gunzip Pfam-A.hmm.gz",
@@ -183,7 +183,7 @@ namespace ToolWrapperLayer
             Directory.CreateDirectory(tmp);
 
             string arguments =
-                " --examine_coding_effects" +
+                " --examine_coding_effect" +
                 " --CPU " + threads.ToString() +
                 " --output_dir " + WrapperUtility.ConvertWindowsPath(OutputDirectoryPath) +
                 " --genome_lib_dir " + WrapperUtility.ConvertWindowsPath(ReferenceLibraryDirectory) +
@@ -193,7 +193,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "STAR-Fusion_v1.4.0/STAR-Fusion " + arguments
+                StarFusionDirectoryName + "/STAR-Fusion " + arguments
             };
         }
 
@@ -223,9 +223,9 @@ namespace ToolWrapperLayer
             Directory.CreateDirectory(tmp);
 
             string arguments =
-                " --examine_coding_effects" +
-                " --left_fq " + fastqs[0] +
-                (fastqs.Length > 1 ? " --right_fq " + fastqs[1] : "") +
+                " --examine_coding_effect" +
+                " --left_fq " + WrapperUtility.ConvertWindowsPath(fastqs[0]) +
+                (fastqs.Length > 1 ? " --right_fq " + WrapperUtility.ConvertWindowsPath(fastqs[1]) : "") +
                 " --CPU " + threads.ToString() +
                 " --output_dir " + WrapperUtility.ConvertWindowsPath(OutputDirectoryPath) +
                 " --genome_lib_dir " + WrapperUtility.ConvertWindowsPath(ReferenceLibraryDirectory) +
@@ -234,7 +234,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "STAR-Fusion_v1.4.0/STAR-Fusion" + arguments
+                StarFusionDirectoryName + "/STAR-Fusion " + arguments
             };
         }
 

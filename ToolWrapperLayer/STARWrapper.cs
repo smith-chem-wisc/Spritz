@@ -63,6 +63,8 @@ namespace ToolWrapperLayer
         /// </summary>
         public static string ThreadCheckFilePrefix { get; } = "Chimeric.out.junction.thread";
 
+        public static string STARVersion { get; private set; } = "2.6.0c";
+
         /// <summary>
         /// Writes an installation script for STAR. Also installs seqtk, which is useful for subsetting fastq files.
         /// </summary>
@@ -79,9 +81,9 @@ namespace ToolWrapperLayer
                 "  cd seqtk; make",
                 "fi",
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d STAR ]; then ",
-                "  git clone https://github.com/alexdobin/STAR.git",
-                "  cd STAR/source",
+                "if [ ! -d STAR-" + STARVersion + " ]; then ",
+                "  wget https://github.com/alexdobin/STAR/archive/" + STARVersion + ".tar.gz; tar xvf " + STARVersion + ".tar.gz; rm " + STARVersion + ".tar.gz",
+                "  cd STAR-" + STARVersion + "/source",
                 "  make STAR",
                 "  cp STAR /usr/local/bin",
                 "  make clean",
@@ -103,7 +105,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "rm -rf seqtk STAR /usr/local/bin/STAR /usr/local/bin/STARlong",
+                "rm -rf seqtk STAR-" + STARVersion + " /usr/local/bin/STAR /usr/local/bin/STARlong",
             });
             return scriptPath;
         }
@@ -138,7 +140,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR/source/STAR" + arguments + "; fi"
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR" + arguments + "; fi"
             };
         }
 
@@ -243,8 +245,6 @@ namespace ToolWrapperLayer
                 " --readFilesIn " + reads_in +
                 " --outSAMtype " + outSamType +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
-                " --chimSegmentMin 12" +
-                " --chimJunctionOverhangMin 12" +
                 " --outSAMstrandField intronMotif" + // adds XS tag to all alignments that contain a splice junction
                 " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
@@ -364,16 +364,6 @@ namespace ToolWrapperLayer
                 fastqFiles.Length > 1 ? "  seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
                 "fi"
             }).WaitForExit();
-        }
-
-        /// <summary>
-        /// Gets the Windows-formatted path to the STAR executable
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <returns></returns>
-        public static string GetStarDirectoryPath(string spritzDirectory)
-        {
-            return Path.Combine(spritzDirectory, "Tools", "STAR", "source");
         }
 
         #endregion Public Methods

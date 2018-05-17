@@ -98,7 +98,8 @@ namespace ToolWrapperLayer
             // construct the commands
             var scriptStrings = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "RSEM-1.3.0")),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd RSEM-1.3.0",
                 "mkdir " + WrapperUtility.ConvertWindowsPath(referencePrefixDirectory),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(referencePrefixDirectory, "SA")) + " && ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(referencePrefixDirectory, "SA")) + " ]]; then " +
                     "./rsem-prepare-reference " +
@@ -157,7 +158,8 @@ namespace ToolWrapperLayer
             // construct the commands
             var scriptStrings = new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "RSEM-1.3.0")),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd RSEM-1.3.0",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " ]]; then " +
                     "./rsem-calculate-expression " +
                         "--time " + // include timed results
@@ -185,7 +187,7 @@ namespace ToolWrapperLayer
             {
                 throw new NotSupportedException("Use of Bowtie1 is not supported. Use STAR or Bowtie2 instead.");
             }
-            string alignerOption = aligner == RSEMAlignerOption.STAR ? "--star --star-path " + WrapperUtility.ConvertWindowsPath(STARWrapper.GetStarDirectoryPath(spritzDirectory)) :
+            string alignerOption = aligner == RSEMAlignerOption.STAR ? "--star" : // STAR is in the path, now
                 aligner == RSEMAlignerOption.Bowtie2 ? "--bowtie2 --bowtie2-path " + WrapperUtility.ConvertWindowsPath(TopHatWrapper.GetBowtie2DirectoryPath(spritzDirectory)) :
                 null;
             return alignerOption;

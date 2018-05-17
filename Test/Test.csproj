@@ -109,11 +109,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlignmentIntegrationTests.cs" />
-    <Compile Include="GeneModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WorkflowTests.cs" />
-    <Compile Include="RSEMIntegrationTests.cs" />
     <Compile Include="SnpEffPortTests.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
     <Compile Include="VariantTests.cs" />
@@ -123,10 +119,10 @@
     <None Include="TestData\Homo_sapiens_202022.xml.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\2000reads_1.fastq">
+    <None Include="TestFastqs\2000reads_1.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\2000reads_2.fastq">
+    <None Include="TestFastqs\2000reads_2.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\chr1_one_fake_transcript_little_exon.gtf">
@@ -162,17 +158,14 @@
     <None Include="TestData\HardReverseStrand\reverse.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\headers.fa">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="TestData\headersShort.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\mapper.fastq">
+    <None Include="TestFastqs\mapper.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <None Include="TestData\TestFastqs\mapperAgain.fastq">
+    <None Include="TestFastqs\mapperAgain.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\paired_end.bam">
@@ -208,16 +201,16 @@
     <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read1.fastq">
+    <None Include="TestFastqs\read1.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read1.fastq.gz">
+    <None Include="TestFastqs\read1.fastq.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read2.fastq">
+    <None Include="TestFastqs\read2.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read2.fastq.gz">
+    <None Include="TestFastqs\read2.fastq.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\sample_gff.gff3">
@@ -247,49 +240,49 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TestData\TestVcfs\aFewNearby.vcf">
+    <Content Include="TestVcfs\aFewNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\problematicChr19\chr19problematic.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr1Ucsc.vcf">
+    <Content Include="TestVcfs\chr1Ucsc.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_400001.vcf">
+    <Content Include="TestVcfs\chr_1_one_400001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_400000.vcf">
+    <Content Include="TestVcfs\chr_1_one_400000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_100001.vcf">
+    <Content Include="TestVcfs\chr_1_one_100001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_100000.vcf">
+    <Content Include="TestVcfs\chr_1_one_100000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_99999.vcf">
+    <Content Include="TestVcfs\chr_1_one_99999.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\ugh.vcf">
+    <Content Include="TestVcfs\ugh.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_heterozygous_missense.vcf">
+    <Content Include="TestVcfs\chr_1_one_heterozygous_missense.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_heterozygous_synonymous.vcf">
+    <Content Include="TestVcfs\chr_1_one_heterozygous_synonymous.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_homozygous_missense.vcf">
+    <Content Include="TestVcfs\chr_1_one_homozygous_missense.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_homozygous_synonymous.vcf">
+    <Content Include="TestVcfs\chr_1_one_homozygous_synonymous.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\tonsFarApart.vcf">
+    <Content Include="TestVcfs\tonsFarApart.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\tonsNearby.vcf">
+    <Content Include="TestVcfs\tonsNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="TestData\UtrProblem\gene.gtf">

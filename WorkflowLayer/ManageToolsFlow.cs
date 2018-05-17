@@ -158,7 +158,7 @@ namespace WorkflowLayer
             //});
 
             // write some scripts in parallel with root permissions
-            string installationLogsDirectory = Path.Combine(spritzDirectory, "scripts", "installLogs");
+            string installationLogsDirectory = Path.Combine(spritzDirectory, "Scripts", "InstallLogs");
             Directory.CreateDirectory(installationLogsDirectory);
             List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(spritzDirectory)).ToList();
 
@@ -180,7 +180,7 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installDependencies.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 
@@ -193,7 +193,7 @@ namespace WorkflowLayer
             List<string> commands = new List<string>();
 
             // write some scripts in parallel with root permissions
-            string toolRemovalLogs = Path.Combine(spritzDirectory, "scripts", "toolRemovalLogs");
+            string toolRemovalLogs = Path.Combine(spritzDirectory, "Scripts", "ToolRemovalLogs");
             Directory.CreateDirectory(toolRemovalLogs);
             List<string> parallelScripts = tools.Select(t => t.WriteRemoveScript(spritzDirectory)).ToList();
 
@@ -214,7 +214,7 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "removalScripts", "installDependencies.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "Scripts", "RemovalScripts", "InstallDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
     }

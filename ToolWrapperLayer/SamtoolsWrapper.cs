@@ -78,16 +78,12 @@ namespace ToolWrapperLayer
 
         public static string GenomeFastaIndexCommand(string spritzDirectory, string genomeFastaPath)
         {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then " +
-                WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "samtools-1.6", "samtools")) +
-                " faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
         }
 
         public static string IndexBamCommand(string spritzDirectory, string bamPath)
         {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then " +
-                WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "samtools-1.6", "samtools")) + " index " + WrapperUtility.ConvertWindowsPath(bamPath) +
-                "; fi";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then samtools index " + WrapperUtility.ConvertWindowsPath(bamPath) + "; fi";
         }
 
         #endregion Public Methods
