@@ -23,7 +23,7 @@ namespace WorkflowLayer
         {
         }
 
-        public SampleSpecificProteinDBParameters Parameters { get; set; }
+        public SampleSpecificProteinDBParameters Parameters { get; set; } = new SampleSpecificProteinDBParameters();
         public List<string> IndelAppliedProteinFastaDatabases { get; private set; } = new List<string>();
         public List<string> IndelAppliedProteinXmlDatabases { get; private set; } = new List<string>();
         public List<string> VariantAnnotatedProteinFastaDatabases { get; private set; } = new List<string>();
@@ -56,7 +56,7 @@ namespace WorkflowLayer
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
-            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
+            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
             GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
 

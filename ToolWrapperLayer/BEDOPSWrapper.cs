@@ -66,8 +66,9 @@ namespace ToolWrapperLayer
                 WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Bed6Conversion.bash"), new List<string>
                 {
                     WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                    (extension == ".gtf" ? "awk '{ if ($0 ~ \"transcript_id\") print $0; else print $0\" transcript_id \\\"\\\";\"; }' " : "cat ") + WrapperUtility.ConvertWindowsPath(gtfOrGffPath)
-                        + " | " + WrapperUtility.ConvertWindowsPath(Path.Combine("bedops", extension == ".gtf" ? "gtf2bed" : "gff2bed")) +
+                    (extension == ".gtf" ? "awk '{ if ($0 ~ \"transcript_id\") print $0; else print $0\" transcript_id \\\"\\\";\"; }' " : "cat ") +
+                        WrapperUtility.ConvertWindowsPath(gtfOrGffPath) +
+                        " | " + (extension == ".gtf" ? "gtf2bed" : "gff2bed") +
                         " - > " + WrapperUtility.ConvertWindowsPath(bedPath),
                 }).WaitForExit();
             }

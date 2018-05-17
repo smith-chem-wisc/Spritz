@@ -14,7 +14,7 @@ namespace WorkflowLayer
         {
         }
 
-        public LncRNADiscoveryParameters Parameters { get; set; }
+        public LncRNADiscoveryParameters Parameters { get; set; } = new LncRNADiscoveryParameters();
         public string SlnckyOutPrefix { get; private set; }
         public string MergedGtfPath { get; private set; }
         public List<string> RsemOutPrefixes { get; private set; } = new List<string>();
@@ -47,8 +47,8 @@ namespace WorkflowLayer
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
-            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
-            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, filteredGeneModelForScalpel, Parameters.GenomeFasta);
+            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
+            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
 
             // Transcript Reconstruction
             StringTieWrapper stringtie = new StringTieWrapper();
@@ -74,8 +74,9 @@ namespace WorkflowLayer
             // Annotate lncRNAs
             string slnckyScriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "SlcnkyAnnotation.bash");
             SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".slnckyOut", "annotated");
-            WrapperUtility.GenerateAndRunScript(slnckyScriptName, SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
-                MergedGtfPath, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
+            WrapperUtility.GenerateAndRunScript(slnckyScriptName, 
+                SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
+                    MergedGtfPath, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
         }
 
         /// <summary>

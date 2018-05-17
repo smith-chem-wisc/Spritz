@@ -64,13 +64,13 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallMelting.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallBLAST.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d ncbi-blast-2.7.1+ ]; then",
                 "  wget --no-check ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz",
-                "  tar -xvf ncbi-blast-2.7.1+-x64-linux.tar.gz; rm ncbi-blast-2.7.1+-x64-linux",
+                "  tar -xvf ncbi-blast-2.7.1+-x64-linux.tar.gz; rm ncbi-blast-2.7.1+-x64-linux.tar.gz",
                 "  cp ncbi-blast-2.7.1+/bin/* /usr/local/bin",
                 "fi"
             });

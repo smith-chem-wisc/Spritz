@@ -6,11 +6,10 @@ using System.Linq;
 using System.Reflection;
 using ToolWrapperLayer;
 using WorkflowLayer;
-using Proteogenomics;
 
 namespace CMD
 {
-    internal class Spritz
+    public class Spritz
     {
         public static void Main(string[] args)
         {
@@ -36,72 +35,69 @@ namespace CMD
                 SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.AnalysisDirectory, options.SraAccession) :
                 SeparateFastqs(options.Fastq1, options.Fastq2);
 
-            #region STAR Fusion Testing
+            if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            {
+                new SnpEffWrapper().DownloadSnpEffDatabase(options.SpritzDirectory, options.AnalysisDirectory, options.Reference);
 
-            // TODO make a star fusion 2 protein runner instead of this mess...
-            //bool validStarFusionTest = options.AnalysisDirectory != null
-            //    && options.SpritzDirectory != null
-            //    && (options.Fastq1 != null || options.st)
-            //if (options.Command == "starFusionTest" && !starFusionRequirements.Any(x => x == null))
-            //{
-            //    Directory.CreateDirectory(Path.Combine(options.AnalysisDirectory, "fusion_out"));
-            //    STARFusionWrapper.Install(options.SpritzDirectory);
-            //    STARFusionWrapper.RunStarFusion(options.SpritzDirectory,
-            //        "grch37",
-            //        8,
-            //        Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR791578_hg19_Chimeric.out.junction"),
-            //        new string[0],
-            //        Path.Combine(TestContext.CurrentContext.TestDirectory, "fusion_out"));
-            //    return;
-            //}
-            //else if (options.Command == "starFusionTest")
-            //{
-            //    return;
-            //}
+                if (options.ReferenceVcf == null)
+                {
+                    var gatk = new GATKWrapper();
+                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
+                    options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
+                }
 
-            #endregion STAR Fusion Testing
+                SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
+                flow.Parameters.SpritzDirectory = options.SpritzDirectory;
+                flow.Parameters.AnalysisDirectory = options.AnalysisDirectory;
+                flow.Parameters.Reference = options.Reference;
+                flow.Parameters.Threads = options.Threads;
+                flow.Parameters.Fastqs = fastqsSeparated;
+                flow.Parameters.StrandSpecific = options.StrandSpecific;
+                flow.Parameters.InferStrandSpecificity = options.InferStrandSpecificity;
+                flow.Parameters.OverwriteStarAlignment = options.OverwriteStarAlignments;
+                flow.Parameters.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory;
+                flow.Parameters.GenomeFasta = options.GenomeFasta;
+                flow.Parameters.ProteinFasta = options.ProteinFastaPath;
+                flow.Parameters.ReferenceGeneModelGtfOrGff = options.GeneModelGtfOrGff;
+                flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
+                flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
+                flow.Parameters.UniProtXmlPath = options.UniProtXml;
+                flow.GenerateSAVProteinsFromFastqs();
 
-            #region lncRNA Discovery Workflow
+                Console.WriteLine("output databases to " + String.Join(", and ",
+                    flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
+            }
 
             if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                LncRNADiscoveryFlow lncRNAdiscovery = new LncRNADiscoveryFlow();
-                lncRNAdiscovery.Parameters = new LncRNADiscoveryParameters(
-                        options.SpritzDirectory,
-                        options.AnalysisDirectory,
-                        options.Reference,
-                        options.Threads,
-                        fastqsSeparated,
-                        options.StrandSpecific,
-                        options.InferStrandSpecificity,
-                        options.OverwriteStarAlignments,
-                        options.GenomeStarIndexDirectory,
-                        options.GenomeFasta,
-                        options.ProteinFastaPath,
-                        options.GeneModelGtfOrGff,
-                        true);
-                lncRNAdiscovery.LncRNADiscoveryFromFastqs();
+                LncRNADiscoveryFlow lnc = new LncRNADiscoveryFlow();
+                lnc.Parameters.SpritzDirectory = options.SpritzDirectory;
+                lnc.Parameters.AnalysisDirectory = options.AnalysisDirectory;
+                lnc.Parameters.Reference = options.Reference;
+                lnc.Parameters.Threads = options.Threads;
+                lnc.Parameters.Fastqs = fastqsSeparated;
+                lnc.Parameters.StrandSpecific = options.StrandSpecific;
+                lnc.Parameters.InferStrandSpecificity = options.InferStrandSpecificity;
+                lnc.Parameters.OverwriteStarAlignment = options.OverwriteStarAlignments;
+                lnc.Parameters.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory;
+                lnc.Parameters.GenomeFasta = options.GenomeFasta;
+                lnc.Parameters.ProteinFasta = options.ProteinFastaPath;
+                lnc.Parameters.GeneModelGtfOrGff = options.GeneModelGtfOrGff;
+                lnc.LncRNADiscoveryFromFastqs();
                 return;
             }
 
-            #endregion lncRNA Discovery Workflow
-
-            #region Infering Strandedness
-
-            if (options.Command.Equals("strandedness"))
+            if (options.Command.Equals(GeneFusionDiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                string[] fastqs = options.Fastq2 == null ?
-                    new[] { options.Fastq1 } :
-                    new[] { options.Fastq1, options.Fastq2 };
-                BAMProperties b = STARAlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
-                        fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
-                Console.WriteLine(b.ToString());
+                GeneFusionDiscoveryFlow flow = new GeneFusionDiscoveryFlow();
+                flow.Parameters.SpritzDirectory = options.SpritzDirectory;
+                flow.Parameters.AnalysisDirectory = options.AnalysisDirectory;
+                flow.Parameters.Reference = options.Reference;
+                flow.Parameters.Threads = options.Threads;
+                flow.Parameters.Fastqs = fastqsSeparated;
+                flow.DiscoverGeneFusions();
                 return;
             }
-
-            #endregion Infering Strandedness
-
-            #region Infering Strandedness
 
             if (options.Command.Equals(TransferModificationsFlow.Command))
             {
@@ -111,11 +107,7 @@ namespace CMD
                 return;
             }
 
-            #endregion Infering Strandedness
-
-            #region Transcript Quantification
-
-            if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            if (options.Command.Equals(TranscriptQuantificationFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
                 foreach (string[] fastq in fastqsSeparated)
                 {
@@ -142,46 +134,16 @@ namespace CMD
                 return;
             }
 
-            #endregion Transcript Quantification
-
-            #region Proteoform Database Engine
-
-            if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            if (options.Command.Equals("strandedness"))
             {
-                new SnpEffWrapper().DownloadSnpEffDatabase(options.SpritzDirectory, options.AnalysisDirectory, options.Reference);
-
-                if (options.ReferenceVcf == null)
-                {
-                    var gatk = new GATKWrapper();
-                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
-                    options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
-                }
-
-                // run the program
-                SampleSpecificProteinDBFlow ssdbf = new SampleSpecificProteinDBFlow();
-                ssdbf.Parameters = new SampleSpecificProteinDBParameters(
-                    options.SpritzDirectory,
-                    options.AnalysisDirectory,
-                    options.Reference,
-                    options.Threads,
-                    fastqsSeparated,
-                    options.StrandSpecific,
-                    options.InferStrandSpecificity,
-                    options.OverwriteStarAlignments,
-                    options.GenomeStarIndexDirectory,
-                    options.GenomeFasta,
-                    options.ProteinFastaPath,
-                    options.GeneModelGtfOrGff,
-                    options.ReferenceVcf,
-                    options.UniProtXml);
-
-                ssdbf.GenerateSAVProteinsFromFastqs();
-
-                Console.WriteLine("output databases to " + String.Join(", and ",
-                    ssdbf.VariantAnnotatedProteinXmlDatabases.Concat(ssdbf.VariantAppliedProteinXmlDatabases.Concat(ssdbf.IndelAppliedProteinXmlDatabases))));
+                string[] fastqs = options.Fastq2 == null ?
+                    new[] { options.Fastq1 } :
+                    new[] { options.Fastq1, options.Fastq2 };
+                BAMProperties b = STARAlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
+                        fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
+                Console.WriteLine(b.ToString());
+                return;
             }
-
-            #endregion Proteoform Database Engine
         }
 
         /// <summary>

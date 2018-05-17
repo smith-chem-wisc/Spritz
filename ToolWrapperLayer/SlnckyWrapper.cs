@@ -38,7 +38,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "git clone https://github.com/slncky/slncky.git",
+                "if [ ! -d slncky ]; then git clone https://github.com/slncky/slncky.git; fi",
                 "cd slncky",
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
                 "if [ ! -d annotations ]; then tar -xvf annotations.tar.gz; fi",
@@ -74,7 +74,8 @@ namespace ToolWrapperLayer
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "slncky")),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd slncky",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " ]]; then " +
                     "./slncky.v1.0" +
                     " --threads " + threads.ToString() +
