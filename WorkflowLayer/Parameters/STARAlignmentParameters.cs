@@ -28,15 +28,11 @@ namespace WorkflowLayer
 
         public STARAlignmentParameters()
         {
-            AnalysisDirectory = Path.Combine("AnalysisDirectory");
-            Reference = null;
+            Reference = "GRCh38";
             Threads = 12;
             StrandSpecific = false;
             InferStrandSpecificity = false;
             OverWriteStarAlignment = false;
-            GenomeStarIndexDirectory = Path.Combine("GenomeStarIndex");
-            ReorderedFasta = Path.Combine("ReorderedFasta");
-            EnsemblKnownSitesPath = Path.Combine("EnsemblKnownSites");
             UseReadSubset = false;
             ReadSubset = 300000;
         }
@@ -60,6 +56,6 @@ namespace WorkflowLayer
         public List<string> ChimericSamFiles { get; set; }
         public List<string> ChimericJunctionFiles { get; set; }
         public bool UseReadSubset { get; set; }
-        public int ReadSubset { get; set; }
+        public int ReadSubset { get; set; } = 300000;
     }
 }

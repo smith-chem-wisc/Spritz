@@ -20,9 +20,9 @@ namespace WorkflowLayer
 
         public void Run()
         {
-            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            //var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-            outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
+            //outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
 #if DEBUG
             var writtenFile = Path.Combine(outputFolder, "test.txt");
@@ -32,7 +32,7 @@ namespace WorkflowLayer
 
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("What a day!");
+                output.WriteLine("What a wonderful day, what a wonderful Spritz!");
             }
 
 #endif

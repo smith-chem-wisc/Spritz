@@ -14,6 +14,10 @@
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Wiki_Click"/>
                 <MenuItem Header="Contact" Click="MenuItem_Contact_Click" />
             </MenuItem>
+            <MenuItem Header="SetUp">
+                <MenuItem Header="Setup" Click="MenuItem_Setup_Click"/>
+                <MenuItem Header="DataDownload" Click="MenuItem_DataDownload_Click"/>
+            </MenuItem>
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>

@@ -6,7 +6,7 @@ using WorkflowLayer;
 
 namespace CMD
 {
-    internal class Options
+    public class Options
     {
         [Option('c', "command", Required = true, HelpText =
             "Command:" +

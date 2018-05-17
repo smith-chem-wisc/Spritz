@@ -10,7 +10,8 @@ using System.IO;
 using System.Reflection;
 using System.Collections.ObjectModel;
 using WorkflowLayer;
-
+using ToolWrapperLayer;
+using CMD;
 
 namespace SpritzGUI
 {
@@ -257,7 +258,14 @@ namespace SpritzGUI
 
         private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
         {
-            ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+            //ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+            Spritz.Main(new string[]{ "c", " ", "setup"});
+            return;
+        }
+
+        private void MenuItem_DataDownload_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         #endregion Private Methods - Controlers
@@ -298,7 +306,7 @@ namespace SpritzGUI
                     where rnaSeqFastqCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
                     select possibleMatch;
 
-                OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+                OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()));
             }
             else
             {

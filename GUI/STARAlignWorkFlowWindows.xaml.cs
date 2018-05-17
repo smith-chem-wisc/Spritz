@@ -62,9 +62,7 @@ namespace SpritzGUI
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
             parametersToSave.Fastqs = new List<string[]> { rnaSeqFastqCollection.Select(p => p.FilePath).ToArray() };
 
-            parametersToSave.AnalysisDirectory = System.IO.Path.Combine(mainWindow.OutputFolderTextBox.Text, TheTask.Parameters.AnalysisDirectory);
-            parametersToSave.SpritzDirectory = System.IO.Path.Combine(mainWindow.OutputFolderTextBox.Text, TheTask.Parameters.SpritzDirectory);
-            parametersToSave.GenomeStarIndexDirectory = System.IO.Path.Combine(mainWindow.OutputFolderTextBox.Text, TheTask.Parameters.GenomeStarIndexDirectory);
+            parametersToSave.AnalysisDirectory = System.IO.Path.Combine(mainWindow.OutputFolderTextBox.Text);
             TheTask.Parameters = parametersToSave;
             TheTask.SpritzParameters = TheTask.Parameters;
             DialogResult = true;

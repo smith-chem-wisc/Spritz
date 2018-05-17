@@ -10,7 +10,7 @@ using Proteogenomics;
 
 namespace CMD
 {
-    internal class Spritz
+    public class Spritz
     {
         public static void Main(string[] args)
         {
