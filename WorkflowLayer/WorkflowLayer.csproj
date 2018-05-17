@@ -125,7 +125,6 @@
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
     <Compile Include="EventArgs\StringEventArgs.cs" />
     <Compile Include="EventArgs\StringListEventArgs.cs" />
-    <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="GeneFusionTranscriptFlow.cs" />
     <Compile Include="LncRNADiscoveryFlow.cs" />
     <Compile Include="Parameters\ISpritzParameters.cs" />

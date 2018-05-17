@@ -25,7 +25,7 @@ namespace SpritzGUI
         private readonly ObservableCollection<GenomeFastaDataGrid> genomeFastaCollection = new ObservableCollection<GenomeFastaDataGrid>();
         private readonly ObservableCollection<GeneSetDataGrid> geneSetCollection = new ObservableCollection<GeneSetDataGrid>();
         private readonly ObservableCollection<RNASeqFastqDataGrid> rnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
-        private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
+        private ObservableCollection<InRunTask> dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
 
         #endregion Private Fields
@@ -41,7 +41,6 @@ namespace SpritzGUI
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
             workflowTreeView.DataContext = staticTasksObservableCollection;
 
-            EverythingRunnerEngine.NewRnaSeqFastqHandler += AddNewRnaSeqFastq;
         }
 
         #endregion Public Constructors
@@ -87,10 +86,10 @@ namespace SpritzGUI
 
         private void BtnSTARAlignment_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new STARAlignWorkFlowWindows();
+            var dialog = new TransferModificationsFlowWindows();
             if (dialog.ShowDialog() == true)
             {
-                AddTaskToCollection(dialog.TheTask);
+                AddTaskToCollection(dialog.Options);
                 UpdateTaskGuiStuff();
             }
         }
@@ -107,10 +106,10 @@ namespace SpritzGUI
 
         private void BtnAddLncRNADiscover_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new LncRNADiscoverFlowWindows();
+            var dialog = new TransferModificationsFlowWindows();
             if (dialog.ShowDialog() == true)
             {
-                AddTaskToCollection(dialog.TheTask);
+                AddTaskToCollection(dialog.Options);
                 UpdateTaskGuiStuff();
             }
         }
@@ -120,10 +119,10 @@ namespace SpritzGUI
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
-                dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].spritzWorkflow.WorkflowType.ToString(), staticTasksObservableCollection[i].spritzWorkflow));
+                dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].options.Command.ToString(), staticTasksObservableCollection[i].options));
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzFlow>(b.DisplayName, b.workflow)).ToList(), OutputFolderTextBox.Text);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
             a.Run();
             //var t = new Task(a.Run);
             //t.Start();
@@ -259,13 +258,13 @@ namespace SpritzGUI
         private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
         {
             //ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-            Spritz.Main(new string[]{ "c", " ", "setup"});
+            Spritz.Main(new string[]{ "CMD.exe", "-c", "setup"});
             return;
         }
 
         private void MenuItem_DataDownload_Click(object sender, RoutedEventArgs e)
         {
-
+            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
         }
 
         #endregion Private Methods - Controlers
@@ -289,7 +288,7 @@ namespace SpritzGUI
             }
         }
 
-        private void AddTaskToCollection(SpritzFlow ye)
+        private void AddTaskToCollection(Options ye)
         {
             PreRunTask te = new PreRunTask(ye);
             staticTasksObservableCollection.Add(te);

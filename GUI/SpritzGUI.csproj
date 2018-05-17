@@ -56,8 +56,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="STARAlignWorkFlowWindows.xaml.cs">
-      <DependentUpon>STARAlignWorkFlowWindows.xaml</DependentUpon>
+    <Compile Include="EverythingRunnerEngine.cs" />
+    <Compile Include="TransferModificationsFlow.xaml.cs">
+      <DependentUpon>TransferModificationsFlow.xaml</DependentUpon>
     </Compile>
     <Compile Include="TreeViews\CollectionForTreeView.cs" />
     <Compile Include="TreeViews\ForTreeView.cs" />
@@ -93,7 +94,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="STARAlignWorkFlowWindows.xaml">
+    <Page Include="TransferModificationsFlow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
