@@ -31,8 +31,6 @@ namespace ToolWrapperLayer
         public static string TimeSuffix { get; } = ".time";
         public static string StatDirectorySuffix { get; } = ".stat";
 
-        #region Installation Methods
-
         /// <summary>
         /// Writes an installation script for RSEM.
         /// </summary>
@@ -69,8 +67,6 @@ namespace ToolWrapperLayer
             });
             return scriptPath;
         }
-
-        #endregion Installation Methods
 
         /// <summary>
         /// Gets commands to prepare an RSEM reference
@@ -145,7 +141,10 @@ namespace ToolWrapperLayer
                     String.Join(",", fastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
-            OutputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]) + "_reference" + referencePrefix.GetHashCode().ToString());
+            OutputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), 
+                Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]) + 
+                "_" + Path.GetExtension(fastqPaths[0].Split(',')[0]).Substring(1).ToUpperInvariant() +
+                referencePrefix.GetHashCode().ToString());
 
             // RSEM likes to sort the transcript.bam file, which takes forever and isn't very useful, I've found. Just sort the genome.bam file instead
             string samtoolsCommands = !doOuptutBam ?

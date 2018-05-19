@@ -26,6 +26,7 @@ namespace WorkflowLayer
             "cmake",
             "build-essential",
             "pkg-config",
+            "maven",
             //"clang", // needed for some tools, but not any in these workflows
 
             // file compression
