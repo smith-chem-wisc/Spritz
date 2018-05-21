@@ -89,7 +89,7 @@
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\pepXML.dll</HintPath>
     </Reference>
     <Reference Include="Proteogenomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Proteogenomics.0.0.3\lib\net471\Proteogenomics.dll</HintPath>
+      <HintPath>..\packages\Proteogenomics.0.0.16\lib\net471\Proteogenomics.dll</HintPath>
     </Reference>
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\Proteomics.dll</HintPath>

@@ -17,6 +17,7 @@ namespace WorkflowLayer
         public LncRNADiscoveryParameters Parameters { get; set; } = new LncRNADiscoveryParameters();
         public string SlnckyOutPrefix { get; private set; }
         public string MergedGtfPath { get; private set; }
+        public string MergedFilteredGtfPath { get; private set; }
         public List<string> RsemOutPrefixes { get; private set; } = new List<string>();
         public List<string> ReconstructedTranscriptModels { get; private set; } = new List<string>();
         public List<string> IsoformResultPaths { get; private set; } = new List<string>();
@@ -32,18 +33,18 @@ namespace WorkflowLayer
             ensemblDownloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
             alignment.Parameters = new STARAlignmentParameters(
-                Parameters.SpritzDirectory, 
+                Parameters.SpritzDirectory,
                 Parameters.AnalysisDirectory,
-                Parameters.Reference, 
+                Parameters.Reference,
                 Parameters.Threads,
-                Parameters.Fastqs, 
+                Parameters.Fastqs,
                 Parameters.StrandSpecific,
-                Parameters.InferStrandSpecificity, 
+                Parameters.InferStrandSpecificity,
                 Parameters.OverwriteStarAlignment,
-                Parameters.GenomeStarIndexDirectory, 
-                ensemblDownloads.ReorderedFastaPath, 
-                Parameters.GeneModelGtfOrGff, 
-                Parameters.UseReadSubset, 
+                Parameters.GenomeStarIndexDirectory,
+                ensemblDownloads.ReorderedFastaPath,
+                Parameters.GeneModelGtfOrGff,
+                Parameters.UseReadSubset,
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
@@ -56,13 +57,14 @@ namespace WorkflowLayer
                 Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles);
             ReconstructedTranscriptModels = stringtie.TranscriptGtfPaths;
             MergedGtfPath = stringtie.MergedGtfPath;
+            MergedFilteredGtfPath = stringtie.MergedFilteredGtfPath;
 
             // Transcript Quantification
             foreach (var fastq in Parameters.Fastqs)
             {
                 TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
                 quantification.Parameters = new TranscriptQuantificationParameters(
-                    Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.GenomeFasta, Parameters.Threads, MergedGtfPath, RSEMAlignerOption.STAR,
+                    Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.GenomeFasta, Parameters.Threads, MergedFilteredGtfPath, RSEMAlignerOption.STAR,
                     Parameters.StrandSpecific ? Strandedness.Forward : Strandedness.None,
                     fastq, Parameters.DoOutputQuantificationBam);
                 quantification.QuantifyTranscripts();
@@ -73,10 +75,10 @@ namespace WorkflowLayer
 
             // Annotate lncRNAs
             string slnckyScriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "SlcnkyAnnotation.bash");
-            SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".slnckyOut", "annotated");
-            WrapperUtility.GenerateAndRunScript(slnckyScriptName, 
+            SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(MergedFilteredGtfPath), Path.GetFileNameWithoutExtension(MergedFilteredGtfPath) + ".slnckyOut", "annotated");
+            WrapperUtility.GenerateAndRunScript(slnckyScriptName,
                 SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
-                    MergedGtfPath, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
+                    MergedFilteredGtfPath, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
         }
 
         /// <summary>

@@ -96,7 +96,7 @@ namespace ToolWrapperLayer
             string referenceUrl = grch37 ? Grch37ReferenceUrl : Grch38ReferenceUrl;
             string referenceTarGz = referenceUrl.Split('/').Last();
             string referenceFolderName = referenceTarGz.Split('.').First();
-            ReferenceLibraryDirectory = Path.Combine(spritzDirectory, "Tools", StarFusionDirectoryName, "ctat_genome_lib_build_dir");
+            ReferenceLibraryDirectory = Path.Combine(spritzDirectory, "Tools", StarFusionDirectoryName, referenceFolderName, "ctat_genome_lib_build_dir");
 
             bool downloadGrch37 = grch37 && !Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", ReferenceLibraryDirectory));
             bool downloadGrch38 = grch38 && !Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion_v1.4.0", ReferenceLibraryDirectory));
@@ -107,7 +107,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "cd " + StarFusionDirectoryName,
-                "if [ ! f " + referenceTarGz + " ]; then wget " + referenceUrl + "; fi",
+                "if [ ! -f " + referenceTarGz + " ]; then wget " + referenceUrl + "; fi",
                 "tar xvf " + referenceTarGz + "; rm " + referenceTarGz,
             };
         }

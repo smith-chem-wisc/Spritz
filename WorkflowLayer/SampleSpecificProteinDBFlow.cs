@@ -1,12 +1,7 @@
-﻿using Bio.VCF;
-using Proteogenomics;
-using Proteomics;
-using System;
+﻿using Proteogenomics;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using ToolWrapperLayer;
-using UsefulProteomicsDatabases;
 
 namespace WorkflowLayer
 {
@@ -35,24 +30,24 @@ namespace WorkflowLayer
         /// <summary>
         /// Generate sample specific protein database starting with fastq files
         /// </summary>
-        public void GenerateSAVProteinsFromFastqs()
+        public void GenerateSAVProteins()
         {
             // Download references and align reads
             Downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
             alignment.Parameters = new STARAlignmentParameters(
-                Parameters.SpritzDirectory, 
-                Parameters.AnalysisDirectory, 
-                Parameters.Reference, 
+                Parameters.SpritzDirectory,
+                Parameters.AnalysisDirectory,
+                Parameters.Reference,
                 Parameters.Threads,
-                Parameters.Fastqs, 
+                Parameters.Fastqs,
                 Parameters.StrandSpecific,
                 Parameters.InferStrandSpecificity,
-                Parameters.OverwriteStarAlignment, 
-                Parameters.GenomeStarIndexDirectory, 
+                Parameters.OverwriteStarAlignment,
+                Parameters.GenomeStarIndexDirectory,
                 Downloads.ReorderedFastaPath,
                 Parameters.ReferenceGeneModelGtfOrGff,
-                Parameters.UseReadSubset, 
+                Parameters.UseReadSubset,
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
@@ -68,16 +63,19 @@ namespace WorkflowLayer
             variantCalling.CallVariants(
                 Parameters.SpritzDirectory,
                 Parameters.AnalysisDirectory,
-                Parameters.Reference, 
-                Parameters.Threads, 
-                sortedBed12Path, 
-                Parameters.EnsemblKnownSitesPath, 
-                alignment.DedupedBamFiles, 
+                Parameters.Reference,
+                Parameters.Threads,
+                sortedBed12Path,
+                Parameters.EnsemblKnownSitesPath,
+                alignment.DedupedBamFiles,
                 Downloads.ReorderedFastaPath);
 
             // Transfer features from UniProt
-            TransferModificationsFlow transfer = new TransferModificationsFlow();
-            transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths);
+            if (File.Exists(Parameters.UniProtXmlPath))
+            {
+                TransferModificationsFlow transfer = new TransferModificationsFlow();
+                transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths);
+            }
         }
 
         /// <summary>
@@ -106,7 +104,7 @@ namespace WorkflowLayer
         protected override void RunSpecific(ISpritzParameters parameters)
         {
             Parameters = (SampleSpecificProteinDBParameters)parameters;
-            GenerateSAVProteinsFromFastqs();
+            GenerateSAVProteins();
         }
     }
 }

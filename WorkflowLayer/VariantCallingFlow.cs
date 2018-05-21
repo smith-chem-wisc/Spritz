@@ -1,10 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using ToolWrapperLayer;
-using Proteogenomics;
-using Bio.VCF;
-using System;
-using System.Linq;
 
 namespace WorkflowLayer
 {
@@ -39,7 +35,7 @@ namespace WorkflowLayer
 
                 // Scalpel
                 var scalpel = new ScalpelWrapper();
-                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, gatk.SplitTrimBamPath, Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath) + "_scalpelOut")));
+                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
                 ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
                 ScalpelFilteredlVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
 

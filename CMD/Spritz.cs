@@ -46,6 +46,11 @@ namespace CMD
                     options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
                 }
 
+                if (options.UniProtXml == null)
+                {
+                    Console.WriteLine("Note: You can specify a UniProt XML file with the -x flag to transfer modificaitons and database references.");
+                }
+
                 SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
                 flow.Parameters.SpritzDirectory = options.SpritzDirectory;
                 flow.Parameters.AnalysisDirectory = options.AnalysisDirectory;
@@ -62,7 +67,7 @@ namespace CMD
                 flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
                 flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
-                flow.GenerateSAVProteinsFromFastqs();
+                flow.GenerateSAVProteins();
 
                 Console.WriteLine("output databases to " + String.Join(", and ",
                     flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
