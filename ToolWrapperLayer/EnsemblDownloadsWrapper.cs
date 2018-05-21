@@ -227,8 +227,8 @@ namespace ToolWrapperLayer
                     if (line.StartsWith("#")) { continue; }
                     string[] columns = line.Split('\t');
                     if (columns.Length == 0) { break; }
-                    if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { columns[0] = ucscColumn; }
-                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { } // nothing to do, already UCSC
+                    if (e2uMappings.TryGetValue(columns[0], out string ucscColumn) && ucscColumn != "") { columns[0] = ucscColumn; }
+                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn) && ensemblColumn != "") { } // nothing to do, already UCSC
                     else { continue; } // did not recognize this chromosome name; filter it out
                     writer.WriteLine(String.Join("\t", columns));
                 }

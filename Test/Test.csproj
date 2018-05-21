@@ -76,7 +76,7 @@
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\pepXML.dll</HintPath>
     </Reference>
     <Reference Include="Proteogenomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Proteogenomics.0.0.3\lib\net471\Proteogenomics.dll</HintPath>
+      <HintPath>..\packages\Proteogenomics.0.0.16\lib\net471\Proteogenomics.dll</HintPath>
     </Reference>
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\Proteomics.dll</HintPath>
@@ -109,6 +109,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IndependentWrapperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnpEffPortTests.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
@@ -117,6 +118,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="TestData\Homo_sapiens_202022.xml.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\sample_gtf_strandProblem.gtf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestFastqs\2000reads_1.fastq">

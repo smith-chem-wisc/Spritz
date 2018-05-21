@@ -56,16 +56,16 @@ namespace WorkflowLayer
             "libpython2.7-dev",
             "perl-doc",
 
-            // cpanm requirements (don't delete)
-            //"libxi-dev",
-            //"libxmu-dev",
-            //"freeglut3-dev",
-            //"libgsl0-dev",
-            //"libnetpbm10-dev",
-            //"libplplot-dev",
-            //"pgplot5",
-            //"libdb5.3",
-            //"libdb5.3-dev",
+            // cpanm requirements, required for STAR-Fusion
+            "libxi-dev",
+            "libxmu-dev",
+            "freeglut3-dev",
+            "libgsl0-dev",
+            "libnetpbm10-dev",
+            "libplplot-dev",
+            "pgplot5",
+            "libdb5.3",
+            "libdb5.3-dev",
 
             // docker requirements (don't delete)
             //"apt-transport-https",
@@ -139,12 +139,12 @@ namespace WorkflowLayer
                 "fi"
             );
 
-            // perl setup (don't delete)
-            //commands.AddRange(new[]
-            //{
-            //    "curl -L http://cpanmin.us | perl - --sudo App::cpanminus",
-            //    "sudo cpanm DB_File URI::Escape Set::IntervalTree Carp::Assert JSON::XS PerlIO::gzip"
-            //});
+            // perl setup, required for STAR-Fusion
+            commands.AddRange(new[]
+            {
+                "curl -L http://cpanmin.us | perl - --sudo App::cpanminus",
+                "sudo cpanm DB_File URI::Escape Set::IntervalTree Carp::Assert JSON::XS PerlIO::gzip"
+            });
 
             // docker setup (don't delete)
             //commands.AddRange(new[]

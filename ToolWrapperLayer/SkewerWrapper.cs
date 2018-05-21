@@ -10,8 +10,6 @@ namespace ToolWrapperLayer
     public class SkewerWrapper :
         IInstallable
     {
-        #region Installation Methods
-
         /// <summary>
         /// Writes a script for installing skewer.
         /// </summary>
@@ -45,10 +43,6 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
-        #region Public Method
-
         public static void Trim(string spritzDirectory, string analysisDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
         {
             log = "";
@@ -81,7 +75,5 @@ namespace ToolWrapperLayer
                     (readPaths.Length > 1 ? " " + WrapperUtility.ConvertWindowsPath(readPaths[1]) : ""),
             }).WaitForExit();
         }
-
-        #endregion Public Method
     }
 }
