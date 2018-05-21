@@ -1,11 +1,11 @@
 ﻿using Bio;
 using Bio.IO.FastA;
+using Bio.VCF;
 using NUnit.Framework;
 using Proteogenomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Bio.VCF;
 using System.Linq;
 using ToolWrapperLayer;
 using WorkflowLayer;
@@ -53,6 +53,7 @@ namespace Test
 
             // scalpel
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "scalpel-0.5.3")));
+            Assert.IsTrue(new ScalpelWrapper().CheckInstallation(TestContext.CurrentContext.TestDirectory));
 
             // skewer
             Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "skewer-0.2.2")));
@@ -395,7 +396,7 @@ namespace Test
             Assert.IsTrue(new FileInfo(outputGtf).Length > 0);
         }
 
-        #endregion Cufflinks tests
+        #endregion Cufflinks and Stringtie tests
 
         #region Slncky tests
 
@@ -407,7 +408,7 @@ namespace Test
         //    string cufflinksTranscripts = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.cufflinksOutput", CufflinksWrapper.TranscriptsFilename);
         //    string slnckyOutPrefix = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "cuffmergeModel848835768.slnckyOut", "annotated"); // strange folder, so that it covers the same test as the lncRNAdiscovery run
         //    string scriptName = Path.Combine(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "SlnckyRun.bash"));
-        //    WrapperUtility.GenerateAndRunScript(scriptName, 
+        //    WrapperUtility.GenerateAndRunScript(scriptName,
         //        SlnckyWrapper.Annotate(
         //            TestContext.CurrentContext.TestDirectory,
         //            Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
@@ -469,7 +470,7 @@ namespace Test
         {
             var snpeff = new SnpEffWrapper();
             WrapperUtility.GenerateAndRunScript(
-                WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"), 
+                WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
                 snpeff.PrimaryVariantAnnotation(
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
@@ -485,6 +486,7 @@ namespace Test
         #endregion SnpEff tests
 
         #region Alignment tests
+
         [Test, Order(1)]
         public void SubsetReadsCheck()
         {
@@ -568,8 +570,10 @@ namespace Test
             Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatDeletionsBEDFilename)));
             Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatInsertionsBEDFilename)));
             Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatJunctionsBEDFilename)));
-        } 
-        #endregion
+        }
+
+        #endregion Alignment tests
+
         #region Workflow Tests
 
         /// <summary>
@@ -740,8 +744,9 @@ namespace Test
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));// no variants anymore with the filtering criteria
             }
-        } 
-        #endregion
+        }
+
+        #endregion Workflow Tests
 
         #region RSEM integration tests
 
@@ -916,7 +921,7 @@ namespace Test
         //    Assert.IsTrue(File.Exists(outputPrefix + RSEMWrapper.GenomeBamIndexSuffix));
         //}
 
-        #endregion
+        #endregion RSEM integration tests
 
         #region Variant workflow tests
 
@@ -929,7 +934,7 @@ namespace Test
             Assert.IsTrue(geneModel.Genes[0].Transcripts[0].UTRs.Count > 0);
         }
 
-        #endregion
+        #endregion Variant workflow tests
 
         #region Gene Model integration test
 
@@ -950,6 +955,6 @@ namespace Test
             }
         }
 
-        #endregion
+        #endregion Gene Model integration test
     }
 }
