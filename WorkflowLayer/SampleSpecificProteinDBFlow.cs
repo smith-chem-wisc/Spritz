@@ -1,4 +1,5 @@
-﻿using Proteogenomics;
+﻿using Proteomics;
+using Proteogenomics;
 using System.Collections.Generic;
 using System.IO;
 using ToolWrapperLayer;
@@ -30,7 +31,7 @@ namespace WorkflowLayer
         /// <summary>
         /// Generate sample specific protein database starting with fastq files
         /// </summary>
-        public void GenerateSAVProteins()
+        public void GenerateSampleSpecificProteinDatabases()
         {
             // Download references and align reads
             Downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
@@ -56,25 +57,52 @@ namespace WorkflowLayer
             GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
 
             // Merge new and reference gene models, if a new one is specified
-            Merge(referenceGeneModel, Parameters.NewGeneModelGtfOrGff);
+            string newGeneModel = Parameters.NewGeneModelGtfOrGff;
+            string reference = Parameters.Reference;
+            if (Parameters.DoTranscriptIsoformAnalysis)
+            {
+                if (newGeneModel == null)
+                {
+                    StringtieWrapper stringtie = new StringtieWrapper();
+                    stringtie.TranscriptReconstruction(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles);
+                    newGeneModel = stringtie.FilteredMergedGtfPath;
+                }
+                TransferCDS(referenceGeneModel, newGeneModel);
+                SnpEffWrapper snpeff = new SnpEffWrapper();
+                reference = snpeff.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath, Downloads.ProteinFastaPath, newGeneModel);
+            }
 
             // Variant Calling
             VariantCallingFlow variantCalling = new VariantCallingFlow();
             variantCalling.CallVariants(
                 Parameters.SpritzDirectory,
                 Parameters.AnalysisDirectory,
-                Parameters.Reference,
+                reference,
                 Parameters.Threads,
                 sortedBed12Path,
                 Parameters.EnsemblKnownSitesPath,
                 alignment.DedupedBamFiles,
                 Downloads.ReorderedFastaPath);
 
+            // Gene Fusion Discovery
+            List<Protein> fusionProteins = new List<Protein>();
+            if (Parameters.DoFusionAnalysis)
+            {
+                GeneFusionDiscoveryFlow fusion = new GeneFusionDiscoveryFlow();
+                fusion.Parameters.SpritzDirectory = Parameters.SpritzDirectory;
+                fusion.Parameters.AnalysisDirectory = Parameters.AnalysisDirectory;
+                fusion.Parameters.Reference = Parameters.Reference;
+                fusion.Parameters.Threads = Parameters.Threads;
+                fusion.Parameters.Fastqs = Parameters.Fastqs;
+                fusion.DiscoverGeneFusions();
+                fusionProteins = fusion.FusionProteins;
+            }
+
             // Transfer features from UniProt
             if (File.Exists(Parameters.UniProtXmlPath))
             {
                 TransferModificationsFlow transfer = new TransferModificationsFlow();
-                transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths);
+                transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
             }
         }
 
@@ -82,7 +110,7 @@ namespace WorkflowLayer
         /// Read in a new gene model and merge it with this one
         /// </summary>
         /// <param name="alternativeGeneModelPath"></param>
-        private void Merge(GeneModel referenceGeneModel, string alternativeGeneModelPath)
+        private void TransferCDS(GeneModel referenceGeneModel, string alternativeGeneModelPath)
         {
             GeneModel newGeneModel = null;
             if (alternativeGeneModelPath != null && File.Exists(alternativeGeneModelPath))
@@ -104,7 +132,7 @@ namespace WorkflowLayer
         protected override void RunSpecific(ISpritzParameters parameters)
         {
             Parameters = (SampleSpecificProteinDBParameters)parameters;
-            GenerateSAVProteins();
+            GenerateSampleSpecificProteinDatabases();
         }
     }
 }

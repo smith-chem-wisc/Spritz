@@ -21,7 +21,7 @@ namespace WorkflowLayer
         public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
             List<string> dedupedBamFiles, string reorderedFastaPath)
         {
-            new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, analysisDirectory, reference);
+            //new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, analysisDirectory, reference);
             List<string> variantCallingCommands = new List<string>();
             string scriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "VariantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)

@@ -602,7 +602,7 @@ namespace Test
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
@@ -693,7 +693,7 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
 
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
@@ -733,7 +733,7 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"); // there is no equivalent of the patch; just checking that that works
             flow.Parameters.UseReadSubset = true;
             flow.Parameters.ReadSubset = 5000;
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {

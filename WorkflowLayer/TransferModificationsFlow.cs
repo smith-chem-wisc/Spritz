@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UsefulProteomicsDatabases;
+using System.Linq;
 
 namespace WorkflowLayer
 {
@@ -11,15 +12,15 @@ namespace WorkflowLayer
     {
         public const string Command = "modtransfer";
 
-        public List<string> TransferModifications(string spritzDirectory, string sourceXmlPath, List<string> destinationXmlPaths)
+        public List<string> TransferModifications(string spritzDirectory, string sourceXmlPath, List<string> destinationXmlPaths, List<Protein> additionalProteins)
         {
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(spritzDirectory);
-            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out Dictionary<string, Modification> un);
+            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out Dictionary<string, Modification> un);
             List<string> outxmls = new List<string>();
             foreach (var xml in destinationXmlPaths)
             {
                 string outxml = Path.Combine(Path.GetDirectoryName(xml), Path.GetFileNameWithoutExtension(xml) + ".withmods.xml");
-                var newProts = ProteinAnnotation.TransferModifications(uniprot, ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, new List<string>(), out un));
+                var newProts = ProteinAnnotation.TransferModifications(uniprot, ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, null, out un).Concat(additionalProteins).ToList());
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), newProts, outxml);
                 outxmls.Add(outxml);
             }

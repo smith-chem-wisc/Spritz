@@ -157,9 +157,8 @@ namespace ToolWrapperLayer
         /// <param name="analysisDirectory"></param>
         /// <param name="genomeFastaPath"></param>
         /// <param name="geneModelGtfOrGffPath"></param>
-        /// <param name="reference"></param>
         /// <returns>Name of the snpEff reference that was generated</returns>
-        public string GenerateDatabase(string spritzDirectory, string analysisDirectory, string genomeFastaPath, string referenceProteinFastaPath, string geneModelGtfOrGffPath, string reference)
+        public string GenerateDatabase(string spritzDirectory, string analysisDirectory, string genomeFastaPath, string referenceProteinFastaPath, string geneModelGtfOrGffPath)
         {
             string snpEffReferenceName = Path.GetExtension(geneModelGtfOrGffPath).ToUpperInvariant() + geneModelGtfOrGffPath.GetHashCode().ToString();
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffDatabaseGeneration.bash");

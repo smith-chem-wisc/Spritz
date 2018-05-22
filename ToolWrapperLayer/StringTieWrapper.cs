@@ -16,6 +16,8 @@ namespace ToolWrapperLayer
         public string StringtieVersion { get; set; } = "1.3.4d";
         public List<string> TranscriptGtfPaths { get; private set; } = new List<string>();
         public List<string> FilteredTranscriptGtfPaths { get; private set; } = new List<string>();
+        public string MergedGtfPath { get; private set; }
+        public string FilteredMergedGtfPath { get; private set; }
 
         /// <summary>
         /// Writes a script for installing cufflinks.
@@ -97,6 +99,49 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
+        /// Perform transcript reconstruction using stringtie
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="analysisDirectory"></param>
+        /// <param name="threads"></param>
+        /// <param name="geneModelGtfOrGff"></param>
+        /// <param name="genome"></param>
+        /// <param name="strandSpecific"></param>
+        /// <param name="inferStrandSpecificity"></param>
+        /// <param name="sortedBamFiles"></param>
+        public void TranscriptReconstruction(string spritzDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome,
+            bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles)
+        {
+            // transcript reconstruction with stringtie (transcripts and quantities used for lncRNA discovery, etc.)
+            List<string> reconstructionCommands = new List<string>();
+            foreach (string sortedBam in sortedBamFiles)
+            {
+                reconstructionCommands.AddRange(AssembleTranscripts(spritzDirectory, threads, sortedBam, geneModelGtfOrGff, genome, strandSpecific ? Strandedness.Forward : Strandedness.None, inferStrandSpecificity, out string stringtieGtfTranscriptGtfPath));
+                TranscriptGtfPaths.Add(stringtieGtfTranscriptGtfPath);
+            }
+
+            // merge the resultant gene models with the reference (used for sample specific databases)
+            int uniqueSuffix = 1;
+            foreach (string f in TranscriptGtfPaths)
+            {
+                uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
+            }
+            MergedGtfPath = MergedGtfPath = Path.Combine(analysisDirectory, "MergedStringtieModel" + uniqueSuffix + ".gtf");
+            reconstructionCommands.AddRange(MergeTranscriptPredictions(spritzDirectory, geneModelGtfOrGff, TranscriptGtfPaths, MergedGtfPath));
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "TranscriptReconstruction.bash"), reconstructionCommands).WaitForExit();
+
+            // filter out the transcripts lacking strand information
+            foreach (string gtf in TranscriptGtfPaths)
+            {
+                string filtered = Path.Combine(Path.GetDirectoryName(gtf), Path.GetFileNameWithoutExtension(gtf) + ".filtered.gtf");
+                FilterGtfEntriesWithoutStrand(gtf, filtered);
+                FilteredTranscriptGtfPaths.Add(filtered);
+            }
+            FilteredMergedGtfPath = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".filtered.gtf");
+            FilterGtfEntriesWithoutStrand(MergedGtfPath, FilteredMergedGtfPath);
+        }
+
+        /// <summary>
         /// Merge multiple transcript models (GTF) into a single one (GTF)
         /// </summary>
         /// <param name="spritzDirectory"></param>
@@ -119,52 +164,6 @@ namespace ToolWrapperLayer
                     " " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "fi"
             };
-        }
-
-        /// <summary>
-        /// Removes transcripts with zero abundance predictions
-        /// </summary>
-        /// <returns></returns>
-        public static List<string> RemoveZeroAbundanceCufflinksPredictionsCommand(string spritzDirectory, string transcriptGtfPath, out string filteredTranscriptGtfPath)
-        {
-            filteredTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(transcriptGtfPath), Path.GetFileNameWithoutExtension(transcriptGtfPath)) + ".filtered" + Path.GetExtension(transcriptGtfPath);
-            return new List<string>
-            {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "echo \"Removing zero-abundance transcripts from " + transcriptGtfPath + "\"",
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " ]]; then " +
-                    "grep -v 'FPKM \"0.000000\"' " + WrapperUtility.ConvertWindowsPath(transcriptGtfPath) + " > " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) +
-                "; fi"
-            };
-        }
-
-        /// <summary>
-        /// Perform transcript reconstruction using stringtie
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <param name="analysisDirectory"></param>
-        /// <param name="threads"></param>
-        /// <param name="geneModelGtfOrGff"></param>
-        /// <param name="genome"></param>
-        /// <param name="strandSpecific"></param>
-        /// <param name="inferStrandSpecificity"></param>
-        /// <param name="sortedBamFiles"></param>
-        public void TranscriptReconstruction(string spritzDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome,
-            bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles)
-        {
-            List<string> reconstructionCommands = new List<string>();
-            foreach (string sortedBam in sortedBamFiles)
-            {
-                reconstructionCommands.AddRange(AssembleTranscripts(spritzDirectory, threads, sortedBam, geneModelGtfOrGff, genome, strandSpecific ? Strandedness.Forward : Strandedness.None, inferStrandSpecificity, out string stringtieGtfTranscriptGtfPath));
-                TranscriptGtfPaths.Add(stringtieGtfTranscriptGtfPath);
-            }
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "TranscriptReconstruction.bash"), reconstructionCommands).WaitForExit();
-            foreach (string gtf in TranscriptGtfPaths)
-            {
-                string filtered = Path.Combine(Path.GetDirectoryName(gtf), Path.GetFileNameWithoutExtension(gtf) + ".filtered.gtf");
-                FilterGtfEntriesWithoutStrand(gtf, filtered);
-                FilteredTranscriptGtfPaths.Add(filtered);
-            }
         }
 
         /// <summary>
