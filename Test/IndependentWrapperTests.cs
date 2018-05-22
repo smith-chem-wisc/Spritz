@@ -11,7 +11,7 @@ namespace Test
         [Test]
         public void StrandAmbiguityFiltering()
         {
-            var stringtie = new StringTieWrapper();
+            var stringtie = new StringtieWrapper();
             string f = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf_strandProblem.gtf");
             string filtered = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf_strandProblem.filtered.gtf");
             stringtie.FilterGtfEntriesWithoutStrand(f, filtered);

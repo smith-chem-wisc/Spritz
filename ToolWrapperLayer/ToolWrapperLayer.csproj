@@ -126,7 +126,7 @@
     <Compile Include="STARFusionWrapper.cs" />
     <Compile Include="STARGenomeLoadOption.cs" />
     <Compile Include="STARWrapper.cs" />
-    <Compile Include="StringTieWrapper.cs" />
+    <Compile Include="StringtieWrapper.cs" />
     <Compile Include="TopHatWrapper.cs" />
     <Compile Include="UCSCDownloadsWrapper.cs" />
     <Compile Include="WrapperUtility.cs" />

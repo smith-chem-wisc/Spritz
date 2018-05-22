@@ -12,19 +12,12 @@ namespace ToolWrapperLayer
         private static string SlnckyAnnotationsLocation = @"https://www.dropbox.com/s/pq7wsjx61sp8ghm/annotations.tar.gz";
 
         public static string CanonicalToLncsSuffix { get; } = ".canonical_to_lncs.txt";
-
         public static string ClusterInfoSuffix { get; } = ".cluster_info.txt";
-
         public static string FilteredInfoSuffix { get; } = ".filtered_info.txt";
-
         public static string LncsBedSuffix { get; } = ".lncs.bed";
-
         public static string LncsInfoSuffix { get; } = ".lncs.info.txt";
-
         public static string OrfsSuffix { get; } = ".orfs.txt";
-
         public static string OrthologsTopSuffix { get; } = ".orthologs.top.txt";
-
         public static string OrthologsSuffix { get; } = ".orthologs.txt";
 
         /// <summary>

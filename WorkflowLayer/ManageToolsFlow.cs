@@ -88,7 +88,7 @@ namespace WorkflowLayer
             new MeltingWrapper(),
             new MfoldWrapper(),
             new SamtoolsWrapper(),
-            new StringTieWrapper(),
+            new StringtieWrapper(),
             //new TrinityWrapper(),
             new VcfToolsWrapper(),
 
