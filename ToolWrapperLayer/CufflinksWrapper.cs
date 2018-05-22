@@ -12,8 +12,6 @@ namespace ToolWrapperLayer
     public class CufflinksWrapper :
         IInstallable
     {
-        #region Public Properties
-
         /// <summary>
         /// Output filename for reconstructed transcripts gene model.
         /// </summary>
@@ -38,10 +36,6 @@ namespace ToolWrapperLayer
         /// Output filename for cufflinks
         /// </summary>
         public static string CufflinksMergedFilename { get; } = "merged.gtf";
-
-        #endregion Public Properties
-
-        #region Installation Methods
 
         /// <summary>
         /// Writes a script for installing cufflinks.
@@ -74,10 +68,6 @@ namespace ToolWrapperLayer
         {
             return null;
         }
-
-        #endregion Installation Methods
-
-        #region Public Method
 
         /// <summary>
         /// Transcript assembly. Note that fragment bias estimation (--frag-bias-correct) and multi-read rescuing (--multi-read-correct) are not used.
@@ -186,7 +176,5 @@ namespace ToolWrapperLayer
                 "; fi"
             }).WaitForExit();
         }
-
-        #endregion Public Method
     }
 }
