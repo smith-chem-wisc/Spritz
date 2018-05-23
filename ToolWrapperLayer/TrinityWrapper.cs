@@ -1,15 +1,14 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 
 namespace ToolWrapperLayer
 {
     /// <summary>
     /// LASTZ is a local alignment tool. Used by Slncky in this software.
     /// </summary>
-    public class LastzWrapper :
+    public class TrinityWrapper :
         IInstallable
     {
-        #region Installation Methods
+        public string TrinityVersion = "2.6.6";
 
         /// <summary>
         /// Writes an installation script for lastz.
@@ -18,18 +17,16 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteInstallScript(string spritzDirectory)
         {
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallLastz.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallTrinity.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d lastz-1.04.00 ]; then",
-                "  wget https://github.com/lastz/lastz/archive/1.04.00.tar.gz",
-                "  tar -xvf 1.04.00.tar.gz",
-                "  rm 1.04.00.tar.gz",
-                "  cd lastz-1.04.00",
+                "if [ ! -d trinityrnaseq-Trinity-v" + TrinityVersion + " ]; then",
+                "  wget https://github.com/trinityrnaseq/trinityrnaseq/archive/Trinity-v" + TrinityVersion + ".tar.gz",
+                "  tar xvf Trinity-v" + TrinityVersion + ".tar.gz",
+                "  rm Trinity-v" + TrinityVersion + ".tar.gz",
+                "  cd trinityrnaseq-Trinity-v" + TrinityVersion,
                 "  make",
-                "  chmod +X src/lastz",
-                "  sudo cp src/lastz /usr/local/bin",
                 "fi"
             });
             return scriptPath;
@@ -44,7 +41,5 @@ namespace ToolWrapperLayer
         {
             return null;
         }
-
-        #endregion Installation Methods
     }
 }

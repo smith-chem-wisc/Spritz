@@ -26,6 +26,7 @@ namespace WorkflowLayer
             "cmake",
             "build-essential",
             "pkg-config",
+            "maven",
             //"clang", // needed for some tools, but not any in these workflows
 
             // file compression
@@ -36,11 +37,11 @@ namespace WorkflowLayer
             "libncurses5-dev",
             "libbz2-dev",
 
-            // bioinformatics -- keep this to illustrate that these things are super outdated in aptitude
-            //"samtools", // out of date
-            //"tophat", // super outdated in aptitude
-            //"cufflinks", // super outdated in aptitude
-            //"bedtools", // super outdated (2013) in aptitude
+            // bioinformatics (don't delete) -- keep this to illustrate that these things are super outdated in aptitude
+            //"samtools", // out of date!
+            //"tophat", // super outdated in aptitude!
+            //"cufflinks", // super outdated in aptitude!
+            //"bedtools", // super outdated (2013) in aptitude!
             //"ncbi-blast+", // very outdated (2.2 from 2014, instead of 2.7)
             //"melting", // outdated (v4 in aptidude, v5 on main site which was totally rewritten)
 
@@ -54,6 +55,23 @@ namespace WorkflowLayer
             "python-setuptools",
             "libpython2.7-dev",
             "perl-doc",
+
+            // cpanm requirements, required for STAR-Fusion
+            "libxi-dev",
+            "libxmu-dev",
+            "freeglut3-dev",
+            "libgsl0-dev",
+            "libnetpbm10-dev",
+            "libplplot-dev",
+            "pgplot5",
+            "libdb5.3",
+            "libdb5.3-dev",
+
+            // docker requirements (don't delete)
+            //"apt-transport-https",
+            //"ca-certificates",
+            //"curl",
+            //"software-properties-common",
         };
 
         /// <summary>
@@ -70,7 +88,8 @@ namespace WorkflowLayer
             new MeltingWrapper(),
             new MfoldWrapper(),
             new SamtoolsWrapper(),
-            new StringTieWrapper(),
+            new StringtieWrapper(),
+            //new TrinityWrapper(),
             new VcfToolsWrapper(),
 
             // don't necessarily require root permissions
@@ -94,26 +113,14 @@ namespace WorkflowLayer
         /// <param name="spritzDirectory"></param>
         public static void Install(string spritzDirectory)
         {
-            // get root permissions and update and upgrade the repositories
+            // get root permissions, update and upgrade the repositories, and install dependencies
             List<string> commands = new List<string>
             {
                 "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
                 "sudo apt-get -y upgrade",
+                "sudo apt-get -y install " + String.Join(" ", aptitudeDependencies)
             };
-
-            // install dependencies from aptitude
-            foreach (string dependency in aptitudeDependencies)
-            {
-                commands.Add
-                (
-                    "if commmand -v " + dependency + " > /dev/null 2>&1 ; then\n" +
-                    "  echo found\n" +
-                    "else\n" +
-                    "  sudo apt-get -y install " + dependency + "\n" +
-                    "fi"
-                );
-            }
 
             // python setup
             commands.Add("sudo easy_install pip");
@@ -132,8 +139,27 @@ namespace WorkflowLayer
                 "fi"
             );
 
+            // perl setup, required for STAR-Fusion
+            commands.AddRange(new[]
+            {
+                "curl -L http://cpanmin.us | perl - --sudo App::cpanminus",
+                "sudo cpanm DB_File URI::Escape Set::IntervalTree Carp::Assert JSON::XS PerlIO::gzip"
+            });
+
+            // docker setup (don't delete)
+            //commands.AddRange(new[]
+            //{
+            //    "sudo apt-get remove docker docker-engine docker.io",
+            //    "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+            //    "sudo apt-key fingerprint 0EBFCD88",
+            //    "sudo add-apt-repository $(lsb_release -cs) stable",
+            //    "sudo apt-get update",
+            //    "sudo apt-get install docker-ce",
+            //    "sudo docker run hello-world",
+            //});
+
             // write some scripts in parallel with root permissions
-            string installationLogsDirectory = Path.Combine(spritzDirectory, "scripts", "installLogs");
+            string installationLogsDirectory = Path.Combine(spritzDirectory, "Scripts", "InstallLogs");
             Directory.CreateDirectory(installationLogsDirectory);
             List<string> parallelScripts = tools.Select(t => t.WriteInstallScript(spritzDirectory)).ToList();
 
@@ -155,7 +181,7 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "installScripts", "installDependencies.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
 
@@ -168,7 +194,7 @@ namespace WorkflowLayer
             List<string> commands = new List<string>();
 
             // write some scripts in parallel with root permissions
-            string toolRemovalLogs = Path.Combine(spritzDirectory, "scripts", "toolRemovalLogs");
+            string toolRemovalLogs = Path.Combine(spritzDirectory, "Scripts", "ToolRemovalLogs");
             Directory.CreateDirectory(toolRemovalLogs);
             List<string> parallelScripts = tools.Select(t => t.WriteRemoveScript(spritzDirectory)).ToList();
 
@@ -189,7 +215,7 @@ namespace WorkflowLayer
             }
 
             // write the and run the installations requiring root permissions
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "removalScripts", "installDependencies.bash");
+            string scriptPath = Path.Combine(spritzDirectory, "Scripts", "RemovalScripts", "InstallDependencies.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
         }
     }

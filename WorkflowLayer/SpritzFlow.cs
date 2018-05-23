@@ -10,6 +10,7 @@ namespace WorkflowLayer
         LncRnaDiscovery,
         TranscriptQuantification,
         STARAlignment,
+        GeneFusionDiscovery,
     }
 
     public abstract class SpritzFlow

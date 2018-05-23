@@ -154,7 +154,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string GetBowtie2DirectoryPath(string spritzDirectory)
         {
-            return Path.Combine(spritzDirectory, "tophat-2.1.1");
+            return Path.Combine(spritzDirectory, "Tools", "tophat-2.1.1");
         }
 
         #endregion Public Methods

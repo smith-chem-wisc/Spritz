@@ -36,17 +36,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Bio.Core, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Core.dll</HintPath>
+    <Reference Include="Bio.Core, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetBio.Core.3.0.0-alpha\lib\netstandard2.0\Bio.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Bio.Desktop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Desktop.dll</HintPath>
-    </Reference>
-    <Reference Include="Bio.Platform.Helpers, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NetBioCore.PCL.2.0.150722\lib\net45\Bio.Platform.Helpers.dll</HintPath>
-    </Reference>
-    <Reference Include="Bio.VCF, Version=0.0.55.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Bio.VCF.ajc.0.0.55\lib\net461\Bio.VCF.dll</HintPath>
+    <Reference Include="Bio.VCF.ajc, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Bio.VCF.ajc.0.0.56\lib\net471\Bio.VCF.ajc.dll</HintPath>
     </Reference>
     <Reference Include="Chemistry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\Chemistry.dll</HintPath>
@@ -81,6 +75,9 @@
     <Reference Include="pepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\pepXML.dll</HintPath>
     </Reference>
+    <Reference Include="Proteogenomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Proteogenomics.0.0.16\lib\net471\Proteogenomics.dll</HintPath>
+    </Reference>
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.305\lib\net471\Proteomics.dll</HintPath>
     </Reference>
@@ -112,11 +109,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlignmentIntegrationTests.cs" />
-    <Compile Include="GeneModelTests.cs" />
+    <Compile Include="IndependentWrapperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WorkflowTests.cs" />
-    <Compile Include="RSEMIntegrationTests.cs" />
     <Compile Include="SnpEffPortTests.cs" />
     <Compile Include="TestSequenceSimilarityMethods.cs" />
     <Compile Include="VariantTests.cs" />
@@ -126,10 +120,13 @@
     <None Include="TestData\Homo_sapiens_202022.xml.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\2000reads_1.fastq">
+    <None Include="TestData\sample_gtf_strandProblem.gtf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\2000reads_2.fastq">
+    <None Include="TestFastqs\2000reads_1.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestFastqs\2000reads_2.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\chr1_one_fake_transcript_little_exon.gtf">
@@ -165,17 +162,14 @@
     <None Include="TestData\HardReverseStrand\reverse.gff3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\headers.fa">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="TestData\headersShort.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\mapper.fastq">
+    <None Include="TestFastqs\mapper.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-    <None Include="TestData\TestFastqs\mapperAgain.fastq">
+    <None Include="TestFastqs\mapperAgain.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\paired_end.bam">
@@ -211,16 +205,16 @@
     <None Include="TestData\read1-trimmed-pair1_STARtmp\Chimeric.out.sam.thread3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read1.fastq">
+    <None Include="TestFastqs\read1.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read1.fastq.gz">
+    <None Include="TestFastqs\read1.fastq.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read2.fastq">
+    <None Include="TestFastqs\read2.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\TestFastqs\read2.fastq.gz">
+    <None Include="TestFastqs\read2.fastq.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\sample_gff.gff3">
@@ -240,10 +234,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Proteogenomics\Proteogenomics.csproj">
-      <Project>{dec1fe77-2976-43ca-84fe-4f2b86c5e85f}</Project>
-      <Name>Proteogenomics</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">
       <Project>{7f0b5697-1bbb-4ff5-9bf2-434f0a9c2c60}</Project>
       <Name>ToolWrapperLayer</Name>
@@ -254,49 +244,49 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TestData\TestVcfs\aFewNearby.vcf">
+    <Content Include="TestVcfs\aFewNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="TestData\problematicChr19\chr19problematic.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr1Ucsc.vcf">
+    <Content Include="TestVcfs\chr1Ucsc.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_400001.vcf">
+    <Content Include="TestVcfs\chr_1_one_400001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_400000.vcf">
+    <Content Include="TestVcfs\chr_1_one_400000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_100001.vcf">
+    <Content Include="TestVcfs\chr_1_one_100001.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_100000.vcf">
+    <Content Include="TestVcfs\chr_1_one_100000.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_99999.vcf">
+    <Content Include="TestVcfs\chr_1_one_99999.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\ugh.vcf">
+    <Content Include="TestVcfs\ugh.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_heterozygous_missense.vcf">
+    <Content Include="TestVcfs\chr_1_one_heterozygous_missense.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_heterozygous_synonymous.vcf">
+    <Content Include="TestVcfs\chr_1_one_heterozygous_synonymous.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_homozygous_missense.vcf">
+    <Content Include="TestVcfs\chr_1_one_homozygous_missense.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\chr_1_one_homozygous_synonymous.vcf">
+    <Content Include="TestVcfs\chr_1_one_homozygous_synonymous.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\tonsFarApart.vcf">
+    <Content Include="TestVcfs\tonsFarApart.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\TestVcfs\tonsNearby.vcf">
+    <Content Include="TestVcfs\tonsNearby.vcf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="TestData\UtrProblem\gene.gtf">

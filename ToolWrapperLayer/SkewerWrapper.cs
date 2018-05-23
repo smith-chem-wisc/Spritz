@@ -10,8 +10,6 @@ namespace ToolWrapperLayer
     public class SkewerWrapper :
         IInstallable
     {
-        #region Installation Methods
-
         /// <summary>
         /// Writes a script for installing skewer.
         /// </summary>
@@ -45,10 +43,6 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
-        #region Public Method
-
         public static void Trim(string spritzDirectory, string analysisDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
         {
             log = "";
@@ -68,20 +62,18 @@ namespace ToolWrapperLayer
             bool alreadyTrimmed = File.Exists(readTrimmedPaths[0]) && (readPaths.Length == 1 || File.Exists(readTrimmedPaths[1]));
             if (alreadyTrimmed) return;
 
-            string script_path = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Skewered.bash");
-            WrapperUtility.GenerateAndRunScript(script_path, new List<string>
+            string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Skewered.bash");
+            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "skewer-0.2.2", "skewer")) +
+                "skewer-0.2.2/skewer" +
                     " -q " + qualityFilter.ToString() +
                     " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]))) +
                     " -t " + threads.ToString() +
-                    " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "BBMap", "resources", "adapters.fa")) +
+                    " -x " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "BBMap", "resources", "adapters.fa")) +
                     " " + WrapperUtility.ConvertWindowsPath(readPaths[0]) +
                     (readPaths.Length > 1 ? " " + WrapperUtility.ConvertWindowsPath(readPaths[1]) : ""),
             }).WaitForExit();
         }
-
-        #endregion Public Method
     }
 }

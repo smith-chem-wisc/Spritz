@@ -1,10 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using ToolWrapperLayer;
-using Proteogenomics;
-using Bio.VCF;
-using System;
-using System.Linq;
 
 namespace WorkflowLayer
 {
@@ -27,7 +23,7 @@ namespace WorkflowLayer
         {
             new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, analysisDirectory, reference);
             List<string> variantCallingCommands = new List<string>();
-            string scriptName = Path.Combine(spritzDirectory, "scripts", "variantCalling.bash");
+            string scriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "VariantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)
             {
                 // GATK
@@ -39,7 +35,7 @@ namespace WorkflowLayer
 
                 // Scalpel
                 var scalpel = new ScalpelWrapper();
-                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, gatk.SplitTrimBamPath, Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath) + "_scalpelOut")));
+                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
                 ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
                 ScalpelFilteredlVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
 
@@ -51,7 +47,7 @@ namespace WorkflowLayer
                 CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
                 CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
                 var snpEff = new SnpEffWrapper();
-                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.SortedVcfPath));
+                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.SortedVcfPath));
                 CombinedAnnotatedVcfFilePaths.Add(snpEff.AnnotatedVcfPath);
                 CombinedSnpEffHtmlFilePaths.Add(snpEff.HtmlReportPath);
                 CombinedAnnotatedProteinFastaPaths.Add(snpEff.VariantProteinFastaPath);

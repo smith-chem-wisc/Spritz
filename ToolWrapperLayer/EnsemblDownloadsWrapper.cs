@@ -151,8 +151,7 @@ namespace ToolWrapperLayer
             if (!downloadGrch37 && !downloadGrch38)
                 return;
 
-            string scriptPath = Path.Combine(spritzDirectory, "scripts", "downloadEnsemblReference.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(targetDirectory, "DownloadEnsemblReference.bash"), new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
                 "if [ ! -f " + Path.GetFileName(GenomeFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38PrimaryAssemblyUrl : GRCh37PrimaryAssemblyUrl) + "; fi",
@@ -179,8 +178,8 @@ namespace ToolWrapperLayer
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
                 .Select(line => line.Split('\t'))
                 .Where(x => x.Length > 1)
                 .ToDictionary(line => line[0], line => line[1]);
@@ -198,8 +197,8 @@ namespace ToolWrapperLayer
             bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
-                Path.Combine(spritzDirectory, "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
+                Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
                 .Select(line => line.Split('\t'))
                 .Where(x => x.Length > 1)
                 .ToDictionary(line => line[0], line => line[1]);
@@ -228,8 +227,8 @@ namespace ToolWrapperLayer
                     if (line.StartsWith("#")) { continue; }
                     string[] columns = line.Split('\t');
                     if (columns.Length == 0) { break; }
-                    if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { columns[0] = ucscColumn; }
-                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { } // nothing to do, already UCSC
+                    if (e2uMappings.TryGetValue(columns[0], out string ucscColumn) && ucscColumn != "") { columns[0] = ucscColumn; }
+                    else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn) && ensemblColumn != "") { } // nothing to do, already UCSC
                     else { continue; } // did not recognize this chromosome name; filter it out
                     writer.WriteLine(String.Join("\t", columns));
                 }
@@ -288,11 +287,11 @@ namespace ToolWrapperLayer
             SelenocysteineProteinAccessions = proteins.Where(p => !badOnes.Contains(p.Accession) && p.BaseSequence.Contains('U')).ToDictionary(p => p.Accession, p => p.BaseSequence);
         }
 
-        public static void FilterGeneModel(string spritzDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
+        public static void FilterGeneModel(string analysisDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
         {
             string grepQuery = "\"^" + String.Join(@"\|^", genome.Chromosomes.Select(c => c.FriendlyName).Concat(new[] { "#" }).ToList()) + "\"";
             filteredGeneModel = Path.Combine(Path.GetDirectoryName(geneModelGtfOrGff), Path.GetFileNameWithoutExtension(geneModelGtfOrGff)) + ".filtered" + Path.GetExtension(geneModelGtfOrGff);
-            WrapperUtility.GenerateAndRunScript(Path.Combine(spritzDirectory, "scripts", "FilterGeneModel.bash"), new List<string>
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "FilterGeneModel.bash"), new List<string>
             {
                 "grep " + grepQuery + " " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGff) + " > " + WrapperUtility.ConvertWindowsPath(filteredGeneModel)
             }).WaitForExit();

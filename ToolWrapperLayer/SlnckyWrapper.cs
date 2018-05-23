@@ -12,19 +12,12 @@ namespace ToolWrapperLayer
         private static string SlnckyAnnotationsLocation = @"https://www.dropbox.com/s/pq7wsjx61sp8ghm/annotations.tar.gz";
 
         public static string CanonicalToLncsSuffix { get; } = ".canonical_to_lncs.txt";
-
         public static string ClusterInfoSuffix { get; } = ".cluster_info.txt";
-
         public static string FilteredInfoSuffix { get; } = ".filtered_info.txt";
-
         public static string LncsBedSuffix { get; } = ".lncs.bed";
-
         public static string LncsInfoSuffix { get; } = ".lncs.info.txt";
-
         public static string OrfsSuffix { get; } = ".orfs.txt";
-
         public static string OrthologsTopSuffix { get; } = ".orthologs.top.txt";
-
         public static string OrthologsSuffix { get; } = ".orthologs.txt";
 
         /// <summary>
@@ -38,7 +31,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "git clone https://github.com/slncky/slncky.git",
+                "if [ ! -d slncky ]; then git clone https://github.com/slncky/slncky.git; fi",
                 "cd slncky",
                 "if [ ! -d annotations ]; then wget " + SlnckyAnnotationsLocation + "; fi",
                 "if [ ! -d annotations ]; then tar -xvf annotations.tar.gz; fi",
@@ -74,7 +67,8 @@ namespace ToolWrapperLayer
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "slncky")),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd slncky",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(slnckyOutPrefix + LncsBedSuffix) + " ]]; then " +
                     "./slncky.v1.0" +
                     " --threads " + threads.ToString() +

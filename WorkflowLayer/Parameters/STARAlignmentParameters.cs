@@ -40,7 +40,7 @@ namespace WorkflowLayer
         public string SpritzDirectory { get; set; }
         public string AnalysisDirectory { get; set; }
         public string Reference { get; set; }
-        public int Threads { get; set; }
+        public int Threads { get; set; } = 1;
         public List<string[]> Fastqs { get; set; }
         public bool StrandSpecific { get; set; }
         public bool InferStrandSpecificity { get; set; }

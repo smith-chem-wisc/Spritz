@@ -14,10 +14,8 @@ namespace WorkflowLayer
         {
         }
 
-        public LncRNADiscoveryParameters Parameters { get; set; }
+        public LncRNADiscoveryParameters Parameters { get; set; } = new LncRNADiscoveryParameters();
         public string SlnckyOutPrefix { get; private set; }
-        public string MergedGtfPath { get; private set; }
-        public List<string> RsemOutPrefixes { get; private set; } = new List<string>();
         public List<string> ReconstructedTranscriptModels { get; private set; } = new List<string>();
         public List<string> IsoformResultPaths { get; private set; } = new List<string>();
         public List<string> GeneResultPaths { get; private set; } = new List<string>();
@@ -32,50 +30,43 @@ namespace WorkflowLayer
             ensemblDownloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
             alignment.Parameters = new STARAlignmentParameters(
-                Parameters.SpritzDirectory, 
+                Parameters.SpritzDirectory,
                 Parameters.AnalysisDirectory,
-                Parameters.Reference, 
+                Parameters.Reference,
                 Parameters.Threads,
-                Parameters.Fastqs, 
+                Parameters.Fastqs,
                 Parameters.StrandSpecific,
-                Parameters.InferStrandSpecificity, 
+                Parameters.InferStrandSpecificity,
                 Parameters.OverwriteStarAlignment,
-                Parameters.GenomeStarIndexDirectory, 
-                ensemblDownloads.ReorderedFastaPath, 
-                Parameters.GeneModelGtfOrGff, 
-                Parameters.UseReadSubset, 
+                Parameters.GenomeStarIndexDirectory,
+                ensemblDownloads.ReorderedFastaPath,
+                Parameters.GeneModelGtfOrGff,
+                Parameters.UseReadSubset,
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
-            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.SpritzDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
-            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, filteredGeneModelForScalpel, Parameters.GenomeFasta);
+            EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
+            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
 
             // Transcript Reconstruction
-            StringTieWrapper stringtie = new StringTieWrapper();
+            StringtieWrapper stringtie = new StringtieWrapper();
             stringtie.TranscriptReconstruction(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome,
                 Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles);
-            ReconstructedTranscriptModels = stringtie.TranscriptGtfPaths;
-            MergedGtfPath = stringtie.MergedGtfPath;
-
-            // Transcript Quantification
-            foreach (var fastq in Parameters.Fastqs)
-            {
-                TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
-                quantification.Parameters = new TranscriptQuantificationParameters(
-                    Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.GenomeFasta, Parameters.Threads, MergedGtfPath, RSEMAlignerOption.STAR,
-                    Parameters.StrandSpecific ? Strandedness.Forward : Strandedness.None,
-                    fastq, Parameters.DoOutputQuantificationBam);
-                quantification.QuantifyTranscripts();
-                RsemOutPrefixes.Add(quantification.RsemOutputPrefix);
-                IsoformResultPaths.Add(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix);
-                GeneResultPaths.Add(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix);
-            }
+            ReconstructedTranscriptModels = stringtie.FilteredTranscriptGtfPaths;
 
             // Annotate lncRNAs
-            string slnckyScriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "SlcnkyAnnotation.bash");
-            SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".slnckyOut", "annotated");
-            WrapperUtility.GenerateAndRunScript(slnckyScriptName, SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
-                MergedGtfPath, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
+            foreach (string gtf in ReconstructedTranscriptModels)
+            {
+                string slnckyScriptName = WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "SlnckyAnnotation.bash");
+                SlnckyOutPrefix = Path.Combine(Path.GetDirectoryName(gtf), Path.GetFileNameWithoutExtension(gtf) + ".slnckyOut", "annotated");
+                WrapperUtility.GenerateAndRunScript(slnckyScriptName,
+                    SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
+                        gtf, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
+
+            }
+
+            // Write quantification tables for differential expression analysis (using stringtie TPM values)
+
         }
 
         /// <summary>

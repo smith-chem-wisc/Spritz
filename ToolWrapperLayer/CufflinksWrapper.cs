@@ -12,8 +12,6 @@ namespace ToolWrapperLayer
     public class CufflinksWrapper :
         IInstallable
     {
-        #region Public Properties
-
         /// <summary>
         /// Output filename for reconstructed transcripts gene model.
         /// </summary>
@@ -38,10 +36,6 @@ namespace ToolWrapperLayer
         /// Output filename for cufflinks
         /// </summary>
         public static string CufflinksMergedFilename { get; } = "merged.gtf";
-
-        #endregion Public Properties
-
-        #region Installation Methods
 
         /// <summary>
         /// Writes a script for installing cufflinks.
@@ -75,10 +69,6 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
-        #region Public Method
-
         /// <summary>
         /// Transcript assembly. Note that fragment bias estimation (--frag-bias-correct) and multi-read rescuing (--multi-read-correct) are not used.
         /// These take a lot of time, and they only provide better abundance estimates, which we use RSEM for.
@@ -104,7 +94,7 @@ namespace ToolWrapperLayer
             string script_name = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "CufflinksRun.bash");
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bamPath) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(sortedCheckPath) + " ]; then " + SamtoolsWrapper.SortBam(spritzDirectory, bamPath) + "; fi",
                 "bam=" +  WrapperUtility.ConvertWindowsPath(bamPath),
@@ -129,7 +119,7 @@ namespace ToolWrapperLayer
             filteredTranscriptGtfPath = Path.Combine(Path.GetDirectoryName(transcriptGtfPath), Path.GetFileNameWithoutExtension(transcriptGtfPath)) + ".filtered" + Path.GetExtension(transcriptGtfPath);
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Removing zero-abundance transcripts from " + transcriptGtfPath + "\"",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) + " ]]; then " +
                     "grep -v 'FPKM \"0.0000000000\"' " + WrapperUtility.ConvertWindowsPath(transcriptGtfPath) + " > " + WrapperUtility.ConvertWindowsPath(filteredTranscriptGtfPath) +
@@ -147,7 +137,8 @@ namespace ToolWrapperLayer
             string mergedGtfPath = Path.Combine(combinedTranscriptGtfOutputPath, CufflinksMergedFilename);
             return new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "cufflinks-2.2.1")),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd cufflinks-2.2.1",
                 "readlink -f \"" + String.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\" > " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(mergedGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mergedGtfPath) + " ]]; then " +
                     "./cuffmerge" +
@@ -178,14 +169,12 @@ namespace ToolWrapperLayer
 
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "GffToGtf.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Converting GFF to GTF: " + geneModelGffPath + " -> " + geneModelGtfPath + "\"",
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath) + " ]]; then " +
                     "cufflinks-2.2.1/gffread " + WrapperUtility.ConvertWindowsPath(geneModelGffPath) + " -T -o " + WrapperUtility.ConvertWindowsPath(geneModelGtfPath) +
                 "; fi"
             }).WaitForExit();
         }
-
-        #endregion Public Method
     }
 }
