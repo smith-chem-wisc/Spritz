@@ -572,13 +572,37 @@ namespace Test
             Assert.IsTrue(File.Exists(Path.Combine(tophatOutDirectory, TopHatWrapper.TophatJunctionsBEDFilename)));
         }
 
+        [Test, Order(1)]
+        public void Hisat2Align()
+        {
+            HISAT2Wrapper.GenerateIndex(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa"),
+                out string IndexPrefix);
+            string genomeFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "chr1_sample.fa");
+            Assert.IsTrue(HISAT2Wrapper.IndexExists(genomeFasta));
+
+            HISAT2Wrapper.Align(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                IndexPrefix,
+                new string[]
+                {
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                },
+                out string outputDirectory
+                );
+            Assert.IsTrue(File.Exists(outputDirectory));
+           
+        }
         #endregion Alignment tests
 
-        #region Workflow Tests
+            #region Workflow Tests
 
-        /// <summary>
-        /// Handling multiple fastq files and chromosomes, single-end
-        /// </summary>
+            /// <summary>
+            /// Handling multiple fastq files and chromosomes, single-end
+            /// </summary>
         [Test, Order(3)]
         public void FullProteinRunFromFastqs()
         {
