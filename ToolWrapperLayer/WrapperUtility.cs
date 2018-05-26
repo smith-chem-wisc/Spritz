@@ -107,7 +107,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string GetInstallationScriptPath(string spritzDirectory, string scriptName)
         {
-            return Path.Combine(spritzDirectory, "Scripts", "installScripts", scriptName);
+            return Path.Combine(spritzDirectory, "Scripts", "InstallScripts", scriptName);
         }
 
         /// <summary>

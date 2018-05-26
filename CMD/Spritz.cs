@@ -67,7 +67,9 @@ namespace CMD
                 flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
                 flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
-                flow.GenerateSAVProteins();
+                flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
+                flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
+                flow.GenerateSampleSpecificProteinDatabases();
 
                 Console.WriteLine("output databases to " + String.Join(", and ",
                     flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));

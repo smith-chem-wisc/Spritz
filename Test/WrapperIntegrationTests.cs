@@ -588,7 +588,7 @@ namespace Test
 
             SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
             flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
-            flow.Parameters.AnalysisDirectory = TestContext.CurrentContext.TestDirectory;
+            flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs");
             flow.Parameters.Reference = "grch37";
             flow.Parameters.Threads = Environment.ProcessorCount;
             flow.Parameters.Fastqs = new List<string[]>
@@ -602,7 +602,8 @@ namespace Test
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
-            flow.GenerateSAVProteins();
+            flow.Parameters.DoTranscriptIsoformAnalysis = true;
+            flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
@@ -649,7 +650,7 @@ namespace Test
             Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
 
             // too small of a test to get these outputs, apparently
-            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix)); 
+            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
             //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
         }
 
@@ -693,7 +694,7 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
 
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
@@ -733,7 +734,7 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"); // there is no equivalent of the patch; just checking that that works
             flow.Parameters.UseReadSubset = true;
             flow.Parameters.ReadSubset = 5000;
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {

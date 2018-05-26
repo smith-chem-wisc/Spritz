@@ -23,5 +23,7 @@ namespace WorkflowLayer
         public int MinPeptideLength { get; set; } = 7;
         public bool UseReadSubset { get; set; } = false;
         public int ReadSubset { get; set; } = 300000;
+        public bool DoFusionAnalysis { get; set; }
+        public bool DoTranscriptIsoformAnalysis { get; set; }
     }
 }

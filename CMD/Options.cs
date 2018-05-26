@@ -67,6 +67,12 @@ namespace CMD
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
 
+        [Option("doTranscriptIsoformAnalysis", Required = false, HelpText = "Do a transcript reconstruction analysis or use the specified new gene model (see -h option) to investigate alternative transcript isoforms.", Default = false)]
+        public bool DoTranscriptIsoformAnalysis { get; set; }
+
+        [Option("doGeneFusionAnalysis", Required = false, HelpText = "Do a gene fusion analysis to investigate gene fusion protein products.", Default = false)]
+        public bool DoFusionAnalysis { get; set; }
+
         public string ProteinFastaPath { get; set; }
     }
 }

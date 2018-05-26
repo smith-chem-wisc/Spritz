@@ -14,7 +14,7 @@ namespace Test
             var stringtie = new StringtieWrapper();
             string f = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf_strandProblem.gtf");
             string filtered = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf_strandProblem.filtered.gtf");
-            stringtie.FilterGtfEntriesWithoutStrand(f, filtered);
+            stringtie.FilterGtfEntriesWithoutStrand(f, filtered, false);
 
             // assert each one has a strand
             var lines = File.ReadAllLines(filtered);

@@ -1,20 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using WorkflowLayer;
+﻿using CMD;
 using System.Collections.ObjectModel;
-using System.IO;
-using CMD;
+using System.Linq;
+using System.Windows;
+using WorkflowLayer;
 
 namespace SpritzGUI
 {
@@ -30,7 +18,6 @@ namespace SpritzGUI
             mainWindow = (MainWindow)Application.Current.MainWindow;
             UpdateFieldsFromTask();
         }
-
 
         private MainWindow mainWindow { get; set; }
 
@@ -48,13 +35,13 @@ namespace SpritzGUI
             Options.AnalysisDirectory = txtAnalysisDirectory.Text;
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
             Options.Fastq1 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[0];
-            Options.Fastq2 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[1];            
+            Options.Fastq2 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[1];
             var geneSetCollection = (ObservableCollection<GeneSetDataGrid>)mainWindow.dataGridGeneSet.DataContext;
             Options.GeneModelGtfOrGff = geneSetCollection.First().FilePath;
             var genomeFastaDataGrids = (ObservableCollection<GenomeFastaDataGrid>)mainWindow.dataGridFASTA.DataContext;
             Options.GenomeFasta = genomeFastaDataGrids.First().FilePath;
 
-            Options.GenomeStarIndexDirectory = txtGenomeStarIndexDirectory.Text ;
+            Options.GenomeStarIndexDirectory = txtGenomeStarIndexDirectory.Text;
             Options.StrandSpecific = ckbStrandSpecific.IsChecked.Value;
             Options.UniProtXml = txtUniProtProteinXml.Text;
             Options.SraAccession = txtSraAccession.Text;
@@ -81,8 +68,6 @@ namespace SpritzGUI
             txtProteinFasta.Text = Options.ProteinFastaPath;
             txtStarFusionReference.Text = Options.Reference;
             txtUniProtProteinXml.Text = Options.UniProtXml;
-            
-
         }
     }
 }
