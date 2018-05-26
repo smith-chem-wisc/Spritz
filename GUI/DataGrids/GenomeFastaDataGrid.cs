@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SpritzGUI
 {
-    class GenomeFastaDataGrid
+    public class GenomeFastaDataGrid
     {
         public GenomeFastaDataGrid(string filePath)
         {
