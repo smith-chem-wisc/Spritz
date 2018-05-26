@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using CMD;
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.IO;
-using System.Reflection;
-using System.Collections.ObjectModel;
 using WorkflowLayer;
-using ToolWrapperLayer;
-using CMD;
 
 namespace SpritzGUI
 {
@@ -40,7 +35,6 @@ namespace SpritzGUI
             dataGridGeneSet.DataContext = geneSetCollection;
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
             workflowTreeView.DataContext = staticTasksObservableCollection;
-
         }
 
         #endregion Public Constructors
@@ -71,7 +65,6 @@ namespace SpritzGUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void MenuItem_Wiki_Click(object sender, RoutedEventArgs e)
@@ -234,7 +227,6 @@ namespace SpritzGUI
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
@@ -258,7 +250,7 @@ namespace SpritzGUI
         private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
         {
             //ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-            Spritz.Main(new string[]{ "CMD.exe", "-c", "setup"});
+            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
             return;
         }
 
@@ -322,11 +314,13 @@ namespace SpritzGUI
                     GenomeFastaDataGrid genomeFasta = new GenomeFastaDataGrid(filepath);
                     genomeFastaCollection.Add(genomeFasta);
                     break;
+
                 case ".gtf":
                 case ".gff3":
                     GeneSetDataGrid geneSet = new GeneSetDataGrid(filepath);
                     geneSetCollection.Add(geneSet);
                     break;
+
                 case ".fastq":
                 case ".fastq.gz":
                     RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
@@ -336,9 +330,6 @@ namespace SpritzGUI
             }
         }
 
-
-
         #endregion Private Methods - no Controlers
-
     }
 }

@@ -1,8 +1,7 @@
-﻿using System;
+﻿using CMD;
+using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using CMD;
 
 namespace SpritzGUI
 {
@@ -59,6 +58,5 @@ namespace SpritzGUI
                 "inferStrandedness", ok.Item2.InferStrandSpecificity.ToString()});
             }
         }
-
     }
 }
