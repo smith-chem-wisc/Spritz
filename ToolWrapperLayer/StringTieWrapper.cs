@@ -110,7 +110,7 @@ namespace ToolWrapperLayer
         /// <param name="inferStrandSpecificity"></param>
         /// <param name="sortedBamFiles"></param>
         public void TranscriptReconstruction(string spritzDirectory, string analysisDirectory, int threads, string geneModelGtfOrGff, Genome genome,
-            bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles)
+            bool strandSpecific, bool inferStrandSpecificity, List<string> sortedBamFiles, bool filterEntriesWithZeroAbundanceStringtieEstimates)
         {
             // transcript reconstruction with stringtie (transcripts and quantities used for lncRNA discovery, etc.)
             List<string> reconstructionCommands = new List<string>();
@@ -134,11 +134,11 @@ namespace ToolWrapperLayer
             foreach (string gtf in TranscriptGtfPaths)
             {
                 string filtered = Path.Combine(Path.GetDirectoryName(gtf), Path.GetFileNameWithoutExtension(gtf) + ".filtered.gtf");
-                FilterGtfEntriesWithoutStrand(gtf, filtered);
+                FilterGtfEntriesWithoutStrand(gtf, filtered, filterEntriesWithZeroAbundanceStringtieEstimates);
                 FilteredTranscriptGtfPaths.Add(filtered);
             }
             FilteredMergedGtfPath = Path.Combine(Path.GetDirectoryName(MergedGtfPath), Path.GetFileNameWithoutExtension(MergedGtfPath) + ".filtered.gtf");
-            FilterGtfEntriesWithoutStrand(MergedGtfPath, FilteredMergedGtfPath);
+            FilterGtfEntriesWithoutStrand(MergedGtfPath, FilteredMergedGtfPath, false); // stringtie merged GTFs no longer have abundance values
         }
 
         /// <summary>
@@ -161,6 +161,8 @@ namespace ToolWrapperLayer
                     " -G " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
                     " -o " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) +
                     " -g " + GapBetweenTranscriptsToMergeTogether.ToString() +
+                    " -T 0 -F 0" + // filtering is done elsewhere
+                    //" -f 0.01" + // minimum isoform fraction -- use default in stringtie for now
                     " " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "fi"
             };
@@ -171,27 +173,45 @@ namespace ToolWrapperLayer
         /// </summary>
         /// <param name="gtfPath"></param>
         /// <param name="gtfOutPath"></param>
-        public void FilterGtfEntriesWithoutStrand(string gtfPath, string gtfOutPath)
+        public void FilterGtfEntriesWithoutStrand(string gtfPath, string gtfOutPath, bool filterEntriesWithZeroAbundanceStringtieEstimates)
         {
             var chromFeatures = GeneModel.SimplerParse(gtfPath);
-            if (!File.Exists(gtfOutPath))
+            //if (!File.Exists(gtfOutPath))
+            //{
+            using (var file = File.Create(gtfOutPath))
             {
-                using (var file = File.Create(gtfOutPath))
+                var formatter = new GffFormatter();
+                foreach (var chromISeq in chromFeatures)
                 {
-                    var formatter = new GffFormatter();
-                    foreach (var feature in chromFeatures)
+                    List<MetadataListItem<List<string>>> filteredFeatures = new List<MetadataListItem<List<string>>>();
+                    bool isMetadata = chromISeq.Metadata.TryGetValue("features", out object featuresObj);
+                    if (isMetadata)
                     {
-                        bool isMetadata = feature.Metadata.TryGetValue("features", out object metadata);
-                        if (isMetadata)
+                        bool okayTranscript = false;
+                        var features = featuresObj as List<MetadataListItem<List<string>>>;
+                        foreach (var feature in features)
                         {
-                            feature.Metadata["features"] = (metadata as List<MetadataListItem<List<string>>>)
-                                .Where(f => f.SubItems.TryGetValue("strand", out List<string> strandish))
-                                .ToList();
-                            formatter.Format(file, feature);
+                            if (!feature.SubItems.TryGetValue("strand", out List<string> strandish)) { continue; }
+                            var attributes = GeneModel.SplitAttributes(feature.FreeText);
+                            if (feature.Key == "transcript")
+                            {
+                                bool okayFpkm = !filterEntriesWithZeroAbundanceStringtieEstimates ||
+                                    attributes.TryGetValue("FPKM", out string fpkm) && double.TryParse(fpkm, out double fpkmValue) && fpkmValue > 0;
+                                bool okayTpm = !filterEntriesWithZeroAbundanceStringtieEstimates ||
+                                    attributes.TryGetValue("TPM", out string tpm) && double.TryParse(tpm, out double tpmValue) && tpmValue > 0;
+                                okayTranscript = okayFpkm && okayTpm;
+                            }
+                            if (okayTranscript)
+                            {
+                                filteredFeatures.Add(feature);
+                            }
                         }
                     }
+                    chromISeq.Metadata["features"] = filteredFeatures;
                 }
+                formatter.Format(file, chromFeatures);
             }
+            //}
         }
     }
 }

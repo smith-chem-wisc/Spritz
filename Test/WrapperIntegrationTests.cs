@@ -588,7 +588,7 @@ namespace Test
 
             SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
             flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
-            flow.Parameters.AnalysisDirectory = TestContext.CurrentContext.TestDirectory;
+            flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs");
             flow.Parameters.Reference = "grch37";
             flow.Parameters.Threads = Environment.ProcessorCount;
             flow.Parameters.Fastqs = new List<string[]>
@@ -602,6 +602,7 @@ namespace Test
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
+            flow.Parameters.DoTranscriptIsoformAnalysis = true;
             flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
@@ -649,7 +650,7 @@ namespace Test
             Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
 
             // too small of a test to get these outputs, apparently
-            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix)); 
+            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
             //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
         }
 

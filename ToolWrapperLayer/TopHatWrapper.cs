@@ -127,7 +127,8 @@ namespace ToolWrapperLayer
         /// <param name="geneModelGtfOrGffPath"></param>
         /// <param name="strandSpecific"></param>
         /// <param name="outputDirectory"></param>
-        public static void Align(string spritzDirectory, string analysisDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths, bool strandSpecific, out string outputDirectory)
+        public static void Align(string spritzDirectory, string analysisDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths,
+            bool strandSpecific, out string outputDirectory)
         {
             string tempDir = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), "tmpDir");
             outputDirectory = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), Path.GetFileNameWithoutExtension(fastqPaths[0]) + "TophatOut");

@@ -1,5 +1,5 @@
-﻿using Proteomics;
-using Proteogenomics;
+﻿using Proteogenomics;
+using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using ToolWrapperLayer;
@@ -56,20 +56,34 @@ namespace WorkflowLayer
             string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
             GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
 
-            // Merge new and reference gene models, if a new one is specified
-            string newGeneModel = Parameters.NewGeneModelGtfOrGff;
+            // Merge reference gene model and a new gene model (either specified or stringtie-generated)
+            string newGeneModelPath = Parameters.NewGeneModelGtfOrGff;
             string reference = Parameters.Reference;
             if (Parameters.DoTranscriptIsoformAnalysis)
             {
-                if (newGeneModel == null)
+                StringtieWrapper stringtie = new StringtieWrapper();
+                if (newGeneModelPath == null)
                 {
-                    StringtieWrapper stringtie = new StringtieWrapper();
-                    stringtie.TranscriptReconstruction(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles);
-                    newGeneModel = stringtie.FilteredMergedGtfPath;
+                    stringtie.TranscriptReconstruction(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles, true);
+                    newGeneModelPath = stringtie.FilteredMergedGtfPath;
                 }
-                TransferCDS(referenceGeneModel, newGeneModel);
-                SnpEffWrapper snpeff = new SnpEffWrapper();
-                reference = snpeff.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath, Downloads.ProteinFastaPath, newGeneModel);
+                else
+                {
+                    newGeneModelPath = EnsemblDownloadsWrapper.ConvertFirstColumnUCSC2Ensembl(Parameters.SpritzDirectory, Parameters.Reference, Parameters.NewGeneModelGtfOrGff);
+                    string mergedGeneModelPath = Path.Combine(Path.GetDirectoryName(newGeneModelPath), Path.GetFileNameWithoutExtension(newGeneModelPath) + ".merged.gtf");
+                    WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "MergeTranscriptModels.bash"),
+                        StringtieWrapper.MergeTranscriptPredictions(Parameters.SpritzDirectory, Parameters.ReferenceGeneModelGtfOrGff, new List<string> { newGeneModelPath }, mergedGeneModelPath)).WaitForExit();
+                    newGeneModelPath = mergedGeneModelPath;
+                }
+
+                GeneModel newGeneModel = new GeneModel(Downloads.EnsemblGenome, newGeneModelPath);
+
+                // Determine CDS from start codons of reference gene model
+                // In the future, we could also try ORF finding to expand this (e.g. https://github.com/TransDecoder/TransDecoder/wiki)
+                string mergedGeneModelWithCdsPath = Path.Combine(Path.GetDirectoryName(newGeneModelPath), Path.GetFileNameWithoutExtension(newGeneModelPath) + ".withcds.gtf");
+                newGeneModel.CreateCDSFromAnnotatedStartCodons(referenceGeneModel);
+                newGeneModel.PrintToGTF(mergedGeneModelWithCdsPath);
+                reference = SnpEffWrapper.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath, Downloads.ProteinFastaPath, mergedGeneModelWithCdsPath);
             }
 
             // Variant Calling
@@ -103,25 +117,6 @@ namespace WorkflowLayer
             {
                 TransferModificationsFlow transfer = new TransferModificationsFlow();
                 transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
-            }
-        }
-
-        /// <summary>
-        /// Read in a new gene model and merge it with this one
-        /// </summary>
-        /// <param name="alternativeGeneModelPath"></param>
-        private void TransferCDS(GeneModel referenceGeneModel, string alternativeGeneModelPath)
-        {
-            GeneModel newGeneModel = null;
-            if (alternativeGeneModelPath != null && File.Exists(alternativeGeneModelPath))
-            {
-                string newGeneModelPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(Parameters.SpritzDirectory, Parameters.Reference, Parameters.NewGeneModelGtfOrGff);
-                newGeneModel = new GeneModel(Downloads.EnsemblGenome, newGeneModelPath);
-                newGeneModel.CreateCDSFromAnnotatedStartCodons(referenceGeneModel);
-            }
-            if (newGeneModel != null)
-            {
-                referenceGeneModel.Merge(newGeneModel);
             }
         }
 

@@ -51,7 +51,7 @@ namespace WorkflowLayer
             // Transcript Reconstruction
             StringtieWrapper stringtie = new StringtieWrapper();
             stringtie.TranscriptReconstruction(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome,
-                Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles);
+                Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles, true);
             ReconstructedTranscriptModels = stringtie.FilteredTranscriptGtfPaths;
 
             // Annotate lncRNAs
@@ -62,11 +62,9 @@ namespace WorkflowLayer
                 WrapperUtility.GenerateAndRunScript(slnckyScriptName,
                     SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
                         gtf, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
-
             }
 
             // Write quantification tables for differential expression analysis (using stringtie TPM values)
-
         }
 
         /// <summary>
