@@ -11,17 +11,9 @@ namespace ToolWrapperLayer
     public class RSeQCWrapper :
         IInstallable
     {
-        #region Public Properties
-
         public static string InnerDistanceRPlotSuffix { get; } = ".inner_distance_plot.r";
-
         public static string InnerDistanceFrequencyTableSuffix { get; } = ".inner_distance_freq.txt";
-
         public static string InnerDistanceDistanceTableSuffix { get; } = ".inner_distance.txt";
-
-        #endregion Public Properties
-
-        #region Installation Methods
 
         /// <summary>
         /// Writes an installation script for RSeQC.
@@ -56,13 +48,11 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        #endregion Installation Methods
-
         public static int InferInnerDistance(string spritzDirectory, string analysisDirectory, string bamPath, string geneModelPath, out string[] outputFiles)
         {
             if (Path.GetExtension(geneModelPath) != ".bed")
             {
-                geneModelPath = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, analysisDirectory, geneModelPath);
+                geneModelPath = BEDOPSWrapper.GffOrGtf2Bed12(spritzDirectory, analysisDirectory, geneModelPath);
             }
 
             outputFiles = new string[]
