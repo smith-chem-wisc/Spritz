@@ -126,24 +126,34 @@ namespace ToolWrapperLayer
                 throw new ArgumentOutOfRangeException("Too many fastq file types given for RSEM calculate expression.");
             }
 
+            string[] analysisFastqPaths = fastqPaths;
             string alignerOption = GetAlignerOption(spritzDirectory, aligner);
             string threadOption = "--num-threads " + threads.ToString();
             string strandOption = "--strandedness " + strandedness.ToString().ToLowerInvariant();
-            bool fastqIsGunzipped = fastqPaths[0].EndsWith(".gz");
-            bool fastqIsBunzipped = fastqPaths[0].EndsWith(".bz2") || fastqPaths[0].EndsWith(".bz") || fastqPaths[0].EndsWith(".tbz") || fastqPaths[0].EndsWith(".tbz2");
-            string compressionOption = fastqIsGunzipped && aligner == RSEMAlignerOption.STAR ? "--star-gzipped-read-file" :
-                fastqIsBunzipped && aligner == RSEMAlignerOption.STAR ? "--star-bzipped-read-file" :
-                "";
-            string inputOption = fastqPaths.Length == 1 ? String.Join(",", fastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) :
+
+            // Decompress files if needed
+            // The '--star-gzipped-read-file' and '--star-bzipped-read-file' options work, but then the rest of RSEM doesn't when using compressed files...
+            bool fastqIsGunzipped = analysisFastqPaths[0].EndsWith("gz");
+            bool fastqIsBunzipped = analysisFastqPaths[0].EndsWith("bz2") || analysisFastqPaths[0].EndsWith("bz");
+            if (fastqIsGunzipped || fastqIsBunzipped)
+            {
+                for (int i = 0; i < analysisFastqPaths.Length; i++)
+                {
+                    WrapperUtility.RunBashCommand(fastqIsGunzipped ? "gunzip" : "bunzip2", "-k " + WrapperUtility.ConvertWindowsPath(analysisFastqPaths[i])).WaitForExit();
+                    analysisFastqPaths[i] = Path.ChangeExtension(analysisFastqPaths[i], null);
+                }
+            }
+
+            string inputOption = analysisFastqPaths.Length == 1 ? String.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) :
                 "--paired-end " +
-                    String.Join(",", fastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) +
+                    String.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " " +
-                    String.Join(",", fastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
+                    String.Join(",", analysisFastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
-            OutputPrefix = Path.Combine(Path.GetDirectoryName(fastqPaths[0].Split(',')[0]), 
-                Path.GetFileNameWithoutExtension(fastqPaths[0].Split(',')[0]) + 
-                "_" + Path.GetExtension(fastqPaths[0].Split(',')[0]).Substring(1).ToUpperInvariant() +
+            OutputPrefix = Path.Combine(Path.GetDirectoryName(analysisFastqPaths[0].Split(',')[0]), 
+                Path.GetFileNameWithoutExtension(analysisFastqPaths[0].Split(',')[0]) + 
+                "_" + Path.GetExtension(analysisFastqPaths[0].Split(',')[0]).Substring(1).ToUpperInvariant() +
                 referencePrefix.GetHashCode().ToString());
 
             // RSEM likes to sort the transcript.bam file, which takes forever and isn't very useful, I've found. Just sort the genome.bam file instead
@@ -165,7 +175,6 @@ namespace ToolWrapperLayer
                         "--calc-ci " + // posterior calculation of 95% confidence intervals
                         alignerOption + " " +
                         threadOption + " " +
-                        compressionOption + " " +
                         bamOption + " " +
                         inputOption + " " +
                         WrapperUtility.ConvertWindowsPath(referencePrefix) + " " +

@@ -161,7 +161,7 @@ namespace ToolWrapperLayer
                     " -G " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) +
                     " -o " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) +
                     " -g " + GapBetweenTranscriptsToMergeTogether.ToString() +
-                    " -T 0 -F 0" + // filtering is done elsewhere
+                    //" -T 0 -F 0" + // filtering is done elsewhere; this really does lead to a lot of bad transcript predictions. Just use the default.
                     //" -f 0.01" + // minimum isoform fraction -- use default in stringtie for now
                     " " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "fi"
