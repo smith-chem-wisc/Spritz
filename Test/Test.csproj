@@ -149,6 +149,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="TestFastqs\mapperCompressed.fastq.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestFastqs\mapperAgain.fastq">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

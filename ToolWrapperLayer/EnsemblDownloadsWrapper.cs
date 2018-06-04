@@ -307,7 +307,7 @@ namespace ToolWrapperLayer
         {
             if (Path.GetExtension(genomeFasta) == ".gz" || Path.GetExtension(genomeFasta) == ".tgz")
             {
-                WrapperUtility.RunBashCommand("gunzip", WrapperUtility.ConvertWindowsPath(genomeFasta));
+                WrapperUtility.RunBashCommand("gunzip", WrapperUtility.ConvertWindowsPath(genomeFasta)).WaitForExit();
                 genomeFasta = Path.ChangeExtension(genomeFasta, null);
             }
 

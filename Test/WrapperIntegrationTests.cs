@@ -785,6 +785,32 @@ namespace Test
         }
 
         [Test, Order(2)]
+        public void RSEMStarCalculateGz()
+        {
+            TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
+            quantification.Parameters = new TranscriptQuantificationParameters(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Environment.ProcessorCount,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                RSEMAlignerOption.STAR,
+                Strandedness.None,
+                new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperCompressed.fastq.gz") },
+                true);
+            quantification.QuantifyTranscripts();
+
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(quantification.RsemOutputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
+        }
+
+        [Test, Order(2)]
         public void RSEMBowtieCalculate()
         {
             string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperRsemBowtie.fastq");
