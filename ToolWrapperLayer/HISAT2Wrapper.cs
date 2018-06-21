@@ -69,7 +69,7 @@ namespace ToolWrapperLayer
 
         public static void Align(string spritzDirectory, string analysisDirectory, string IndexPrefix, string[] fastqPaths, out string outputDirectory)
         {
-            if (fastqPaths.Count() == 1)
+            if (fastqPaths.Length == 1)
             {
                 outputDirectory = "Hisat2OutUnpaired.sam";
                 WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Hisat2Align.bash"), new List<string>
