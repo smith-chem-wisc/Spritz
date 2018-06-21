@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -139,7 +140,7 @@ namespace ToolWrapperLayer
             {
                 for (int i = 0; i < analysisFastqPaths.Length; i++)
                 {
-                    WrapperUtility.RunBashCommand(fastqIsGunzipped ? "gunzip" : "bunzip2", "-k " + WrapperUtility.ConvertWindowsPath(analysisFastqPaths[i])).WaitForExit();
+                    WrapperUtility.RunBashCommand(fastqIsGunzipped ? "gunzip" : "bunzip2", "--keep " + WrapperUtility.ConvertWindowsPath(analysisFastqPaths[i])).WaitForExit();
                     analysisFastqPaths[i] = Path.ChangeExtension(analysisFastqPaths[i], null);
                 }
             }
@@ -151,8 +152,8 @@ namespace ToolWrapperLayer
                     String.Join(",", analysisFastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
-            OutputPrefix = Path.Combine(Path.GetDirectoryName(analysisFastqPaths[0].Split(',')[0]), 
-                Path.GetFileNameWithoutExtension(analysisFastqPaths[0].Split(',')[0]) + 
+            OutputPrefix = Path.Combine(Path.GetDirectoryName(analysisFastqPaths[0].Split(',')[0]),
+                Path.GetFileNameWithoutExtension(analysisFastqPaths[0].Split(',')[0]) +
                 "_" + Path.GetExtension(analysisFastqPaths[0].Split(',')[0]).Substring(1).ToUpperInvariant() +
                 referencePrefix.GetHashCode().ToString());
 
@@ -160,8 +161,8 @@ namespace ToolWrapperLayer
             string samtoolsCommands = !doOuptutBam ?
                 "" :
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
-                    "  " + SamtoolsWrapper.SortBam(spritzDirectory, OutputPrefix + GenomeBamSuffix) + "\n" +
-                    "  " + SamtoolsWrapper.IndexBamCommand(spritzDirectory, OutputPrefix + GenomeSortedBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.SortBam(OutputPrefix + GenomeBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.IndexBamCommand(OutputPrefix + GenomeSortedBamSuffix) + "\n" +
                     "fi";
 
             // construct the commands

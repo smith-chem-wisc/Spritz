@@ -1,10 +1,9 @@
-﻿using Proteogenomics;
-using Proteomics;
+﻿using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UsefulProteomicsDatabases;
 using System.Linq;
+using UsefulProteomicsDatabases;
 
 namespace WorkflowLayer
 {
@@ -20,7 +19,7 @@ namespace WorkflowLayer
             foreach (var xml in destinationXmlPaths)
             {
                 string outxml = Path.Combine(Path.GetDirectoryName(xml), Path.GetFileNameWithoutExtension(xml) + ".withmods.xml");
-                var newProts = ProteinAnnotation.TransferModifications(uniprot, ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, null, out un).Concat(additionalProteins).ToList());
+                var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, null, out un).Concat(additionalProteins).ToList());
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), newProts, outxml);
                 outxmls.Add(outxml);
             }
@@ -32,7 +31,7 @@ namespace WorkflowLayer
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(spritzDirectory);
             var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out Dictionary<string, Modification> un);
             string outxml = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withmods.xml");
-            var newProts = ProteinAnnotation.TransferModifications(uniprot, ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out un));
+            var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out un));
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), newProts, outxml);
             return outxml;
         }

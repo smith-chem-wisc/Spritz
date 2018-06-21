@@ -69,6 +69,7 @@ namespace ToolWrapperLayer
             AnnotatedGenesSummaryPath = outPrefix + ".snpEffAnnotated.genes.txt";
             VariantProteinFastaPath = outPrefix + ".snpEffAnnotated.protein.fasta";
             VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
+            Directory.CreateDirectory(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             if (File.Exists(AnnotatedVcfPath)) return new List<string>();
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
@@ -81,6 +82,11 @@ namespace ToolWrapperLayer
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
+
+                // ensure that the files get closed before continuing
+                WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath)),
+                WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath)),
+                WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath)),
 
                 // remove the annotated VCF file if snpEff didn't work, e.g. if there was no VCF file to annotate
                 "if [[ ( -f " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath) + " && ! -s " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath) + " ) ]]; then",

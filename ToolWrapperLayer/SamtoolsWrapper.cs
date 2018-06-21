@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace ToolWrapperLayer
 {
@@ -11,7 +12,6 @@ namespace ToolWrapperLayer
     public class SamtoolsWrapper :
         IInstallable
     {
-
         public string SamtoolsVersion { get; set; } = "1.8";
 
         #region Installation Methods
@@ -69,21 +69,28 @@ namespace ToolWrapperLayer
             return megabytes + "M";
         }
 
-        public static string SortBam(string spritzDirectory, string bamPath)
+        public static string SortBam(string bamPath)
         {
             return "samtools sort -@ " + Environment.ProcessorCount.ToString() + " -m " + GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount) +
                 " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + " " +
                 WrapperUtility.ConvertWindowsPath(bamPath);
         }
 
-        public static string GenomeFastaIndexCommand(string spritzDirectory, string genomeFastaPath)
+        public static string GenomeFastaIndexCommand(string genomeFastaPath)
         {
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
         }
 
-        public static string IndexBamCommand(string spritzDirectory, string bamPath)
+        public static string IndexBamCommand(string bamPath)
         {
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then samtools index " + WrapperUtility.ConvertWindowsPath(bamPath) + "; fi";
+        }
+
+        public static string GetSequencesFromFasta(string inputFasta, IEnumerable<string> sequenceNames, string outputFasta)
+        {
+            if (sequenceNames.Any(name => name.Contains(" "))) { throw new ArgumentException("A sequence name query had a space in it; this is not supported" + String.Join(",", sequenceNames) + "."); }
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outputFasta) + " ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(inputFasta) +
+                " " + String.Join(" ", sequenceNames) + " > " + WrapperUtility.ConvertWindowsPath(outputFasta) + "; fi";
         }
 
         #endregion Public Methods

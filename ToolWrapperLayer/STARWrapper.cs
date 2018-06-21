@@ -325,12 +325,12 @@ namespace ToolWrapperLayer
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
                     "  STAR" + alignmentArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(spritzDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
                     "  STAR" + dedupArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(spritzDirectory, WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
 
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
                     "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
@@ -344,12 +344,12 @@ namespace ToolWrapperLayer
         /// </summary>
         /// <param name="spritzDirectory"></param>
         /// <param name="fastqFiles"></param>
-        /// <param name="reads"></param>
+        /// <param name="numReads"></param>
         /// <param name="currentDirectory"></param>
         /// <param name="newFfiles"></param>
         /// <param name="useSeed"></param>
         /// <param name="seed"></param>
-        public static void SubsetFastqs(string spritzDirectory, string analysisDirectory, string[] fastqFiles, int reads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
+        public static void SubsetFastqs(string spritzDirectory, string analysisDirectory, string[] fastqFiles, int numReads, string currentDirectory, out string[] newFfiles, bool useSeed = false, int seed = 0)
         {
             newFfiles = new string[] { Path.Combine(Path.GetDirectoryName(fastqFiles[0]), Path.GetFileNameWithoutExtension(fastqFiles[0]) + ".segment.fastq") };
             if (fastqFiles.Length > 1)
@@ -359,9 +359,9 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(newFfiles[0]) + " ]; then",
-                "  echo \"Subsetting " + reads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
-                "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
-                fastqFiles.Length > 1 ? "  seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + reads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
+                "  echo \"Subsetting " + numReads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
+                "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + numReads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
+                fastqFiles.Length > 1 ? "  seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + numReads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
                 "fi"
             }).WaitForExit();
         }

@@ -51,7 +51,7 @@ namespace WorkflowLayer
                 Parameters.UseReadSubset,
                 Parameters.ReadSubset);
             alignment.PerformTwoPassAlignment();
-            Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
+            Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFastaPath);
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.GffOrGtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
             GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
@@ -83,7 +83,12 @@ namespace WorkflowLayer
                 string mergedGeneModelWithCdsPath = Path.Combine(Path.GetDirectoryName(newGeneModelPath), Path.GetFileNameWithoutExtension(newGeneModelPath) + ".withcds.gtf");
                 newGeneModel.CreateCDSFromAnnotatedStartCodons(referenceGeneModel);
                 newGeneModel.PrintToGTF(mergedGeneModelWithCdsPath);
-                reference = SnpEffWrapper.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath, Downloads.ProteinFastaPath, mergedGeneModelWithCdsPath);
+                reference = SnpEffWrapper.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath,
+                    Parameters.ProteinFastaPath, mergedGeneModelWithCdsPath);
+            }
+            else
+            {
+                new SnpEffWrapper().DownloadSnpEffDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference);
             }
 
             // Variant Calling
@@ -96,7 +101,8 @@ namespace WorkflowLayer
                 sortedBed12Path,
                 Parameters.EnsemblKnownSitesPath,
                 alignment.DedupedBamFiles,
-                Downloads.ReorderedFastaPath);
+                Downloads.ReorderedFastaPath,
+                Downloads.EnsemblGenome);
 
             // Gene Fusion Discovery
             List<Protein> fusionProteins = new List<Protein>();

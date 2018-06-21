@@ -110,7 +110,6 @@ namespace ToolWrapperLayer
                 "  mv gatk-4.0.0.0 gatk",
                 "fi",
                 "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
-
             });
             return scriptPath;
         }
@@ -298,12 +297,12 @@ namespace ToolWrapperLayer
             List<string> commands = new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 // split and trim reads (some datasets are probably going to have misencoded quality scores; -fixMisencodedQuals just subtracts 31 from all quality scores if possible...)
                 // exit code of 2 means that the FixMisencodedQualityBaseReads errored out because there were correctly encode base quality scores
-                SamtoolsWrapper.IndexBamCommand(spritzDirectory, dedupedBam),
+                SamtoolsWrapper.IndexBamCommand(dedupedBam),
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(fixedQualsBam) + " ) ]]; then",
                 "  " + fixMisencodedQualsCmd,
                 "  if [ $? -ne 2 ]; then",
@@ -312,7 +311,7 @@ namespace ToolWrapperLayer
                 "    " + splitNCigarReadsCmd2,
                 "  fi",
                 "fi",
-                SamtoolsWrapper.IndexBamCommand(spritzDirectory, SplitTrimBamPath),
+                SamtoolsWrapper.IndexBamCommand(SplitTrimBamPath),
             };
             return commands;
         }
@@ -334,7 +333,7 @@ namespace ToolWrapperLayer
             List<string> commands = new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 // check that reference VCF is indexed
@@ -401,7 +400,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
 
-                SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep SO:coordinate > " + WrapperUtility.ConvertWindowsPath(sortedCheckPath),
@@ -460,7 +459,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "RealignIndels.bash"), new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(realignerTable) + " || ! -s " + WrapperUtility.ConvertWindowsPath(realignerTable) + " ]]; then " +
@@ -501,7 +500,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "BaseRecalibration.bash"), new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SamtoolsWrapper.GenomeFastaIndexCommand(spritzDirectory, genomeFasta),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " ]; then " +

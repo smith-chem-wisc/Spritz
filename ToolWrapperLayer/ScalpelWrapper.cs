@@ -10,7 +10,10 @@ namespace ToolWrapperLayer
         IInstallable
     {
         public string IndelVcfPath { get; private set; }
+
+        //public string IndelVcf1IndexedPath { get; private set; }
         public string FilteredIndelVcfPath { get; private set; }
+
         private string ScalpelLocationCheckFilename { get; set; } = "scalpelLocation.txt";
         private string ScalpelVersion { get; set; } = "0.5.3";
 
@@ -58,18 +61,24 @@ namespace ToolWrapperLayer
             CheckInstallation(spritzDirectory);
             var vcftools = new VcfToolsWrapper();
             IndelVcfPath = Path.Combine(outdir, "variants.indel.vcf");
+            //IndelVcf1IndexedPath = Path.Combine(outdir, "variants.indel.1index.vcf");
             var commands = new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " ]]; then " +
-                "scalpel-" + ScalpelVersion + "/scalpel-discovery --single " +
+                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " ]]; then ",
+                "  scalpel-" + ScalpelVersion + "/scalpel-discovery --single " +
                     "--bam " + WrapperUtility.ConvertWindowsPath(bamPath) +
                     " --ref " + WrapperUtility.ConvertWindowsPath(genomeFastaP) +
                     " --bed " + WrapperUtility.ConvertWindowsPath(bedPath) +
                     " --numprocs " + threads.ToString() +
-                    " --dir " + WrapperUtility.ConvertWindowsPath(outdir) +
-                "; fi",
-                vcftools.RemoveAllSnvs(spritzDirectory, IndelVcfPath, false, true) // vcf-concat doesn't keep all INFO header lines, so just dump the INFO from each variant
+                    " --dir " + WrapperUtility.ConvertWindowsPath(outdir),
+
+                // scalpel uses 0-indexing, where SnpEff uses 1-indexing, so change this output to match snpeff
+                //"  awk 'BEGIN{OFS=\"\t\"}{ if (substr($0, 1, 1) != \"#\") $2=++$2; print $0 }' " + WrapperUtility.ConvertWindowsPath(IndelVcfPath) + " > " + WrapperUtility.ConvertWindowsPath(IndelVcf1IndexedPath),
+                "fi",
+
+                // vcf-concat doesn't keep all INFO header lines, so just dump the INFO from each variant
+                vcftools.RemoveAllSnvs(spritzDirectory, IndelVcfPath, false, true)
             };
             FilteredIndelVcfPath = vcftools.VcfWithoutSnvsPath;
             return commands;
