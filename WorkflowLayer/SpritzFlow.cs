@@ -22,6 +22,8 @@ namespace WorkflowLayer
 
         public MyWorkflow WorkflowType { get; set; }
 
+        public ISpritzParameters SpritzParameters { get; set; }
+
         public void RunTask(string outputFolder, ISpritzParameters parameters, string displayName)
         {
             try

@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpritzGUI
+﻿namespace SpritzGUI
 {
-    class GenomeFastaDataGrid
+    public class GenomeFastaDataGrid
     {
         public GenomeFastaDataGrid(string filePath)
         {

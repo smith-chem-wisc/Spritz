@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Proteogenomics;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ToolWrapperLayer;
 
 namespace WorkflowLayer
@@ -9,7 +11,7 @@ namespace WorkflowLayer
         public List<string> GatkVcfFilePaths { get; private set; } = new List<string>();
         public List<string> GatkFilteredVcfFilePaths { get; private set; } = new List<string>();
         public List<string> ScalpelVcfFilePaths { get; private set; } = new List<string>();
-        public List<string> ScalpelFilteredlVcfFilePaths { get; private set; } = new List<string>();
+        public List<string> ScalpelFilteredVcfFilePaths { get; private set; } = new List<string>();
         public List<string> CombinedVcfFilePaths { get; private set; } = new List<string>();
         public List<string> CombinedSortedVcfFilePaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedVcfFilePaths { get; private set; } = new List<string>();
@@ -17,12 +19,13 @@ namespace WorkflowLayer
         public List<string> CombinedAnnotatedGenesSummaryPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinFastaPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinXmlPaths { get; private set; } = new List<string>();
+        public List<string> CompletedProteinXmlPaths { get; private set; } = new List<string>();
 
         public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
-            List<string> dedupedBamFiles, string reorderedFastaPath)
+            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome)
         {
-            new SnpEffWrapper().DownloadSnpEffDatabase(spritzDirectory, analysisDirectory, reference);
             List<string> variantCallingCommands = new List<string>();
+            List<SnpEffWrapper> snpeffs = new List<SnpEffWrapper>();
             string scriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "VariantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)
             {
@@ -37,7 +40,7 @@ namespace WorkflowLayer
                 var scalpel = new ScalpelWrapper();
                 variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
                 ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
-                ScalpelFilteredlVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
+                ScalpelFilteredVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
 
                 // Combine & Annotate
                 var vcftools = new VcfToolsWrapper();
@@ -52,8 +55,11 @@ namespace WorkflowLayer
                 CombinedSnpEffHtmlFilePaths.Add(snpEff.HtmlReportPath);
                 CombinedAnnotatedProteinFastaPaths.Add(snpEff.VariantProteinFastaPath);
                 CombinedAnnotatedProteinXmlPaths.Add(snpEff.VariantProteinXmlPath);
+                snpeffs.Add(snpEff);
             }
             WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
+            CompletedProteinXmlPaths = snpeffs.Select(snpEff => ProteinAnnotation.CompleteVariantAnnotations(spritzDirectory,
+                snpEff.VariantProteinXmlPath, snpEff.AnnotatedVcfPath, genome)).ToList();
         }
     }
 }

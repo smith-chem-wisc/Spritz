@@ -1,13 +1,13 @@
-﻿using Bio;
-using Bio.IO.FastA;
-using Bio.VCF;
+﻿using Bio.VCF;
 using NUnit.Framework;
 using Proteogenomics;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
+using UsefulProteomicsDatabases;
 using WorkflowLayer;
 
 namespace Test
@@ -18,7 +18,7 @@ namespace Test
         #region Installs
 
         [Test, Order(0)]
-        public void TestInstall()
+        public void InstallTest()
         {
             ManageToolsFlow.Install(TestContext.CurrentContext.TestDirectory);
 
@@ -83,51 +83,55 @@ namespace Test
             Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "trinity*").Length > 0);
         }
 
-        private string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.dna.primary_assembly.fa");
-
         [Test, Order(1)]
-        public void DownloadReferences()
+        [TestCase("grch37")]
+        [TestCase("grch38")]
+        public void EnsemblDownloadReferences(string reference)
         {
             EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
             downloadsWrapper.DownloadReferences(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                "grch37");
+                reference);
 
             // - a basic set of chromosomes, fairly small ones
-            string a = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa");
+            string a = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa");
+
             // - chromosomes and contigs that test ordering: 9 comes before 22 in karyotipic order, but not lexographic
-            string b = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa");
-
-            if (!File.Exists(a) || !File.Exists(b))
-            {
-                List<ISequence> chromosomes = new FastAParser().Parse(new FileStream(genomeFastaPath, FileMode.Open)).ToList();
-                FastAFormatter formatter = new FastAFormatter();
-
-                if (!File.Exists(a))
-                {
-                    Genome.WriteFasta(chromosomes.Where(x => x.ID.StartsWith("20") || x.ID.StartsWith("21") || x.ID.StartsWith("22")), a);
-                }
-                if (!File.Exists(b))
-                {
-                    Genome.WriteFasta(chromosomes.Where(x => x.ID.StartsWith("9") || x.ID.StartsWith("22") || x.ID.StartsWith("GL000210") || x.ID.StartsWith("HG1287_PATCH")), b);
-                }
-            }
+            string b = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + ".fa");
 
             // Additional setup for small integration tests
             string scriptPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Scripts", "setup.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            if (reference == "grch37")
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
-                "if [ -f Homo_sapiens.GRCh37.75.gtf.gz ]; then gunzip Homo_sapiens.GRCh37.75.gtf.gz; fi",
-                @"if [ ! -f 202122.gtf ]; then grep '^20\|^21\|^22' Homo_sapiens.GRCh37.75.gtf > 202122.gtf; fi",
-                @"if [ ! -f 922HG1287_PATCH.gtf ]; then grep '^9\|^22\|^HG1287_PATCH\|^GL000210.1' Homo_sapiens.GRCh37.75.gtf > 922HG1287_PATCH.gtf; fi",
-            }).WaitForExit();
+                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+                {
+                    "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                    SamtoolsWrapper.GetSequencesFromFasta(downloadsWrapper.GenomeFastaPath, new[] { "20", "21", "22" }, a),
+                    WrapperUtility.EnsureClosedFileCommands(a),
+                    SamtoolsWrapper.GetSequencesFromFasta(downloadsWrapper.GenomeFastaPath, new[] { "9", "22", "GL000210.1"}, b),
+                    WrapperUtility.EnsureClosedFileCommands(b),
+                    "if [ -f Homo_sapiens.GRCh37.75.gtf.gz ]; then gunzip Homo_sapiens.GRCh37.75.gtf.gz; fi",
+                    "if [ ! -f 202122" + reference + @".gtf ]; then grep '^20\|^21\|^22' Homo_sapiens.GRCh37.75.gtf > 202122" + reference + ".gtf; fi",
+                    "if [ ! -f 922HG1287_PATCH" + reference + @".gtf ]; then grep '^9\|^22\|^GL000210.1' Homo_sapiens.GRCh37.75.gtf > 922GL" + reference + ".gtf; fi",
+                }).WaitForExit();
+                Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + ".fa")));
+                Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3"))));
+            }
+            else
+            {
+                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+                {
+                    "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
+                    SamtoolsWrapper.GetSequencesFromFasta(downloadsWrapper.GenomeFastaPath, new[] { "20", "21", "22" }, a),
+                    WrapperUtility.EnsureClosedFileCommands(a),
+                    "if [ -f Homo_sapiens.GRCh38.81.gff3.gz ]; then gunzip Homo_sapiens.GRCh38.81.gff3.gz; fi",
+                    "if [ ! -f 202122" + reference + @".gff3 ]; then grep '^20\|^21\|^22' Homo_sapiens.GRCh38.81.gff3 > 202122" + reference + ".gff3; fi",
+                }).WaitForExit();
+            }
 
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3"))));
         }
 
         #endregion Installs
@@ -135,7 +139,7 @@ namespace Test
         #region SRA download test
 
         [Test, Order(1)]
-        public void TestDownloadSRA()
+        public void SRAToolkitTestDownload()
         {
             SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
             sratoolkit.Fetch(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, "SRR6304532");
@@ -148,7 +152,7 @@ namespace Test
         #region BED conversion tests
 
         [Test, Order(1)]
-        public void TestConvertGff()
+        public void BEDOPSTestConvertGff()
         {
             string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.IsTrue(new FileInfo(bedPath).Length > 0);
@@ -156,7 +160,7 @@ namespace Test
         }
 
         [Test, Order(1)]
-        public void TestConvertGtf()
+        public void BEDOPSTestConvertGtf()
         {
             string bedPath = BEDOPSWrapper.GtfOrGff2Bed6(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(bedPath).Length > 0);
@@ -164,16 +168,16 @@ namespace Test
         }
 
         [Test, Order(1)]
-        public void TestConvertGtf12()
+        public void BEDOPSTestConvertGtf12()
         {
-            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
+            BEDOPSWrapper.GffOrGtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gtf.gtf"));
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", Path.GetFileNameWithoutExtension("sample_gtf.gtf") + ".bed12")).Length > 0);
         }
 
         [Test, Order(1)]
-        public void TestConvertGffToBed12()
+        public void BEDOPSTestConvertGffToBed12()
         {
-            BEDOPSWrapper.Gtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
+            BEDOPSWrapper.GffOrGtf2Bed12(TestContext.CurrentContext.TestDirectory, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "sample_gff.gff3"));
             Assert.IsTrue(new FileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", Path.GetFileNameWithoutExtension("sample_gff.gff3.converted.gff3") + ".bed12")).Length > 0);
         }
 
@@ -181,26 +185,15 @@ namespace Test
 
         #region Infer Experiment tests
 
-        [Test, Order(4)]
-        public void StrandSpecificityTest()
-        {
-            BAMProperties bam = new BAMProperties(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
-                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
-                0.8);
-            Assert.AreEqual(Strandedness.None, bam.Strandedness);
-            Assert.AreEqual(RnaSeqProtocol.SingleEnd, bam.Protocol);
-        }
-
         [Test, Order(2)]
-        public void InnerDistanceTest()
+        [TestCase("grch37")]
+        public void InnerDistanceTest(string reference)
         {
             Assert.AreEqual(132, RSeQCWrapper.InferInnerDistance(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "paired_end.bam"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", reference.EndsWith("37") ? "202122" + reference + ".gtf" : "202122" + reference + ".gff3"),
                 out string[] outputFiles));
         }
 
@@ -273,32 +266,37 @@ namespace Test
         #region GATK tests
 
         [Test, Order(2)]
-        public void DownloadKnownSites()
+        [TestCase("grch37")]
+        [TestCase("grch38")]
+        public void GatkDownloadKnownSites(string reference)
         {
             var gatk = new GATKWrapper();
             gatk.DownloadEnsemblKnownVariantSites(
                 TestContext.CurrentContext.TestDirectory,
                 true,
-                "grch37");
+                reference);
             Assert.IsTrue(File.Exists(gatk.EnsemblKnownSitesPath));
 
+            string vcf202122Filename = "202122" + reference + ".vcf";
+            string vcf922HG1287Filename = "922GL" + reference + ".vcf";
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "setupKnownSitesTest.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 "cd " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData")),
-                @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")) + " ]; " +
+                @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", vcf202122Filename)) + " ]; " +
                     @"then grep '^#\|^chr20\|^chr21\|^chr22\|^20\|^21\|^22' " + WrapperUtility.ConvertWindowsPath(gatk.EnsemblKnownSitesPath) +
-                    " > 202122.vcf; fi",
-                @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf")) + " ]; " +
-                    @"then grep '^#\|^chr9\|^chr22\|^chrHG1287_PATCH\|chr21_gl000210_random\|^9\|^22\|^HG1287_PATCH\|^GL000210.1' " + WrapperUtility.ConvertWindowsPath(gatk.EnsemblKnownSitesPath) +
-                    " > 922HG1287_PATCH.vcf; fi",
+                    " > " + vcf202122Filename + "; fi",
+                @"if [ ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", vcf922HG1287Filename)) + " ]; " +
+                    @"then grep '^#\|^chr9\|^chr22\|chr21_gl000210_random\|^9\|^22\|^GL000210.1' " + WrapperUtility.ConvertWindowsPath(gatk.EnsemblKnownSitesPath) +
+                    " > " + vcf922HG1287Filename + "; fi",
             }).WaitForExit();
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", vcf202122Filename)));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", vcf922HG1287Filename)));
         }
 
         [Test, Order(4)]
-        public void GatkWorflow()
+        [TestCase("grch37")]
+        public void GatkWorflow(string reference)
         {
             var gatk = new GATKWrapper();
             List<string> commands = new List<string>();
@@ -306,48 +304,49 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     Environment.ProcessorCount,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperAgain-trimmedAligned.sortedByCoord.out.bam"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-                    "grch37"));
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0-trimmedAligned.sortedByCoord.out.bam"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
+                    reference));
             commands.AddRange(gatk.SplitNCigarReads(
                 TestContext.CurrentContext.TestDirectory,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
                 gatk.PreparedBamPath));
 
             // No longer needed with HaplotypeCaller
             //GATKWrapper.RealignIndels(TestContext.CurrentContext.TestDirectory,
             //    8,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
             //    new_bam,
             //    out string realigned_bam,
             //    ""); // not including known sites speeds this up substantially, and I'm not planning to use these indels
 
             // Takes kind of a long time, and it's not recommended for RNA-Seq yet
             //GATKWrapper.base_recalibration(TestContext.CurrentContext.TestDirectory,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.fa"),
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122" + reference + ".fa"),
             //    realigned_bam,
             //    out string recal_table_filepath,
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122.vcf"));
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestData", "202122" + reference + ".vcf"));
 
             commands.AddRange(gatk.VariantCalling(
                 TestContext.CurrentContext.TestDirectory,
                 Environment.ProcessorCount,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
                 gatk.SplitTrimBamPath,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf")));
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".vcf")));
 
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "gatkWorkflowTest.bash"), commands).WaitForExit();
             Assert.IsTrue(File.Exists(gatk.HaplotypeCallerVcfPath) && new FileInfo(gatk.HaplotypeCallerVcfPath).Length > 0);
         }
 
         [Test, Order(5)]
-        public void convertVcf()
+        [TestCase("grch37")]
+        public void GatkConvertVcf(string reference)
         {
             var gatk = new GATKWrapper();
             var newvcf = gatk.ConvertVCFChromosomesUCSC2Ensembl(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "chr1Ucsc.vcf"),
-                "grch37");
+                reference);
             Assert.IsTrue(File.Exists(newvcf) && new FileInfo(newvcf).Length > 0);
         }
 
@@ -356,17 +355,18 @@ namespace Test
         #region Cufflinks and Stringtie tests
 
         [Test, Order(4)]
-        public void CufflinksRun()
+        [TestCase("grch37")]
+        public void CufflinksRun(string reference)
         {
-            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.bam");
+            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0-trimmedAligned.sortedByCoord.out.bam");
             string script_name = Path.Combine(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "cufflinksRun.bash"));
             WrapperUtility.GenerateAndRunScript(script_name, CufflinksWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 Environment.ProcessorCount,
                 bamPath,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
-                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", reference.EndsWith("37") ? "202122" + reference + ".gtf" : "202122" + reference + ".gff3"),
+                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa")),
                 false,
                 false,
                 out string outputDirectory
@@ -378,16 +378,17 @@ namespace Test
         }
 
         [Test, Order(4)]
-        public void StringtieRun()
+        [TestCase("grch37")]
+        public void StringtieRun(string reference)
         {
-            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.bam");
+            string bamPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0-trimmedAligned.sortedByCoord.out.bam");
             string script_name = Path.Combine(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "stringtieRun.bash"));
             WrapperUtility.GenerateAndRunScript(script_name, StringtieWrapper.AssembleTranscripts(
                 TestContext.CurrentContext.TestDirectory,
                 Environment.ProcessorCount,
                 bamPath,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
-                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa")),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", reference.EndsWith("37") ? "202122" + reference + ".gtf" : "202122" + reference + ".gff3"),
+                new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa")),
                 Strandedness.None,
                 false,
                 out string outputGtf
@@ -405,7 +406,7 @@ namespace Test
         //[Test, Order(5)]
         //public void SlnckyRun()
         //{
-        //    string cufflinksTranscripts = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.cufflinksOutput", CufflinksWrapper.TranscriptsFilename);
+        //    string cufflinksTranscripts = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0-trimmedAligned.sortedByCoord.out.cufflinksOutput", CufflinksWrapper.TranscriptsFilename);
         //    string slnckyOutPrefix = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "cuffmergeModel848835768.slnckyOut", "annotated"); // strange folder, so that it covers the same test as the lncRNAdiscovery run
         //    string scriptName = Path.Combine(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "SlnckyRun.bash"));
         //    WrapperUtility.GenerateAndRunScript(scriptName,
@@ -432,16 +433,17 @@ namespace Test
         #region Scalpel tests
 
         [Test, Order(4)]
-        public void ScalpelCall()
+        [TestCase("grch37")]
+        public void ScalpelCall(string reference)
         {
             var scalpel = new ScalpelWrapper();
             WrapperUtility.GenerateAndRunScript(
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "scalpel.bash"),
                 scalpel.CallIndels(TestContext.CurrentContext.TestDirectory,
                 Environment.ProcessorCount,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.bed12"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.out.bam"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".bed12"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0-trimmedAligned.sortedByCoord.out.bam"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "scalpel_test_out")))
             .WaitForExit();
             Assert.IsTrue(File.Exists(scalpel.IndelVcfPath) && new FileInfo(scalpel.IndelVcfPath).Length > 0);
@@ -453,20 +455,23 @@ namespace Test
         #region SnpEff tests
 
         [Test, Order(1)]
-        public void DownloadSnpEffDatabase()
+        [TestCase("grch37")]
+        [TestCase("grch38")]
+        public void SnpEffDatabaseDownload(string reference)
         {
             var snpeff = new SnpEffWrapper();
             snpeff.DownloadSnpEffDatabase(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                "grch37");
+                reference);
             Assert.IsTrue(File.Exists(snpeff.DatabaseListPath));
             string[] databases = Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "SnpEff", "data"));
-            Assert.IsTrue(databases.Any(x => Path.GetFileName(x).StartsWith("grch37", true, null)));
+            Assert.IsTrue(databases.Any(x => Path.GetFileName(x).StartsWith(reference, true, null)));
         }
 
         [Test, Order(4)]
-        public void BasicSnpEffAnnotation()
+        [TestCase("grch37")]
+        public void SnpEffAnnotationBasics(string reference)
         {
             var snpeff = new SnpEffWrapper();
             WrapperUtility.GenerateAndRunScript(
@@ -474,13 +479,167 @@ namespace Test
                 snpeff.PrimaryVariantAnnotation(
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
-                    "grch37",
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.vcf")))
+                    reference,
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",
+                        "mapper0" + reference + "-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.concat.sorted.vcf")))
                 .WaitForExit();
             Assert.IsTrue(File.Exists(snpeff.HtmlReportPath) && new FileInfo(snpeff.HtmlReportPath).Length > 0);
             Assert.IsTrue(File.Exists(snpeff.AnnotatedVcfPath) && new FileInfo(snpeff.AnnotatedVcfPath).Length > 0);
             Assert.IsTrue(File.Exists(snpeff.AnnotatedGenesSummaryPath) && new FileInfo(snpeff.AnnotatedGenesSummaryPath).Length > 0);
             Assert.IsTrue(File.Exists(snpeff.VariantProteinFastaPath) && new FileInfo(snpeff.VariantProteinFastaPath).Length > 0);
+            Assert.IsTrue(File.Exists(snpeff.VariantProteinXmlPath) && new FileInfo(snpeff.VariantProteinXmlPath).Length > 0);
+        }
+
+        [Test, Order(4)]
+        [TestCase("grch37", "coding1")]
+        [TestCase("grch38", "coding2")]
+        public void SnpEffCodingChangeProteins(string reference, string vcfFilename)
+        {
+            //BuildAndCopySnpeff();
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".snpEffAnnotated.vcf"));
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", vcfFilename + ".vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"));
+            var snpeff = new SnpEffWrapper();
+            WrapperUtility.GenerateAndRunScript(
+                WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
+                snpeff.PrimaryVariantAnnotation(
+                    TestContext.CurrentContext.TestDirectory,
+                    TestContext.CurrentContext.TestDirectory,
+                    reference,
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                .WaitForExit();
+
+            var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
+            var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
+            if (reference.EndsWith("37"))
+            {
+                Assert.IsTrue(fastaLines.Any(l => l.Contains("Val204Ala")));
+                Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "V" && v.OneBasedBeginPosition == 204 && v.VariantSequence == "A")));
+            }
+            else
+            {
+                Assert.IsTrue(fastaLines.Any(l => l.Contains("Leu513Val")));
+                Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "L" && v.OneBasedBeginPosition == 513 && v.VariantSequence == "V")));
+            }
+        }
+
+        [Test, Order(4)]
+        [TestCase("grch37")]
+        public void SnpEffFrameshiftProteins(string reference)
+        {
+            //BuildAndCopySnpeff();
+            //Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
+            //File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
+            //File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));
+            //File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "frameshift1.vcf"),
+            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
+            var snpeff = new SnpEffWrapper();
+            WrapperUtility.GenerateAndRunScript(
+                WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
+                snpeff.PrimaryVariantAnnotation(
+                    TestContext.CurrentContext.TestDirectory,
+                    TestContext.CurrentContext.TestDirectory,
+                    reference,
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf")))
+                .WaitForExit();
+            var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
+            var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
+            Assert.IsTrue(fastaLines.Any(l => l.Contains("Val204fs")));
+            Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.Description.Contains("Val204fs"))));
+            Assert.IsTrue(xmlProts.Count(p => p.Accession.Contains("ENST00000316027")) == 1);
+
+            // Frameshift variations should be annotated regarding the protein sequence
+            Assert.IsTrue(xmlProts.FirstOrDefault(p => p.SequenceVariations.Any(v => v.Description.Contains("Val204fs")))
+                .SequenceVariations.Any(v => v.OriginalSequence.StartsWith("V") && v.VariantSequence.Length > 1));
+        }
+
+        [Test, Order(4)]
+        [TestCase("grch37", "inframe1")]
+        [TestCase("grch38", "inframe2")]
+        public void SnpEffInframeInsertionProteins(string reference, string vcfFilename)
+        {
+            //BuildAndCopySnpeff();
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".snpEffAnnotated.vcf"));
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", vcfFilename + ".vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"));
+            var snpeff = new SnpEffWrapper();
+            WrapperUtility.GenerateAndRunScript(
+                WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
+                snpeff.PrimaryVariantAnnotation(
+                    TestContext.CurrentContext.TestDirectory,
+                    TestContext.CurrentContext.TestDirectory,
+                    reference,
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                .WaitForExit();
+            var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
+            if (reference.EndsWith("37")) { Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "V" && v.VariantSequence.Length == 2))); }
+            else { Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence.Length == 1 && v.VariantSequence.Length == 2))); }
+        }
+
+        [Test, Order(5)] // after lncRNA full run
+        [TestCase("grch37", "coding1")]
+        [TestCase("grch38", "coding2")]
+        public void SnpEffCodingChangeProteinsWithAltGeneModel(string reference, string vcfFilename)
+        {
+            //BuildAndCopySnpeff();
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".snpEffAnnotated.vcf"));
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", vcfFilename + ".vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"));
+            string r = SnpEffWrapper.GenerateDatabase(
+                TestContext.CurrentContext.TestDirectory,
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
+                null,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",
+                    reference.EndsWith("37") ? "MergedStringtieModel-806392539.filtered.withcds.gtf" : "MergedStringtieModel-7878119.filtered.withcds.gtf")
+                );
+            var snpeff = new SnpEffWrapper();
+            WrapperUtility.GenerateAndRunScript(
+                WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
+                snpeff.PrimaryVariantAnnotation(
+                    TestContext.CurrentContext.TestDirectory,
+                    TestContext.CurrentContext.TestDirectory,
+                    r,
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                .WaitForExit();
+
+            var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
+            var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
+            if (reference.EndsWith("37"))
+            {
+                Assert.IsTrue(fastaLines.Any(l => l.Contains("Val204Ala")));
+                Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "V" && v.OneBasedBeginPosition == 204 && v.VariantSequence == "A")));
+            }
+            else
+            {
+                Assert.IsTrue(fastaLines.Any(l => l.Contains("Leu513Val")));
+                Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "L" && v.OneBasedBeginPosition == 513 && v.VariantSequence == "V")));
+            }
+        }
+
+        /// <summary>
+        /// Automated build and copy from Maven for development of SnpEff extension
+        /// </summary>
+        private void BuildAndCopySnpeff()
+        {
+            if (!Directory.Exists(@"C:\Users\Anthony\Documents\GitHub\SnpEff")) { return; }
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "SnpEffBuild.bash"),
+                new List<string>
+                {
+                    "export VERSION=4.3; " +
+                    "export SNPEFF=/mnt/c/Users/Anthony/Documents/GitHub/SnpEff; " +
+                    "sh /mnt/c/Users/Anthony/Documents/GitHub/SnpEff/scripts_build/make.sh; " +
+                    "cp /mnt/c/Users/Anthony/Documents/GitHub/SnpEff/target/SnpEff-$VERSION-jar-with-dependencies.jar /mnt/c/Users/Anthony/Documents/GitHub/SnpEff/snpEff.jar; " +
+                    "cp /mnt/c/Users/Anthony/Documents/GitHub/SnpEff/snpEff.jar /mnt/e/source/repos/Spritz/Test/bin/Debug/Tools/SnpEff; cd /mnt/e/source/repos/Spritz/Test/bin/Debug/Tools/SnpEff; " +
+                    "java -jar  /mnt/e/source/repos/Spritz/Test/bin/Debug/Tools/SnpEff/snpEff.jar"
+                }
+            ).WaitForExit();
         }
 
         #endregion SnpEff tests
@@ -512,7 +671,7 @@ namespace Test
         }
 
         [Test, Order(2)]
-        public void TestGenomeGenerate()
+        public void STARTestGenomeGenerate()
         {
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), "SmallGenomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(TestContext.CurrentContext.TestDirectory,
@@ -525,7 +684,7 @@ namespace Test
         }
 
         [Test, Order(3)]
-        public void TestAlign()
+        public void STARTestAlign()
         {
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"), "SmallAlignReads.bash"),
                 STARWrapper.BasicAlignReadCommands
@@ -560,7 +719,7 @@ namespace Test
                 8,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
                 },
                 true,
                 out string tophatOutDirectory
@@ -618,98 +777,75 @@ namespace Test
             /// Handling multiple fastq files and chromosomes, single-end
             /// </summary>
         [Test, Order(3)]
-        public void FullProteinRunFromFastqs()
+        [TestCase("grch37", "mapper_chr22indelRegion.fastq")]
+        [TestCase("grch38", "mapper_chr22indelRegion.fastq")]
+        [TestCase("grch37", "mapper0.fastq")]
+        [TestCase("grch38", "mapper0.fastq")]
+        [TestCase("grch37", "mapper1.fastq")]
+        [TestCase("grch38", "mapper1.fastq")]
+        [TestCase("grch37", "mapper2.fastq")]
+        [TestCase("grch38", "mapper2.fastq")]
+        [TestCase("grch37", "mapper3.fastq")]
+        [TestCase("grch38", "mapper3.fastq")]
+        public void FullProteinRunFromFastqs(string reference, string fastqFilename)
         {
-            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa");
-            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf");
+            BuildAndCopySnpeff();
+            string f = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", fastqFilename);
+            string fastqPath = Path.Combine(Path.GetDirectoryName(f), Path.GetFileNameWithoutExtension(f) + reference + ".fastq");
+            if (!File.Exists(fastqPath)) { File.Copy(f, fastqPath); }
+            List<string[]> fastqs = new List<string[]> { new[] { fastqPath } };
+
+            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa");
+            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3"));
             string starIndexDir = STARWrapper.GetGenomeStarIndexDirectoryPath(genomeFastaPath, geneModelPath);
 
             SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
             flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
-            flow.Parameters.AnalysisDirectory = TestContext.CurrentContext.TestDirectory;
-            flow.Parameters.Reference = "grch37";
+            flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs");
+            flow.Parameters.Reference = reference;
             flow.Parameters.Threads = Environment.ProcessorCount;
-            flow.Parameters.Fastqs = new List<string[]>
-            {
-                new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper.fastq") },
-                new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperAgain.fastq") },
-            };
+            flow.Parameters.Fastqs = fastqs;
             flow.Parameters.GenomeStarIndexDirectory = starIndexDir;
             flow.Parameters.GenomeFasta = genomeFastaPath;
-            flow.Parameters.ProteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
+            flow.Parameters.ProteinFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
-            flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
+            flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
-            flow.GenerateSAVProteins();
+            flow.Parameters.DoTranscriptIsoformAnalysis = true;
+            flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
             }
-            foreach (string database in flow.VariantAppliedProteinFastaDatabases)
+            foreach (string database in flow.VariantAnnotatedProteinXmlDatabases)
             {
-                Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
+                List<Protein> proteins = ProteinDbLoader.LoadProteinXML(database, true, DecoyType.None, null, false, null, out var un);
+                Assert.IsTrue(proteins.Count > 0);
             }
-        }
-
-        /// <summary>
-        /// Handling multiple fastq files and chromosomes, single-end
-        /// </summary>
-        [Test, Order(4)]
-        public void LncRnaDiscoveryRunFromFastqs()
-        {
-            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa");
-            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf");
-            string starIndexDir = STARWrapper.GetGenomeStarIndexDirectoryPath(genomeFastaPath, geneModelPath);
-            LncRNADiscoveryFlow flow = new LncRNADiscoveryFlow();
-            flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
-            flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
-            flow.Parameters.Reference = "grch37";
-            flow.Parameters.Threads = Environment.ProcessorCount;
-            flow.Parameters.Fastqs = new List<string[]>
-            {
-                new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper.fastq") },
-            };
-            flow.Parameters.GenomeStarIndexDirectory = starIndexDir;
-            flow.Parameters.GenomeFasta = genomeFastaPath;
-            flow.Parameters.ProteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
-            flow.Parameters.GeneModelGtfOrGff = geneModelPath;
-            flow.LncRNADiscoveryFromFastqs();
-
-            Assert.IsTrue(flow.ReconstructedTranscriptModels.All(f => File.Exists(f)));
-            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
-            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.FilteredInfoSuffix));
-            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.LncsBedSuffix));
-            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.LncsInfoSuffix));
-            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrthologsSuffix));
-            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
-
-            // too small of a test to get these outputs, apparently
-            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix)); 
-            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
         }
 
         /// <summary>
         /// Handling multiple fastq files and chromosomes, single end
         /// </summary>
         [Test, Order(3)]
-        public void FullProteinRunFromTwoPairsFastqs()
+        [TestCase("grch37")]
+        public void FullProteinRunFromTwoPairsFastqs(string reference)
         {
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000readsAgain_1.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000readsAgain_1.fastq"));
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000readsAgain_2.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000reads_2.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000readsAgain_2.fastq"));
 
-            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa");
-            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf");
+            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa");
+            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3"));
             string starIndexDir = STARWrapper.GetGenomeStarIndexDirectoryPath(genomeFastaPath, geneModelPath);
 
             SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
             flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
             flow.Parameters.AnalysisDirectory = TestContext.CurrentContext.TestDirectory;
-            flow.Parameters.Reference = "grch37";
+            flow.Parameters.Reference = reference;
             flow.Parameters.Threads = Environment.ProcessorCount;
             flow.Parameters.Fastqs = new List<string[]>
             {
@@ -726,12 +862,12 @@ namespace Test
             };
             flow.Parameters.GenomeStarIndexDirectory = starIndexDir;
             flow.Parameters.GenomeFasta = genomeFastaPath;
-            flow.Parameters.ProteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
+            flow.Parameters.ProteinFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
-            flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.vcf");
+            flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
 
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
@@ -750,10 +886,11 @@ namespace Test
         /// This also tests well-encoded quality scores, so if it starts to fail, check out whether the exit code of the FixMisencodedQualityBaseReads is expected (2 for failure).
         /// </summary>
         [Test, Order(3)]
-        public void FullProteinRunFromSRA()
+        [TestCase("grch37")]
+        public void FullProteinRunFromSRA(string reference)
         {
-            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.fa");
-            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.gtf");
+            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + ".fa");
+            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3"));
             string starIndexDir = STARWrapper.GetGenomeStarIndexDirectoryPath(genomeFastaPath, geneModelPath);
 
             SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
@@ -761,17 +898,17 @@ namespace Test
             flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR6319804");
             var fastqs = SRAToolkitWrapper.GetFastqsFromSras(flow.Parameters.SpritzDirectory, flow.Parameters.AnalysisDirectory, "SRR6319804");
             Directory.CreateDirectory(flow.Parameters.AnalysisDirectory);
-            flow.Parameters.Reference = "grch37";
+            flow.Parameters.Reference = reference;
             flow.Parameters.Threads = Environment.ProcessorCount;
             flow.Parameters.Fastqs = fastqs;
             flow.Parameters.GenomeStarIndexDirectory = starIndexDir;
             flow.Parameters.GenomeFasta = genomeFastaPath;
-            flow.Parameters.ProteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
+            flow.Parameters.ProteinFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
-            flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922HG1287_PATCH.vcf"); // there is no equivalent of the patch; just checking that that works
+            flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + ".vcf"); // there is no equivalent of the patch; just checking that that works
             flow.Parameters.UseReadSubset = true;
             flow.Parameters.ReadSubset = 5000;
-            flow.GenerateSAVProteins();
+            flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
             {
@@ -785,26 +922,66 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// Handling multiple fastq files and chromosomes, single-end
+        /// </summary>
+        [Test, Order(4)]
+        [TestCase("grch37")]
+        public void FullLncRnaDiscoveryRunFromFastqs(string reference)
+        {
+            string genomeFastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa");
+            string geneModelPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3"));
+            string starIndexDir = STARWrapper.GetGenomeStarIndexDirectoryPath(genomeFastaPath, geneModelPath);
+            LncRNADiscoveryFlow flow = new LncRNADiscoveryFlow();
+            flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
+            flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
+            flow.Parameters.Reference = reference;
+            flow.Parameters.Threads = Environment.ProcessorCount;
+            flow.Parameters.Fastqs = new List<string[]>
+            {
+                new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0.fastq") },
+            };
+            flow.Parameters.GenomeStarIndexDirectory = starIndexDir;
+            flow.Parameters.GenomeFasta = genomeFastaPath;
+            flow.Parameters.ProteinFasta = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", EnsemblDownloadsWrapper.GRCh37ProteinFastaFilename);
+            flow.Parameters.GeneModelGtfOrGff = geneModelPath;
+            flow.LncRNADiscoveryFromFastqs();
+
+            Assert.IsTrue(flow.ReconstructedTranscriptModels.All(f => File.Exists(f)));
+            Assert.IsTrue(File.Exists(flow.MergedTranscriptModel));
+            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.CanonicalToLncsSuffix));
+            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.FilteredInfoSuffix));
+            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.LncsBedSuffix));
+            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.LncsInfoSuffix));
+            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrthologsSuffix));
+            Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrthologsTopSuffix));
+
+            // too small of a test to get these outputs, apparently
+            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.ClusterInfoSuffix));
+            //Assert.IsTrue(File.Exists(flow.SlnckyOutPrefix + SlnckyWrapper.OrfsSuffix));
+        }
+
         #endregion Workflow Tests
 
         #region RSEM integration tests
 
         [Test, Order(2)]
-        public void RSEMStarCalculate()
+        [TestCase("grch37")]
+        public void RSEMStarCalculate(string reference)
         {
             string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperRsemStar.fastq");
             if (!File.Exists(newMapper))
             {
-                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper.fastq"), newMapper);
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0.fastq"), newMapper);
             }
 
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
             quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
                 Environment.ProcessorCount,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3")),
                 RSEMAlignerOption.STAR,
                 Strandedness.None,
                 new[] { newMapper },
@@ -822,21 +999,50 @@ namespace Test
         }
 
         [Test, Order(2)]
-        public void RSEMBowtieCalculate()
+        [TestCase("grch37")]
+        public void RSEMStarCalculateGz(string reference)
+        {
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperCompressed.fastq"));
+            TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
+            quantification.Parameters = new TranscriptQuantificationParameters(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
+                Environment.ProcessorCount,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3")),
+                RSEMAlignerOption.STAR,
+                Strandedness.None,
+                new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperCompressed.fastq.gz") },
+                true);
+            quantification.QuantifyTranscripts();
+
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.IsoformResultsSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GeneResultsSuffix));
+            Assert.IsTrue(Directory.Exists(quantification.RsemOutputPrefix + RSEMWrapper.StatDirectorySuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TimeSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.TranscriptBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamSuffix));
+            Assert.IsTrue(File.Exists(quantification.RsemOutputPrefix + RSEMWrapper.GenomeSortedBamIndexSuffix));
+        }
+
+        [Test, Order(2)]
+        [TestCase("grch37")]
+        public void RSEMBowtieCalculate(string reference)
         {
             string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperRsemBowtie.fastq");
             if (!File.Exists(newMapper))
             {
-                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper.fastq"), newMapper);
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0.fastq"), newMapper);
             }
 
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
             quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
                 Environment.ProcessorCount,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3")),
                 RSEMAlignerOption.Bowtie2,
                 Strandedness.None,
                 new[] { newMapper },
@@ -854,21 +1060,22 @@ namespace Test
         }
 
         [Test, Order(4)]
-        public void RSEMStarCalculateFromPaired()
+        [TestCase("grch37")]
+        public void RSEMStarCalculateFromPaired(string reference)
         {
             string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperRsemBowtie.fastq");
             if (!File.Exists(newMapper))
             {
-                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper.fastq"), newMapper);
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapper0.fastq"), newMapper);
             }
 
             TranscriptQuantificationFlow quantification = new TranscriptQuantificationFlow();
             quantification.Parameters = new TranscriptQuantificationParameters(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
                 Environment.ProcessorCount,
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3")),
                 RSEMAlignerOption.STAR,
                 Strandedness.None,
                 new[]
@@ -892,24 +1099,25 @@ namespace Test
         // I'm having trouble getting RSEM to work with comma-separated inputs... I think it's because of STAR, which I have had trouble with in this respect in the past.
 
         //[Test, Order(2)]
-        //public void RSEMStarCalculate2Fastq()
+        //[TestCase("grch37")]
+        //public void RSEMStarCalculate2Fastq(string reference)
         //{
         //    string newMapper = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperRsemStar2.fastq");
         //    if (!File.Exists(newMapper))
         //    {
-        //        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",  "mapper.fastq"), newMapper);
+        //        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",  "mapper0.fastq"), newMapper);
         //    }
         //    string newMapper2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "mapperRsemStar2Again.fastq");
         //    if (!File.Exists(newMapper2))
         //    {
-        //        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData",  "TestFastqs","mapper.fastq"), newMapper2);
+        //        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData",  "TestFastqs","mapper0.fastq"), newMapper2);
         //    }
 
         //    TranscriptQuantificationFlow.QuantifyTranscripts(
         //        TestContext.CurrentContext.TestDirectory,
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
         //        Environment.ProcessorCount,
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3")),
         //        RSEMAlignerOption.STAR,
         //        Strandedness.None,
         //        new[] { newMapper + "," + newMapper2 },
@@ -928,13 +1136,14 @@ namespace Test
         //}
 
         //[Test, Order(4)]
-        //public void RSEMStarCalculateTwoPairFastq()
+        //[TestCase("grch37")]
+        //public void RSEMStarCalculateTwoPairFastq(string reference)
         //{
         //    TranscriptQuantificationFlow.QuantifyTranscripts(
         //        TestContext.CurrentContext.TestDirectory,
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"),
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
         //        Environment.ProcessorCount,
-        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.gtf"),
+        //        Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + (reference.EndsWith("37") ? ".gtf" : ".gff3")),
         //        RSEMAlignerOption.STAR,
         //        Strandedness.None,
         //        new[]
@@ -965,9 +1174,10 @@ namespace Test
         #region Variant workflow tests
 
         [Test, Order(3)]
-        public void ThereShouldBeUTRs()
+        [TestCase("grch37")]
+        public void VCFParserThereShouldBeUTRs(string reference)
         {
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"));
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"));
             GeneModel geneModel = new GeneModel(genome, Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "UtrProblem", "gene.gtf"));
             geneModel.ApplyVariants(new VCFParser(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "UtrProblem", "vcf.vcf")).Select(v => new Variant(null, v, genome.Chromosomes[0])).ToList());
             Assert.IsTrue(geneModel.Genes[0].Transcripts[0].UTRs.Count > 0);
@@ -978,9 +1188,10 @@ namespace Test
         #region Gene Model integration test
 
         [Test, Order(3)]
-        public void FilterTest()
+        [TestCase("grch37")]
+        public void EnsemblDownloadsFilterTest(string reference)
         {
-            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122.fa"));
+            Genome genome = new Genome(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"));
             EnsemblDownloadsWrapper.FilterGeneModel(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens.GRCh37.75.gtf"),

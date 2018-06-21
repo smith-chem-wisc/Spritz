@@ -10,10 +10,9 @@ namespace ToolWrapperLayer
     public class VcfToolsWrapper :
         IInstallable
     {
+        public string VcfDepthFilteredPath { get; private set; }
         public string VcfWithoutIndelsPath { get; private set; }
-
         public string VcfWithoutSnvsPath { get; private set; }
-
         public string VcfConcatenatedPath { get; private set; }
 
         /// <summary>
@@ -44,12 +43,42 @@ namespace ToolWrapperLayer
         /// Writes a script for removing bedtools.
         /// </summary>
         /// <param name="spritzDirectory"></param>
-        /// <returns></returns>
+        /// <returns>path for script for removing bedtools</returns>
         public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
         }
 
+        /// <summary>
+        /// Sets filter based on average genotype depth
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="vcfPath"></param>
+        /// <param name="keepInfo"></param>
+        /// <param name="minDepth"></param>
+        /// <returns></returns>
+        public string AverageGenotypeDepthFilter(string spritzDirectory, string vcfPath, bool keepInfo, float minDepth)
+        {
+            VcfDepthFilteredPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath)) + ".DPFilter.vcf";
+            return
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(VcfDepthFilteredPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(VcfDepthFilteredPath) + " ]; then " +
+                    "vcftools " +
+                    " --vcf " + WrapperUtility.ConvertWindowsPath(vcfPath) +
+                    " --min-meanDP " + minDepth.ToString() +
+                    " --recode " +
+                    (keepInfo ? " --recode-INFO-all " : "") +
+                    " --stdout > " + WrapperUtility.ConvertWindowsPath(VcfDepthFilteredPath) +
+                "; fi";
+        }
+
+        /// <summary>
+        /// Gets command to remove all indels from a VCF file
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="vcfPath"></param>
+        /// <param name="keepInfo"></param>
+        /// <param name="applyFilter"></param>
+        /// <returns>bash command to run vcftools to remove all indels from a VCF file</returns>
         public string RemoveAllIndels(string spritzDirectory, string vcfPath, bool keepInfo, bool applyFilter)
         {
             VcfWithoutIndelsPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath)) + ".NoIndels.vcf";
@@ -64,6 +93,14 @@ namespace ToolWrapperLayer
                 "; fi";
         }
 
+        /// <summary>
+        /// Get command to remove all SNVs froma VCF file
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="vcfPath"></param>
+        /// <param name="keepInfo"></param>
+        /// <param name="applyFilter"></param>
+        /// <returns>bash command to run vcftools to remove all SNVs froma VCF file</returns>
         public string RemoveAllSnvs(string spritzDirectory, string vcfPath, bool keepInfo, bool applyFilter)
         {
             VcfWithoutSnvsPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath)) + ".NoSnvs.vcf";
@@ -78,6 +115,13 @@ namespace ToolWrapperLayer
                 "; fi";
         }
 
+        /// <summary>
+        /// Get command to concatenate a set of VCF files
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="vcfInputs">Windows-formatted VCF paths</param>
+        /// <param name="outPrefix"></param>
+        /// <returns>command to run vcftools to concatenate a set of VCF files</returns>
         public string Concatenate(string spritzDirectory, IEnumerable<string> vcfInputs, string outPrefix)
         {
             VcfConcatenatedPath = outPrefix + ".concat.vcf";

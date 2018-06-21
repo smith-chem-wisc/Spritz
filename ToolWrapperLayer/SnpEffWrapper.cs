@@ -69,6 +69,7 @@ namespace ToolWrapperLayer
             AnnotatedGenesSummaryPath = outPrefix + ".snpEffAnnotated.genes.txt";
             VariantProteinFastaPath = outPrefix + ".snpEffAnnotated.protein.fasta";
             VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
+            Directory.CreateDirectory(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             if (File.Exists(AnnotatedVcfPath)) return new List<string>();
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
@@ -81,6 +82,11 @@ namespace ToolWrapperLayer
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
+
+                // ensure that the files get closed before continuing
+                WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath)),
+                WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath)),
+                WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath)),
 
                 // remove the annotated VCF file if snpEff didn't work, e.g. if there was no VCF file to annotate
                 "if [[ ( -f " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath) + " && ! -s " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath) + " ) ]]; then",
@@ -142,11 +148,11 @@ namespace ToolWrapperLayer
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Downloading " + snpeffReference + " SnpEff reference\"",
                 SnpEff() + " download " + snpeffReference,
-                "echo \"\n# " + snpeffReference + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
-                "echo \"" + snpeffReference + ".genome : Human genome " + snpeffReference.Split('.')[0] + " using RefSeq transcripts\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "snpEff", "snpEff.config")),
-                "echo \"" + snpeffReference + ".reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
-                "echo \"\t" + snpeffReference + ".M.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
-                "echo \"\t" + snpeffReference + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
+                "echo \"\n# " + snpeffReference + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
+                "echo \"" + snpeffReference + ".genome : Human genome " + snpeffReference.Split('.')[0] + " using RefSeq transcripts\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
+                "echo \"" + snpeffReference + ".reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
+                "echo \"\t" + snpeffReference + ".M.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
+                "echo \"\t" + snpeffReference + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
             }).WaitForExit();
         }
 
@@ -157,13 +163,17 @@ namespace ToolWrapperLayer
         /// <param name="analysisDirectory"></param>
         /// <param name="genomeFastaPath"></param>
         /// <param name="geneModelGtfOrGffPath"></param>
-        /// <param name="reference"></param>
         /// <returns>Name of the snpEff reference that was generated</returns>
-        public string GenerateDatabase(string spritzDirectory, string analysisDirectory, string genomeFastaPath, string referenceProteinFastaPath, string geneModelGtfOrGffPath, string reference)
+        public static string GenerateDatabase(string spritzDirectory, string analysisDirectory, string genomeFastaPath, string referenceProteinFastaPath, string geneModelGtfOrGffPath)
         {
-            string snpEffReferenceName = Path.GetExtension(geneModelGtfOrGffPath).ToUpperInvariant() + geneModelGtfOrGffPath.GetHashCode().ToString();
+            string snpEffReferenceName = Path.GetExtension(geneModelGtfOrGffPath).Substring(1).ToUpperInvariant() + geneModelGtfOrGffPath.GetHashCode().ToString();
+            string snpEffReferenceFolderPath = Path.Combine(spritzDirectory, "Tools", "SnpEff", "data", snpEffReferenceName);
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffDatabaseGeneration.bash");
             string geneModelOption = Path.GetExtension(geneModelGtfOrGffPath).EndsWith("gtf") ? "-gtf22" : "-gff3";
+
+            // if the database is already made, don't remake it
+            if (File.Exists(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data", snpEffReferenceName, "snpEffectPredictor.bin"))) { return snpEffReferenceName; }
+
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -171,22 +181,23 @@ namespace ToolWrapperLayer
 
                 // create data folder for this reference, and copy the custom gene model (can also copy regulatory annotations)
                 "mkdir data/" + snpEffReferenceName,
-                "cp " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) + " data/genes" + Path.GetExtension(geneModelGtfOrGffPath),
-                "cp " + WrapperUtility.ConvertWindowsPath(referenceProteinFastaPath) + " data/protein.fa",
+                "cp " + WrapperUtility.ConvertWindowsPath(geneModelGtfOrGffPath) + " " + WrapperUtility.ConvertWindowsPath(Path.Combine(snpEffReferenceFolderPath, "genes" + Path.GetExtension(geneModelGtfOrGffPath))),
+                "cp " + WrapperUtility.ConvertWindowsPath(referenceProteinFastaPath) + " " + WrapperUtility.ConvertWindowsPath(Path.Combine(snpEffReferenceFolderPath, "protein.fa")),
 
                 // copy the genome to the genomes folder
-                "mkdir genomes",
-                "cp " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + " genomes/" + snpEffReferenceName + ".fa",
+                "mkdir " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data", "genomes")),
+                "cp " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + " " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data", "genomes", snpEffReferenceName + ".fa")),
 
-                // configure SnpEff for this custom reference 
+                // configure SnpEff for this custom reference
                 // note: if different organism is used in the future, this becomes pretty complex... probably would list the organisms from snpEff.config in the GUI
-                "echo \"\n# " + snpEffReferenceName + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
-                "echo \"" + snpEffReferenceName + ".genome : Homo_sapiens >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "snpEff", "snpEff.config")),
-                "echo \"" + snpEffReferenceName + ".reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
-                "echo \"\t" + snpEffReferenceName + ".M.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
-                "echo \"\t" + snpEffReferenceName + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "SnpEff", "snpEff.config")),
+                "echo \"\n# " + snpEffReferenceName + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
+                "echo \"" + snpEffReferenceName + ".genome : Homo_sapiens\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
+                "echo \"" + snpEffReferenceName + ".reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
+                "echo \"\t" + snpEffReferenceName + ".M.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
+                "echo \"\t" + snpEffReferenceName + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
 
                 // build snpEff model
+                "cd ..",
                 SnpEff() + " build " + geneModelOption + " -v " + snpEffReferenceName,
             }).WaitForExit();
             return snpEffReferenceName;

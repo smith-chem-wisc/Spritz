@@ -84,7 +84,7 @@ namespace ToolWrapperLayer
         /// <param name="spritzDirectory"></param>
         /// <param name="geneModelGtfOrGff"></param>
         /// <returns></returns>
-        public static string Gtf2Bed12(string spritzDirectory, string analysisDirectory, string geneModelGtfOrGff)
+        public static string GffOrGtf2Bed12(string spritzDirectory, string analysisDirectory, string geneModelGtfOrGff)
         {
             string geneModelGtf = geneModelGtfOrGff;
             if (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff"))

@@ -15,7 +15,7 @@ namespace WorkflowLayer
         public bool OverwriteStarAlignment { get; set; }
         public string GenomeStarIndexDirectory { get; set; }
         public string GenomeFasta { get; set; }
-        public string ProteinFasta { get; set; }
+        public string ProteinFastaPath { get; set; }
         public string ReferenceGeneModelGtfOrGff { get; set; }
         public string NewGeneModelGtfOrGff { get; set; }
         public string UniProtXmlPath { get; set; }
@@ -23,5 +23,7 @@ namespace WorkflowLayer
         public int MinPeptideLength { get; set; } = 7;
         public bool UseReadSubset { get; set; } = false;
         public int ReadSubset { get; set; } = 300000;
+        public bool DoFusionAnalysis { get; set; }
+        public bool DoTranscriptIsoformAnalysis { get; set; }
     }
 }

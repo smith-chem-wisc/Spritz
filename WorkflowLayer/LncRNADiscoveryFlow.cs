@@ -17,6 +17,7 @@ namespace WorkflowLayer
         public LncRNADiscoveryParameters Parameters { get; set; } = new LncRNADiscoveryParameters();
         public string SlnckyOutPrefix { get; private set; }
         public List<string> ReconstructedTranscriptModels { get; private set; } = new List<string>();
+        public string MergedTranscriptModel { get; private set; }
         public List<string> IsoformResultPaths { get; private set; } = new List<string>();
         public List<string> GeneResultPaths { get; private set; } = new List<string>();
 
@@ -46,13 +47,14 @@ namespace WorkflowLayer
             alignment.PerformTwoPassAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
-            string sortedBed12Path = BEDOPSWrapper.Gtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
+            string sortedBed12Path = BEDOPSWrapper.GffOrGtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
 
             // Transcript Reconstruction
             StringtieWrapper stringtie = new StringtieWrapper();
             stringtie.TranscriptReconstruction(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome,
-                Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles);
+                Parameters.StrandSpecific, Parameters.InferStrandSpecificity, alignment.SortedBamFiles, true);
             ReconstructedTranscriptModels = stringtie.FilteredTranscriptGtfPaths;
+            MergedTranscriptModel = stringtie.FilteredMergedGtfPath;
 
             // Annotate lncRNAs
             foreach (string gtf in ReconstructedTranscriptModels)
@@ -62,11 +64,9 @@ namespace WorkflowLayer
                 WrapperUtility.GenerateAndRunScript(slnckyScriptName,
                     SlnckyWrapper.Annotate(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads,
                         gtf, Parameters.Reference, SlnckyOutPrefix)).WaitForExit();
-
             }
 
             // Write quantification tables for differential expression analysis (using stringtie TPM values)
-
         }
 
         /// <summary>

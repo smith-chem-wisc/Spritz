@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace WorkflowLayer
 {
@@ -25,6 +26,17 @@ namespace WorkflowLayer
             ReadSubset = readSubset;
         }
 
+        public STARAlignmentParameters()
+        {
+            Reference = "GRCh38";
+            Threads = 12;
+            StrandSpecific = false;
+            InferStrandSpecificity = false;
+            OverWriteStarAlignment = false;
+            UseReadSubset = false;
+            ReadSubset = 300000;
+        }
+
         public string SpritzDirectory { get; set; }
         public string AnalysisDirectory { get; set; }
         public string Reference { get; set; }
@@ -44,6 +56,6 @@ namespace WorkflowLayer
         public List<string> ChimericSamFiles { get; set; }
         public List<string> ChimericJunctionFiles { get; set; }
         public bool UseReadSubset { get; set; }
-        public int ReadSubset { get; set; }
+        public int ReadSubset { get; set; } = 300000;
     }
 }

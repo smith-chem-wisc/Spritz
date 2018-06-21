@@ -61,7 +61,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> Annotate(string spritzDirectory, string analysisDirectory, int threads, string predictedGeneModelGtfPath, string reference, string slnckyOutPrefix)
         {
-            string sortedBed12Cuffmerge = BEDOPSWrapper.Gtf2Bed12(spritzDirectory, analysisDirectory, predictedGeneModelGtfPath);
+            string sortedBed12Cuffmerge = BEDOPSWrapper.GffOrGtf2Bed12(spritzDirectory, analysisDirectory, predictedGeneModelGtfPath);
             string ucscCuffmergeBedPath = EnsemblDownloadsWrapper.ConvertFirstColumnEnsembl2UCSC(spritzDirectory, reference, sortedBed12Cuffmerge);
             Directory.CreateDirectory(Path.GetDirectoryName(slnckyOutPrefix));
             string ucscReference = reference.Contains("38") ? "hg38" : "hg19";

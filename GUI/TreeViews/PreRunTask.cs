@@ -1,4 +1,4 @@
-﻿using WorkflowLayer;
+﻿using CMD;
 
 namespace SpritzGUI
 {
@@ -6,15 +6,15 @@ namespace SpritzGUI
     {
         #region Public Fields
 
-        public readonly SpritzFlow spritzWorkflow;
+        public readonly Options options;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public PreRunTask(SpritzFlow theWorkflow)
+        public PreRunTask(Options options)
         {
-            this.spritzWorkflow = theWorkflow;
+            this.options = options;
         }
 
         #endregion Public Constructors

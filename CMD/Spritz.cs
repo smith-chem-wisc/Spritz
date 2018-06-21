@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Proteogenomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,8 +38,6 @@ namespace CMD
 
             if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
-                new SnpEffWrapper().DownloadSnpEffDatabase(options.SpritzDirectory, options.AnalysisDirectory, options.Reference);
-
                 if (options.ReferenceVcf == null)
                 {
                     var gatk = new GATKWrapper();
@@ -62,12 +61,14 @@ namespace CMD
                 flow.Parameters.OverwriteStarAlignment = options.OverwriteStarAlignments;
                 flow.Parameters.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory;
                 flow.Parameters.GenomeFasta = options.GenomeFasta;
-                flow.Parameters.ProteinFasta = options.ProteinFastaPath;
+                flow.Parameters.ProteinFastaPath = options.ProteinFastaPath;
                 flow.Parameters.ReferenceGeneModelGtfOrGff = options.GeneModelGtfOrGff;
                 flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
                 flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
-                flow.GenerateSAVProteins();
+                flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
+                flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
+                flow.GenerateSampleSpecificProteinDatabases();
 
                 Console.WriteLine("output databases to " + String.Join(", and ",
                     flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
