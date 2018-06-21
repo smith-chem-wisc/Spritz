@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ToolWrapperLayer
 {
@@ -43,5 +44,60 @@ namespace ToolWrapperLayer
         }
 
         #endregion Installation Methods
+        #region Alignment Methods
+
+        public static bool IndexExists(string genomeFasta)
+        {
+            return File.Exists(Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta) + ".1.ht2"));
+        }
+
+        public static void GenerateIndex(string spritzDirectory, string analysisDirectory, string genomeFasta, out string IndexPrefix)
+        {
+            IndexPrefix = Path.Combine(Path.GetDirectoryName(genomeFasta), Path.GetFileNameWithoutExtension(genomeFasta));
+            if (IndexExists(genomeFasta))
+            {
+                return;
+            }
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory,"Hisat2Build.bash"), new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "hisat2-2.1.0/hisat2-build" + 
+                    " " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " " + WrapperUtility.ConvertWindowsPath(IndexPrefix)
+            }).WaitForExit();
+        }
+
+        public static void Align(string spritzDirectory, string analysisDirectory, string IndexPrefix, string[] fastqPaths, out string outputDirectory)
+        {
+            if (fastqPaths.Count() == 1)
+            {
+                outputDirectory = "Hisat2OutUnpaired.sam";
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Hisat2Align.bash"), new List<string>
+                {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "hisat2-2.1.0/hisat2 -q -x" +
+                " " + WrapperUtility.ConvertWindowsPath(IndexPrefix) +
+                " -U " + System.String.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))) +
+                " -S " + outputDirectory,
+
+                }).WaitForExit();
+            }
+            else
+            {
+                outputDirectory = "Hisat2OutPaired.sam";
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Hisat2Align.bash"), new List<string>
+                {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "hisat2-2.1.0/hisat2 -q -x" +
+                " " + WrapperUtility.ConvertWindowsPath(IndexPrefix) +
+                " -1 " + System.String.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[0])) +
+                " -2 " + System.String.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
+                " -S " + outputDirectory,
+
+                }).WaitForExit();
+            }
+            
+        }
+        #endregion Alignment Methods
     }
 }
