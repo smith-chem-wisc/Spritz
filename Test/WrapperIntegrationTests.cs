@@ -593,8 +593,22 @@ namespace Test
                 },
                 out string outputDirectory
                 );
-            Assert.IsTrue(File.Exists(outputDirectory));
-           
+            var output = outputDirectory;
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory,"Tools",output)));
+            HISAT2Wrapper.Align(
+                TestContext.CurrentContext.TestDirectory,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
+                IndexPrefix,
+                new string[]
+                {
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                },
+                out string outputDirectoryPaired
+                );
+            var outputPaired = outputDirectoryPaired;
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", outputPaired)));
+
         }
         #endregion Alignment tests
 

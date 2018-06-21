@@ -69,16 +69,34 @@ namespace ToolWrapperLayer
 
         public static void Align(string spritzDirectory, string analysisDirectory, string IndexPrefix, string[] fastqPaths, out string outputDirectory)
         {
-            outputDirectory = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), Path.GetFileNameWithoutExtension(fastqPaths[0]) + "Hisat2Out.sam");
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Hisat2Align.bash"), new List<string>
+            if (fastqPaths.Count() == 1)
             {
+                outputDirectory = "Hisat2OutUnpaired.sam";
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Hisat2Align.bash"), new List<string>
+                {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "hisat2-2.1.0/hisat2 -q -x" +
                 " " + WrapperUtility.ConvertWindowsPath(IndexPrefix) +
                 " -U " + System.String.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))) +
                 " -S " + outputDirectory,
 
-            }).WaitForExit();
+                }).WaitForExit();
+            }
+            else
+            {
+                outputDirectory = "Hisat2OutPaired.sam";
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Hisat2Align.bash"), new List<string>
+                {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "hisat2-2.1.0/hisat2 -q -x" +
+                " " + WrapperUtility.ConvertWindowsPath(IndexPrefix) +
+                " -1 " + System.String.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[0])) +
+                " -2 " + System.String.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
+                " -S " + outputDirectory,
+
+                }).WaitForExit();
+            }
+            
         }
         #endregion Alignment Methods
     }
