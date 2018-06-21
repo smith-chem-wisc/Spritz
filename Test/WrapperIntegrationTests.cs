@@ -481,7 +481,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     reference,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",
-                        "mapper0" + reference + "-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.concat.sorted.vcf")))
+                        "mapper0" + reference + "-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.concat.sorted.vcf"),
+                    false))
                 .WaitForExit();
             Assert.IsTrue(File.Exists(snpeff.HtmlReportPath) && new FileInfo(snpeff.HtmlReportPath).Length > 0);
             Assert.IsTrue(File.Exists(snpeff.AnnotatedVcfPath) && new FileInfo(snpeff.AnnotatedVcfPath).Length > 0);
@@ -508,7 +509,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
+                    true))
                 .WaitForExit();
 
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
@@ -542,7 +544,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"),
+                    true))
                 .WaitForExit();
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
             var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
@@ -573,7 +576,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
+                    true))
                 .WaitForExit();
             var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
             if (reference.EndsWith("37")) { Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "V" && v.VariantSequence.Length == 2))); }
@@ -606,7 +610,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     r,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
+                    true))
                 .WaitForExit();
 
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);

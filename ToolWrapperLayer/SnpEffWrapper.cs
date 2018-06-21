@@ -61,7 +61,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string vcfPath)
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string vcfPath, bool quick)
         {
             string outPrefix = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath));
             AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
@@ -79,6 +79,7 @@ namespace ToolWrapperLayer
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
                     " -fastaProt " + WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath) +
                     " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
+                    (quick ? " -t " : "") +
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
