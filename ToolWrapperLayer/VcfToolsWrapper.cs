@@ -10,6 +10,7 @@ namespace ToolWrapperLayer
     public class VcfToolsWrapper :
         IInstallable
     {
+        public string VcfDepthFilteredPath { get; private set; }
         public string VcfWithoutIndelsPath { get; private set; }
         public string VcfWithoutSnvsPath { get; private set; }
         public string VcfConcatenatedPath { get; private set; }
@@ -46,6 +47,28 @@ namespace ToolWrapperLayer
         public string WriteRemoveScript(string spritzDirectory)
         {
             return null;
+        }
+
+        /// <summary>
+        /// Sets filter based on average genotype depth
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="vcfPath"></param>
+        /// <param name="keepInfo"></param>
+        /// <param name="minDepth"></param>
+        /// <returns></returns>
+        public string AverageGenotypeDepthFilter(string spritzDirectory, string vcfPath, bool keepInfo, float minDepth)
+        {
+            VcfDepthFilteredPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath)) + ".DPFilter.vcf";
+            return
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(VcfDepthFilteredPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(VcfDepthFilteredPath) + " ]; then " +
+                    "vcftools " +
+                    " --vcf " + WrapperUtility.ConvertWindowsPath(vcfPath) +
+                    " --min-meanDP " + minDepth.ToString() +
+                    " --recode " +
+                    (keepInfo ? " --recode-INFO-all " : "") +
+                    " --stdout > " + WrapperUtility.ConvertWindowsPath(VcfDepthFilteredPath) +
+                "; fi";
         }
 
         /// <summary>
