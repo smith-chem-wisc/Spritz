@@ -56,23 +56,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DataGrids\SRADataGrid.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
-    <Compile Include="TransferModificationsFlow.xaml.cs">
-      <DependentUpon>TransferModificationsFlow.xaml</DependentUpon>
+    <Compile Include="WorkFlow.xaml.cs">
+      <DependentUpon>WorkFlow.xaml</DependentUpon>
     </Compile>
     <Compile Include="TreeViews\CollectionForTreeView.cs" />
     <Compile Include="TreeViews\ForTreeView.cs" />
     <Compile Include="TreeViews\InRunTask.cs" />
     <Compile Include="TreeViews\OutputFileForTreeView.cs" />
     <Compile Include="TreeViews\PreRunTask.cs" />
-    <Page Include="Fastq2ProteinsFlowWindows.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="LncRNADiscoverWFWindows.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -84,17 +77,11 @@
     <Compile Include="DataGrids\GeneSetDataGrid.cs" />
     <Compile Include="DataGrids\GenomeFastaDataGrid.cs" />
     <Compile Include="DataGrids\RNASeqFastqDataGrid.cs" />
-    <Compile Include="Fastq2ProteinsFlowWindows.xaml.cs">
-      <DependentUpon>Fastq2ProteinsFlowWindows.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="LncRNADiscoverWFWindows.xaml.cs">
-      <DependentUpon>LncRNADiscoverWFWindows.xaml</DependentUpon>
-    </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="TransferModificationsFlow.xaml">
+    <Page Include="WorkFlow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

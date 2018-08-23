@@ -3,17 +3,19 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using WorkflowLayer;
+using System;
 
 namespace SpritzGUI
 {
     /// <summary>
     /// Interaction logic for TransferModificationsFlowWindows.xaml
     /// </summary>
-    public partial class TransferModificationsFlowWindows : Window
+    public partial class WorkFlowWindow : Window
     {
-        public TransferModificationsFlowWindows()
+        public WorkFlowWindow()
         {
             InitializeComponent();
+            PopulateChoices();
             Options = new Options();
             mainWindow = (MainWindow)Application.Current.MainWindow;
             UpdateFieldsFromTask();
@@ -30,16 +32,33 @@ namespace SpritzGUI
 
         protected void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            Options.Command = TransferModificationsFlow.Command;
+            int i = CbxWorkFlowType.SelectedIndex;
+            switch (i)
+            {
+                case 0:
+                    Options.Command = SampleSpecificProteinDBFlow.Command;
+                    break;
+                case 1:
+                    Options.Command = LncRNADiscoveryFlow.Command;
+                    break;
+                case 2:
+                    Options.Command = TranscriptQuantificationFlow.Command;
+                    break;
+                case 3:
+                    //Options.Command = STARAlignmentFlow.Command;
+                    break;
+                case 4:
+                    Options.Command = GeneFusionDiscoveryFlow.Command;
+                    break;
+                default:
+                    break;
+            }
+            
             Options.Threads = int.Parse(txtThreads.Text);
             Options.AnalysisDirectory = txtAnalysisDirectory.Text;
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
             Options.Fastq1 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[0];
             Options.Fastq2 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[1];
-            var geneSetCollection = (ObservableCollection<GeneSetDataGrid>)mainWindow.dataGridGeneSet.DataContext;
-            Options.GeneModelGtfOrGff = geneSetCollection.First().FilePath;
-            var genomeFastaDataGrids = (ObservableCollection<GenomeFastaDataGrid>)mainWindow.dataGridFASTA.DataContext;
-            Options.GenomeFasta = genomeFastaDataGrids.First().FilePath;
 
             Options.GenomeStarIndexDirectory = txtGenomeStarIndexDirectory.Text;
             Options.StrandSpecific = ckbStrandSpecific.IsChecked.Value;
@@ -58,6 +77,7 @@ namespace SpritzGUI
 
         private void UpdateFieldsFromTask()
         {
+            CbxWorkFlowType.SelectedIndex = 0;
             txtAnalysisDirectory.Text = Options.AnalysisDirectory;
             txtThreads.Text = Options.Threads.ToString();
             ckbStrandSpecific.IsChecked = Options.StrandSpecific;
@@ -68,6 +88,12 @@ namespace SpritzGUI
             txtProteinFasta.Text = Options.ProteinFastaPath;
             txtStarFusionReference.Text = Options.Reference;
             txtUniProtProteinXml.Text = Options.UniProtXml;
+        }
+
+        private void PopulateChoices()
+        {
+            foreach (string aWorkFlow in Enum.GetNames(typeof(MyWorkflow)))
+                CbxWorkFlowType.Items.Add(aWorkFlow);
         }
     }
 }
