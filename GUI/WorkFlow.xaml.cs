@@ -53,41 +53,67 @@ namespace SpritzGUI
                 default:
                     break;
             }
-            
-            Options.Threads = int.Parse(txtThreads.Text);
-            Options.AnalysisDirectory = txtAnalysisDirectory.Text;
-            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
-            Options.Fastq1 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[0];
-            Options.Fastq2 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[1];
 
-            Options.GenomeStarIndexDirectory = txtGenomeStarIndexDirectory.Text;
-            Options.StrandSpecific = ckbStrandSpecific.IsChecked.Value;
-            Options.UniProtXml = txtUniProtProteinXml.Text;
-            Options.SraAccession = txtSraAccession.Text;
             Options.SpritzDirectory = txtSpritzDirecory.Text;
-            Options.ReferenceVcf = txtDbsnpVcfReference.Text;
-            Options.Reference = txtReference.Text;
-            Options.ProteinFastaPath = txtProteinFasta.Text;
-            Options.OverwriteStarAlignments = ckbOverWriteStarAlignment.IsChecked.Value;
-            Options.GenomeStarIndexDirectory = txtGenomeStarIndexDirectory.Text;
-            Options.InferStrandSpecificity = ckbInferStrandedness.IsChecked.Value;
+            Options.AnalysisDirectory = txtAnalysisDirectory.Text;    
+            
+            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
+            if (rnaSeqFastqCollection.Count != 0)
+            {
+                Options.Fastq1 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[0];
+                Options.Fastq2 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[1];
+            }            
+            var sraCollection = (ObservableCollection<SRADataGrid>)mainWindow.LbxSRAs.ItemsSource;
+            Options.SraAccession = String.Join(",", sraCollection.Select(p => p.Name).ToArray());
 
+            Options.Threads = int.Parse(txtThreads.Text);
+            Options.GenomeStarIndexDirectory = txtGenomeDir.Text;
+            Options.GenomeFasta = txtGenomeFasta.Text;
+            Options.GeneModelGtfOrGff = txtGeneModelGtfOrGff.Text;
+            Options.NewGeneModelGtfOrGff = txtNewGeneModelGtfOrGff.Text;
+            Options.ReferenceVcf = txtDbsnpVcfReference.Text;
+            Options.Reference = txtStarFusionReference.Text;
+            Options.UniProtXml = txtUniProtProteinXml.Text;
+            Options.OverwriteStarAlignments = ckbOverWriteStarAlignment.IsChecked.Value;
+            Options.StrandSpecific = ckbStrandSpecific.IsChecked.Value;
+            Options.InferStrandSpecificity = ckbInferStrandedness.IsChecked.Value;
+            Options.DoTranscriptIsoformAnalysis = CkbDoTranscriptIsoformAnalysis.IsChecked.Value;
+            Options.DoFusionAnalysis = CkbDoGeneFusionAnalysis.IsChecked.Value;
+
+            Options.ProteinFastaPath = txtProteinFasta.Text;          
             DialogResult = true;
         }
 
         private void UpdateFieldsFromTask()
         {
-            CbxWorkFlowType.SelectedIndex = 0;
+            int i = 0;
+            foreach (string aWorkFlow in Enum.GetNames(typeof(MyWorkflow)))
+            {
+                if (Options.Command == aWorkFlow)
+                {
+                    CbxWorkFlowType.SelectedIndex = i;
+                }
+                i++;
+            }
+
+            txtSpritzDirecory.Text = Options.SpritzDirectory;
             txtAnalysisDirectory.Text = Options.AnalysisDirectory;
+
             txtThreads.Text = Options.Threads.ToString();
-            ckbStrandSpecific.IsChecked = Options.StrandSpecific;
-            ckbStrandSpecific.IsChecked = Options.InferStrandSpecificity;
-            ckbOverWriteStarAlignment.IsChecked = Options.OverwriteStarAlignments;
-            txtGenomeStarIndexDirectory.Text = Options.GenomeStarIndexDirectory;
+            txtGenomeDir.Text = Options.GenomeStarIndexDirectory;
+            txtGenomeFasta.Text = Options.GenomeFasta;
+            txtGeneModelGtfOrGff.Text = Options.GeneModelGtfOrGff;
+            txtNewGeneModelGtfOrGff.Text = Options.NewGeneModelGtfOrGff;
             txtDbsnpVcfReference.Text = Options.ReferenceVcf;
-            txtProteinFasta.Text = Options.ProteinFastaPath;
             txtStarFusionReference.Text = Options.Reference;
             txtUniProtProteinXml.Text = Options.UniProtXml;
+            ckbOverWriteStarAlignment.IsChecked = Options.OverwriteStarAlignments;
+            ckbStrandSpecific.IsChecked = Options.StrandSpecific;
+            ckbInferStrandedness.IsChecked = Options.InferStrandSpecificity;
+            CkbDoTranscriptIsoformAnalysis.IsChecked = Options.DoTranscriptIsoformAnalysis;
+            CkbDoGeneFusionAnalysis.IsChecked = Options.DoFusionAnalysis;
+
+            txtProteinFasta.Text = Options.ProteinFastaPath;
         }
 
         private void PopulateChoices()

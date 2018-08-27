@@ -32,6 +32,7 @@ namespace SpritzGUI
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
             workflowTreeView.DataContext = staticTasksObservableCollection;
             LbxSRAs.ItemsSource = sraCollection;
+            Check4Install();
         }
 
         #endregion Public Constructors
@@ -175,11 +176,6 @@ namespace SpritzGUI
             return;
         }
 
-        private void MenuItem_DataDownload_Click(object sender, RoutedEventArgs e)
-        {
-            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
-        }
-
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
             if (TbxSRA.Text.Contains("SRA"))
@@ -263,7 +259,27 @@ namespace SpritzGUI
             }
         }
 
+        private void Check4Install()
+        {
+            var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            var exeToolsHistory = Path.Combine(exePath, "Tools\\history.txt");
+            if (!File.Exists(exeToolsHistory))
+            {
+                try
+                {
+                    var dialog = new InstallWindow();
+                    dialog.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+
+            }
+        }
         #endregion Private Methods - no Controlers
+
 
     }
 }

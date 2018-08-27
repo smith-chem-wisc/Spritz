@@ -37,57 +37,82 @@
                             <RowDefinition Height="1*"/>
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
-                            <Label Content="SpritzDirecory"/>
-                            <TextBox x:Name="txtSpritzDirecory" Width="100" />
+                            <Label Content="SpritzDirecory" Width="200"/>
+                            <TextBox x:Name="txtSpritzDirecory" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
-                            <Label Content="AnalysisDirectory" />
-                            <TextBox x:Name="txtAnalysisDirectory" Width="100" />
+                            <Label Content="AnalysisDirectory" Width="200"/>
+                            <TextBox x:Name="txtAnalysisDirectory" Width="180" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
-                            <Label Content="Reference" />
-                            <TextBox x:Name="txtReference" Width="100" />
+                        <!--<StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
+                            <Label Content="fq1" Width="200"/>
+                            <TextBox x:Name="txtFq1" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
-                            <Label Content="Threads" />
-                            <TextBox x:Name="txtThreads" Width="100" />
+                            <Label Content="fq2" Width="200"/>
+                            <TextBox x:Name="txtFq2" Width="180" />
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
+                            <Label Content="sraAcession" Width="200"/>
+                            <TextBox x:Name="txtSraAcession" Width="180" />
+                        </StackPanel>-->
                         <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="0">
-                            <Label Content="StrandSpecific" />
-                            <CheckBox x:Name="ckbStrandSpecific" VerticalAlignment="Center" />
+                            <Label Content="Threads" Width="200"/>
+                            <TextBox x:Name="txtThreads" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="0">
-                            <Label Content="InferStrandedness" />
-                            <CheckBox x:Name="ckbInferStrandedness" VerticalAlignment="Center" />
+                            <Label Content="genomeDir" Width="200"/>
+                            <TextBox x:Name="txtGenomeDir" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="0">
-                            <Label Content="OverWriteStarAlignment" />
-                            <CheckBox x:Name="ckbOverWriteStarAlignment" VerticalAlignment="Center" />
+                            <Label Content="genomeFasta" Width="200"/>
+                            <TextBox x:Name="txtGenomeFasta" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="0">
-                            <Label Content="GenomeStarIndexDirectory" />
-                            <TextBox x:Name="txtGenomeStarIndexDirectory" Width="100" />
+                            <Label Content="geneModelGtfOrGff" Width="200"/>
+                            <TextBox x:Name="txtGeneModelGtfOrGff" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="0">
-                            <Label Content="DbsnpVcfReference" />
-                            <TextBox x:Name="txtDbsnpVcfReference" Width="100" />
+                            <Label Content="newGeneModelGtfOrGff" Width="200"/>
+                            <TextBox x:Name="txtNewGeneModelGtfOrGff" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
-                            <Label Content="ProteinFasta" />
-                            <TextBox x:Name="txtProteinFasta" Width="100" Height="32" VerticalAlignment="Bottom" />
+                            <Label Content="DbsnpVcfReference" Width="200"/>
+                            <TextBox x:Name="txtDbsnpVcfReference" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
+                            <Label Content="StarFusionReference" Width="200"/>
+                            <TextBox x:Name="txtStarFusionReference" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
-                            <Label Content="StarFusionReference" />
-                            <TextBox x:Name="txtStarFusionReference" Width="100" />
+                            <Label Content="UniProtProteinXml" Width="200"/>
+                            <TextBox x:Name="txtUniProtProteinXml" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
-                            <Label Content="UniProtProteinXml" />
-                            <TextBox x:Name="txtUniProtProteinXml" Width="100" />
+                            <Label Content="OverWriteStarAlignment" Width="200"/>
+                            <CheckBox x:Name="ckbOverWriteStarAlignment" VerticalAlignment="Center" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
-                            <Label Content="SraAccession" />
-                            <TextBox x:Name="txtSraAccession" Width="100" />
+                            <Label Content="StrandSpecific" Width="200"/>
+                            <CheckBox x:Name="ckbStrandSpecific" VerticalAlignment="Center" />
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="1">
+                            <Label Content="InferStrandedness" Width="200"/>
+                            <CheckBox x:Name="ckbInferStrandedness" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="1">
+                            <Label Content="doTranscriptIsoformAnalysis" Width="200"/>
+                            <CheckBox x:Name="CkbDoTranscriptIsoformAnalysis" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="1">
+                            <Label Content="doGeneFusionAnalysis" Width="200"/>
+                            <CheckBox x:Name="CkbDoGeneFusionAnalysis" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
+                            <Label Content="ProteinFastaPath" Width="200"/>
+                            <TextBox x:Name="txtProteinFasta" Width="180" Height="32" VerticalAlignment="Bottom" />
+                        </StackPanel>
+                        
                     </Grid>
                 </GroupBox>
             </DockPanel>

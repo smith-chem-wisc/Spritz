@@ -16,7 +16,6 @@
             </MenuItem>
             <MenuItem Header="SetUp">
                 <MenuItem Header="Setup" Click="MenuItem_Setup_Click"/>
-                <MenuItem Header="DataDownload" Click="MenuItem_DataDownload_Click"/>
             </MenuItem>
         </Menu>
         <Grid>

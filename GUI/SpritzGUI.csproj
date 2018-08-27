@@ -58,6 +58,9 @@
     </ApplicationDefinition>
     <Compile Include="DataGrids\SRADataGrid.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
+    <Compile Include="InstallWindow.xaml.cs">
+      <DependentUpon>InstallWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WorkFlow.xaml.cs">
       <DependentUpon>WorkFlow.xaml</DependentUpon>
     </Compile>
@@ -66,6 +69,10 @@
     <Compile Include="TreeViews\InRunTask.cs" />
     <Compile Include="TreeViews\OutputFileForTreeView.cs" />
     <Compile Include="TreeViews\PreRunTask.cs" />
+    <Page Include="InstallWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
