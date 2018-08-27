@@ -60,39 +60,6 @@ namespace ToolWrapperLayer
         public string SortedVcfPath { get; private set; }
 
         /// <summary>
-        /// Generic command for calling GATK, allowing use of all free memory.
-        /// </summary>
-        /// <returns></returns>
-        public string Gatk()
-        {
-            var performance = new PerformanceCounter("Memory", "Available MBytes");
-            var memory = performance.NextValue();
-            return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
-        }
-
-        /// <summary>
-        /// Writes an installation script for installing GATK from source. Requires root permissions to install gradle the first time.
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <returns></returns>
-        public static string WriteGitCloneInstallScript(string spritzDirectory)
-        {
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -f gatk/build/libs/gatk.jar ]; then",
-                "  git clone https://github.com/broadinstitute/gatk.git",
-                "  cd gatk",
-                "  ./gradlew localJar",
-                "  cd ..",
-                "fi",
-                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
-            });
-            return scriptPath;
-        }
-
-        /// <summary>
         /// Writes an installation script for installing GATK from pre-built binaries.
         /// </summary>
         /// <param name="spritzDirectory"></param>
@@ -513,6 +480,39 @@ namespace ToolWrapperLayer
                     " -O " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) +
                     "; fi",
             }).WaitForExit();
+        }
+
+        /// <summary>
+        /// Generic command for calling GATK, allowing use of all free memory.
+        /// </summary>
+        /// <returns></returns>
+        public static string Gatk()
+        {
+            var performance = new PerformanceCounter("Memory", "Available MBytes");
+            var memory = performance.NextValue();
+            return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
+        }
+
+        /// <summary>
+        /// Writes an installation script for installing GATK from source. Requires root permissions to install gradle the first time.
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public static string WriteGitCloneInstallScript(string spritzDirectory)
+        {
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "if [ ! -f gatk/build/libs/gatk.jar ]; then",
+                "  git clone https://github.com/broadinstitute/gatk.git",
+                "  cd gatk",
+                "  ./gradlew localJar",
+                "  cd ..",
+                "fi",
+                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
+            });
+            return scriptPath;
         }
 
         /// <summary>

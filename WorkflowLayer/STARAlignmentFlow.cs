@@ -13,6 +13,8 @@ namespace WorkflowLayer
     public class STARAlignmentFlow
         : SpritzFlow
     {
+        public const string Command = "a";
+    
         public STARAlignmentFlow()
             : base(MyWorkflow.STARAlignment)
         {

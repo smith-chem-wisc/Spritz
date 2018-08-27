@@ -119,7 +119,8 @@ namespace WorkflowLayer
                 "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
                 "sudo apt-get -y upgrade",
-                "sudo apt-get -y install " + String.Join(" ", aptitudeDependencies)
+                "sudo apt-get -y install " + String.Join(" ", aptitudeDependencies),
+                "sudo cp /usr/lib/x86_64-linux-gnu/libgsl.so.19 /usr/lib/x86_64-linux-gnu/libgsl.so.0", // required for rMATS in an Ubuntu 16.04 environment
             };
 
             // python setup

@@ -180,7 +180,7 @@ namespace CMD
             if (fastq1string != null)
             {
                 // Parse comma-separated fastq lists
-                if (fastq2string != null && fastq1string.Count(x => x == ',') != fastq1string.Count(x => x == ','))
+                if (fastq2string != null && fastq1string.Count(x => x == ',') != fastq2string.Count(x => x == ','))
                 {
                     throw new ArgumentException("Error: There are a different number of first-strand and second-strand fastq files.");
                 }

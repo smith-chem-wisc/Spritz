@@ -1,7 +1,6 @@
 ﻿using Proteogenomics;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using ToolWrapperLayer;
 
 namespace WorkflowLayer
@@ -19,7 +18,6 @@ namespace WorkflowLayer
         public List<string> CombinedAnnotatedGenesSummaryPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinFastaPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinXmlPaths { get; private set; } = new List<string>();
-        public List<string> CompletedProteinXmlPaths { get; private set; } = new List<string>();
 
         public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
             List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff)
@@ -58,8 +56,6 @@ namespace WorkflowLayer
                 snpeffs.Add(snpEff);
             }
             WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
-            CompletedProteinXmlPaths = snpeffs.Select(snpEff => ProteinAnnotation.CompleteVariantAnnotations(spritzDirectory,
-                snpEff.VariantProteinXmlPath, snpEff.AnnotatedVcfPath, genome)).ToList();
         }
     }
 }

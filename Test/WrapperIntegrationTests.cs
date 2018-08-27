@@ -753,34 +753,35 @@ namespace Test
                 IndexPrefix,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
                 },
                 out string outputDirectory
                 );
             var output = outputDirectory;
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory,"Tools",output)));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", output)));
+
             HISAT2Wrapper.Align(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 IndexPrefix,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
                 },
                 out string outputDirectoryPaired
                 );
             var outputPaired = outputDirectoryPaired;
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", outputPaired)));
-
         }
+
         #endregion Alignment tests
 
-            #region Workflow Tests
+        #region Workflow Tests
 
-            /// <summary>
-            /// Handling multiple fastq files and chromosomes, single-end
-            /// </summary>
+        /// <summary>
+        /// Handling multiple fastq files and chromosomes, single-end
+        /// </summary>
         [Test, Order(3)]
         [TestCase("grch37", "mapper_chr22indelRegion.fastq")]
         [TestCase("grch38", "mapper_chr22indelRegion.fastq")]
