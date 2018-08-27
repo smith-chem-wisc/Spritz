@@ -21,66 +21,7 @@ namespace Test
         public void InstallTest()
         {
             ManageToolsFlow.Install(TestContext.CurrentContext.TestDirectory);
-
-            // bedops
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "bedops")));
-
-            // bedtools
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "bedtools2", "bin", "bedtools")));
-
-            // cufflinks
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "cufflinks-2.2.1")));
-
-            // gatk
-            Assert.IsTrue(Directory.GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "gatk"), "gatk*local.jar").Length > 0);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "ChromosomeMappings")));
-
-            // hisat2
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "hisat2-2.1.0", "hisat2")));
-
-            // mfold
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "mfold-3.6", "scripts", "mfold")));
-
-            // rsem
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSEM-1.3.0", "rsem-prepare-reference")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSEM-1.3.0", "rsem-calculate-expression")));
-
-            // rseqc
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSeQC-2.6.4")));
-
-            // samtools
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "samtools-1.6", "samtools")));
-
-            // scalpel
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "scalpel-0.5.3")));
-            Assert.IsTrue(new ScalpelWrapper().CheckInstallation(TestContext.CurrentContext.TestDirectory));
-
-            // skewer
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "skewer-0.2.2")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "BBMap")));
-
-            // slncky
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "slncky")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "slncky", "annotations")));
-            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "lastz*").Length > 0);
-
-            // snpeff
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "SnpEff", "snpEff.jar")));
-
-            // sratoolkit
-            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "sratoolkit*").Length > 0);
-            Assert.IsTrue(Directory.GetFiles(
-                Directory.GetDirectories(
-                    Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0);
-
-            // star
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "STAR-" + STARWrapper.STARVersion)));
-
-            // star-fusion
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "STAR-Fusion-v1.4.0", "STAR-Fusion")));
-
-            // trinity
-            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "trinity*").Length > 0);
+            Assert.IsTrue(WrapperUtility.CheckToolSetup(TestContext.CurrentContext.TestDirectory));
         }
 
         [Test, Order(1)]
