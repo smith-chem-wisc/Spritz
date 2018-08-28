@@ -73,6 +73,9 @@ namespace CMD
         [Option("doGeneFusionAnalysis", Required = false, HelpText = "Do a gene fusion analysis to investigate gene fusion protein products.", Default = false)]
         public bool DoFusionAnalysis { get; set; }
 
+        [Option("quickSnpEffWithoutStats", Required = false, HelpText = "Use multiple threads for SnpEff and do not output stats HTML.", Default = false)]
+        public bool QuickSnpEffWithoutStats { get; set; }
+
         public string ProteinFastaPath { get; set; }
     }
 }

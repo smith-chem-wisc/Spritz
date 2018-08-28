@@ -25,5 +25,6 @@ namespace WorkflowLayer
         public int ReadSubset { get; set; } = 300000;
         public bool DoFusionAnalysis { get; set; }
         public bool DoTranscriptIsoformAnalysis { get; set; }
+        public bool QuickSnpEffWithoutStats { get; set; }
     }
 }
