@@ -11,41 +11,35 @@ namespace ToolWrapperLayer
     public class TopHatWrapper :
         IInstallable
     {
-        #region Public Properties
-
         /// <summary>
         /// File prefix for bowtie indices.
         /// </summary>
-        public static string BowtieIndexFilePrefix = "index";
+        public static readonly string BowtieIndexFilePrefix = "index";
 
         /// <summary>
         /// Output filename for TopHat-aligned reads.
         /// </summary>
-        public static string TophatAcceptedHitsFilename = "accepted_hits.bam";
+        public static readonly string TophatAcceptedHitsFilename = "accepted_hits.bam";
 
         /// <summary>
         /// Output filename for TopHat summary.
         /// </summary>
-        public static string TophatAlignmentSummaryFilename = "align_summary.txt";
+        public static readonly string TophatAlignmentSummaryFilename = "align_summary.txt";
 
         /// <summary>
         /// Output filename for detected deletions.
         /// </summary>
-        public static string TophatDeletionsBEDFilename = "deletions.bed";
+        public static readonly string TophatDeletionsBEDFilename = "deletions.bed";
 
         /// <summary>
         /// Output filename for detected splice junctions.
         /// </summary>
-        public static string TophatJunctionsBEDFilename = "junctions.bed";
+        public static readonly string TophatJunctionsBEDFilename = "junctions.bed";
 
         /// <summary>
         /// Output filename for detected insertions.
         /// </summary>
-        public static string TophatInsertionsBEDFilename = "insertions.bed";
-
-        #endregion Public Properties
-
-        #region Installation Methods
+        public static readonly string TophatInsertionsBEDFilename = "insertions.bed";
 
         /// <summary>
         /// Writes an installation script for TopHat and bowtie2.
@@ -80,10 +74,6 @@ namespace ToolWrapperLayer
         {
             return null;
         }
-
-        #endregion Installation Methods
-
-        #region Public Methods
 
         /// <summary>
         /// Checks whether the bowtie indices exist.
@@ -157,7 +147,5 @@ namespace ToolWrapperLayer
         {
             return Path.Combine(spritzDirectory, "Tools", "tophat-2.1.1");
         }
-
-        #endregion Public Methods
     }
 }

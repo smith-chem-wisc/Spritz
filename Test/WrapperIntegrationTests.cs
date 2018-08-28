@@ -21,66 +21,7 @@ namespace Test
         public void InstallTest()
         {
             ManageToolsFlow.Install(TestContext.CurrentContext.TestDirectory);
-
-            // bedops
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "bedops")));
-
-            // bedtools
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "bedtools2", "bin", "bedtools")));
-
-            // cufflinks
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "cufflinks-2.2.1")));
-
-            // gatk
-            Assert.IsTrue(Directory.GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "gatk"), "gatk*local.jar").Length > 0);
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "ChromosomeMappings")));
-
-            // hisat2
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "hisat2-2.1.0", "hisat2")));
-
-            // mfold
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "mfold-3.6", "scripts", "mfold")));
-
-            // rsem
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSEM-1.3.0", "rsem-prepare-reference")));
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSEM-1.3.0", "rsem-calculate-expression")));
-
-            // rseqc
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "RSeQC-2.6.4")));
-
-            // samtools
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "samtools-1.6", "samtools")));
-
-            // scalpel
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "scalpel-0.5.3")));
-            Assert.IsTrue(new ScalpelWrapper().CheckInstallation(TestContext.CurrentContext.TestDirectory));
-
-            // skewer
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "skewer-0.2.2")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "BBMap")));
-
-            // slncky
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "slncky")));
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "slncky", "annotations")));
-            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "lastz*").Length > 0);
-
-            // snpeff
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "SnpEff", "snpEff.jar")));
-
-            // sratoolkit
-            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "sratoolkit*").Length > 0);
-            Assert.IsTrue(Directory.GetFiles(
-                Directory.GetDirectories(
-                    Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0);
-
-            // star
-            Assert.IsTrue(Directory.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "STAR-" + STARWrapper.STARVersion)));
-
-            // star-fusion
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", "STAR-Fusion-v1.4.0", "STAR-Fusion")));
-
-            // trinity
-            Assert.IsTrue(Directory.GetDirectories(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools"), "trinity*").Length > 0);
+            Assert.IsTrue(WrapperUtility.CheckToolSetup(TestContext.CurrentContext.TestDirectory));
         }
 
         [Test, Order(1)]
@@ -481,7 +422,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     reference,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",
-                        "mapper0" + reference + "-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.concat.sorted.vcf")))
+                        "mapper0" + reference + "-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.concat.sorted.vcf"),
+                    false))
                 .WaitForExit();
             Assert.IsTrue(File.Exists(snpeff.HtmlReportPath) && new FileInfo(snpeff.HtmlReportPath).Length > 0);
             Assert.IsTrue(File.Exists(snpeff.AnnotatedVcfPath) && new FileInfo(snpeff.AnnotatedVcfPath).Length > 0);
@@ -508,7 +450,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
+                    true))
                 .WaitForExit();
 
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
@@ -530,11 +473,11 @@ namespace Test
         public void SnpEffFrameshiftProteins(string reference)
         {
             //BuildAndCopySnpeff();
-            //Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
-            //File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
-            //File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));
-            //File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "frameshift1.vcf"),
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "frameshift1.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
             var snpeff = new SnpEffWrapper();
             WrapperUtility.GenerateAndRunScript(
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
@@ -542,7 +485,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"),
+                    true))
                 .WaitForExit();
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
             var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
@@ -573,7 +517,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
+                    true))
                 .WaitForExit();
             var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
             if (reference.EndsWith("37")) { Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.OriginalSequence == "V" && v.VariantSequence.Length == 2))); }
@@ -606,7 +551,8 @@ namespace Test
                     TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     r,
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf")))
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
+                    true))
                 .WaitForExit();
 
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
@@ -748,34 +694,35 @@ namespace Test
                 IndexPrefix,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
                 },
                 out string outputDirectory
                 );
             var output = outputDirectory;
-            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory,"Tools",output)));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", output)));
+
             HISAT2Wrapper.Align(
                 TestContext.CurrentContext.TestDirectory,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData"),
                 IndexPrefix,
                 new string[]
                 {
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
-                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
+                    Path.Combine(TestContext.CurrentContext.TestDirectory,"TestFastqs", "mapper0.fastq"),
                 },
                 out string outputDirectoryPaired
                 );
             var outputPaired = outputDirectoryPaired;
             Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "Tools", outputPaired)));
-
         }
+
         #endregion Alignment tests
 
-            #region Workflow Tests
+        #region Workflow Tests
 
-            /// <summary>
-            /// Handling multiple fastq files and chromosomes, single-end
-            /// </summary>
+        /// <summary>
+        /// Handling multiple fastq files and chromosomes, single-end
+        /// </summary>
         [Test, Order(3)]
         [TestCase("grch37", "mapper_chr22indelRegion.fastq")]
         [TestCase("grch38", "mapper_chr22indelRegion.fastq")]

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -18,6 +19,53 @@ namespace ToolWrapperLayer
         public static bool CheckBashSetup()
         {
             return File.Exists(@"C:\Windows\System32\bash.exe");
+        }
+
+        /// <summary>
+        /// Returns true if all tools are set up
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public static bool CheckToolSetup(string spritzDirectory)
+        {
+            return GetToolSetupChecks(spritzDirectory).All(x => x.Item2); 
+        }
+
+        /// <summary>
+        /// Gets tuples with name of tool and whether the tool is set up
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public static List<Tuple<string, bool>> GetToolSetupChecks(string spritzDirectory)
+        {
+            List<Tuple<string, bool>> setup = new List<Tuple<string, bool>>();
+            setup.Add(new Tuple<string, bool>("bedops", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "bedops"))));
+            setup.Add(new Tuple<string, bool>("bedtools", File.Exists(Path.Combine(spritzDirectory, "Tools", "bedtools2", "bin", "bedtools"))));
+            setup.Add(new Tuple<string, bool>("cufflinks", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "cufflinks-2.2.1"))));
+            setup.Add(new Tuple<string, bool>("gatk", Directory.GetFiles(Path.Combine(spritzDirectory, "Tools", "gatk"), "gatk*local.jar").Length > 0));
+            setup.Add(new Tuple<string, bool>("gatk", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings"))));
+            setup.Add(new Tuple<string, bool>("hisat2", File.Exists(Path.Combine(spritzDirectory, "Tools", "hisat2-2.1.0", "hisat2"))));
+            setup.Add(new Tuple<string, bool>("mfold", File.Exists(Path.Combine(spritzDirectory, "Tools", "mfold-3.6", "scripts", "mfold"))));
+            setup.Add(new Tuple<string, bool>("rsem", File.Exists(Path.Combine(spritzDirectory, "Tools", "RSEM-1.3.0", "rsem-prepare-reference"))));
+            setup.Add(new Tuple<string, bool>("rsem", File.Exists(Path.Combine(spritzDirectory, "Tools", "RSEM-1.3.0", "rsem-calculate-expression"))));
+            setup.Add(new Tuple<string, bool>("rseqc", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "RSeQC-2.6.4"))));
+            setup.Add(new Tuple<string, bool>("samtools", File.Exists(Path.Combine(spritzDirectory, "Tools", "samtools-1.6", "samtools"))));
+            setup.Add(new Tuple<string, bool>("scalpel", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "scalpel-0.5.3"))));
+            setup.Add(new Tuple<string, bool>("scalpel", new ScalpelWrapper().CheckInstallation(spritzDirectory)));
+            setup.Add(new Tuple<string, bool>("skewer", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "skewer-0.2.2"))));
+            setup.Add(new Tuple<string, bool>("skewer", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "BBMap"))));
+            setup.Add(new Tuple<string, bool>("slncky", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "slncky"))));
+            setup.Add(new Tuple<string, bool>("slncky", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "slncky", "annotations"))));
+            setup.Add(new Tuple<string, bool>("slncky", Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "lastz*").Length > 0));
+            setup.Add(new Tuple<string, bool>("snpeff", File.Exists(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.jar"))));
+            setup.Add(new Tuple<string, bool>("sratoolkit", Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*").Length > 0));
+            setup.Add(new Tuple<string, bool>("sratoolkit", Directory.GetFiles(
+                Directory.GetDirectories(
+                    Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0));
+            setup.Add(new Tuple<string, bool>("star", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-" + STARWrapper.STARVersion))));
+            setup.Add(new Tuple<string, bool>("star-fusion", File.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion-v1.4.0", "STAR-Fusion"))));
+            setup.Add(new Tuple<string, bool>("trinity", Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "trinity*").Length > 0));
+            return setup;
         }
 
         /// <summary>

@@ -102,7 +102,8 @@ namespace WorkflowLayer
                 Parameters.EnsemblKnownSitesPath,
                 alignment.DedupedBamFiles,
                 Downloads.ReorderedFastaPath,
-                Downloads.EnsemblGenome);
+                Downloads.EnsemblGenome,
+                Parameters.QuickSnpEffWithoutStats);
 
             // Gene Fusion Discovery
             List<Protein> fusionProteins = new List<Protein>();
