@@ -79,7 +79,7 @@ namespace ToolWrapperLayer
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
                     " -fastaProt " + WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath) +
                     " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
-                    (quick ? " -t " : "") +
+                    //(quick ? " -t " : "") + // this threaded version isn't working consistently...
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),

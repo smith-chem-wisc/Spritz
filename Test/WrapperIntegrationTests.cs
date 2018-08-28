@@ -473,11 +473,11 @@ namespace Test
         public void SnpEffFrameshiftProteins(string reference)
         {
             //BuildAndCopySnpeff();
-            //Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
-            //File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
-            //File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));
-            //File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "frameshift1.vcf"),
-            //    Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", "frameshift1.vcf"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
             var snpeff = new SnpEffWrapper();
             WrapperUtility.GenerateAndRunScript(
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
