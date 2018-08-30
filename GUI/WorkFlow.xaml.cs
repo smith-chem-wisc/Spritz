@@ -60,8 +60,8 @@ namespace SpritzGUI
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
             if (rnaSeqFastqCollection.Count != 0)
             {
-                Options.Fastq1 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[0];
-                Options.Fastq2 = rnaSeqFastqCollection.Select(p => p.FilePath).ToList()[1];
+                Options.Fastq1 = String.Join(",", rnaSeqFastqCollection.Where(p => p.MateRun == 1.ToString()).OrderBy(p=>p.Experiment).Select(p => p.FilePath).ToArray());
+                Options.Fastq2 = String.Join(",", rnaSeqFastqCollection.Where(p => p.MateRun == 2.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
             }            
             var sraCollection = (ObservableCollection<SRADataGrid>)mainWindow.LbxSRAs.ItemsSource;
             Options.SraAccession = String.Join(",", sraCollection.Select(p => p.Name).ToArray());

@@ -81,8 +81,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DataGrids\GeneSetDataGrid.cs" />
-    <Compile Include="DataGrids\GenomeFastaDataGrid.cs" />
     <Compile Include="DataGrids\RNASeqFastqDataGrid.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

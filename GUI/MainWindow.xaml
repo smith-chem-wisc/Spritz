@@ -68,23 +68,6 @@
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
-                                        <EventSetter Event="MouseDoubleClick" Handler="DataGridCell_MouseDoubleClick" />
-                                        <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black" />
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
-                                                <Setter Property="Foreground" Value="Blue" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                    <Style TargetType="{x:Type DataGridRow}">
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="BorderBrush" Value="Transparent" />
                                         <Setter Property="Foreground" Value="Black" />
@@ -100,12 +83,29 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
+                                    <!--<Style TargetType="{x:Type DataGridRow}">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Coral" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>-->
                                 </ResourceDictionary>
                             </DataGrid.Resources>
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="BtnAddRnaSeqFastq" Content="Add" Click="BtnAddRnaSeqFastq_Click" />
                             <Button x:Name="BtnClearRnaSeqFastq" Content="Clear" Click="BtnClearRnaSeqFastq_Click" />
+                            <Button x:Name="BtnSaveRnaSeqFastqSet" Content="Save" Click="BtnSaveRnaSeqFastqSet_Click"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>

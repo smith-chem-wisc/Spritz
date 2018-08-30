@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using WorkflowLayer;
+using ToolWrapperLayer;
 
 namespace SpritzGUI
 {
@@ -85,15 +86,6 @@ namespace SpritzGUI
             a.Run();
             //var t = new Task(a.Run);
             //t.Start();
-        }
-
-        private void DataGridCell_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
-            {
-                System.Diagnostics.Process.Start(hm.Text);
-            }
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -199,6 +191,19 @@ namespace SpritzGUI
             }
         }
 
+        private void BtnSaveRnaSeqFastqSet_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                WriteExperDesignToTsv(OutputFolderTextBox.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not save experimental design!\n\n" + ex.Message);
+                return;
+            }
+        }
+
         #endregion Private Methods - Controlers
 
         #region Private Methods - no Controlers
@@ -262,9 +267,8 @@ namespace SpritzGUI
         private void Check4Install()
         {
             var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            var exeToolsHistory = Path.Combine(exePath, "Tools\\history.txt");
-            if (!File.Exists(exeToolsHistory))
+            
+            if (WrapperUtility.CheckToolSetup(exePath))
             {
                 try
                 {
@@ -278,6 +282,21 @@ namespace SpritzGUI
 
             }
         }
+
+        private void WriteExperDesignToTsv(string filePath)
+        {
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                foreach (var aFastq in rnaSeqFastqCollection)
+                {
+                    output.WriteLine(aFastq.FileName +
+                        "\t" + aFastq.Experiment +
+                        "\t" + aFastq.MateRun);
+                }
+            }
+        }
+
         #endregion Private Methods - no Controlers
 
 

@@ -8,12 +8,15 @@
         Title="InstallWindow" Height="200" Width="400">
     <Grid>
         <StackPanel>
-            <ScrollViewer Height="120">
-                <TextBlock x:Name="TxbkInstall" TextWrapping="Wrap" FontSize="15" VerticalAlignment="Top" Margin="5" 
-                           Text="Welcom to use Spritz! Please install all the packages used by Spritz!"/>
+            <ScrollViewer Height="100">
+                <TextBlock x:Name="TxbkInstall" TextWrapping="Wrap" FontSize="15" VerticalAlignment="Top" Margin="5">
+                </TextBlock>
             </ScrollViewer>
-            <Button x:Name="BtnInstall" Content="Install packages, first time set up!" Click="BtnInstall_Click"/>
-            <Button x:Name="BtnAlreadyInstalled" Content="Already installed! skip this." Click="BtnAlreadyInstalled_Click"/>
+            <TextBlock HorizontalAlignment="Center"> 
+                <Hyperlink x:Name="Url" NavigateUri="https://smith-chem-wisc.github.io/Spritz" RequestNavigate="Url_Click"> https://smith-chem-wisc.github.io/Spritz </Hyperlink>
+            </TextBlock>
+            <Button x:Name="BtnInstall" Content="Install packages, set up!" Click="BtnInstall_Click" IsEnabled="False"/>
+            <Button x:Name="BtnAlreadyInstalled" Content="Already installed! skip this." Click="BtnAlreadyInstalled_Click" IsEnabled="False"/>
         </StackPanel>
     </Grid>
 </Window>

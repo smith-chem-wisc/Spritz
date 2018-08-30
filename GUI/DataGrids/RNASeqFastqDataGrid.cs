@@ -1,20 +1,29 @@
-﻿namespace SpritzGUI
+﻿using System.IO;
+
+namespace SpritzGUI
 {
     internal class RNASeqFastqDataGrid
     {
         public RNASeqFastqDataGrid(string filePath)
         {
             Use = true;
+            FileName = Path.GetFileNameWithoutExtension(filePath);
             FilePath = filePath;
         }
 
         public bool Use { get; set; }
-        public bool InProgress { get; private set; }
+        public string FileName { get; set; }
+        public string Experiment { get; set; }
+        public string MateRun { get; set; }
         public string FilePath { get; set; }
 
-        public void SetInProgress(bool inProgress)
+        public void SetConditionText(string text)
         {
-            InProgress = inProgress;
+            Experiment = text;
+        }
+        public void SetTechRepText(string text)
+        {
+            MateRun = text;
         }
     }
 }
