@@ -76,6 +76,7 @@
                             <Label Content="newGeneModelGtfOrGff" Width="200"/>
                             <TextBox x:Name="txtNewGeneModelGtfOrGff" Width="180" />
                         </StackPanel>
+
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
                             <Label Content="DbsnpVcfReference" Width="200"/>
                             <TextBox x:Name="txtDbsnpVcfReference" Width="180" />
@@ -107,6 +108,10 @@
                         <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="1">
                             <Label Content="doGeneFusionAnalysis" Width="200"/>
                             <CheckBox x:Name="CkbDoGeneFusionAnalysis" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="1">
+                            <Label Content="quickSnpEffWithoutStats" Width="200"/>
+                            <CheckBox x:Name="CkbQuickSnpEffWithoutStats" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
                             <Label Content="ProteinFastaPath" Width="200"/>

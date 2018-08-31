@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WorkflowLayer;
 using ToolWrapperLayer;
+using Nett;
 
 namespace SpritzGUI
 {
@@ -170,7 +171,7 @@ namespace SpritzGUI
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
-            if (TbxSRA.Text.Contains("SRA"))
+            if (TbxSRA.Text.Contains("SR"))
             {
                 //TO DO: If exist, then pop box.
                 if (true)
@@ -261,7 +262,24 @@ namespace SpritzGUI
                     rnaSeqFastqCollection.Add(rnaSeqFastq);
                     UpdateOutputFolderTextbox();
                     break;
+
+                case ".toml":
+                    TomlTable tomlFile = null;
+                    try
+                    {
+                        tomlFile = Toml.ReadFile(filepath);
+                    }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                    var ye1 = Toml.ReadFile<Options>(filepath);
+                    AddTaskToCollection(ye1);
+                    break;
+
             }
+
+
         }
 
         private void Check4Install()
@@ -297,8 +315,19 @@ namespace SpritzGUI
             }
         }
 
+
         #endregion Private Methods - no Controlers
 
+        private void workflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var a = sender as TreeView;
+            if (a.SelectedItem is PreRunTask preRunTask)
+            {
+                var workflowDialog = new WorkFlowWindow(preRunTask.options);
+                workflowDialog.ShowDialog();
+                workflowTreeView.Items.Refresh();
+            }
+        }
 
     }
 }

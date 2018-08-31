@@ -131,7 +131,7 @@
                             <!--<Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />-->
                             <!--<Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>-->
                         </StackPanel>
-                        <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}">
+                        <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="workflowTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">

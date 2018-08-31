@@ -18,7 +18,16 @@ namespace SpritzGUI
             PopulateChoices();
             Options = new Options();
             mainWindow = (MainWindow)Application.Current.MainWindow;
-            UpdateFieldsFromTask();
+            UpdateFieldsFromTask(Options);
+        }
+
+        public WorkFlowWindow(Options options)
+        {
+            InitializeComponent();
+            PopulateChoices();
+            UpdateFieldsFromTask(options);
+            mainWindow = (MainWindow)Application.Current.MainWindow;
+            Options = options;
         }
 
         private MainWindow mainWindow { get; set; }
@@ -45,7 +54,7 @@ namespace SpritzGUI
                     Options.Command = TranscriptQuantificationFlow.Command;
                     break;
                 case 3:
-                    //Options.Command = STARAlignmentFlow.Command;
+                    Options.Command = STARAlignmentFlow.Command;
                     break;
                 case 4:
                     Options.Command = GeneFusionDiscoveryFlow.Command;
@@ -79,41 +88,55 @@ namespace SpritzGUI
             Options.InferStrandSpecificity = ckbInferStrandedness.IsChecked.Value;
             Options.DoTranscriptIsoformAnalysis = CkbDoTranscriptIsoformAnalysis.IsChecked.Value;
             Options.DoFusionAnalysis = CkbDoGeneFusionAnalysis.IsChecked.Value;
-
+            Options.QuickSnpEffWithoutStats = CkbQuickSnpEffWithoutStats.IsChecked.Value;
             Options.ProteinFastaPath = txtProteinFasta.Text;          
             DialogResult = true;
         }
 
-        private void UpdateFieldsFromTask()
+        private void UpdateFieldsFromTask(Options options)
         {
-            int i = 0;
-            foreach (string aWorkFlow in Enum.GetNames(typeof(MyWorkflow)))
+            foreach (var aWorkFlow in Enum.GetValues(typeof(MyWorkflow)))
             {
-                if (Options.Command == aWorkFlow)
+                if (options.Command == "proteins")
                 {
-                    CbxWorkFlowType.SelectedIndex = i;
+                    CbxWorkFlowType.SelectedIndex = 0;
                 }
-                i++;
+                if (options.Command == "lncRNADiscovery")
+                {
+                    CbxWorkFlowType.SelectedIndex = 1;
+                }
+                if (options.Command == "quantify")
+                {
+                    CbxWorkFlowType.SelectedIndex = 2;
+                }
+                if (options.Command == "a")
+                {
+                    CbxWorkFlowType.SelectedIndex = 3;
+                }
+                if (options.Command == "fusion")
+                {
+                    CbxWorkFlowType.SelectedIndex = 4;
+                }
             }
 
-            txtSpritzDirecory.Text = Options.SpritzDirectory;
-            txtAnalysisDirectory.Text = Options.AnalysisDirectory;
+            txtSpritzDirecory.Text = options.SpritzDirectory;
+            txtAnalysisDirectory.Text = options.AnalysisDirectory;
 
-            txtThreads.Text = Options.Threads.ToString();
-            txtGenomeDir.Text = Options.GenomeStarIndexDirectory;
-            txtGenomeFasta.Text = Options.GenomeFasta;
-            txtGeneModelGtfOrGff.Text = Options.GeneModelGtfOrGff;
-            txtNewGeneModelGtfOrGff.Text = Options.NewGeneModelGtfOrGff;
-            txtDbsnpVcfReference.Text = Options.ReferenceVcf;
-            txtStarFusionReference.Text = Options.Reference;
-            txtUniProtProteinXml.Text = Options.UniProtXml;
-            ckbOverWriteStarAlignment.IsChecked = Options.OverwriteStarAlignments;
-            ckbStrandSpecific.IsChecked = Options.StrandSpecific;
-            ckbInferStrandedness.IsChecked = Options.InferStrandSpecificity;
-            CkbDoTranscriptIsoformAnalysis.IsChecked = Options.DoTranscriptIsoformAnalysis;
-            CkbDoGeneFusionAnalysis.IsChecked = Options.DoFusionAnalysis;
-
-            txtProteinFasta.Text = Options.ProteinFastaPath;
+            txtThreads.Text = options.Threads.ToString();
+            txtGenomeDir.Text = options.GenomeStarIndexDirectory;
+            txtGenomeFasta.Text = options.GenomeFasta;
+            txtGeneModelGtfOrGff.Text = options.GeneModelGtfOrGff;
+            txtNewGeneModelGtfOrGff.Text = options.NewGeneModelGtfOrGff;
+            txtDbsnpVcfReference.Text = options.ReferenceVcf;
+            txtStarFusionReference.Text = options.Reference;
+            txtUniProtProteinXml.Text = options.UniProtXml;
+            ckbOverWriteStarAlignment.IsChecked = options.OverwriteStarAlignments;
+            ckbStrandSpecific.IsChecked = options.StrandSpecific;
+            ckbInferStrandedness.IsChecked = options.InferStrandSpecificity;
+            CkbDoTranscriptIsoformAnalysis.IsChecked = options.DoTranscriptIsoformAnalysis;
+            CkbDoGeneFusionAnalysis.IsChecked = options.DoFusionAnalysis;
+            CkbQuickSnpEffWithoutStats.IsChecked = options.QuickSnpEffWithoutStats;
+            txtProteinFasta.Text = options.ProteinFastaPath;
         }
 
         private void PopulateChoices()

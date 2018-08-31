@@ -855,6 +855,33 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + ".vcf"); // there is no equivalent of the patch; just checking that that works
             flow.Parameters.UseReadSubset = true;
             flow.Parameters.ReadSubset = 5000;
+
+            var writtenFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "Parameters.txt");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("AnalysisDirectory: " + flow.Parameters.AnalysisDirectory);
+                output.WriteLine("DoFusionAnalysis: " + flow.Parameters.DoFusionAnalysis);
+                output.WriteLine("DoTranscriptIsoformAnalysis: " + flow.Parameters.DoTranscriptIsoformAnalysis);
+                output.WriteLine("EnsemblKnownSitesPath: " + flow.Parameters.EnsemblKnownSitesPath);
+                output.WriteLine("Fastqs: " + flow.Parameters.Fastqs);
+                output.WriteLine("GenomeFasta: " + flow.Parameters.GenomeFasta);
+                output.WriteLine("GenomeStarIndexDirectory: " + flow.Parameters.GenomeStarIndexDirectory);
+                output.WriteLine("InferStrandSpecificity: " + flow.Parameters.InferStrandSpecificity);
+                output.WriteLine("MinPeptideLength: " + flow.Parameters.MinPeptideLength);
+                output.WriteLine("NewGeneModelGtfOrGff: " + flow.Parameters.NewGeneModelGtfOrGff);
+                output.WriteLine("OverwriteStarAlignment: " + flow.Parameters.OverwriteStarAlignment);
+                output.WriteLine("ProteinFastaPath: " + flow.Parameters.ProteinFastaPath);
+                output.WriteLine("QuickSnpEffWithoutStats: " + flow.Parameters.QuickSnpEffWithoutStats);
+                output.WriteLine("ReadSubset: " + flow.Parameters.ReadSubset);
+                output.WriteLine("Reference: " + flow.Parameters.Reference);
+                output.WriteLine("ReferenceGeneModelGtfOrGff: " + flow.Parameters.ReferenceGeneModelGtfOrGff);
+                output.WriteLine("SpritzDirectory: " + flow.Parameters.SpritzDirectory);
+                output.WriteLine("StrandSpecific: " + flow.Parameters.StrandSpecific);
+                output.WriteLine("Threads: " + flow.Parameters.Threads);
+                output.WriteLine("UniProtXmlPath: " + flow.Parameters.UniProtXmlPath);
+                output.WriteLine("UseReadSubset: " + flow.Parameters.UseReadSubset);
+            }
+
             flow.GenerateSampleSpecificProteinDatabases();
 
             foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)

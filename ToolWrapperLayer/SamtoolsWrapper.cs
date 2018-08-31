@@ -28,7 +28,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d samtools-" + SamtoolsVersion + " ]; then",
-                "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-" + SamtoolsVersion + ".tar.bz2",
+                "  wget --no-check https://github.com/samtools/samtools/releases/download/" + SamtoolsVersion + "/samtools-" + SamtoolsVersion + ".tar.bz2",
                 "  tar -jxvf samtools-" + SamtoolsVersion + ".tar.bz2",
                 "  rm samtools-" + SamtoolsVersion + ".tar.bz2",
                 "  cd samtools-" + SamtoolsVersion + "/htslib-" + SamtoolsVersion,
