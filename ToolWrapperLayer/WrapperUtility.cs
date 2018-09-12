@@ -42,7 +42,8 @@ namespace ToolWrapperLayer
             setup.Add(new Tuple<string, bool>("bedops", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "bedops"))));
             setup.Add(new Tuple<string, bool>("bedtools", File.Exists(Path.Combine(spritzDirectory, "Tools", "bedtools2", "bin", "bedtools"))));
             setup.Add(new Tuple<string, bool>("cufflinks", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "cufflinks-2.2.1"))));
-            setup.Add(new Tuple<string, bool>("gatk", Directory.GetFiles(Path.Combine(spritzDirectory, "Tools", "gatk"), "gatk*local.jar").Length > 0));
+            string gatk = Path.Combine(spritzDirectory, "Tools", "gatk");
+            setup.Add(new Tuple<string, bool>("gatk", Directory.Exists(gatk) && Directory.GetFiles(gatk, "gatk*local.jar").Length > 0));
             setup.Add(new Tuple<string, bool>("gatk", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings"))));
             setup.Add(new Tuple<string, bool>("hisat2", File.Exists(Path.Combine(spritzDirectory, "Tools", "hisat2-2.1.0", "hisat2"))));
             setup.Add(new Tuple<string, bool>("mfold", File.Exists(Path.Combine(spritzDirectory, "Tools", "mfold-3.6", "scripts", "mfold"))));
