@@ -472,7 +472,7 @@ namespace Test
         [TestCase("grch37")]
         public void SnpEffFrameshiftProteins(string reference)
         {
-            //BuildAndCopySnpeff();
+            BuildAndCopySnpeff();
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));

@@ -90,10 +90,10 @@ namespace WorkflowLayer
 
             return new Protein(
                 seq.First(),
-                String.Join(",", proteinsWithSameSequence.Select(p => p.Accession)),
+                string.Join(",", proteinsWithSameSequence.Select(p => p.Accession)),
                 organism: proteinsWithSameSequence.First().Organism,
-                name: String.Join(",", proteinsWithSameSequence.Select(p => p.Name)),
-                full_name: String.Join(",", proteinsWithSameSequence.Select(p => p.FullName)),
+                name: string.Join(",", proteinsWithSameSequence.Select(p => p.Name)),
+                full_name: string.Join(",", proteinsWithSameSequence.Select(p => p.FullName)),
                 isDecoy: proteinsWithSameSequence.All(p => p.IsDecoy),
                 isContaminant: proteinsWithSameSequence.Any(p => p.IsContaminant),
                 sequenceVariations: proteinsWithSameSequence.SelectMany(p => p.SequenceVariations).ToList(),
