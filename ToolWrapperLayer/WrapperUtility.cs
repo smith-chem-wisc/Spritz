@@ -49,7 +49,7 @@ namespace ToolWrapperLayer
             setup.Add(new Tuple<string, bool>("rsem", File.Exists(Path.Combine(spritzDirectory, "Tools", "RSEM-1.3.0", "rsem-prepare-reference"))));
             setup.Add(new Tuple<string, bool>("rsem", File.Exists(Path.Combine(spritzDirectory, "Tools", "RSEM-1.3.0", "rsem-calculate-expression"))));
             setup.Add(new Tuple<string, bool>("rseqc", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "RSeQC-2.6.4"))));
-            setup.Add(new Tuple<string, bool>("samtools", File.Exists(Path.Combine(spritzDirectory, "Tools", "samtools-1.6", "samtools"))));
+            setup.Add(new Tuple<string, bool>("samtools", File.Exists(Path.Combine(spritzDirectory, "Tools", "samtools-" + new SamtoolsWrapper().SamtoolsVersion, "samtools"))));
             setup.Add(new Tuple<string, bool>("scalpel", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "scalpel-0.5.3"))));
             setup.Add(new Tuple<string, bool>("scalpel", new ScalpelWrapper().CheckInstallation(spritzDirectory)));
             setup.Add(new Tuple<string, bool>("skewer", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "skewer-0.2.2"))));
@@ -64,7 +64,7 @@ namespace ToolWrapperLayer
                     Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0));
             setup.Add(new Tuple<string, bool>("star", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-" + STARWrapper.STARVersion))));
             setup.Add(new Tuple<string, bool>("star-fusion", File.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion-v1.4.0", "STAR-Fusion"))));
-            setup.Add(new Tuple<string, bool>("trinity", Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "trinity*").Length > 0));
+            //setup.Add(new Tuple<string, bool>("trinity", Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "trinity*").Length > 0));
             return setup;
         }
 

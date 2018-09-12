@@ -16,7 +16,6 @@
             </MenuItem>
             <MenuItem Header="SetUp">
                 <MenuItem Header="Setup" Click="MenuItem_Setup_Click"/>
-                <MenuItem Header="DataDownload" Click="MenuItem_DataDownload_Click"/>
             </MenuItem>
         </Menu>
         <Grid>
@@ -30,66 +29,36 @@
                     <RowDefinition Height="1*" MinHeight="50" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="1*" MinHeight="50"/>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="2*" MinHeight="100"/>
                 </Grid.RowDefinitions>
-                <GroupBox Grid.Row="0" Header="Genome FASTA" >
+                <GroupBox Grid.Row="0"  Header="SRA---RAN seq data from NCBI SRA">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="20" />
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="1*"/>
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridFASTA" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False">
-                            <DataGrid.Resources>
-                                <Style TargetType="DataGridCell">
-                                    <EventSetter Event="MouseDoubleClick" Handler="DataGridCell_MouseDoubleClick" />
-                                </Style>
-                            </DataGrid.Resources>
-                        </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-                            <Button x:Name="BtnAddGenomeFASTA" Content="Add" Click="BtnAddGenomeFASTA_Click" />
-                            <Button x:Name="BtnClearGenomeFASTA" Content="Clear" Click="BtnClearGenomeFASTA_Click" />
-                        </StackPanel>
+                        <TextBox x:Name="TbxSRA" Grid.Row="0"/>
+                        <Button x:Name="BtnAddSRA" Content="Add SRA" Grid.Row="1" Width="100" Click="BtnAddSRA_Click"/>
+                        <ListBox x:Name="LbxSRAs" Grid.Row="2" HorizontalContentAlignment="Stretch">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding State}" />
+                                        <ProgressBar Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Completion}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>
-                <GroupBox Grid.Row="2" Header="Gene Set">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="20" />
-                        </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridGeneSet" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top">
-                            <DataGrid.Resources>
-                                <ResourceDictionary>
-                                    <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
-                                        <EventSetter Event="MouseDoubleClick" Handler="DataGridCell_MouseDoubleClick" />
-                                        <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black" />
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
-                                                <Setter Property="Foreground" Value="Blue" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ResourceDictionary>
-                            </DataGrid.Resources>
-                        </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-                            <Button x:Name="BtnAddGeneSet" Content="Add" Click="BtnAddGeneSet_Click" />
-                            <Button x:Name="BtnClearGeneSet" Content="Clear" Click="BtnClearGeneSet_Click" />
-                        </StackPanel>
-                    </Grid>
-                </GroupBox>
-                <GridSplitter Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>
-                <GroupBox Grid.Row="4" Header="FASTQ">
+                <GroupBox Grid.Row="2" Header="FASTQ">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -99,23 +68,6 @@
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
-                                        <EventSetter Event="MouseDoubleClick" Handler="DataGridCell_MouseDoubleClick" />
-                                        <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black" />
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
-                                                <Setter Property="Foreground" Value="Blue" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                    <Style TargetType="{x:Type DataGridRow}">
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="BorderBrush" Value="Transparent" />
                                         <Setter Property="Foreground" Value="Black" />
@@ -131,12 +83,29 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
+                                    <!--<Style TargetType="{x:Type DataGridRow}">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Coral" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>-->
                                 </ResourceDictionary>
                             </DataGrid.Resources>
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="BtnAddRnaSeqFastq" Content="Add" Click="BtnAddRnaSeqFastq_Click" />
                             <Button x:Name="BtnClearRnaSeqFastq" Content="Clear" Click="BtnClearRnaSeqFastq_Click" />
+                            <Button x:Name="BtnSaveRnaSeqFastqSet" Content="Save" Click="BtnSaveRnaSeqFastqSet_Click"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -146,7 +115,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" MinHeight="50" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="1*" MinHeight="100"/>
+                    <RowDefinition Height="1*" MinHeight="50"/>
                 </Grid.RowDefinitions>
                 <GroupBox Grid.Row="0" Header="Work Flow" >
                     <Grid>
@@ -158,11 +127,11 @@
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="BtnSTARAlignment" Content="STAR Alignment" Click="BtnSTARAlignment_Click"/>
-                            <Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />
-                            <Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>
+                            <Button x:Name="BtnWorkFlow" Content="Work Flow" Click="BtnWorkFlow_Click"  Height="20" VerticalAlignment="Bottom"/>
+                            <!--<Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />-->
+                            <!--<Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>-->
                         </StackPanel>
-                        <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}">
+                        <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="workflowTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">

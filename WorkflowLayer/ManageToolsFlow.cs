@@ -49,6 +49,7 @@ namespace WorkflowLayer
             "gawk",
             "git",
             "python",
+            "python-pip",
             "r-base-core",
             "python-dev",
             "python3-dev",
@@ -124,8 +125,8 @@ namespace WorkflowLayer
             };
 
             // python setup
-            commands.Add("sudo easy_install pip");
-            commands.Add("sudo -H pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy h5py scipy");
+            //commands.Add("sudo easy_install pip");
+            commands.Add("sudo -H pip install --upgrade virtualenv pip qc bitsets cython numpy bx-python pysam RSeQC h5py scipy");
 
             // java8 setup
             commands.Add
