@@ -45,7 +45,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteRemoveScript(string spritzDirectory)
         {
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallScalpel.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "RemoveScalpel.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -92,11 +92,14 @@ namespace ToolWrapperLayer
         /// <returns>true if no fix needed, false if fix performed</returns>
         public bool CheckInstallation(string spritzDirectory)
         {
-            string removeScriptPath = WriteRemoveScript(spritzDirectory);
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "CheckScalpelInstallation.bash");
+            // Don't go further if installation hasn't been run at all
             string scalpelLocationFile = Path.Combine(spritzDirectory, "Tools", ScalpelLocationCheckFilename);
             if (!File.Exists(scalpelLocationFile))
-                return false; // don't go further if installation hasn't been run at all
+                return false; 
+
+            // Remove and reinstall if it moved
+            string removeScriptPath = WriteRemoveScript(spritzDirectory);
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "CheckScalpelInstallation.bash");
             string expectedLocation = WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "scalpel-" + ScalpelVersion));
             bool isSame = File.ReadAllText(scalpelLocationFile).TrimEnd() == expectedLocation;
             if (!isSame)
