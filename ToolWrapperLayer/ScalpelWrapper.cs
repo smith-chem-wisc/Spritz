@@ -94,15 +94,20 @@ namespace ToolWrapperLayer
         {
             string removeScriptPath = WriteRemoveScript(spritzDirectory);
             string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "CheckScalpelInstallation.bash");
-            string before = File.ReadAllText(Path.Combine(spritzDirectory, "Tools", ScalpelLocationCheckFilename)).TrimEnd();
-            string now = WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "scalpel-" + ScalpelVersion));
-            bool isSame = before == now;
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            string scalpelLocationFile = Path.Combine(spritzDirectory, "Tools", ScalpelLocationCheckFilename);
+            if (!File.Exists(scalpelLocationFile))
+                return false; // don't go further if installation hasn't been run at all
+            string expectedLocation = WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "scalpel-" + ScalpelVersion));
+            bool isSame = File.ReadAllText(scalpelLocationFile).TrimEnd() == expectedLocation;
+            if (!isSame)
             {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "bash " + WrapperUtility.ConvertWindowsPath(removeScriptPath),
-                "bash " + WrapperUtility.ConvertWindowsPath(WriteInstallScript(spritzDirectory)),
-            }).WaitForExit();
+                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+                {
+                    WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                    "bash " + WrapperUtility.ConvertWindowsPath(removeScriptPath),
+                    "bash " + WrapperUtility.ConvertWindowsPath(WriteInstallScript(spritzDirectory)),
+                }).WaitForExit();
+            }
             return isSame;
         }
     }

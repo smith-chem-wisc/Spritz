@@ -14,8 +14,8 @@
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Wiki_Click"/>
                 <MenuItem Header="Contact" Click="MenuItem_Contact_Click" />
             </MenuItem>
-            <MenuItem Header="SetUp">
-                <MenuItem Header="Setup" Click="MenuItem_Setup_Click"/>
+            <MenuItem Header="Set Up">
+                <MenuItem Header="Open Installation Window" Click="MenuItem_Setup_Click"/>
             </MenuItem>
         </Menu>
         <Grid>
