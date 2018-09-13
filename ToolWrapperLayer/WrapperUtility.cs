@@ -18,7 +18,8 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static bool CheckBashSetup()
         {
-            return File.Exists(@"C:\Windows\System32\bash.exe");
+            string ubuntu = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\ubuntu.exe");
+            return File.Exists(ubuntu);
         }
 
         /// <summary>
@@ -92,7 +93,7 @@ namespace ToolWrapperLayer
         public static Process RunBashCommand(string command, string arguments)
         {
             Process proc = new Process();
-            proc.StartInfo.FileName = @"C:\Windows\System32\bash.exe";
+            proc.StartInfo.FileName = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\ubuntu.exe");
             proc.StartInfo.Arguments = "-c \"" + command + " " + arguments + "\"";
             proc.Start();
             return proc;
