@@ -8,7 +8,10 @@ namespace CMD
 {
     public class Options
     {
-        [Option('c', "command", Required = true, HelpText =
+        public const char CommandOptionShort = 'c';
+        public const string CommandOptionLong = "command";
+
+        [Option(CommandOptionShort, CommandOptionLong, Required = true, HelpText =
             "Command:" +
                 " (1) " + ManageToolsFlow.Command +
                 " (2) " + SampleSpecificProteinDBFlow.Command +
@@ -25,10 +28,10 @@ namespace CMD
         [Option('a', "analysisDirectory", Required = false, HelpText = "Target directory for downloads and analysis")]
         public string AnalysisDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
-        [Option("fq1", Required = false, HelpText = "FASTQ file for single-end or for pair1 (comma-separated for multiple files)")]
+        [Option('1', "fq1", Required = false, HelpText = "FASTQ file for single-end or for pair1 (comma-separated for multiple files)")]
         public string Fastq1 { get; set; }
 
-        [Option("fq2", Required = false, HelpText = "FASTQ file pair2 (comma-separated for multiple files)")]
+        [Option('2', "fq2", Required = false, HelpText = "FASTQ file pair2 (comma-separated for multiple files)")]
         public string Fastq2 { get; set; }
 
         [Option('s', "sraAccession", Required = false, HelpText = "SRR or SRX accession for download of fastq files for analysis (comma-separated for multiple SRAs)")]
@@ -73,8 +76,8 @@ namespace CMD
         [Option("doGeneFusionAnalysis", Required = false, HelpText = "Do a gene fusion analysis to investigate gene fusion protein products.", Default = false)]
         public bool DoFusionAnalysis { get; set; }
 
-        [Option("quickSnpEffWithoutStats", Required = false, HelpText = "Use multiple threads for SnpEff and do not output stats HTML.", Default = false)]
-        public bool QuickSnpEffWithoutStats { get; set; }
+        //[Option("quickSnpEffWithoutStats", Required = false, HelpText = "Use multiple threads for SnpEff and do not output stats HTML.", Default = false)]
+        //public bool QuickSnpEffWithoutStats { get; set; }
 
         public string ProteinFastaPath { get; set; }
     }

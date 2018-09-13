@@ -1,23 +1,27 @@
 ﻿using CMD;
+using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using WorkflowLayer;
-using System;
 
 namespace SpritzGUI
 {
     /// <summary>
-    /// Interaction logic for TransferModificationsFlowWindows.xaml
+    /// Interaction logic for workflows
     /// </summary>
     public partial class WorkFlowWindow : Window
     {
-        public WorkFlowWindow()
+        private string AnalysisDirectory;
+
+        public WorkFlowWindow(string analysisDirectory)
         {
+            AnalysisDirectory = analysisDirectory;
             InitializeComponent();
             PopulateChoices();
             Options = new Options();
-            mainWindow = (MainWindow)Application.Current.MainWindow;
+            MainWindow = (MainWindow)Application.Current.MainWindow;
             UpdateFieldsFromTask(Options);
         }
 
@@ -26,13 +30,13 @@ namespace SpritzGUI
             InitializeComponent();
             PopulateChoices();
             UpdateFieldsFromTask(options);
-            mainWindow = (MainWindow)Application.Current.MainWindow;
+            MainWindow = (MainWindow)Application.Current.MainWindow;
             Options = options;
         }
 
-        private MainWindow mainWindow { get; set; }
-
         public Options Options { get; set; }
+
+        private MainWindow MainWindow { get; set; }
 
         protected void cancelButton_Click(object sender, RoutedEventArgs e)
         {
@@ -42,38 +46,33 @@ namespace SpritzGUI
         protected void saveButton_Click(object sender, RoutedEventArgs e)
         {
             int i = CbxWorkFlowType.SelectedIndex;
-            switch (i)
+            if (i == 0)
+                Options.Command = SampleSpecificProteinDBFlow.Command;
+            else if (i == 1)
+                Options.Command = LncRNADiscoveryFlow.Command;
+            else if (i == 2)
+                Options.Command = TranscriptQuantificationFlow.Command;
+            else if (i == 3)
+                Options.Command = STARAlignmentFlow.Command;
+            else if (i == 4)
+                Options.Command = GeneFusionDiscoveryFlow.Command;
+            else
             {
-                case 0:
-                    Options.Command = SampleSpecificProteinDBFlow.Command;
-                    break;
-                case 1:
-                    Options.Command = LncRNADiscoveryFlow.Command;
-                    break;
-                case 2:
-                    Options.Command = TranscriptQuantificationFlow.Command;
-                    break;
-                case 3:
-                    Options.Command = STARAlignmentFlow.Command;
-                    break;
-                case 4:
-                    Options.Command = GeneFusionDiscoveryFlow.Command;
-                    break;
-                default:
-                    break;
+                MessageBox.Show("Please choose a workflow.");
+                return;
             }
 
-            Options.SpritzDirectory = txtSpritzDirecory.Text;
-            Options.AnalysisDirectory = txtAnalysisDirectory.Text;    
-            
-            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)mainWindow.dataGridRnaSeqFastq.DataContext;
+            //Options.SpritzDirectory = txtSpritzDirecory.Text;
+            Options.AnalysisDirectory = txtAnalysisDirectory.Text;
+
+            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.dataGridRnaSeqFastq.DataContext;
             if (rnaSeqFastqCollection.Count != 0)
             {
-                Options.Fastq1 = String.Join(",", rnaSeqFastqCollection.Where(p => p.MateRun == 1.ToString()).OrderBy(p=>p.Experiment).Select(p => p.FilePath).ToArray());
-                Options.Fastq2 = String.Join(",", rnaSeqFastqCollection.Where(p => p.MateRun == 2.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
-            }            
-            var sraCollection = (ObservableCollection<SRADataGrid>)mainWindow.LbxSRAs.ItemsSource;
-            Options.SraAccession = String.Join(",", sraCollection.Select(p => p.Name).ToArray());
+                Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 1.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
+                Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 2.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
+            }
+            var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
+            Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
 
             Options.Threads = int.Parse(txtThreads.Text);
             Options.GenomeStarIndexDirectory = txtGenomeDir.Text;
@@ -88,55 +87,98 @@ namespace SpritzGUI
             Options.InferStrandSpecificity = ckbInferStrandedness.IsChecked.Value;
             Options.DoTranscriptIsoformAnalysis = CkbDoTranscriptIsoformAnalysis.IsChecked.Value;
             Options.DoFusionAnalysis = CkbDoGeneFusionAnalysis.IsChecked.Value;
-            Options.QuickSnpEffWithoutStats = CkbQuickSnpEffWithoutStats.IsChecked.Value;
-            Options.ProteinFastaPath = txtProteinFasta.Text;          
+            Options.ProteinFastaPath = txtProteinFasta.Text;
             DialogResult = true;
+        }
+
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files != null)
+            {
+                foreach (var draggedFilePath in files)
+                {
+                    if (Directory.Exists(draggedFilePath))
+                    {
+                        foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
+                        {
+                            AddAFile(file);
+                        }
+                    }
+                    else
+                    {
+                        AddAFile(draggedFilePath);
+                    }
+                }
+            }
+        }
+
+        private void AddAFile(string filepath)
+        {
+            var theExtension = filepath.EndsWith("gz") ?
+                Path.GetExtension(Path.GetExtension(filepath)).ToLowerInvariant() :
+                Path.GetExtension(filepath).ToLowerInvariant();
+
+            if (theExtension == ".fa")
+                txtGenomeFasta.Text = filepath;
+            else if (theExtension == ".xml")
+                txtUniProtProteinXml.Text = filepath;
+            else if (theExtension == ".gtf" || theExtension.Contains("gff"))
+                txtGeneModelGtfOrGff.Text = filepath;
+            else if (theExtension == ".vcf")
+                txtDbsnpVcfReference.Text = filepath;
+            else
+                return;
         }
 
         private void UpdateFieldsFromTask(Options options)
         {
             foreach (var aWorkFlow in Enum.GetValues(typeof(MyWorkflow)))
             {
-                if (options.Command == "proteins")
+                if (options.Command == SampleSpecificProteinDBFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 0;
                 }
-                if (options.Command == "lncRNADiscovery")
+                if (options.Command == LncRNADiscoveryFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 1;
                 }
-                if (options.Command == "quantify")
+                if (options.Command == TranscriptQuantificationFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 2;
                 }
-                if (options.Command == "a")
+                if (options.Command == STARAlignmentFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 3;
                 }
-                if (options.Command == "fusion")
+                if (options.Command == GeneFusionDiscoveryFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 4;
                 }
             }
 
-            txtSpritzDirecory.Text = options.SpritzDirectory;
-            txtAnalysisDirectory.Text = options.AnalysisDirectory;
+            //txtSpritzDirecory.Text = options.SpritzDirectory;
+            txtAnalysisDirectory.Text = AnalysisDirectory;
 
             txtThreads.Text = options.Threads.ToString();
-            txtGenomeDir.Text = options.GenomeStarIndexDirectory;
-            txtGenomeFasta.Text = options.GenomeFasta;
-            txtGeneModelGtfOrGff.Text = options.GeneModelGtfOrGff;
-            txtNewGeneModelGtfOrGff.Text = options.NewGeneModelGtfOrGff;
-            txtDbsnpVcfReference.Text = options.ReferenceVcf;
+            txtGenomeDir.Text = TrimQuotesOrNull(options.GenomeStarIndexDirectory);
+            txtGenomeFasta.Text = TrimQuotesOrNull(options.GenomeFasta);
+            txtGeneModelGtfOrGff.Text = TrimQuotesOrNull(options.GeneModelGtfOrGff);
+            txtNewGeneModelGtfOrGff.Text = TrimQuotesOrNull(options.NewGeneModelGtfOrGff);
+            txtDbsnpVcfReference.Text = TrimQuotesOrNull(options.ReferenceVcf);
             txtStarFusionReference.Text = options.Reference;
-            txtUniProtProteinXml.Text = options.UniProtXml;
+            txtUniProtProteinXml.Text = TrimQuotesOrNull(options.UniProtXml);
             ckbOverWriteStarAlignment.IsChecked = options.OverwriteStarAlignments;
             ckbStrandSpecific.IsChecked = options.StrandSpecific;
             ckbInferStrandedness.IsChecked = options.InferStrandSpecificity;
             CkbDoTranscriptIsoformAnalysis.IsChecked = options.DoTranscriptIsoformAnalysis;
             CkbDoGeneFusionAnalysis.IsChecked = options.DoFusionAnalysis;
-            CkbQuickSnpEffWithoutStats.IsChecked = options.QuickSnpEffWithoutStats;
             txtProteinFasta.Text = options.ProteinFastaPath;
+        }
+
+        private string TrimQuotesOrNull(string a)
+        {
+            return a == null ? a : a.Trim('"');
         }
 
         private void PopulateChoices()

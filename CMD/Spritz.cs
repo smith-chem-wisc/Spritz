@@ -68,7 +68,7 @@ namespace CMD
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
                 flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
                 flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
-                flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
+                //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
                 flow.GenerateSampleSpecificProteinDatabases();
 
                 Console.WriteLine("output databases to " + String.Join(", and ",
