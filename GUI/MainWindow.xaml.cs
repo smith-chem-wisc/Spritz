@@ -1,14 +1,15 @@
 ﻿using CMD;
+using Nett;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WorkflowLayer;
 using ToolWrapperLayer;
-using Nett;
+using WorkflowLayer;
 
 namespace SpritzGUI
 {
@@ -17,15 +18,10 @@ namespace SpritzGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        #region Private Fields
         private readonly ObservableCollection<RNASeqFastqDataGrid> rnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<SRADataGrid> sraCollection = new ObservableCollection<SRADataGrid>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public MainWindow()
         {
@@ -37,27 +33,27 @@ namespace SpritzGUI
             Check4Install();
         }
 
-        #endregion Public Constructors
-
-        #region Private Methods - Controlers
-
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             if (files != null)
+            {
                 foreach (var draggedFilePath in files)
                 {
                     if (Directory.Exists(draggedFilePath))
+                    {
                         foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
                         {
                             AddAFile(file);
                         }
+                    }
                     else
                     {
                         AddAFile(draggedFilePath);
                     }
                     dataGridRnaSeqFastq.Items.Refresh();
                 }
+            }
             UpdateOutputFolderTextbox();
         }
 
@@ -84,9 +80,9 @@ namespace SpritzGUI
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            a.Run();
-            //var t = new Task(a.Run);
-            //t.Start();
+            var t = new Task(a.Run);
+            t.Start();
+            RunWorkflowButton.IsEnabled = false;
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -99,10 +95,12 @@ namespace SpritzGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
+            {
                 foreach (var filepath in openPicker.FileNames)
                 {
                     AddAFile(filepath);
                 }
+            }
             dataGridRnaSeqFastq.Items.Refresh();
         }
 
@@ -121,10 +119,12 @@ namespace SpritzGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
+            {
                 foreach (var tomlFromSelected in openPicker.FileNames)
                 {
                     AddAFile(tomlFromSelected);
                 }
+            }
             UpdateTaskGuiStuff();
         }
 
@@ -157,14 +157,15 @@ namespace SpritzGUI
                     uu.Use = false;
                 }
                 foreach (var newRnaSeqFastqData in e.StringList)
+                {
                     rnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
+                }
                 UpdateOutputFolderTextbox();
             }
         }
 
         private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
         {
-            //ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
             Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
             return;
         }
@@ -184,7 +185,12 @@ namespace SpritzGUI
 
         private void BtnWorkFlow_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new WorkFlowWindow();
+            if (sraCollection.Count == 0 && rnaSeqFastqCollection.Count == 0)
+            {
+                MessageBox.Show("Please add FASTQ files prior to choosing the workflow.");
+                return;
+            }
+            var dialog = new WorkFlowWindow(OutputFolderTextBox.Text);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.Options);
@@ -204,10 +210,6 @@ namespace SpritzGUI
                 return;
             }
         }
-
-        #endregion Private Methods - Controlers
-
-        #region Private Methods - no Controlers
 
         private void UpdateTaskGuiStuff()
         {
@@ -276,16 +278,13 @@ namespace SpritzGUI
                     var ye1 = Toml.ReadFile<Options>(filepath);
                     AddTaskToCollection(ye1);
                     break;
-
             }
-
-
         }
 
         private void Check4Install()
         {
             var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            
+
             if (WrapperUtility.CheckToolSetup(exePath))
             {
                 try
@@ -297,7 +296,6 @@ namespace SpritzGUI
                 {
                     MessageBox.Show(ex.ToString());
                 }
-
             }
         }
 
@@ -310,13 +308,10 @@ namespace SpritzGUI
                 {
                     output.WriteLine(aFastq.FileName +
                         "\t" + aFastq.Experiment +
-                        "\t" + aFastq.MateRun);
+                        "\t" + aFastq.MatePair);
                 }
             }
         }
-
-
-        #endregion Private Methods - no Controlers
 
         private void workflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -328,6 +323,5 @@ namespace SpritzGUI
                 workflowTreeView.Items.Refresh();
             }
         }
-
     }
 }

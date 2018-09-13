@@ -1,8 +1,8 @@
 ﻿using CMD;
+using Nett;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Nett;
 
 namespace SpritzGUI
 {
@@ -23,19 +23,6 @@ namespace SpritzGUI
 
             //outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
-#if DEBUG
-            var writtenFile = Path.Combine(outputFolder, "test.txt");
-
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine("What a wonderful day, what a wonderful Spritz!");
-            }
-
-#endif
-
             for (int i = 0; i < taskList.Count; i++)
             {
                 var ok = taskList[i];
@@ -44,111 +31,85 @@ namespace SpritzGUI
                 Toml.WriteFile(ok.Item2, tomlFileName);
 
                 //Put it into a function
-                var commands = generateCommand(ok.Item2);
+                var commands = GenerateArguments(ok.Item2);
                 Spritz.Main(commands);
             }
         }
 
-        private string[] generateCommand(Options options)
+        private string[] GenerateArguments(Options options)
         {
-            List<string> commands = new List<string>();
-            //commands.Add("CMD.exe");
-            commands.Add("-c");
-            commands.Add(options.Command);
-            if (options.SpritzDirectory != "")
+            List<string> commands = new List<string> { "-c", options.Command };
+            if (options.SpritzDirectory != null && options.SpritzDirectory != "")
             {
-                commands.Add("b");
-                commands.Add(options.SpritzDirectory);
+                commands.AddRange(new[] { "-b", options.SpritzDirectory });
             }
-            if (options.AnalysisDirectory != "")
+            if (options.AnalysisDirectory != null && options.AnalysisDirectory != "")
             {
-                commands.Add("a");
-                commands.Add(options.AnalysisDirectory);
+                commands.AddRange(new[] { "-a", options.AnalysisDirectory });
             }
-            if (options.Fastq1 != "" && options.Fastq1!=null)
+            if (options.Fastq1 != null && options.Fastq1 != "")
             {
-                commands.Add("fq1");
-                commands.Add(options.Fastq1);
+                commands.AddRange(new[] { "--fq1", options.Fastq1 });
             }
-            if (options.Fastq2!="" && options.Fastq2!=null)
+            if (options.Fastq2 != null && options.Fastq2 != "")
             {
-                commands.Add("fq2");
-                commands.Add(options.Fastq2);
+                commands.AddRange(new[] { "--fq2", options.Fastq2 });
             }
-            if (options.SraAccession != "")
+            if (options.SraAccession != null && options.SraAccession != "")
             {
-                commands.Add("s");
-                commands.Add(options.SraAccession);
+                commands.AddRange(new[] { "-s", options.SraAccession });
             }
-            if (options.Threads > 0)
+            if (options.Threads > 0 && options.Threads <= Environment.ProcessorCount)
             {
-                commands.Add("t");
-                commands.Add(options.Threads.ToString());
+                commands.AddRange(new[] { "-t", options.Threads.ToString() });
             }
-            if (options.GenomeStarIndexDirectory != "")
+            if (options.GenomeStarIndexDirectory != null && options.GenomeStarIndexDirectory != "")
             {
-                commands.Add("d");
-                commands.Add(options.GenomeStarIndexDirectory);
+                commands.AddRange(new[] { "-d", options.GenomeStarIndexDirectory });
             }
-            if (options.GenomeFasta != "")
+            if (options.GenomeFasta != null && options.GenomeFasta != "")
             {
-                commands.Add("f");
-                commands.Add(options.GenomeFasta);
+                commands.AddRange(new[] { "-f", options.GenomeFasta });
             }
-            if (options.GeneModelGtfOrGff != "")
+            if (options.GeneModelGtfOrGff != null && options.GeneModelGtfOrGff != "")
             {
-                commands.Add("g");
-                commands.Add(options.GeneModelGtfOrGff);
+                commands.AddRange(new[] { "-g", options.GeneModelGtfOrGff });
             }
-            if (options.NewGeneModelGtfOrGff != "")
+            if (options.NewGeneModelGtfOrGff != null && options.NewGeneModelGtfOrGff != "")
             {
-                commands.Add("h");
-                commands.Add(options.NewGeneModelGtfOrGff);
+                commands.AddRange(new[] { "-h", options.NewGeneModelGtfOrGff });
             }
-            if (options.ReferenceVcf != "")
+            if (options.ReferenceVcf != null && options.ReferenceVcf != "")
             {
-                commands.Add("v");
-                commands.Add(options.ReferenceVcf);
+                commands.AddRange(new[] { "-v", options.ReferenceVcf });
             }
-            if (options.Reference != "")
+            if (options.Reference != null && options.Reference != "")
             {
-                commands.Add("r");
-                commands.Add(options.Reference);
+                commands.AddRange(new[] { "-r", options.Reference });
             }
-            if (options.UniProtXml != "")
+            if (options.UniProtXml != null && options.UniProtXml != "")
             {
-                commands.Add("x");
-                commands.Add(options.UniProtXml);
+                commands.AddRange(new[] { "-x", options.UniProtXml });
             }
-            if (options.OverwriteStarAlignments == true)
+            if (options.OverwriteStarAlignments)
             {
-                commands.Add("overwriteStarAlignments");
-                commands.Add("true");
+                commands.Add("--overwriteStarAlignments");
             }
-            if (options.StrandSpecific == true)
+            if (options.StrandSpecific)
             {
-                commands.Add("strandSpecific");
-                commands.Add("true");
+                commands.Add("--strandSpecific");
             }
-            if (options.InferStrandSpecificity == true)
+            if (options.InferStrandSpecificity)
             {
-                commands.Add("inferStrandedness");
-                commands.Add("true");
+                commands.Add("--inferStrandedness");
             }
-            if (options.DoTranscriptIsoformAnalysis == true)
+            if (options.DoTranscriptIsoformAnalysis)
             {
-                commands.Add("doTranscriptIsoformAnalysis");
-                commands.Add("true");
+                commands.Add("--doTranscriptIsoformAnalysis");
             }
-            if (options.DoFusionAnalysis==true)
+            if (options.DoFusionAnalysis)
             {
-                commands.Add("doGeneFusionAnalysis");
-                commands.Add("true");
-            }
-            if (options.QuickSnpEffWithoutStats == true)
-            {
-                commands.Add("quickSnpEffWithoutStats");
-                commands.Add("true");
+                commands.Add("--doGeneFusionAnalysis");
             }
             return commands.ToArray();
         }

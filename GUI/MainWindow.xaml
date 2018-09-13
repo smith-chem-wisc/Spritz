@@ -30,7 +30,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="1*" MinHeight="50"/>
                 </Grid.RowDefinitions>
-                <GroupBox Grid.Row="0"  Header="SRA---RAN seq data from NCBI SRA">
+                <GroupBox Grid.Row="0"  Header="SRA---RNA seq data from NCBI SRA">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="35"/>
