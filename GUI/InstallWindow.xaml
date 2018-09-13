@@ -15,8 +15,10 @@
             <TextBlock HorizontalAlignment="Center"> 
                 <Hyperlink x:Name="Url" NavigateUri="https://smith-chem-wisc.github.io/Spritz" RequestNavigate="Url_Click"> https://smith-chem-wisc.github.io/Spritz </Hyperlink>
             </TextBlock>
-            <Button x:Name="BtnInstall" Content="Install packages, set up!" Click="BtnInstall_Click" IsEnabled="False"/>
-            <Button x:Name="BtnAlreadyInstalled" Content="Already installed! skip this." Click="BtnAlreadyInstalled_Click" IsEnabled="False"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2"  Margin="5">
+                <Button x:Name="BtnInstall" Content="Install packages, set up!" Click="BtnInstall_Click" IsEnabled="False"/>
+                <Button x:Name="BtnAlreadyInstalled" Content="Already installed elsewhere! Skip this." Click="BtnAlreadyInstalled_Click" IsEnabled="False"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>

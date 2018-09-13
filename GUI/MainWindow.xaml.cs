@@ -166,8 +166,15 @@ namespace SpritzGUI
 
         private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
         {
-            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
-            return;
+            try
+            {
+                var dialog = new InstallWindow();
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
@@ -285,7 +292,7 @@ namespace SpritzGUI
         {
             var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            if (WrapperUtility.CheckToolSetup(exePath))
+            if (!WrapperUtility.CheckToolSetup(exePath))
             {
                 try
                 {

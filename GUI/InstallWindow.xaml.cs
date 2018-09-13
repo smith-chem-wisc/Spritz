@@ -1,8 +1,8 @@
-﻿using System.Windows;
-using CMD;
-using ToolWrapperLayer;
+﻿using CMD;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Navigation;
+using ToolWrapperLayer;
 
 namespace SpritzGUI
 {
@@ -21,12 +21,11 @@ namespace SpritzGUI
         {
             if (!WrapperUtility.CheckBashSetup())
             {
-                TxbkInstall.Text = "The Windows Subsystem for Windows has not been enabled. Please see open link below for more details.";
-                
+                TxbkInstall.Text = "The Windows Subsystem for Linux has not been enabled. Please see link below for more details.";
             }
             else
             {
-                TxbkInstall.Text = "Please install all the required packages!";
+                TxbkInstall.Text = "Time to install the required packages in the Windows Subsystem for Linux!";
                 BtnInstall.IsEnabled = true;
                 BtnAlreadyInstalled.IsEnabled = true;
             }
@@ -34,7 +33,7 @@ namespace SpritzGUI
 
         private void BtnInstall_Click(object sender, RoutedEventArgs e)
         {
-            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
+            Spritz.Main(new[] { "CMD.exe", "-c", "setup" });
             DialogResult = true;
         }
 
