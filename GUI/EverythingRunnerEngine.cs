@@ -2,6 +2,7 @@
 using Nett;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace SpritzGUI
@@ -31,8 +32,16 @@ namespace SpritzGUI
                 Toml.WriteFile(ok.Item2, tomlFileName);
 
                 //Put it into a function
-                var commands = GenerateArguments(ok.Item2);
-                Spritz.Main(commands);
+                var arguments = GenerateArguments(ok.Item2);
+                //Spritz.Main(commands); // this doesn't work in releases, unfortunately
+
+                Process proc = new Process();
+                proc.StartInfo.FileName = "CMD.exe";
+                proc.StartInfo.Arguments = string.Join(" ", arguments);
+                proc.StartInfo.CreateNoWindow = true;
+                proc.StartInfo.UseShellExecute = false; // don't fire up a shell for the CMD.exe process
+                proc.Start();
+                proc.WaitForExit();
             }
         }
 

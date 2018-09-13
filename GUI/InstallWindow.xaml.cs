@@ -33,7 +33,13 @@ namespace SpritzGUI
 
         private void BtnInstall_Click(object sender, RoutedEventArgs e)
         {
-            Spritz.Main(new[] { "CMD.exe", "-c", "setup" });
+            Process proc = new Process();
+            proc.StartInfo.FileName = "CMD.exe";
+            proc.StartInfo.Arguments = "-c setup";
+            proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.UseShellExecute = false; // don't fire up a shell for the CMD.exe process
+            proc.Start();
+            proc.WaitForExit();
             DialogResult = true;
         }
 
