@@ -31,10 +31,10 @@ namespace SpritzGUI
                 var tomlFileName = Path.Combine(outputFolder, i.ToString() + "_Parameters.toml");
                 Toml.WriteFile(ok.Item2, tomlFileName);
 
+                //Put it into a function
                 var arguments = GenerateArguments(ok.Item2);
                 //Spritz.Main(commands); // this doesn't work in releases, unfortunately
 
-                //Put it into a function
                 Process proc = new Process();
                 proc.StartInfo.FileName = "CMD.exe";
                 proc.StartInfo.Arguments = string.Join(" ", arguments);
