@@ -94,7 +94,7 @@ namespace ToolWrapperLayer
         {
             Process proc = new Process();
             proc.StartInfo.FileName = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\ubuntu.exe");
-            proc.StartInfo.Arguments = "-c \"" + command + " " + arguments + "\"";
+            proc.StartInfo.Arguments = $"-c {command} {arguments.Replace(" ", "\\ ")}"; // escape the spaces
             proc.Start();
             return proc;
         }
