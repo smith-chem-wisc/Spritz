@@ -81,7 +81,7 @@ namespace ToolWrapperLayer
             if (path == null) return null;
             if (path == "") return "";
             if (path.StartsWith("/mnt/")) return path;
-            return "/mnt/" + Char.ToLowerInvariant(path[0]) + driveName.Replace(forwardSlashes.Replace(path, "/"), "");
+            return "\"/mnt/" + char.ToLowerInvariant(path[0]) + driveName.Replace(forwardSlashes.Replace(path, "/"), "") + "\"";
         }
 
         /// <summary>

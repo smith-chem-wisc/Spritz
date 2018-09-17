@@ -1,4 +1,5 @@
 ﻿using CMD;
+using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
@@ -41,6 +42,9 @@ namespace SpritzGUI
             proc.Start();
             proc.WaitForExit();
             DialogResult = true;
+
+            bool installationSuccessful = WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
+            MessageBox.Show("Installation of tools " + (installationSuccessful ? "was" : "was not") + " successful.", "Spritz Installation", MessageBoxButton.OK);
         }
 
         private void BtnAlreadyInstalled_Click(object sender, RoutedEventArgs e)

@@ -274,7 +274,7 @@ namespace ToolWrapperLayer
         public static List<string> AlignRNASeqReadsForVariantCalling(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles,
             string outprefix, bool overwriteStarAlignment, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
-            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string reads_in = string.Join(" ", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
                 fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
@@ -285,7 +285,7 @@ namespace ToolWrapperLayer
                 " --genomeLoad " + genomeLoad.ToString() +
                 " --runMode alignReads" +
                 " --runThreadN " + threads.ToString() +
-                " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
+                " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
