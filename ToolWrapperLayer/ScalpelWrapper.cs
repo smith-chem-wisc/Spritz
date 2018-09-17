@@ -101,7 +101,7 @@ namespace ToolWrapperLayer
             string removeScriptPath = WriteRemoveScript(spritzDirectory);
             string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "CheckScalpelInstallation.bash");
             string expectedLocation = WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "scalpel-" + ScalpelVersion));
-            bool isSame = File.ReadAllText(scalpelLocationFile).TrimEnd() == expectedLocation;
+            bool isSame = File.ReadAllText(scalpelLocationFile).TrimEnd() == expectedLocation.Trim('"');
             if (!isSame)
             {
                 WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>

@@ -18,6 +18,8 @@ namespace SpritzGUI
             this.outputFolder = outputFolder;
         }
 
+        public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
+
         public void Run()
         {
             //var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);

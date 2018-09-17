@@ -30,7 +30,8 @@ namespace SpritzGUI
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
             workflowTreeView.DataContext = staticTasksObservableCollection;
             LbxSRAs.ItemsSource = sraCollection;
-            Check4Install();
+            if (!InstallationDialogAndCheck())
+                Close();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -288,7 +289,7 @@ namespace SpritzGUI
             }
         }
 
-        private void Check4Install()
+        private bool InstallationDialogAndCheck()
         {
             var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
@@ -304,6 +305,7 @@ namespace SpritzGUI
                     MessageBox.Show(ex.ToString());
                 }
             }
+            return WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
         }
 
         private void WriteExperDesignToTsv(string filePath)
