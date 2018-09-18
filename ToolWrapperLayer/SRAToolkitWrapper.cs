@@ -11,7 +11,7 @@ namespace ToolWrapperLayer
         IInstallable
     {
         private static string AscpDownloadLocation = "http://download.asperasoft.com/download/sw/connect/3.7.4/aspera-connect-3.7.4.147727-linux-64.tar.gz";
-        private static string DownloadLocation = "https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-ubuntu64.tar.gz";
+        private static string DownloadLocation = "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.9.2/sratoolkit.2.9.2-ubuntu64.tar.gz";
 
         public string[] FastqPaths { get; private set; }
         public string LogPath { get; private set; }
@@ -31,8 +31,8 @@ namespace ToolWrapperLayer
                 "  echo \"Found SRAToolkit.\"",
                 "else",
                 "  wget " + DownloadLocation,
-                "  tar -xvf sratoolkit.current-ubuntu64.tar.gz",
-                "  rm sratoolkit.current-ubuntu64.tar.gz",
+                "  tar -xvf sratoolkit.2.9.2-ubuntu64.tar.gz",
+                "  rm sratoolkit.2.9.2-ubuntu64.tar.gz",
                 "fi"
 
                 //"wget " + AscpDownloadLocation,
@@ -55,7 +55,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public void Fetch(string spritzDirectory, string analysisDirectory, string sraAccession)
+        public void Fetch(string spritzDirectory, int threads, string analysisDirectory, string sraAccession)
         {
             LogPath = Path.Combine(analysisDirectory, sraAccession + "download.log");
             FastqPaths = new[] { sraAccession + "_1.fastq", sraAccession + "_2.fastq"}.Select(f => Path.Combine(analysisDirectory, f)).Where(f => File.Exists(f)).ToArray();
@@ -67,10 +67,9 @@ namespace ToolWrapperLayer
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Download" + sraAccession + ".bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
-                "echo \"Downloading " + sraAccession + "\"",
+                $"echo \"Downloading {sraAccession}\"",
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "sratoolkit*/bin/fastq-dump --split-files --outdir \"" + WrapperUtility.ConvertWindowsPath(analysisDirectory) + "\" " +
-                    sraAccession + " >> " + WrapperUtility.ConvertWindowsPath(LogPath),
+                $"sratoolkit*/bin/fasterq-dump --progress --threads {threads.ToString()} --split-files --outdir \"{WrapperUtility.ConvertWindowsPath(analysisDirectory)}\" {sraAccession} 2> {WrapperUtility.ConvertWindowsPath(LogPath)}",
             }).WaitForExit();
             FastqPaths = Directory.GetFiles(analysisDirectory, sraAccession + "*.fastq").ToArray();
         }
@@ -82,14 +81,14 @@ namespace ToolWrapperLayer
         /// <param name="analysisDirectory"></param>
         /// <param name="commaSeparatedSraAccessions"></param>
         /// <returns></returns>
-        public static List<string[]> GetFastqsFromSras(string spritzDirectory, string analysisDirectory, string commaSeparatedSraAccessions)
+        public static List<string[]> GetFastqsFromSras(string spritzDirectory, int threads, string analysisDirectory, string commaSeparatedSraAccessions)
         {
             List<string[]> fastqs = new List<string[]>();
             string[] sras = commaSeparatedSraAccessions.Split(',');
             foreach (string sra in sras)
             {
                 SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
-                sratoolkit.Fetch(spritzDirectory, analysisDirectory, sra);
+                sratoolkit.Fetch(spritzDirectory, threads, analysisDirectory, sra);
                 fastqs.Add(sratoolkit.FastqPaths);
             }
             return fastqs;

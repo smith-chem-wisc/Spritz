@@ -33,7 +33,7 @@ namespace CMD
 
             bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
             List<string[]> fastqsSeparated = useSraMethod ?
-                SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.AnalysisDirectory, options.SraAccession) :
+                SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.Threads, options.AnalysisDirectory, options.SraAccession) :
                 SeparateFastqs(options.Fastq1, options.Fastq2);
 
             if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))

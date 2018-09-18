@@ -83,8 +83,9 @@ namespace Test
         public void SRAToolkitTestDownload()
         {
             SRAToolkitWrapper sratoolkit = new SRAToolkitWrapper();
-            sratoolkit.Fetch(TestContext.CurrentContext.TestDirectory, TestContext.CurrentContext.TestDirectory, "SRR6304532");
-            Assert.IsTrue(sratoolkit.FastqPaths.All(f => File.Exists(f)));
+            sratoolkit.Fetch(TestContext.CurrentContext.TestDirectory, 1, TestContext.CurrentContext.TestDirectory, "SRR6304532");
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR6304532_1.fastq")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR6304532_2.fastq")));
             Assert.IsTrue(File.Exists(sratoolkit.LogPath));
         }
 
@@ -843,7 +844,7 @@ namespace Test
             SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
             flow.Parameters.SpritzDirectory = TestContext.CurrentContext.TestDirectory;
             flow.Parameters.AnalysisDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "SRR6319804");
-            var fastqs = SRAToolkitWrapper.GetFastqsFromSras(flow.Parameters.SpritzDirectory, flow.Parameters.AnalysisDirectory, "SRR6319804");
+            var fastqs = SRAToolkitWrapper.GetFastqsFromSras(flow.Parameters.SpritzDirectory, flow.Parameters.Threads, flow.Parameters.AnalysisDirectory, "SRR6319804");
             Directory.CreateDirectory(flow.Parameters.AnalysisDirectory);
             flow.Parameters.Reference = reference;
             flow.Parameters.Threads = Environment.ProcessorCount;
