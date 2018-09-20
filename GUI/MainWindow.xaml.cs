@@ -81,11 +81,9 @@ namespace SpritzGUI
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            RunWorkflowButton.IsEnabled = false;
             var t = new Task(a.Run);
             t.Start();
-            MessageBox.Show("Completed Spritz workflow.", "Run Completion", MessageBoxButton.OK);
-            RunWorkflowButton.IsEnabled = true;
+            RunWorkflowButton.IsEnabled = false;
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
