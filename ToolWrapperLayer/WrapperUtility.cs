@@ -66,7 +66,7 @@ namespace ToolWrapperLayer
             setup.Add(new Tuple<string, bool>("sratoolkit", toolsFolderExists && Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*").Length > 0));
             setup.Add(new Tuple<string, bool>("sratoolkit", toolsFolderExists && sraToolkitExists && sraBinExists && Directory.GetFiles(
                 Directory.GetDirectories(
-                    Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0));
+                    Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fasterq-dump").Length > 0));
             setup.Add(new Tuple<string, bool>("star", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-" + STARWrapper.STARVersion))));
             setup.Add(new Tuple<string, bool>("star-fusion", File.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-Fusion-v1.4.0", "STAR-Fusion"))));
             //setup.Add(new Tuple<string, bool>("trinity", Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "trinity*").Length > 0));

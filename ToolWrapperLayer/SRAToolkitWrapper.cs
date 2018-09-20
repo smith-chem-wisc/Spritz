@@ -27,7 +27,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if ls sratoolkit* 1> /dev/null 2>&1; then", // if there are files listed matching the pattern sratoolkit*
+                "if ls sratoolkit*/bin/faster-dump 1> /dev/null 2>&1; then", // if there are files listed matching the pattern sratoolkit*
                 "  echo \"Found SRAToolkit.\"",
                 "else",
                 "  wget " + DownloadLocation,
