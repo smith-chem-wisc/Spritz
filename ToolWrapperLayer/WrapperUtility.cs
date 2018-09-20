@@ -61,8 +61,10 @@ namespace ToolWrapperLayer
             bool toolsFolderExists = Directory.Exists(Path.Combine(spritzDirectory, "Tools"));
             setup.Add(new Tuple<string, bool>("slncky", toolsFolderExists && Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "lastz*").Length > 0));
             setup.Add(new Tuple<string, bool>("snpeff", File.Exists(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.jar"))));
+            bool sraToolkitExists = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*").Count() > 0;
+            bool sraBinExists = sraToolkitExists && Directory.GetDirectories(Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*")[0], "bin").Count() > 0;
             setup.Add(new Tuple<string, bool>("sratoolkit", toolsFolderExists && Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*").Length > 0));
-            setup.Add(new Tuple<string, bool>("sratoolkit", toolsFolderExists && Directory.GetFiles(
+            setup.Add(new Tuple<string, bool>("sratoolkit", toolsFolderExists && sraToolkitExists && sraBinExists && Directory.GetFiles(
                 Directory.GetDirectories(
                     Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools"), "sratoolkit*")[0], "bin")[0], "fastq-dump").Length > 0));
             setup.Add(new Tuple<string, bool>("star", Directory.Exists(Path.Combine(spritzDirectory, "Tools", "STAR-" + STARWrapper.STARVersion))));
