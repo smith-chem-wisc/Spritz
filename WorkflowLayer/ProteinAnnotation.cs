@@ -14,7 +14,7 @@ namespace WorkflowLayer
         /// </summary>
         /// <param name="spritzDirectory"></param>
         /// <returns></returns>
-        public static List<ModificationWithLocation> GetUniProtMods(string spritzDirectory)
+        public static List<Modification> GetUniProtMods(string spritzDirectory)
         {
             Loaders.LoadElements(Path.Combine(spritzDirectory, "elements.dat"));
             var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(spritzDirectory, "PSI-MOD.obo.xml"));
@@ -54,13 +54,13 @@ namespace WorkflowLayer
                     uniprot != null ? uniprot.Accession : pgProtein.Accession, //comma-separated
                     organism: uniprot != null ? uniprot.Organism : pgProtein.Organism,
                     name: pgProtein.Name, //comma-separated
-                    full_name: uniprot != null ? uniprot.FullName : pgProtein.FullName, //comma-separated
+                    fullName: uniprot != null ? uniprot.FullName : pgProtein.FullName, //comma-separated
                     isDecoy: pgProtein.IsDecoy,
                     isContaminant: pgProtein.IsContaminant,
                     sequenceVariations: pgProtein.SequenceVariations.OrderBy(v => v.OneBasedBeginPosition).ToList(),
 
                     // combine these
-                    gene_names: (uniprot != null ? uniprot.GeneNames : new List<Tuple<string, string>>()).Concat(pgProtein.GeneNames).ToList(),
+                    geneNames: (uniprot != null ? uniprot.GeneNames : new List<Tuple<string, string>>()).Concat(pgProtein.GeneNames).ToList(),
 
                     // transfer these
                     oneBasedModifications: uniprot != null ? uniprot.OneBasedPossibleLocalizedModifications : new Dictionary<int, List<Modification>>(),
@@ -93,11 +93,11 @@ namespace WorkflowLayer
                 string.Join(",", proteinsWithSameSequence.Select(p => p.Accession)),
                 organism: proteinsWithSameSequence.First().Organism,
                 name: string.Join(",", proteinsWithSameSequence.Select(p => p.Name)),
-                full_name: string.Join(",", proteinsWithSameSequence.Select(p => p.FullName)),
+                fullName: string.Join(",", proteinsWithSameSequence.Select(p => p.FullName)),
                 isDecoy: proteinsWithSameSequence.All(p => p.IsDecoy),
                 isContaminant: proteinsWithSameSequence.Any(p => p.IsContaminant),
                 sequenceVariations: proteinsWithSameSequence.SelectMany(p => p.SequenceVariations).ToList(),
-                gene_names: proteinsWithSameSequence.SelectMany(p => p.GeneNames).ToList(),
+                geneNames: proteinsWithSameSequence.SelectMany(p => p.GeneNames).ToList(),
                 oneBasedModifications: CollapseMods(proteinsWithSameSequence),
                 proteolysisProducts: new HashSet<ProteolysisProduct>(proteinsWithSameSequence.SelectMany(p => p.ProteolysisProducts)).ToList(),
                 databaseReferences: new HashSet<DatabaseReference>(proteinsWithSameSequence.SelectMany(p => p.DatabaseReferences)).ToList(),

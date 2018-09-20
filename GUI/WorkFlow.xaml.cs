@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using ToolWrapperLayer;
 using WorkflowLayer;
 
 namespace SpritzGUI
@@ -65,6 +66,12 @@ namespace SpritzGUI
             //Options.SpritzDirectory = txtSpritzDirecory.Text;
             Options.AnalysisDirectory = txtAnalysisDirectory.Text;
 
+            if (!Directory.Exists(Options.AnalysisDirectory))
+            {
+                MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
+                return;
+            }
+
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.dataGridRnaSeqFastq.DataContext;
             if (rnaSeqFastqCollection.Count != 0)
             {
@@ -80,7 +87,7 @@ namespace SpritzGUI
             Options.GeneModelGtfOrGff = txtGeneModelGtfOrGff.Text;
             Options.NewGeneModelGtfOrGff = txtNewGeneModelGtfOrGff.Text;
             Options.ReferenceVcf = txtDbsnpVcfReference.Text;
-            Options.Reference = txtStarFusionReference.Text;
+            Options.Reference = txtEnsemblReference.Text;
             Options.UniProtXml = txtUniProtProteinXml.Text;
             Options.OverwriteStarAlignments = ckbOverWriteStarAlignment.IsChecked.Value;
             Options.StrandSpecific = ckbStrandSpecific.IsChecked.Value;
@@ -139,34 +146,34 @@ namespace SpritzGUI
                 {
                     CbxWorkFlowType.SelectedIndex = 0;
                 }
-                if (options.Command == LncRNADiscoveryFlow.Command)
+                else if (options.Command == LncRNADiscoveryFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 1;
                 }
-                if (options.Command == TranscriptQuantificationFlow.Command)
+                else if (options.Command == TranscriptQuantificationFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 2;
                 }
-                if (options.Command == STARAlignmentFlow.Command)
+                else if (options.Command == STARAlignmentFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 3;
                 }
-                if (options.Command == GeneFusionDiscoveryFlow.Command)
+                else if (options.Command == GeneFusionDiscoveryFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 4;
+                }
+                else
+                {
+                    // do nothing
                 }
             }
 
             //txtSpritzDirecory.Text = options.SpritzDirectory;
             txtAnalysisDirectory.Text = AnalysisDirectory;
-
             txtThreads.Text = options.Threads.ToString();
             txtGenomeDir.Text = TrimQuotesOrNull(options.GenomeStarIndexDirectory);
-            txtGenomeFasta.Text = TrimQuotesOrNull(options.GenomeFasta);
-            txtGeneModelGtfOrGff.Text = TrimQuotesOrNull(options.GeneModelGtfOrGff);
             txtNewGeneModelGtfOrGff.Text = TrimQuotesOrNull(options.NewGeneModelGtfOrGff);
-            txtDbsnpVcfReference.Text = TrimQuotesOrNull(options.ReferenceVcf);
-            txtStarFusionReference.Text = options.Reference;
+            txtEnsemblReference.Text = options.Reference ?? "GRCh38";
             txtUniProtProteinXml.Text = TrimQuotesOrNull(options.UniProtXml);
             ckbOverWriteStarAlignment.IsChecked = options.OverwriteStarAlignments;
             ckbStrandSpecific.IsChecked = options.StrandSpecific;
@@ -174,6 +181,7 @@ namespace SpritzGUI
             CkbDoTranscriptIsoformAnalysis.IsChecked = options.DoTranscriptIsoformAnalysis;
             CkbDoGeneFusionAnalysis.IsChecked = options.DoFusionAnalysis;
             txtProteinFasta.Text = options.ProteinFastaPath;
+            UpdateReference();
         }
 
         private string TrimQuotesOrNull(string a)
@@ -185,6 +193,56 @@ namespace SpritzGUI
         {
             foreach (string aWorkFlow in Enum.GetNames(typeof(MyWorkflow)))
                 CbxWorkFlowType.Items.Add(aWorkFlow);
+        }
+
+        private void txtStarFusionReference_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            UpdateReference();
+        }
+
+        private void UpdateReference()
+        {
+            // Does dbSNP vcf already exist?
+            var gatk = new GATKWrapper();
+            if (gatk.KnownVariantSitesFileExists(EverythingRunnerEngine.SpritzDirectory, true, txtEnsemblReference.Text))
+            {
+                txtDbsnpVcfReference.Text = gatk.UcscKnownSitesPath;
+            }
+            else
+            {
+                txtDbsnpVcfReference.Text = TrimQuotesOrNull(null);
+            }
+
+            // Does gene model already exist?
+            if (!Directory.Exists(AnalysisDirectory))
+            {
+                MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
+                return;
+            }
+            var ensembl = new EnsemblDownloadsWrapper();
+            ensembl.DownloadReferences(EverythingRunnerEngine.SpritzDirectory, EverythingRunnerEngine.SpritzDirectory, txtEnsemblReference.Text, true);
+            if (File.Exists(ensembl.Gff3GeneModelPath))
+            {
+                txtGeneModelGtfOrGff.Text = ensembl.Gff3GeneModelPath;
+            }
+            else if (File.Exists(ensembl.GtfGeneModelPath))
+            {
+                txtGeneModelGtfOrGff.Text = ensembl.GtfGeneModelPath;
+            }
+            else
+            {
+                txtGeneModelGtfOrGff.Text = TrimQuotesOrNull(null);
+            }
+
+            // Does genome reference already exist?
+            if (File.Exists(ensembl.GenomeFastaPath))
+            {
+                txtGenomeFasta.Text = ensembl.GenomeFastaPath;
+            }
+            else
+            {
+                txtGenomeFasta.Text = TrimQuotesOrNull(null);
+            }
         }
     }
 }

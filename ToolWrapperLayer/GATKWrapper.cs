@@ -49,6 +49,7 @@ namespace ToolWrapperLayer
 
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
         private static Regex getISequenceHeaderSequenceName = new Regex(@"([\w\d\.\-]+)(.+)");
+        private string TargetFileLocation;
         public string UcscKnownSitesPath { get; private set; }
         public string EnsemblKnownSitesPath { get; private set; }
         public string SplitTrimBamPath { get; private set; }
@@ -142,23 +143,41 @@ namespace ToolWrapperLayer
             };
         }
 
-        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
+        /// <summary>
+        /// Reference dbSNP vcf file exists
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="commonOnly"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
+        public bool KnownVariantSitesFileExists(string spritzDirectory, bool commonOnly, string reference)
         {
-            bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
-            string targetFileLocation =
+            bool downloadGrch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool downloadGrch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            TargetFileLocation =
                 commonOnly ?
                     (downloadGrch37 ? CommonGRCh37UCSC : CommonGRCh38UCSC) :
                     (downloadGrch37 ? AllGRCh37UCSC : AllGRCh38UCSC);
-            string ucscKnownSitesFilename = targetFileLocation.Split('/').Last();
+            string ucscKnownSitesFilename = TargetFileLocation.Split('/').Last();
             UcscKnownSitesPath = Path.Combine(spritzDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
+            return (downloadGrch37 || downloadGrch38) && File.Exists(UcscKnownSitesPath);
+        }
 
-            if ((downloadGrch37 || downloadGrch38) && !File.Exists(UcscKnownSitesPath))
+        /// <summary>
+        /// Downloads dbSNP reference VCF file if it doesn't exist
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="commonOnly"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
+        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
+        {
+            if (!KnownVariantSitesFileExists(spritzDirectory, commonOnly, reference))
             {
                 WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "DownloadUcscVariants.bash"), new List<string>
                 {
                     "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                    "wget " + targetFileLocation,
+                    "wget " + TargetFileLocation,
                     "gunzip " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz",
                     "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz"
                 }).WaitForExit();

@@ -78,10 +78,11 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string ConvertWindowsPath(string path)
         {
-            if (path == null) return null;
-            if (path == "") return "";
-            if (path.StartsWith("/mnt/")) return path;
-            return "\"/mnt/" + char.ToLowerInvariant(path[0]) + driveName.Replace(forwardSlashes.Replace(path, "/"), "") + "\"";
+            string pathTrim = path.Trim('"');
+            if (pathTrim == null) return null;
+            if (pathTrim == "") return "";
+            if (pathTrim.StartsWith("/mnt/")) return path;
+            return "\"/mnt/" + char.ToLowerInvariant(pathTrim[0]) + driveName.Replace(forwardSlashes.Replace(pathTrim, "/"), "") + "\"";
         }
 
         /// <summary>
@@ -168,7 +169,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string EnsureClosedFileCommands(string path)
         {
-            return "exec 3<> " + ConvertWindowsPath(path) + "; exec 3>&-";
+            return $"exec 3<> {ConvertWindowsPath(path)}; exec 3>&-";
         }
 
         /// <summary>

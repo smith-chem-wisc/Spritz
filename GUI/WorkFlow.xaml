@@ -83,8 +83,8 @@
                             <TextBox x:Name="txtDbsnpVcfReference" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
-                            <Label Content="Star Fusion Reference" Width="200"/>
-                            <TextBox x:Name="txtStarFusionReference" Width="180" />
+                            <Label Content="Ensembl Reference" Width="200"/>
+                            <TextBox x:Name="txtEnsemblReference" Width="180" TextChanged="txtStarFusionReference_TextChanged" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
                             <Label Content="UniProt Protein XML" Width="200"/>
