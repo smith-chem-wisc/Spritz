@@ -122,7 +122,7 @@ namespace ToolWrapperLayer
         /// <param name="gtfGeneModelPath"></param>
         /// <param name="gff3GeneModelPath"></param>
         /// <param name="proteinFastaPath"></param>
-        public void DownloadReferences(string spritzDirectory, string targetDirectory, string reference)
+        public void DownloadReferences(string spritzDirectory, string targetDirectory, string reference, bool dryRun)
         {
             bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
             bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
@@ -148,7 +148,7 @@ namespace ToolWrapperLayer
                     Path.Combine(targetDirectory, GRCh38ProteinFastaFilename) :
                     "";
 
-            if (!downloadGrch37 && !downloadGrch38)
+            if (!downloadGrch37 && !downloadGrch38 || dryRun)
                 return;
 
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(targetDirectory, "DownloadEnsemblReference.bash"), new List<string>

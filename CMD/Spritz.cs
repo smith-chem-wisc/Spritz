@@ -161,7 +161,7 @@ namespace CMD
         {
             // Download ensembl references and set default paths
             EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
-            downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference);
+            downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference, false);
             options.GenomeFasta = options.GenomeFasta ?? downloadsWrapper.GenomeFastaPath;
             options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? downloadsWrapper.Gff3GeneModelPath;
             options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? STARWrapper.GetGenomeStarIndexDirectoryPath(options.GenomeFasta, options.GeneModelGtfOrGff);

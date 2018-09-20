@@ -206,7 +206,7 @@ namespace ToolWrapperLayer
             {
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) + " ]; then " +
                     "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " +
-                    String.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
+                    string.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " | grep -v 'MT' >> " +
                     WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) +
                     "; fi"
@@ -250,7 +250,7 @@ namespace ToolWrapperLayer
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
 
-            string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix) + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix);
+            string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix));
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -314,23 +314,23 @@ namespace ToolWrapperLayer
                 " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
                 " --runThreadN " + threads.ToString() +
-                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix +
-                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) + Path.GetFileNameWithoutExtension(SortedBamFileSuffix);
+                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix + Path.GetFileNameWithoutExtension(SortedBamFileSuffix));
 
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
 
                 overwriteStarAlignment ? "" :
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) + " ) ]]; then",
                     "  STAR" + alignmentArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)),
 
-                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
+                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " ) ]]; then",
                     "  STAR" + dedupArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix)),
 
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
                     "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :

@@ -71,7 +71,7 @@ namespace ToolWrapperLayer
             VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
             Directory.CreateDirectory(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
-            if (File.Exists(AnnotatedVcfPath)) return new List<string>();
+            if (File.Exists(AnnotatedVcfPath) && new FileInfo(AnnotatedVcfPath).Length > 0) return new List<string>();
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
             return new List<string>
             {
