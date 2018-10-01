@@ -77,7 +77,7 @@ namespace ToolWrapperLayer
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "hisat2-2.1.0/hisat2 -q -x" +
                 " " + WrapperUtility.ConvertWindowsPath(IndexPrefix) +
-                " -U " + System.String.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))) +
+                " -U " + string.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))) +
                 " -S " + outputDirectory,
 
                 }).WaitForExit();
@@ -90,8 +90,8 @@ namespace ToolWrapperLayer
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "hisat2-2.1.0/hisat2 -q -x" +
                 " " + WrapperUtility.ConvertWindowsPath(IndexPrefix) +
-                " -1 " + System.String.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[0])) +
-                " -2 " + System.String.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
+                " -1 " + string.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[0])) +
+                " -2 " + string.Join(",", WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
                 " -S " + outputDirectory,
 
                 }).WaitForExit();

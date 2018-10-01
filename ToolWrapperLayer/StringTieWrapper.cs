@@ -153,7 +153,7 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "readlink -f \"" + String.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
+                "readlink -f \"" + string.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     "\" > " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(combinedTranscriptGtfOutputPath) + " ]]; then ",
                 "  echo \"Performing stringtie transcript merger on GTF list:" + gtfListPath + "\"",

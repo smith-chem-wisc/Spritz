@@ -474,7 +474,7 @@ namespace Test
         [TestCase("grch37")]
         public void SnpEffFrameshiftProteins(string reference)
         {
-            BuildAndCopySnpeff();
+            //BuildAndCopySnpeff();
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.snpEffAnnotated.vcf"));
@@ -1124,10 +1124,10 @@ namespace Test
         //        Strandedness.None,
         //        new[]
         //        {
-        //            String.Join(",", new string[] {
+        //            string.Join(",", new string[] {
         //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000reads_1.fastq"),
         //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","TestFastqs", "2000readsAgain_1.fastq") }),
-        //            String.Join(",", new string[] {
+        //            string.Join(",", new string[] {
         //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","TestFastqs", "2000reads_2.fastq"),
         //                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData","TestFastqs", "2000readsAgain_2.fastq") })
         //        },

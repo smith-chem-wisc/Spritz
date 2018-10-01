@@ -40,9 +40,7 @@ namespace CMD
             {
                 if (options.ReferenceVcf == null)
                 {
-                    var gatk = new GATKWrapper();
-                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
-                    options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
+                    options.ReferenceVcf = new GATKWrapper().DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
                 }
 
                 if (options.UniProtXml == null)
@@ -71,7 +69,7 @@ namespace CMD
                 //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
                 flow.GenerateSampleSpecificProteinDatabases();
 
-                Console.WriteLine("output databases to " + String.Join(", and ",
+                Console.WriteLine("output databases to " + string.Join(", and ",
                     flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
             }
 

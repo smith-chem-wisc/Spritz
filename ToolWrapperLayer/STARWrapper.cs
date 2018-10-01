@@ -125,7 +125,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
-            string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
+            string fastas = string.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
                 " --runMode genomeGenerate" +
                 " --runThreadN " + threads.ToString() +
@@ -232,7 +232,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> BasicAlignReadCommands(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory, string outSamType = "BAM Unsorted")
         {
-            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string reads_in = "\"" + string.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
             string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
                 fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
@@ -359,7 +359,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(newFfiles[0]) + " ]; then",
-                "  echo \"Subsetting " + numReads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
+                "  echo \"Subsetting " + numReads.ToString() + " reads from " + string.Join(",", fastqFiles) + "\"",
                 "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + numReads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
                 fastqFiles.Length > 1 ? "  seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + numReads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
                 "fi"
