@@ -206,7 +206,8 @@ namespace SpritzGUI
             var gatk = new GATKWrapper();
             if (gatk.KnownVariantSitesFileExists(EverythingRunnerEngine.SpritzDirectory, true, txtEnsemblReference.Text))
             {
-                txtDbsnpVcfReference.Text = gatk.UcscKnownSitesPath;
+                string ensemblVcfPath = Path.Combine(Path.GetDirectoryName(gatk.UcscKnownSitesPath), Path.GetFileNameWithoutExtension(gatk.UcscKnownSitesPath) + ".ensembl.vcf");
+                txtDbsnpVcfReference.Text = ensemblVcfPath;
             }
             else
             {

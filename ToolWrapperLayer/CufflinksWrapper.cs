@@ -139,7 +139,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "cd cufflinks-2.2.1",
-                "readlink -f \"" + String.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\" > " + WrapperUtility.ConvertWindowsPath(gtfListPath),
+                "readlink -f \"" + string.Join("\" \"", transcriptGtfPaths.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\" > " + WrapperUtility.ConvertWindowsPath(gtfListPath),
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(mergedGtfPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(mergedGtfPath) + " ]]; then " +
                     "./cuffmerge" +
                     " -p " + threads.ToString() +

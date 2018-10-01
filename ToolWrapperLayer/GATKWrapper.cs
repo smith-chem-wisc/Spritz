@@ -223,7 +223,7 @@ namespace ToolWrapperLayer
                     if (splitLine.Length > 1 && ucsc2EnsemblChromosomeMappings.TryGetValue(splitLine[0], out string newChrom))
                     {
                         splitLine[0] = newChrom;
-                        writer.Write(String.Join("\t", splitLine) + '\n');
+                        writer.Write(string.Join("\t", splitLine) + '\n');
                     }
                 }
             }

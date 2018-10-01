@@ -133,7 +133,7 @@ namespace ToolWrapperLayer
                     " --tmp-dir " + WrapperUtility.ConvertWindowsPath(tempDir) +
                     (strandSpecific ? " --library-type fr-firststrand" : "") +
                     " " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix) +
-                    " " + String.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))),
+                    " " + string.Join(",", fastqPaths.Select(x => WrapperUtility.ConvertWindowsPath(x))),
                 "if [ -d " + WrapperUtility.ConvertWindowsPath(tempDir) + " ]; then rm -r " + WrapperUtility.ConvertWindowsPath(tempDir) + "; fi",
             }).WaitForExit();
         }
