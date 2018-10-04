@@ -77,7 +77,7 @@ namespace SpritzGUI
         {
             if (staticTasksObservableCollection.Count == 0)
             {
-                MessageBox.Show("You must add a workflow before a run.", "Run Workflows");
+                MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
@@ -210,7 +210,7 @@ namespace SpritzGUI
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -225,13 +225,17 @@ namespace SpritzGUI
                     sraCollection.Add(sraDataGrid);
                 }
             }
+            else if (MessageBox.Show("SRA accessions are expected to start with \"SR\", such as SRX254398 or SRR791584. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+            {
+                System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
+            }
         }
 
         private void BtnWorkFlow_Click(object sender, RoutedEventArgs e)
         {
             if (sraCollection.Count == 0 && rnaSeqFastqCollection.Count == 0)
             {
-                if (MessageBox.Show("Please add FASTQ files or sequence read archive (SRA) accessions prior to adding a workflow. View more information on SRAs?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+                if (MessageBox.Show("Please add FASTQ files or sequence read archive (SRA) accessions prior to adding a workflow. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
                 {
                     System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
                 }
@@ -253,7 +257,7 @@ namespace SpritzGUI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Could not save experimental design!\n\n" + ex.Message);
+                MessageBox.Show("Could not save experimental design!\n\n" + ex.Message, "Experimental Design", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
         }
@@ -341,7 +345,7 @@ namespace SpritzGUI
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.ToString());
+                    MessageBox.Show(ex.ToString(), "Installation", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             return WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
