@@ -215,7 +215,7 @@ namespace SpritzGUI
             }
 
             // Does gene model already exist?
-            if (!Directory.Exists(AnalysisDirectory))
+            if (AnalysisDirectory != null && AnalysisDirectory != "" && !Directory.Exists(AnalysisDirectory))
             {
                 MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
                 return;

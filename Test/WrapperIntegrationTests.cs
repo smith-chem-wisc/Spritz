@@ -738,7 +738,7 @@ namespace Test
         [TestCase("grch38", "mapper3.fastq")]
         public void FullProteinRunFromFastqs(string reference, string fastqFilename)
         {
-            //BuildAndCopySnpeff();
+            BuildAndCopySnpeff();
             string f = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", fastqFilename);
             string fastqPath = Path.Combine(Path.GetDirectoryName(f), Path.GetFileNameWithoutExtension(f) + reference + ".fastq");
             if (!File.Exists(fastqPath)) { File.Copy(f, fastqPath); }

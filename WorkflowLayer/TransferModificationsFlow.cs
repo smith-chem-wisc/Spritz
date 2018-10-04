@@ -14,8 +14,12 @@ namespace WorkflowLayer
         public List<string> TransferModifications(string spritzDirectory, string sourceXmlPath, List<string> destinationXmlPaths, List<Protein> additionalProteins)
         {
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(spritzDirectory);
-            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out Dictionary<string, Modification> un);
             List<string> outxmls = new List<string>();
+
+            var uniprot = File.Exists(sourceXmlPath) ?
+                ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out Dictionary<string, Modification> un) :
+                new List<Protein>();
+
             foreach (var xml in destinationXmlPaths)
             {
                 string outxml = Path.Combine(Path.GetDirectoryName(xml), Path.GetFileNameWithoutExtension(xml) + ".withmods.xml");

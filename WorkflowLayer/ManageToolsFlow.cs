@@ -117,7 +117,6 @@ namespace WorkflowLayer
             // get root permissions, update and upgrade the repositories, and install dependencies
             List<string> commands = new List<string>
             {
-                "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
                 "sudo apt-get -y upgrade",
                 "sudo apt-get -y install " + string.Join(" ", aptitudeDependencies),
@@ -184,7 +183,13 @@ namespace WorkflowLayer
 
             // write the and run the installations requiring root permissions
             string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallDependencies.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
+            WrapperUtility.GenerateScript(scriptPath, commands);
+            string installScript = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "Installation.bash");
+            WrapperUtility.GenerateAndRunScript(installScript, new List<string>
+            {
+                "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
+                $"sudo bash {WrapperUtility.ConvertWindowsPath(scriptPath)}"
+            }).WaitForExit();
         }
 
         /// <summary>

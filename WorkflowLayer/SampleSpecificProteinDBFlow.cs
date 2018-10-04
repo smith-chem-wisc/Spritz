@@ -120,11 +120,8 @@ namespace WorkflowLayer
             }
 
             // Transfer features from UniProt
-            if (File.Exists(Parameters.UniProtXmlPath))
-            {
-                TransferModificationsFlow transfer = new TransferModificationsFlow();
-                transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
-            }
+            TransferModificationsFlow transfer = new TransferModificationsFlow();
+            transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
         }
 
         /// <summary>
