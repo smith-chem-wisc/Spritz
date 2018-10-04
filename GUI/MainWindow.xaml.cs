@@ -22,6 +22,7 @@ namespace SpritzGUI
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<SRADataGrid> sraCollection = new ObservableCollection<SRADataGrid>();
+        private EverythingRunnerEngine everything;
 
         public MainWindow()
         {
@@ -74,16 +75,49 @@ namespace SpritzGUI
 
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
+            if (staticTasksObservableCollection.Count == 0)
+            {
+                MessageBox.Show("You must add a workflow before a run.", "Run Workflows");
+                return;
+            }
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].options.Command.ToString(), staticTasksObservableCollection[i].options));
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            var t = new Task(a.Run);
+            everything = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
+            var t = new Task(everything.Run);
             t.Start();
+            t.ContinueWith(DisplayAnyErrors);
             RunWorkflowButton.IsEnabled = false;
+        }
+
+        private void DisplayAnyErrors(Task obj)
+        {
+            if (everything.StdErr != null && everything.StdErr != "")
+            {
+                var message = "Run failed, Exception: " + everything.StdErr;
+                Dispatcher.Invoke(() => WarningsTextBox.AppendText(message + Environment.NewLine));
+                var messageBoxResult = MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (messageBoxResult == MessageBoxResult.Yes)
+                {
+                    string body = everything.StdErr;
+                    //+ "%0D%0A" + exception.Data +
+                    //"%0D%0A" + exception.StackTrace +
+                    //"%0D%0A" + exception.Source +
+                    //"%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A ???" + // TODO: implement this system info check
+                    //"%0D%0A%0D%0A Spritz: version ???" + // TODO: implement this version check.
+                    //"%0D%0A %0D%0A %0D%0A %0D%0A TOML: %0D%0A " +
+                    //tomlText;
+                    body = body.Replace('&', ' ');
+                    body = body.Replace("\n", "%0D%0A");
+                    body = body.Replace("\r", "%0D%0A");
+                    string mailto = string.Format("mailto:{0}?Subject=Spritz. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
+                    System.Diagnostics.Process.Start(mailto);
+                    Console.WriteLine(body);
+                }
+            }
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -143,7 +177,8 @@ namespace SpritzGUI
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
-
+            RunWorkflowButton.IsEnabled = true;
+            ResetTasksButton.IsEnabled = false;
         }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
@@ -196,7 +231,10 @@ namespace SpritzGUI
         {
             if (sraCollection.Count == 0 && rnaSeqFastqCollection.Count == 0)
             {
-                MessageBox.Show("Please add FASTQ files prior to choosing the workflow.");
+                if (MessageBox.Show("Please add FASTQ files or sequence read archive (SRA) accessions prior to adding a workflow. View more information on SRAs?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+                {
+                    System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
+                }
                 return;
             }
             var dialog = new WorkFlowWindow(OutputFolderTextBox.Text);

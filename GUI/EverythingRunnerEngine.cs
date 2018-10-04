@@ -18,6 +18,7 @@ namespace SpritzGUI
             this.outputFolder = outputFolder;
         }
 
+        public string StdErr { get; set; }
         public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
 
         public void Run()
@@ -42,8 +43,10 @@ namespace SpritzGUI
                 proc.StartInfo.Arguments = string.Join(" ", arguments);
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false; // don't fire up a shell for the CMD.exe process
+                proc.StartInfo.RedirectStandardError = true;
                 proc.Start();
                 proc.WaitForExit();
+                StdErr = proc.StandardError.ReadToEnd();
             }
         }
 
