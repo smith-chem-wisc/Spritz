@@ -33,16 +33,14 @@ namespace CMD
 
             bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
             List<string[]> fastqsSeparated = useSraMethod ?
-                SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.AnalysisDirectory, options.SraAccession) :
+                SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.Threads, options.AnalysisDirectory, options.SraAccession) :
                 SeparateFastqs(options.Fastq1, options.Fastq2);
 
             if (options.Command.Equals(SampleSpecificProteinDBFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
                 if (options.ReferenceVcf == null)
                 {
-                    var gatk = new GATKWrapper();
-                    gatk.DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
-                    options.ReferenceVcf = gatk.EnsemblKnownSitesPath;
+                    options.ReferenceVcf = new GATKWrapper().DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
                 }
 
                 if (options.UniProtXml == null)
@@ -68,9 +66,10 @@ namespace CMD
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
                 flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
                 flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
+                //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
                 flow.GenerateSampleSpecificProteinDatabases();
 
-                Console.WriteLine("output databases to " + String.Join(", and ",
+                Console.WriteLine("output databases to " + string.Join(", and ",
                     flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
             }
 
@@ -160,7 +159,7 @@ namespace CMD
         {
             // Download ensembl references and set default paths
             EnsemblDownloadsWrapper downloadsWrapper = new EnsemblDownloadsWrapper();
-            downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference);
+            downloadsWrapper.DownloadReferences(options.SpritzDirectory, options.SpritzDirectory, options.Reference, false);
             options.GenomeFasta = options.GenomeFasta ?? downloadsWrapper.GenomeFastaPath;
             options.GeneModelGtfOrGff = options.GeneModelGtfOrGff ?? downloadsWrapper.Gff3GeneModelPath;
             options.GenomeStarIndexDirectory = options.GenomeStarIndexDirectory ?? STARWrapper.GetGenomeStarIndexDirectoryPath(options.GenomeFasta, options.GeneModelGtfOrGff);
@@ -179,7 +178,7 @@ namespace CMD
             if (fastq1string != null)
             {
                 // Parse comma-separated fastq lists
-                if (fastq2string != null && fastq1string.Count(x => x == ',') != fastq1string.Count(x => x == ','))
+                if (fastq2string != null && fastq1string.Count(x => x == ',') != fastq2string.Count(x => x == ','))
                 {
                     throw new ArgumentException("Error: There are a different number of first-strand and second-strand fastq files.");
                 }

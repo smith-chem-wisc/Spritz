@@ -1,0 +1,127 @@
+﻿<Window x:Class="SpritzGUI.WorkFlowWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SpritzGUI"
+        mc:Ignorable="d"
+        Drop="Window_Drop" AllowDrop="True"
+        Title="WorkFlow Windows" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="0"  Margin="5">
+            <Label Content="Select Work Flow Type"/>
+            <ComboBox x:Name="CbxWorkFlowType"/>
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="1">
+            <DockPanel>
+                <GroupBox Header="Parameters" DockPanel.Dock="Top">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <!--StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
+                            <Label Content="SpritzDirecory" Width="200"/>
+                            <TextBox x:Name="txtSpritzDirecory" Width="180" />
+                        </-->
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
+                            <Label Content="AnalysisDirectory" Width="200"/>
+                            <TextBox x:Name="txtAnalysisDirectory" Width="180" />
+                        </StackPanel>
+                        <!--<StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
+                            <Label Content="fq1" Width="200"/>
+                            <TextBox x:Name="txtFq1" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+                            <Label Content="fq2" Width="200"/>
+                            <TextBox x:Name="txtFq2" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
+                            <Label Content="sraAcession" Width="200"/>
+                            <TextBox x:Name="txtSraAcession" Width="180" />
+                        </StackPanel>-->
+                        <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="0">
+                            <Label Content="Threads" Width="200"/>
+                            <TextBox x:Name="txtThreads" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="0">
+                            <Label Content="Star Genome Directory" Width="200"/>
+                            <TextBox x:Name="txtGenomeDir" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="0">
+                            <Label Content="Genome Fasta" Width="200"/>
+                            <TextBox x:Name="txtGenomeFasta" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="0">
+                            <Label Content="Gene Model (Gtf/Gff)" Width="200"/>
+                            <TextBox x:Name="txtGeneModelGtfOrGff" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="0">
+                            <Label Content="Alternative Gene Model (Gtf/Gff)" Width="200"/>
+                            <TextBox x:Name="txtNewGeneModelGtfOrGff" Width="180" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
+                            <Label Content="dbSNP VCF Reference" Width="200"/>
+                            <TextBox x:Name="txtDbsnpVcfReference" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
+                            <Label Content="Ensembl Reference" Width="200"/>
+                            <TextBox x:Name="txtEnsemblReference" Width="180" TextChanged="txtStarFusionReference_TextChanged" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
+                            <Label Content="UniProt Protein XML" Width="200"/>
+                            <TextBox x:Name="txtUniProtProteinXml" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                            <Label Content="Overwrite Star Alignments" Width="200"/>
+                            <CheckBox x:Name="ckbOverWriteStarAlignment" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
+                            <Label Content="Strand-Specific Protocol" Width="200"/>
+                            <CheckBox x:Name="ckbStrandSpecific" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="1">
+                            <Label Content="Infer Strandedness" Width="200"/>
+                            <CheckBox x:Name="ckbInferStrandedness" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="1">
+                            <Label Content="Do Transcript Isoform Analysis" Width="200"/>
+                            <CheckBox x:Name="CkbDoTranscriptIsoformAnalysis" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="1">
+                            <Label Content="Do Gene Fusion Analysis" Width="200"/>
+                            <CheckBox x:Name="CkbDoGeneFusionAnalysis" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
+                            <Label Content="Protein Fasta Path" Width="200"/>
+                            <TextBox x:Name="txtProteinFasta" Width="180" Height="32" VerticalAlignment="Bottom" />
+                        </StackPanel>
+                        
+                    </Grid>
+                </GroupBox>
+            </DockPanel>
+        </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2"  Margin="5">
+            <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Workflow" Click="saveButton_Click"  FontSize="18" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,7 +1,6 @@
 ﻿using Proteogenomics;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using ToolWrapperLayer;
 
 namespace WorkflowLayer
@@ -19,10 +18,9 @@ namespace WorkflowLayer
         public List<string> CombinedAnnotatedGenesSummaryPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinFastaPaths { get; private set; } = new List<string>();
         public List<string> CombinedAnnotatedProteinXmlPaths { get; private set; } = new List<string>();
-        public List<string> CompletedProteinXmlPaths { get; private set; } = new List<string>();
 
         public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
-            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome)
+            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff)
         {
             List<string> variantCallingCommands = new List<string>();
             List<SnpEffWrapper> snpeffs = new List<SnpEffWrapper>();
@@ -50,7 +48,7 @@ namespace WorkflowLayer
                 CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
                 CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
                 var snpEff = new SnpEffWrapper();
-                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.SortedVcfPath));
+                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.SortedVcfPath, quickSnpEff));
                 CombinedAnnotatedVcfFilePaths.Add(snpEff.AnnotatedVcfPath);
                 CombinedSnpEffHtmlFilePaths.Add(snpEff.HtmlReportPath);
                 CombinedAnnotatedProteinFastaPaths.Add(snpEff.VariantProteinFastaPath);
@@ -58,8 +56,6 @@ namespace WorkflowLayer
                 snpeffs.Add(snpEff);
             }
             WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
-            CompletedProteinXmlPaths = snpeffs.Select(snpEff => ProteinAnnotation.CompleteVariantAnnotations(spritzDirectory,
-                snpEff.VariantProteinXmlPath, snpEff.AnnotatedVcfPath, genome)).ToList();
         }
     }
 }

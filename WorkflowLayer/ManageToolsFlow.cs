@@ -49,6 +49,7 @@ namespace WorkflowLayer
             "gawk",
             "git",
             "python",
+            "python-pip",
             "r-base-core",
             "python-dev",
             "python3-dev",
@@ -116,15 +117,15 @@ namespace WorkflowLayer
             // get root permissions, update and upgrade the repositories, and install dependencies
             List<string> commands = new List<string>
             {
-                "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 "sudo apt-get -y update",
                 "sudo apt-get -y upgrade",
-                "sudo apt-get -y install " + String.Join(" ", aptitudeDependencies)
+                "sudo apt-get -y install " + string.Join(" ", aptitudeDependencies),
+                "sudo cp /usr/lib/x86_64-linux-gnu/libgsl.so.19 /usr/lib/x86_64-linux-gnu/libgsl.so.0", // required for rMATS in an Ubuntu 16.04 environment
             };
 
             // python setup
-            commands.Add("sudo easy_install pip");
-            commands.Add("sudo -H pip install --upgrade virtualenv pip qc bitsets cython bx-python pysam RSeQC numpy h5py scipy");
+            //commands.Add("sudo easy_install pip");
+            commands.Add("sudo -H pip install --upgrade virtualenv pip qc bitsets cython numpy bx-python pysam RSeQC h5py scipy");
 
             // java8 setup
             commands.Add
@@ -182,7 +183,13 @@ namespace WorkflowLayer
 
             // write the and run the installations requiring root permissions
             string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallDependencies.bash");
-            WrapperUtility.GenerateAndRunScript(scriptPath, commands).WaitForExit();
+            WrapperUtility.GenerateScript(scriptPath, commands);
+            string installScript = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "Installation.bash");
+            WrapperUtility.GenerateAndRunScript(installScript, new List<string>
+            {
+                "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
+                $"sudo bash {WrapperUtility.ConvertWindowsPath(scriptPath)}"
+            }).WaitForExit();
         }
 
         /// <summary>

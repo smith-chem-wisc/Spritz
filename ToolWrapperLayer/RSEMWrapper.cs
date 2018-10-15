@@ -127,6 +127,12 @@ namespace ToolWrapperLayer
                 throw new ArgumentOutOfRangeException("Too many fastq file types given for RSEM calculate expression.");
             }
 
+            List<string> scriptCommands = new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "cd RSEM-1.3.0",
+            };
+
             string[] analysisFastqPaths = fastqPaths;
             string alignerOption = GetAlignerOption(spritzDirectory, aligner);
             string threadOption = "--num-threads " + threads.ToString();
@@ -140,16 +146,17 @@ namespace ToolWrapperLayer
             {
                 for (int i = 0; i < analysisFastqPaths.Length; i++)
                 {
-                    WrapperUtility.RunBashCommand(fastqIsGunzipped ? "gunzip" : "bunzip2", "--keep " + WrapperUtility.ConvertWindowsPath(analysisFastqPaths[i])).WaitForExit();
+                    string decompressionCommand = fastqIsGunzipped ? "gunzip" : "bunzip2";
+                    scriptCommands.Add($"{decompressionCommand} --keep {WrapperUtility.ConvertWindowsPath(analysisFastqPaths[i])}");
                     analysisFastqPaths[i] = Path.ChangeExtension(analysisFastqPaths[i], null);
                 }
             }
 
-            string inputOption = analysisFastqPaths.Length == 1 ? String.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) :
+            string inputOption = analysisFastqPaths.Length == 1 ? string.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) :
                 "--paired-end " +
-                    String.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) +
+                    string.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " " +
-                    String.Join(",", analysisFastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
+                    string.Join(",", analysisFastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
             var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
             OutputPrefix = Path.Combine(Path.GetDirectoryName(analysisFastqPaths[0].Split(',')[0]),
@@ -166,10 +173,9 @@ namespace ToolWrapperLayer
                     "fi";
 
             // construct the commands
-            var scriptStrings = new List<string>
+            scriptCommands.AddRange(new List<string>
             {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "cd RSEM-1.3.0",
+
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + IsoformResultsSuffix) + " ]]; then " +
                     "./rsem-calculate-expression " +
                         "--time " + // include timed results
@@ -182,8 +188,8 @@ namespace ToolWrapperLayer
                         WrapperUtility.ConvertWindowsPath(OutputPrefix) +
                 "; fi",
                 samtoolsCommands
-            };
-            return scriptStrings;
+            });
+            return scriptCommands;
         }
 
         /// <summary>

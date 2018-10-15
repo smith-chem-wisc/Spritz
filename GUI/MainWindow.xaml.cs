@@ -1,11 +1,14 @@
 ﻿using CMD;
+using Nett;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ToolWrapperLayer;
 using WorkflowLayer;
 
 namespace SpritzGUI
@@ -15,51 +18,44 @@ namespace SpritzGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        #region Private Fields
-
-        private readonly ObservableCollection<GenomeFastaDataGrid> genomeFastaCollection = new ObservableCollection<GenomeFastaDataGrid>();
-        private readonly ObservableCollection<GeneSetDataGrid> geneSetCollection = new ObservableCollection<GeneSetDataGrid>();
         private readonly ObservableCollection<RNASeqFastqDataGrid> rnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private readonly ObservableCollection<SRADataGrid> sraCollection = new ObservableCollection<SRADataGrid>();
+        private EverythingRunnerEngine everything;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            dataGridFASTA.DataContext = genomeFastaCollection;
-            dataGridGeneSet.DataContext = geneSetCollection;
             dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
             workflowTreeView.DataContext = staticTasksObservableCollection;
+            LbxSRAs.ItemsSource = sraCollection;
+            if (!InstallationDialogAndCheck())
+                Close();
         }
-
-        #endregion Public Constructors
-
-        #region Private Methods - Controlers
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             if (files != null)
+            {
                 foreach (var draggedFilePath in files)
                 {
                     if (Directory.Exists(draggedFilePath))
+                    {
                         foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
                         {
                             AddAFile(file);
                         }
+                    }
                     else
                     {
                         AddAFile(draggedFilePath);
                     }
-                    dataGridFASTA.Items.Refresh();
-                    dataGridGeneSet.Items.Refresh();
                     dataGridRnaSeqFastq.Items.Refresh();
                 }
+            }
             UpdateOutputFolderTextbox();
         }
 
@@ -77,79 +73,51 @@ namespace SpritzGUI
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/Spritz");
         }
 
-        private void BtnSTARAlignment_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new TransferModificationsFlowWindows();
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.Options);
-                UpdateTaskGuiStuff();
-            }
-        }
-
-        private void BtnAddFastq2Proteins_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Fastq2ProteinsFlowWindows();
-            if (dialog.ShowDialog() == true)
-            {
-                //AddTaskToCollection(dialog.TheTask);
-                UpdateTaskGuiStuff();
-            }
-        }
-
-        private void BtnAddLncRNADiscover_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new TransferModificationsFlowWindows();
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.Options);
-                UpdateTaskGuiStuff();
-            }
-        }
-
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
+            if (staticTasksObservableCollection.Count == 0)
+            {
+                MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].options.Command.ToString(), staticTasksObservableCollection[i].options));
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            a.Run();
-            //var t = new Task(a.Run);
-            //t.Start();
+            everything = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
+            var t = new Task(everything.Run);
+            t.Start();
+            t.ContinueWith(DisplayAnyErrors);
+            RunWorkflowButton.IsEnabled = false;
         }
 
-        private void DataGridCell_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void DisplayAnyErrors(Task obj)
         {
-            var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
+            if (everything.StdErr != null && everything.StdErr != "")
             {
-                System.Diagnostics.Process.Start(hm.Text);
-            }
-        }
-
-        private void BtnAddGenomeFASTA_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
-            {
-                Filter = "Genome Fasta Files (*.fa; *.fasta)|*.fa; *.fasta",
-                FilterIndex = 1,
-                RestoreDirectory = true,
-                Multiselect = true
-            };
-            if (openPicker.ShowDialog() == true)
-                foreach (var filepath in openPicker.FileNames)
+                var message = "Run failed, Exception: " + everything.StdErr;
+                Dispatcher.Invoke(() => WarningsTextBox.AppendText(message + Environment.NewLine));
+                var messageBoxResult = MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (messageBoxResult == MessageBoxResult.Yes)
                 {
-                    AddAFile(filepath);
+                    string body = everything.StdErr;
+                    //+ "%0D%0A" + exception.Data +
+                    //"%0D%0A" + exception.StackTrace +
+                    //"%0D%0A" + exception.Source +
+                    //"%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A ???" + // TODO: implement this system info check
+                    //"%0D%0A%0D%0A Spritz: version ???" + // TODO: implement this version check.
+                    //"%0D%0A %0D%0A %0D%0A %0D%0A TOML: %0D%0A " +
+                    //tomlText;
+                    body = body.Replace('&', ' ');
+                    body = body.Replace("\n", "%0D%0A");
+                    body = body.Replace("\r", "%0D%0A");
+                    string mailto = string.Format("mailto:{0}?Subject=Spritz. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
+                    System.Diagnostics.Process.Start(mailto);
+                    Console.WriteLine(body);
                 }
-            dataGridFASTA.Items.Refresh();
-        }
-
-        private void BtnClearGenomeFASTA_Click(object sender, RoutedEventArgs e)
-        {
-            genomeFastaCollection.Clear();
+            }
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -162,38 +130,18 @@ namespace SpritzGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
+            {
                 foreach (var filepath in openPicker.FileNames)
                 {
                     AddAFile(filepath);
                 }
+            }
             dataGridRnaSeqFastq.Items.Refresh();
         }
 
         private void BtnClearRnaSeqFastq_Click(object sender, RoutedEventArgs e)
         {
             rnaSeqFastqCollection.Clear();
-        }
-
-        private void BtnAddGeneSet_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
-            {
-                Filter = "Gene Model Files|*.gtf;*.gff3",
-                FilterIndex = 1,
-                RestoreDirectory = true,
-                Multiselect = true
-            };
-            if (openPicker.ShowDialog() == true)
-                foreach (var filepath in openPicker.FileNames)
-                {
-                    AddAFile(filepath);
-                }
-            dataGridGeneSet.Items.Refresh();
-        }
-
-        private void BtnClearGeneSet_Click(object sender, RoutedEventArgs e)
-        {
-            geneSetCollection.Clear();
         }
 
         private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
@@ -206,10 +154,12 @@ namespace SpritzGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
+            {
                 foreach (var tomlFromSelected in openPicker.FileNames)
                 {
                     AddAFile(tomlFromSelected);
                 }
+            }
             UpdateTaskGuiStuff();
         }
 
@@ -227,6 +177,8 @@ namespace SpritzGUI
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
+            RunWorkflowButton.IsEnabled = true;
+            ResetTasksButton.IsEnabled = false;
         }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
@@ -242,26 +194,73 @@ namespace SpritzGUI
                     uu.Use = false;
                 }
                 foreach (var newRnaSeqFastqData in e.StringList)
+                {
                     rnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
+                }
                 UpdateOutputFolderTextbox();
             }
         }
 
         private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
         {
-            //ManageToolsFlow.Install(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
-            return;
+            try
+            {
+                var dialog = new InstallWindow();
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void MenuItem_DataDownload_Click(object sender, RoutedEventArgs e)
+        private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
-            Spritz.Main(new string[] { "CMD.exe", "-c", "setup" });
+            if (TbxSRA.Text.Contains("SR"))
+            {
+                //TO DO: If exist, then pop box.
+                if (true)
+                {
+                    SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text);
+                    sraCollection.Add(sraDataGrid);
+                }
+            }
+            else if (MessageBox.Show("SRA accessions are expected to start with \"SR\", such as SRX254398 or SRR791584. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+            {
+                System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
+            }
         }
 
-        #endregion Private Methods - Controlers
+        private void BtnWorkFlow_Click(object sender, RoutedEventArgs e)
+        {
+            if (sraCollection.Count == 0 && rnaSeqFastqCollection.Count == 0)
+            {
+                if (MessageBox.Show("Please add FASTQ files or sequence read archive (SRA) accessions prior to adding a workflow. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+                {
+                    System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
+                }
+                return;
+            }
+            var dialog = new WorkFlowWindow(OutputFolderTextBox.Text);
+            if (dialog.ShowDialog() == true)
+            {
+                AddTaskToCollection(dialog.Options);
+                UpdateTaskGuiStuff();
+            }
+        }
 
-        #region Private Methods - no Controlers
+        private void BtnSaveRnaSeqFastqSet_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                WriteExperDesignToTsv(OutputFolderTextBox.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not save experimental design!\n\n" + ex.Message, "Experimental Design", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
 
         private void UpdateTaskGuiStuff()
         {
@@ -310,26 +309,71 @@ namespace SpritzGUI
             var theExtension = Path.GetExtension(filepath).ToLowerInvariant();
             switch (theExtension)
             {
-                case ".fa":
-                    GenomeFastaDataGrid genomeFasta = new GenomeFastaDataGrid(filepath);
-                    genomeFastaCollection.Add(genomeFasta);
-                    break;
-
-                case ".gtf":
-                case ".gff3":
-                    GeneSetDataGrid geneSet = new GeneSetDataGrid(filepath);
-                    geneSetCollection.Add(geneSet);
-                    break;
-
                 case ".fastq":
                 case ".fastq.gz":
                     RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
                     rnaSeqFastqCollection.Add(rnaSeqFastq);
                     UpdateOutputFolderTextbox();
                     break;
+
+                case ".toml":
+                    TomlTable tomlFile = null;
+                    try
+                    {
+                        tomlFile = Toml.ReadFile(filepath);
+                    }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                    var ye1 = Toml.ReadFile<Options>(filepath);
+                    AddTaskToCollection(ye1);
+                    break;
             }
         }
 
-        #endregion Private Methods - no Controlers
+        private bool InstallationDialogAndCheck()
+        {
+            var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            if (!WrapperUtility.CheckToolSetup(exePath))
+            {
+                try
+                {
+                    var dialog = new InstallWindow();
+                    dialog.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString(), "Installation", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            return WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
+        }
+
+        private void WriteExperDesignToTsv(string filePath)
+        {
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                foreach (var aFastq in rnaSeqFastqCollection)
+                {
+                    output.WriteLine(aFastq.FileName +
+                        "\t" + aFastq.Experiment +
+                        "\t" + aFastq.MatePair);
+                }
+            }
+        }
+
+        private void workflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var a = sender as TreeView;
+            if (a.SelectedItem is PreRunTask preRunTask)
+            {
+                var workflowDialog = new WorkFlowWindow(preRunTask.options);
+                workflowDialog.ShowDialog();
+                workflowTreeView.Items.Refresh();
+            }
+        }
     }
 }

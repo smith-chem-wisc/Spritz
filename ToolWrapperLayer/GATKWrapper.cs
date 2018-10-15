@@ -49,6 +49,7 @@ namespace ToolWrapperLayer
 
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
         private static Regex getISequenceHeaderSequenceName = new Regex(@"([\w\d\.\-]+)(.+)");
+        private string TargetFileLocation;
         public string UcscKnownSitesPath { get; private set; }
         public string EnsemblKnownSitesPath { get; private set; }
         public string SplitTrimBamPath { get; private set; }
@@ -58,39 +59,6 @@ namespace ToolWrapperLayer
         public string RealignedIndelBamPath { get; private set; }
         public string RecalibrationTablePath { get; private set; }
         public string SortedVcfPath { get; private set; }
-
-        /// <summary>
-        /// Generic command for calling GATK, allowing use of all free memory.
-        /// </summary>
-        /// <returns></returns>
-        public string Gatk()
-        {
-            var performance = new PerformanceCounter("Memory", "Available MBytes");
-            var memory = performance.NextValue();
-            return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
-        }
-
-        /// <summary>
-        /// Writes an installation script for installing GATK from source. Requires root permissions to install gradle the first time.
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <returns></returns>
-        public static string WriteGitCloneInstallScript(string spritzDirectory)
-        {
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
-            WrapperUtility.GenerateScript(scriptPath, new List<string>
-            {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -f gatk/build/libs/gatk.jar ]; then",
-                "  git clone https://github.com/broadinstitute/gatk.git",
-                "  cd gatk",
-                "  ./gradlew localJar",
-                "  cd ..",
-                "fi",
-                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
-            });
-            return scriptPath;
-        }
 
         /// <summary>
         /// Writes an installation script for installing GATK from pre-built binaries.
@@ -175,23 +143,41 @@ namespace ToolWrapperLayer
             };
         }
 
-        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
+        /// <summary>
+        /// Reference dbSNP vcf file exists
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="commonOnly"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
+        public bool KnownVariantSitesFileExists(string spritzDirectory, bool commonOnly, string reference)
         {
-            bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
-            string targetFileLocation =
+            bool downloadGrch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool downloadGrch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            TargetFileLocation =
                 commonOnly ?
                     (downloadGrch37 ? CommonGRCh37UCSC : CommonGRCh38UCSC) :
                     (downloadGrch37 ? AllGRCh37UCSC : AllGRCh38UCSC);
-            string ucscKnownSitesFilename = targetFileLocation.Split('/').Last();
+            string ucscKnownSitesFilename = TargetFileLocation.Split('/').Last();
             UcscKnownSitesPath = Path.Combine(spritzDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
+            return (downloadGrch37 || downloadGrch38) && File.Exists(UcscKnownSitesPath);
+        }
 
-            if ((downloadGrch37 || downloadGrch38) && !File.Exists(UcscKnownSitesPath))
+        /// <summary>
+        /// Downloads dbSNP reference VCF file if it doesn't exist
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <param name="commonOnly"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
+        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
+        {
+            if (!KnownVariantSitesFileExists(spritzDirectory, commonOnly, reference))
             {
                 WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "DownloadUcscVariants.bash"), new List<string>
                 {
                     "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
-                    "wget " + targetFileLocation,
+                    "wget " + TargetFileLocation,
                     "gunzip " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz",
                     "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz"
                 }).WaitForExit();
@@ -237,7 +223,7 @@ namespace ToolWrapperLayer
                     if (splitLine.Length > 1 && ucsc2EnsemblChromosomeMappings.TryGetValue(splitLine[0], out string newChrom))
                     {
                         splitLine[0] = newChrom;
-                        writer.Write(String.Join("\t", splitLine) + '\n');
+                        writer.Write(string.Join("\t", splitLine) + '\n');
                     }
                 }
             }
@@ -513,6 +499,39 @@ namespace ToolWrapperLayer
                     " -O " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) +
                     "; fi",
             }).WaitForExit();
+        }
+
+        /// <summary>
+        /// Generic command for calling GATK, allowing use of all free memory.
+        /// </summary>
+        /// <returns></returns>
+        public static string Gatk()
+        {
+            var performance = new PerformanceCounter("Memory", "Available MBytes");
+            var memory = performance.NextValue();
+            return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
+        }
+
+        /// <summary>
+        /// Writes an installation script for installing GATK from source. Requires root permissions to install gradle the first time.
+        /// </summary>
+        /// <param name="spritzDirectory"></param>
+        /// <returns></returns>
+        public static string WriteGitCloneInstallScript(string spritzDirectory)
+        {
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallGatk.bash");
+            WrapperUtility.GenerateScript(scriptPath, new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "if [ ! -f gatk/build/libs/gatk.jar ]; then",
+                "  git clone https://github.com/broadinstitute/gatk.git",
+                "  cd gatk",
+                "  ./gradlew localJar",
+                "  cd ..",
+                "fi",
+                "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
+            });
+            return scriptPath;
         }
 
         /// <summary>

@@ -1,9 +1,9 @@
 ﻿using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ToolWrapperLayer;
-using System;
 
 namespace WorkflowLayer
 {
@@ -13,6 +13,8 @@ namespace WorkflowLayer
     public class STARAlignmentFlow
         : SpritzFlow
     {
+        public const string Command = "align";
+
         public STARAlignmentFlow()
             : base(MyWorkflow.STARAlignment)
         {
@@ -37,16 +39,16 @@ namespace WorkflowLayer
             // Alignment preparation
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "GenomeGenerate.bash"),
                 STARWrapper.GenerateGenomeIndex(
-                    Parameters.SpritzDirectory, 
-                    Parameters.Threads, 
+                    Parameters.SpritzDirectory,
+                    Parameters.Threads,
                     Parameters.GenomeStarIndexDirectory,
-                    new string[] { Parameters.ReorderedFasta }, 
+                    new string[] { Parameters.ReorderedFasta },
                     Parameters.GeneModelGtfOrGff))
                 .WaitForExit();
 
             // there's trouble with the number of open files for sorting and stuff, which increases with the number of threads
             // 18 is the max that works with the default max number of open files
-            TwoPassAlignment(Math.Min(18, Parameters.Threads), Parameters.OverWriteStarAlignment); 
+            TwoPassAlignment(Math.Min(18, Parameters.Threads), Parameters.OverWriteStarAlignment);
         }
 
         /// <summary>
@@ -92,7 +94,7 @@ namespace WorkflowLayer
                 bool localStrandSpecific = Parameters.StrandSpecific;
                 if (Parameters.InferStrandSpecificity || Parameters.UseReadSubset)
                 {
-                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, fqForAlignment, 
+                    STARWrapper.SubsetFastqs(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, fqForAlignment,
                         Parameters.ReadSubset, Parameters.AnalysisDirectory, out string[] subsetFastqs);
                     if (Parameters.UseReadSubset)
                     {

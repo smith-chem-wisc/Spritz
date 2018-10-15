@@ -28,7 +28,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d samtools-" + SamtoolsVersion + " ]; then",
-                "  wget --no-check https://github.com/samtools/samtools/releases/download/1.6/samtools-" + SamtoolsVersion + ".tar.bz2",
+                "  wget --no-check https://github.com/samtools/samtools/releases/download/" + SamtoolsVersion + "/samtools-" + SamtoolsVersion + ".tar.bz2",
                 "  tar -jxvf samtools-" + SamtoolsVersion + ".tar.bz2",
                 "  rm samtools-" + SamtoolsVersion + ".tar.bz2",
                 "  cd samtools-" + SamtoolsVersion + "/htslib-" + SamtoolsVersion,
@@ -88,9 +88,9 @@ namespace ToolWrapperLayer
 
         public static string GetSequencesFromFasta(string inputFasta, IEnumerable<string> sequenceNames, string outputFasta)
         {
-            if (sequenceNames.Any(name => name.Contains(" "))) { throw new ArgumentException("A sequence name query had a space in it; this is not supported" + String.Join(",", sequenceNames) + "."); }
+            if (sequenceNames.Any(name => name.Contains(" "))) { throw new ArgumentException("A sequence name query had a space in it; this is not supported" + string.Join(",", sequenceNames) + "."); }
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(outputFasta) + " ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(inputFasta) +
-                " " + String.Join(" ", sequenceNames) + " > " + WrapperUtility.ConvertWindowsPath(outputFasta) + "; fi";
+                " " + string.Join(" ", sequenceNames) + " > " + WrapperUtility.ConvertWindowsPath(outputFasta) + "; fi";
         }
 
         #endregion Public Methods

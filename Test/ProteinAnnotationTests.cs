@@ -18,7 +18,8 @@ namespace Test
         [Test]
         public void ProteinAnnTransferExactSequenceMatchMods()
         {
-            List<Protein> ok = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "xml2.xml"), true, DecoyType.None, null, false, null, out Dictionary<string, Modification> un);
+            List<Modification> mods = ProteinAnnotation.GetUniProtMods(TestContext.CurrentContext.TestDirectory);
+            List<Protein> ok = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "xml2.xml"), true, DecoyType.None, mods, false, null, out Dictionary<string, Modification> un);
             List<Protein> destination = new List<Protein> {
                 new Protein("MKTCYYELLGVETHASDLELKKAYRKKALQYHPDKNPDNVEEATQKFAVIRAAYEVLSDPQERAWYDSHKEQILNDTPPSTDDYYDYEVDATVTGVTTDELLLFFNSALYTKIDNSAAGIYQIAGKIFAKLAKDEILSGKRLGKFSEYQDDVFEQDINSIGYLKACDNFINKTDKLLYPLFGYSPTDYEYLKHFYKTWSAFNTLKSFSWKDEYMYSKNYDRRTKREVNRRNEKARQQARNEYNKTVKRFVVFIKKLDKRMKEGAKIAEEQRKLKEQQRKNELNNRRKFGNDNNDEEKFHLQSWQTVKEENWDELEKVYDNFGEFENSKNDKEGEVLIYECFICNKTFKSEKQLKNHINTKLHKKNMEEIRKEMEEENITLGLDNLSDLEKFDSADESVKEKEDIDLQALQAELAEIERKLAESSSEDESEDDNLNIEMDIEVEDVSSDENVHVNTKNKKKRKKKKKAKVDTETEESESFDDTKDKRSNELDDLLASLGDKGLQTDDDEDWSTKAKKKKGKQPKKNSKSTKSTPSLSTLPSSMSPTSAIEVCTTCGESFDSRNKLFNHVKIAGHAAVKNVVKRKKVKTKRI",
                     "") };
@@ -40,14 +41,14 @@ namespace Test
             List<Protein> ok = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "xml2.xml"), true, DecoyType.None, null, false, null, out Dictionary<string, Modification> un);
             List<Protein> destination = new List<Protein> {
                 new Protein("MKTCYYELLGVETHASDLELKKAYRKKALQYHPDKNPDNVEEATQKFAVIRAAYEVLSDPQERAWYDSHKEQILNDTPPSTDDYYDYEVDATVTGVTTDELLLFFNSALYTKIDNSAAGIYQIAGKIFAKLAKDEILSGKRLGKFSEYQDDVFEQDINSIGYLKACDNFINKTDKLLYPLFGYSPTDYEYLKHFYKTWSAFNTLKSFSWKDEYMYSKNYDRRTKREVNRRNEKARQQARNEYNKTVKRFVVFIKKLDKRMKEGAKIAEEQRKLKEQQRKNELNNRRKFGNDNNDEEKFHLQSWQTVKEENWDELEKVYDNFGEFENSKNDKEGEVLIYECFICNKTFKSEKQLKNHINTKLHKKNMEEIRKEMEEENITLGLDNLSDLEKFDSADESVKEKEDIDLQALQAELAEIERKLAESSSEDESEDDNLNIEMDIEVEDVSSDENVHVNTKNKKKRKKKKKAKVDTETEESESFDDTKDKRSNELDDLLASLGDKGLQTDDDEDWSTKAKKKKGKQPKKNSKSTKSTPSLSTLPSSMSPTSAIEVCTTCGESFDSRNKLFNHVKIAGHAAVKNVVKRKKVKTKRI",
-                    "Acc1", organism: "Homo sapiens", gene_names: new List<Tuple<string, string>>{ new Tuple<string, string>( "primary", "gene1" ) },
-                    name: "name1", full_name: "fullname1"),
+                    "Acc1", organism: "Homo sapiens", geneNames: new List<Tuple<string, string>>{ new Tuple<string, string>( "primary", "gene1" ) },
+                    name: "name1", fullName: "fullname1"),
                 new Protein("MKTCYYELLGVETHASDLELKKAYRKKALQYHPDKNPDNVEEATQKFAVIRAAYEVLSDPQERAWYDSHKEQILNDTPPSTDDYYDYEVDATVTGVTTDELLLFFNSALYTKIDNSAAGIYQIAGKIFAKLAKDEILSGKRLGKFSEYQDDVFEQDINSIGYLKACDNFINKTDKLLYPLFGYSPTDYEYLKHFYKTWSAFNTLKSFSWKDEYMYSKNYDRRTKREVNRRNEKARQQARNEYNKTVKRFVVFIKKLDKRMKEGAKIAEEQRKLKEQQRKNELNNRRKFGNDNNDEEKFHLQSWQTVKEENWDELEKVYDNFGEFENSKNDKEGEVLIYECFICNKTFKSEKQLKNHINTKLHKKNMEEIRKEMEEENITLGLDNLSDLEKFDSADESVKEKEDIDLQALQAELAEIERKLAESSSEDESEDDNLNIEMDIEVEDVSSDENVHVNTKNKKKRKKKKKAKVDTETEESESFDDTKDKRSNELDDLLASLGDKGLQTDDDEDWSTKAKKKKGKQPKKNSKSTKSTPSLSTLPSSMSPTSAIEVCTTCGESFDSRNKLFNHVKIAGHAAVKNVVKRKKVKTKRI",
-                    "Acc2", organism: "Homo sapiens", gene_names: new List<Tuple<string, string>>{ new Tuple<string, string>( "primary", "gene2" ) },
-                    name: "name2", full_name: "fullname2"),
+                    "Acc2", organism: "Homo sapiens", geneNames: new List<Tuple<string, string>>{ new Tuple<string, string>( "primary", "gene2" ) },
+                    name: "name2", fullName: "fullname2"),
                 new Protein("MNOTTHESAMESEQ",
-                    "Acc2", organism: "Homo sapiens", gene_names: new List<Tuple<string, string>>{ new Tuple<string, string>( "primary", "gene2" ) },
-                    name: "name2", full_name: "fullname2"),
+                    "Acc2", organism: "Homo sapiens", geneNames: new List<Tuple<string, string>>{ new Tuple<string, string>( "primary", "gene2" ) },
+                    name: "name2", fullName: "fullname2"),
             };
 
             List<Protein> newProteins = ProteinAnnotation.CombineAndAnnotateProteins(ok, destination);

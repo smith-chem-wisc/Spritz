@@ -125,7 +125,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
-            string fastas = String.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
+            string fastas = string.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
                 " --runMode genomeGenerate" +
                 " --runThreadN " + threads.ToString() +
@@ -206,7 +206,7 @@ namespace ToolWrapperLayer
             {
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) + " ]; then " +
                     "awk 'BEGIN {OFS=\"\t\"; strChar[0]=\".\"; strChar[1]=\"+\"; strChar[2]=\"-\";} {if($5>0){print $1,$2,$3,strChar[$4]}}' " +
-                    String.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
+                    string.Join(" ", spliceJunctionOuts.Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " | grep -v 'MT' >> " +
                     WrapperUtility.ConvertWindowsPath(spliceJunctionStarts) +
                     "; fi"
@@ -232,7 +232,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static List<string> BasicAlignReadCommands(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles, string outprefix, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory, string outSamType = "BAM Unsorted")
         {
-            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string reads_in = "\"" + string.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
             string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
                 fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
@@ -250,7 +250,7 @@ namespace ToolWrapperLayer
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command;
 
-            string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix) + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix);
+            string fileToCheck = WrapperUtility.ConvertWindowsPath(outprefix + (outSamType.Contains("Sorted") ? SortedBamFileSuffix : outSamType.Contains("Unsorted") ? BamFileSuffix : SpliceJunctionFileSuffix));
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -274,7 +274,7 @@ namespace ToolWrapperLayer
         public static List<string> AlignRNASeqReadsForVariantCalling(string spritzDirectory, int threads, string genomeDir, string[] fastqFiles,
             string outprefix, bool overwriteStarAlignment, bool strandSpecific = true, STARGenomeLoadOption genomeLoad = STARGenomeLoadOption.NoSharedMemory)
         {
-            string reads_in = "\"" + String.Join("\" \"", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f))) + "\"";
+            string reads_in = string.Join(" ", fastqFiles.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string read_command = fastqFiles.Any(f => Path.GetExtension(f) == ".gz") ?
                 " --readFilesCommand zcat -c" :
                 fastqFiles.Any(f => Path.GetExtension(f) == ".bz2") ?
@@ -285,7 +285,7 @@ namespace ToolWrapperLayer
                 " --genomeLoad " + genomeLoad.ToString() +
                 " --runMode alignReads" +
                 " --runThreadN " + threads.ToString() +
-                " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
+                " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
@@ -314,23 +314,23 @@ namespace ToolWrapperLayer
                 " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
                 " --runThreadN " + threads.ToString() +
-                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix +
-                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) + Path.GetFileNameWithoutExtension(SortedBamFileSuffix);
+                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix + Path.GetFileNameWithoutExtension(SortedBamFileSuffix));
 
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
 
                 overwriteStarAlignment ? "" :
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix + " ) ]]; then",
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) + " ) ]]; then",
                     "  STAR" + alignmentArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix) + SortedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)),
 
-                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix + " ) ]]; then",
+                overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " ) ]]; then",
                     "  STAR" + dedupArguments,
                 overwriteStarAlignment ? "" : "fi",
-                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix) + DedupedBamFileSuffix),
+                SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix)),
 
                 File.Exists(outprefix + BamFileSuffix) && File.Exists(outprefix + DedupedBamFileSuffix) && genomeLoad == STARGenomeLoadOption.LoadAndRemove ?
                     "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
@@ -359,7 +359,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -s " + WrapperUtility.ConvertWindowsPath(newFfiles[0]) + " ]; then",
-                "  echo \"Subsetting " + numReads.ToString() + " reads from " + String.Join(",", fastqFiles) + "\"",
+                "  echo \"Subsetting " + numReads.ToString() + " reads from " + string.Join(",", fastqFiles) + "\"",
                 "  seqtk/seqtk sample" + (useSeed || fastqFiles.Length > 1 ? " -s" + seed.ToString() : "") + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[0]) + " " + numReads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[0]),
                 fastqFiles.Length > 1 ? "  seqtk/seqtk sample -s" + seed.ToString() + " " + WrapperUtility.ConvertWindowsPath(fastqFiles[1]) + " " + numReads.ToString() + " > " + WrapperUtility.ConvertWindowsPath(newFfiles[1]) : "",
                 "fi"

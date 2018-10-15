@@ -45,7 +45,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string WriteRemoveScript(string spritzDirectory)
         {
-            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "InstallScalpel.bash");
+            string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "RemoveScalpel.bash");
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -92,17 +92,25 @@ namespace ToolWrapperLayer
         /// <returns>true if no fix needed, false if fix performed</returns>
         public bool CheckInstallation(string spritzDirectory)
         {
+            // Don't go further if installation hasn't been run at all
+            string scalpelLocationFile = Path.Combine(spritzDirectory, "Tools", ScalpelLocationCheckFilename);
+            if (!File.Exists(scalpelLocationFile))
+                return false; 
+
+            // Remove and reinstall if it moved
             string removeScriptPath = WriteRemoveScript(spritzDirectory);
             string scriptPath = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "CheckScalpelInstallation.bash");
-            string before = File.ReadAllText(Path.Combine(spritzDirectory, "Tools", ScalpelLocationCheckFilename)).TrimEnd();
-            string now = WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "scalpel-" + ScalpelVersion));
-            bool isSame = before == now;
-            WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+            string expectedLocation = WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "scalpel-" + ScalpelVersion));
+            bool isSame = File.ReadAllText(scalpelLocationFile).TrimEnd() == expectedLocation.Trim('"');
+            if (!isSame)
             {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "bash " + WrapperUtility.ConvertWindowsPath(removeScriptPath),
-                "bash " + WrapperUtility.ConvertWindowsPath(WriteInstallScript(spritzDirectory)),
-            }).WaitForExit();
+                WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
+                {
+                    WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                    "bash " + WrapperUtility.ConvertWindowsPath(removeScriptPath),
+                    "bash " + WrapperUtility.ConvertWindowsPath(WriteInstallScript(spritzDirectory)),
+                }).WaitForExit();
+            }
             return isSame;
         }
     }

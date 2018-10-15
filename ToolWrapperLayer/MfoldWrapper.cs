@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 
 namespace ToolWrapperLayer
 {
@@ -9,8 +8,6 @@ namespace ToolWrapperLayer
     public class MfoldWrapper :
         IInstallable
     {
-        #region Installation Methods
-
         /// <summary>
         /// Writes an installation script for mfold.
         /// </summary>
@@ -44,7 +41,5 @@ namespace ToolWrapperLayer
         {
             return null;
         }
-
-        #endregion Installation Methods
     }
 }

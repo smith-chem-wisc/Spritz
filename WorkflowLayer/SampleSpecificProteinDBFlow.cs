@@ -102,7 +102,8 @@ namespace WorkflowLayer
                 Parameters.EnsemblKnownSitesPath,
                 alignment.DedupedBamFiles,
                 Downloads.ReorderedFastaPath,
-                Downloads.EnsemblGenome);
+                Downloads.EnsemblGenome,
+                Parameters.QuickSnpEffWithoutStats);
 
             // Gene Fusion Discovery
             List<Protein> fusionProteins = new List<Protein>();
@@ -119,11 +120,8 @@ namespace WorkflowLayer
             }
 
             // Transfer features from UniProt
-            if (File.Exists(Parameters.UniProtXmlPath))
-            {
-                TransferModificationsFlow transfer = new TransferModificationsFlow();
-                transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
-            }
+            TransferModificationsFlow transfer = new TransferModificationsFlow();
+            transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
         }
 
         /// <summary>

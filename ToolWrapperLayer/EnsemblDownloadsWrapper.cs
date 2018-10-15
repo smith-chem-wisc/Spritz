@@ -122,10 +122,10 @@ namespace ToolWrapperLayer
         /// <param name="gtfGeneModelPath"></param>
         /// <param name="gff3GeneModelPath"></param>
         /// <param name="proteinFastaPath"></param>
-        public void DownloadReferences(string spritzDirectory, string targetDirectory, string reference)
+        public void DownloadReferences(string spritzDirectory, string targetDirectory, string reference, bool dryRun)
         {
-            bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            bool downloadGrch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool downloadGrch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
 
             GenomeFastaPath = downloadGrch37 ?
                 Path.Combine(targetDirectory, GRCh37PrimaryAssemblyFilename) :
@@ -148,7 +148,7 @@ namespace ToolWrapperLayer
                     Path.Combine(targetDirectory, GRCh38ProteinFastaFilename) :
                     "";
 
-            if (!downloadGrch37 && !downloadGrch38)
+            if (!downloadGrch37 && !downloadGrch38 || dryRun)
                 return;
 
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(targetDirectory, "DownloadEnsemblReference.bash"), new List<string>
@@ -175,8 +175,8 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static Dictionary<string, string> UCSC2EnsemblChromosomeMappings(string spritzDirectory, string reference)
         {
-            bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            bool useGrch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool useGrch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
                 Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh37_UCSC2ensembl.txt") :
                 Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh38_UCSC2ensembl.txt"))
@@ -194,8 +194,8 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static Dictionary<string, string> Ensembl2UCSCChromosomeMappings(string spritzDirectory, string reference)
         {
-            bool useGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool useGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            bool useGrch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool useGrch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             Dictionary<string, string> chromMappings = File.ReadAllLines(useGrch37 ?
                 Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh37_ensembl2UCSC.txt") :
                 Path.Combine(spritzDirectory, "Tools", "ChromosomeMappings", "GRCh38_ensembl2UCSC.txt"))
@@ -230,7 +230,7 @@ namespace ToolWrapperLayer
                     if (e2uMappings.TryGetValue(columns[0], out string ucscColumn) && ucscColumn != "") { columns[0] = ucscColumn; }
                     else if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn) && ensemblColumn != "") { } // nothing to do, already UCSC
                     else { continue; } // did not recognize this chromosome name; filter it out
-                    writer.WriteLine(String.Join("\t", columns));
+                    writer.WriteLine(string.Join("\t", columns));
                 }
             }
             return outputPath;
@@ -261,7 +261,7 @@ namespace ToolWrapperLayer
                     if (u2eMappings.TryGetValue(columns[0], out string ensemblColumn)) { columns[0] = ensemblColumn; }
                     else if (e2uMappings.TryGetValue(columns[0], out string ucscColumn)) { } // nothing to do, already Ensembl
                     else { continue; } // did not recognize this chromosome name; filter it out
-                    writer.WriteLine(String.Join("\t", columns));
+                    writer.WriteLine(string.Join("\t", columns));
                 }
             }
             return outputPath;
@@ -289,7 +289,7 @@ namespace ToolWrapperLayer
 
         public static void FilterGeneModel(string analysisDirectory, string geneModelGtfOrGff, Genome genome, out string filteredGeneModel)
         {
-            string grepQuery = "\"^" + String.Join(@"\|^", genome.Chromosomes.Select(c => c.FriendlyName).Concat(new[] { "#" }).ToList()) + "\"";
+            string grepQuery = "\"^" + string.Join(@"\|^", genome.Chromosomes.Select(c => c.FriendlyName).Concat(new[] { "#" }).ToList()) + "\"";
             filteredGeneModel = Path.Combine(Path.GetDirectoryName(geneModelGtfOrGff), Path.GetFileNameWithoutExtension(geneModelGtfOrGff)) + ".filtered" + Path.GetExtension(geneModelGtfOrGff);
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "FilterGeneModel.bash"), new List<string>
             {

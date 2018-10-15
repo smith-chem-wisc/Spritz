@@ -61,7 +61,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string vcfPath)
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string vcfPath, bool quick)
         {
             string outPrefix = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath));
             AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
@@ -71,7 +71,7 @@ namespace ToolWrapperLayer
             VariantProteinXmlPath = outPrefix + ".snpEffAnnotated.protein.xml";
             Directory.CreateDirectory(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
-            if (File.Exists(AnnotatedVcfPath)) return new List<string>();
+            if (File.Exists(AnnotatedVcfPath) && new FileInfo(AnnotatedVcfPath).Length > 0) return new List<string>();
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
             return new List<string>
             {
@@ -79,6 +79,7 @@ namespace ToolWrapperLayer
                 SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
                     " -fastaProt " + WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath) +
                     " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
+                    //(quick ? " -t " : "") + // this threaded version isn't working consistently...
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),

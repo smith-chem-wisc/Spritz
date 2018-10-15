@@ -91,8 +91,8 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public List<string> DownloadPrecompiledReference(string spritzDirectory, string reference)
         {
-            bool grch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
-            bool grch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
+            bool grch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase);
+            bool grch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase);
             string referenceUrl = grch37 ? Grch37ReferenceUrl : Grch38ReferenceUrl;
             string referenceTarGz = referenceUrl.Split('/').Last();
             string referenceFolderName = referenceTarGz.Split('.').First();
@@ -123,9 +123,9 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public List<string> PrepareReference(string spritzDirectory, int threads, string reference, string genomeFastaPath, string geneModelGtfPath)
         {
-            bool downloadGrch37 = String.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase) &&
+            bool downloadGrch37 = string.Equals(reference, "GRCh37", StringComparison.CurrentCultureIgnoreCase) &&
                 !Directory.Exists(Path.Combine(spritzDirectory, StarFusionDirectoryName, "data", "GRCh37_v19_CTAT_lib_Feb092018.source_data"));
-            bool downloadGrch38 = String.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase) &&
+            bool downloadGrch38 = string.Equals(reference, "GRCh38", StringComparison.CurrentCultureIgnoreCase) &&
                 !Directory.Exists(Path.Combine(spritzDirectory, StarFusionDirectoryName, "data", "GRCh38_v27_CTAT_lib_Feb092018.source_data"));
 
             if (!downloadGrch37 && !downloadGrch38) { return new List<string>(); }
