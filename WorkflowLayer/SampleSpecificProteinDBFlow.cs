@@ -2,7 +2,9 @@
 using Proteomics;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ToolWrapperLayer;
+using UsefulProteomicsDatabases;
 
 namespace WorkflowLayer
 {
@@ -36,25 +38,29 @@ namespace WorkflowLayer
             // Download references and align reads
             Downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
             STARAlignmentFlow alignment = new STARAlignmentFlow();
-            alignment.Parameters = new STARAlignmentParameters(
-                Parameters.SpritzDirectory,
-                Parameters.AnalysisDirectory,
-                Parameters.Reference,
-                Parameters.Threads,
-                Parameters.Fastqs,
-                Parameters.StrandSpecific,
-                Parameters.InferStrandSpecificity,
-                Parameters.OverwriteStarAlignment,
-                Parameters.GenomeStarIndexDirectory,
-                Downloads.ReorderedFastaPath,
-                Parameters.ReferenceGeneModelGtfOrGff,
-                Parameters.UseReadSubset,
-                Parameters.ReadSubset);
-            alignment.PerformTwoPassAlignment();
-            Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFastaPath);
+            if (Parameters.Fastqs != null)
+            {
+                alignment.Parameters = new STARAlignmentParameters(
+                    Parameters.SpritzDirectory,
+                    Parameters.AnalysisDirectory,
+                    Parameters.Reference,
+                    Parameters.Threads,
+                    Parameters.Fastqs,
+                    Parameters.StrandSpecific,
+                    Parameters.InferStrandSpecificity,
+                    Parameters.OverwriteStarAlignment,
+                    Parameters.GenomeStarIndexDirectory,
+                    Downloads.ReorderedFastaPath,
+                    Parameters.ReferenceGeneModelGtfOrGff,
+                    Parameters.UseReadSubset,
+                    Parameters.ReadSubset);
+                alignment.PerformTwoPassAlignment();
+                Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFastaPath);
+            }
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.GffOrGtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
             GeneModel referenceGeneModel = new GeneModel(Downloads.EnsemblGenome, Parameters.ReferenceGeneModelGtfOrGff);
+            string referenceGeneModelProteinXml = Path.Combine(Path.GetDirectoryName(Parameters.ReferenceGeneModelGtfOrGff), Path.GetFileNameWithoutExtension(Parameters.ReferenceGeneModelGtfOrGff) + ".protein.xml"); // used if no fastqs are provided
 
             // Merge reference gene model and a new gene model (either specified or stringtie-generated)
             string newGeneModelPath = Parameters.NewGeneModelGtfOrGff;
@@ -86,25 +92,33 @@ namespace WorkflowLayer
                 reference = SnpEffWrapper.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath,
                     Parameters.ProteinFastaPath, mergedGeneModelWithCdsPath);
             }
-            else
+            else if (Parameters.Fastqs != null) // no isoform analysis, but there are are fastqs
             {
                 new SnpEffWrapper().DownloadSnpEffDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference);
+            }
+            else // no isoform analysis and no fastqs
+            {
+                var proteins = referenceGeneModel.Genes.SelectMany(g => g.Transcripts).Where(t => t.IsProteinCoding()).Select(t => t.Protein()).ToList();
+                ProteinDbWriter.WriteXmlDatabase(null, proteins, referenceGeneModelProteinXml);
             }
 
             // Variant Calling
             VariantCallingFlow variantCalling = new VariantCallingFlow();
-            variantCalling.CallVariants(
-                Parameters.SpritzDirectory,
-                Parameters.AnalysisDirectory,
-                reference,
-                Parameters.Threads,
-                sortedBed12Path,
-                Parameters.EnsemblKnownSitesPath,
-                alignment.DedupedBamFiles,
-                Downloads.ReorderedFastaPath,
-                Downloads.EnsemblGenome,
-                Parameters.QuickSnpEffWithoutStats,
-                Parameters.IndelFinder);
+            if (Parameters.Fastqs != null)
+            {
+                variantCalling.CallVariants(
+                    Parameters.SpritzDirectory,
+                    Parameters.AnalysisDirectory,
+                    reference,
+                    Parameters.Threads,
+                    sortedBed12Path,
+                    Parameters.EnsemblKnownSitesPath,
+                    alignment.DedupedBamFiles,
+                    Downloads.ReorderedFastaPath,
+                    Downloads.EnsemblGenome,
+                    Parameters.QuickSnpEffWithoutStats,
+                    Parameters.IndelFinder);
+            }
 
             // Gene Fusion Discovery
             List<Protein> fusionProteins = new List<Protein>();
@@ -122,7 +136,8 @@ namespace WorkflowLayer
 
             // Transfer features from UniProt
             TransferModificationsFlow transfer = new TransferModificationsFlow();
-            transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, variantCalling.CombinedAnnotatedProteinXmlPaths, fusionProteins);
+            var xmlsToUse = variantCalling.CombinedAnnotatedProteinXmlPaths.Count > 0 ? variantCalling.CombinedAnnotatedProteinXmlPaths : new List<string> { referenceGeneModelProteinXml };
+            transfer.TransferModifications(Parameters.SpritzDirectory, Parameters.UniProtXmlPath, xmlsToUse, fusionProteins);
         }
 
         /// <summary>

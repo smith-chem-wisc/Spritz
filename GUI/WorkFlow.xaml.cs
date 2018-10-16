@@ -21,7 +21,6 @@ namespace SpritzGUI
             AnalysisDirectory = analysisDirectory;
             InitializeComponent();
             PopulateChoices();
-            Options = new Options();
             MainWindow = (MainWindow)Application.Current.MainWindow;
             UpdateFieldsFromTask(Options);
         }
@@ -35,7 +34,7 @@ namespace SpritzGUI
             Options = options;
         }
 
-        public Options Options { get; set; }
+        public Options Options { get; set; } = new Options();
 
         private MainWindow MainWindow { get; set; }
 
@@ -202,6 +201,10 @@ namespace SpritzGUI
             foreach (string aWorkFlow in Enum.GetNames(typeof(MyWorkflow)))
             {
                 CbxWorkFlowType.Items.Add(aWorkFlow);
+            }
+            if (Options.Fastq1 == null)
+            {
+                Options.Command = SampleSpecificProteinDBFlow.Command; // this is the only one currently allowed without FASTQ files
             }
             CmbxIndelFinding.Items.Add("None");
             CmbxIndelFinding.Items.Add("GATK");

@@ -185,6 +185,12 @@ namespace SpritzGUI
         {
             RunWorkflowButton.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
+            for (int i = 0; i < dynamicTasksObservableCollection.Count; i++)
+            {
+                staticTasksObservableCollection.Add(new PreRunTask(staticTasksObservableCollection[i].options));
+            }
+            dynamicTasksObservableCollection.Clear();
+            workflowTreeView.DataContext = staticTasksObservableCollection;
         }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
@@ -224,9 +230,12 @@ namespace SpritzGUI
         {
             if (TbxSRA.Text.Contains("SR"))
             {
-                //TO DO: If exist, then pop box.
-                if (true)
+                if (sraCollection.Any(s => s.Name == TbxSRA.Text))
                 {
+                    MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                { 
                     SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text);
                     sraCollection.Add(sraDataGrid);
                 }
@@ -237,17 +246,21 @@ namespace SpritzGUI
             }
         }
 
+        private void BtnClearSRA_Click(object sender, RoutedEventArgs e)
+        {
+            sraCollection.Clear();
+        }
+
         private void BtnWorkFlow_Click(object sender, RoutedEventArgs e)
         {
             if (sraCollection.Count == 0 && rnaSeqFastqCollection.Count == 0)
             {
-                if (MessageBox.Show("Please add FASTQ files or sequence read archive (SRA) accessions prior to adding a workflow. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+                if (MessageBox.Show("You have not added any nucleic acid sequencing data (SRA accession or fastq files). Would you like to continue to make a protein database from the reference gene model?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.No)
                 {
-                    System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
+                    return;
                 }
-                return;
             }
-            var dialog = new WorkFlowWindow(OutputFolderTextBox.Text);
+            var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options().AnalysisDirectory : OutputFolderTextBox.Text);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.Options);

@@ -38,7 +38,10 @@
                             <RowDefinition Height="1*"/>
                         </Grid.RowDefinitions>
                         <TextBox x:Name="TbxSRA" Grid.Row="0"/>
-                        <Button x:Name="BtnAddSRA" Content="Add SRA" Grid.Row="1" Width="100" Click="BtnAddSRA_Click"/>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="BtnAddSRA" Content="Add SRA" Grid.Row="0" Width="100" Click="BtnAddSRA_Click"/>
+                            <Button x:Name="BtnClearSRA" Content="Clear SRA" Grid.Row="1" Width="100" Click="BtnClearSRA_Click"/>
+                        </StackPanel>
                         <ListBox x:Name="LbxSRAs" Grid.Row="2" HorizontalContentAlignment="Stretch">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
@@ -127,7 +130,7 @@
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="BtnWorkFlow" Content="Work Flow" Click="BtnWorkFlow_Click"  Height="20" VerticalAlignment="Bottom"/>
+                            <Button x:Name="BtnWorkFlow" Content="Create Workflow" Click="BtnWorkFlow_Click"  Height="20" VerticalAlignment="Bottom"/>
                             <!--<Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />-->
                             <!--<Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>-->
                         </StackPanel>
