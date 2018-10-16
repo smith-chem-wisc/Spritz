@@ -18,6 +18,7 @@ namespace SpritzGUI
             this.outputFolder = outputFolder;
         }
 
+        public string Arguments { get; set; }
         public string StdErr { get; set; }
         public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
 
@@ -36,6 +37,8 @@ namespace SpritzGUI
 
                 //Put it into a function
                 var arguments = GenerateArguments(ok.Item2);
+                Arguments = string.Join(" ", arguments);
+
                 //Spritz.Main(commands); // this doesn't work in releases, unfortunately
 
                 Process proc = new Process();
@@ -50,24 +53,34 @@ namespace SpritzGUI
             }
         }
 
+        public IEnumerable<string> GenerateCommandsDry()
+        {
+            for (int i = 0; i < taskList.Count; i++)
+            {
+                var ok = taskList[i];
+                var arguments = GenerateArguments(ok.Item2);
+                yield return string.Join(" ", arguments);
+            }
+        }
+
         private string[] GenerateArguments(Options options)
         {
             List<string> commands = new List<string> { "-c", options.Command };
             if (options.SpritzDirectory != null && options.SpritzDirectory != "")
             {
-                commands.AddRange(new[] { "-b", options.SpritzDirectory });
+                commands.AddRange(new[] { "-b", AddQuotes(options.SpritzDirectory) });
             }
             if (options.AnalysisDirectory != null && options.AnalysisDirectory != "")
             {
-                commands.AddRange(new[] { "-a", options.AnalysisDirectory });
+                commands.AddRange(new[] { "-a", AddQuotes(options.AnalysisDirectory)});
             }
             if (options.Fastq1 != null && options.Fastq1 != "")
             {
-                commands.AddRange(new[] { "--fq1", options.Fastq1 });
+                commands.AddRange(new[] { "--fq1", AddQuotes(options.Fastq1) });
             }
             if (options.Fastq2 != null && options.Fastq2 != "")
             {
-                commands.AddRange(new[] { "--fq2", options.Fastq2 });
+                commands.AddRange(new[] { "--fq2", AddQuotes(options.Fastq2) });
             }
             if (options.SraAccession != null && options.SraAccession != "")
             {
@@ -79,23 +92,23 @@ namespace SpritzGUI
             }
             if (options.GenomeStarIndexDirectory != null && options.GenomeStarIndexDirectory != "")
             {
-                commands.AddRange(new[] { "-d", options.GenomeStarIndexDirectory });
+                commands.AddRange(new[] { "-d", AddQuotes(options.GenomeStarIndexDirectory) });
             }
             if (options.GenomeFasta != null && options.GenomeFasta != "")
             {
-                commands.AddRange(new[] { "-f", options.GenomeFasta });
+                commands.AddRange(new[] { "-f", AddQuotes(options.GenomeFasta) });
             }
             if (options.GeneModelGtfOrGff != null && options.GeneModelGtfOrGff != "")
             {
-                commands.AddRange(new[] { "-g", options.GeneModelGtfOrGff });
+                commands.AddRange(new[] { "-g", AddQuotes(options.GeneModelGtfOrGff) });
             }
             if (options.NewGeneModelGtfOrGff != null && options.NewGeneModelGtfOrGff != "")
             {
-                commands.AddRange(new[] { "-h", options.NewGeneModelGtfOrGff });
+                commands.AddRange(new[] { "-h", AddQuotes(options.NewGeneModelGtfOrGff) });
             }
             if (options.ReferenceVcf != null && options.ReferenceVcf != "")
             {
-                commands.AddRange(new[] { "-v", options.ReferenceVcf });
+                commands.AddRange(new[] { "-v", AddQuotes(options.ReferenceVcf) });
             }
             if (options.Reference != null && options.Reference != "")
             {
@@ -103,7 +116,11 @@ namespace SpritzGUI
             }
             if (options.UniProtXml != null && options.UniProtXml != "")
             {
-                commands.AddRange(new[] { "-x", options.UniProtXml });
+                commands.AddRange(new[] { "-x", AddQuotes(options.UniProtXml) });
+            }
+            if (options.UniProtXml != null && options.UniProtXml != "")
+            {
+                commands.AddRange(new[] { "--indelFinder", options.IndelFinder });
             }
             if (options.OverwriteStarAlignments)
             {
@@ -126,6 +143,19 @@ namespace SpritzGUI
                 commands.Add("--doGeneFusionAnalysis");
             }
             return commands.ToArray();
+        }
+
+        /// <summary>
+        /// Needed for paths that have spaces in them to pass through properly
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private static string AddQuotes(string path)
+        {
+            if (path.StartsWith("\"") && path.EndsWith("\""))
+                return path;
+            else
+                return $"\"{path}\"";
         }
     }
 }

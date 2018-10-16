@@ -87,6 +87,7 @@ namespace SpritzGUI
             }
             workflowTreeView.DataContext = dynamicTasksObservableCollection;
             everything = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
+            //WarningsTextBox.AppendText(string.Join("\n", everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
             var t = new Task(everything.Run);
             t.Start();
             t.ContinueWith(DisplayAnyErrors);
@@ -117,6 +118,10 @@ namespace SpritzGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
+            }
+            else
+            {
+                Dispatcher.Invoke(() => WarningsTextBox.AppendText("Done!" + Environment.NewLine));
             }
         }
 

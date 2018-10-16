@@ -493,11 +493,11 @@ namespace Test
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
             var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
             Assert.IsTrue(fastaLines.Any(l => l.Contains("Val204fs")));
-            Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.Description.Contains("Val204fs"))));
+            Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.Description.Description.Contains("Val204fs"))));
             Assert.IsTrue(xmlProts.Count(p => p.Accession.Contains("ENST00000316027")) == 1);
 
             // Frameshift variations should be annotated regarding the protein sequence
-            Assert.IsTrue(xmlProts.FirstOrDefault(p => p.SequenceVariations.Any(v => v.Description.Contains("Val204fs")))
+            Assert.IsTrue(xmlProts.FirstOrDefault(p => p.SequenceVariations.Any(v => v.Description.Description.Contains("Val204fs")))
                 .SequenceVariations.Any(v => v.OriginalSequence.StartsWith("V") && v.VariantSequence.Length > 1));
         }
 

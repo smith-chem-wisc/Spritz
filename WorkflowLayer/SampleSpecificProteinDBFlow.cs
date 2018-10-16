@@ -103,7 +103,8 @@ namespace WorkflowLayer
                 alignment.DedupedBamFiles,
                 Downloads.ReorderedFastaPath,
                 Downloads.EnsemblGenome,
-                Parameters.QuickSnpEffWithoutStats);
+                Parameters.QuickSnpEffWithoutStats,
+                Parameters.IndelFinder);
 
             // Gene Fusion Discovery
             List<Protein> fusionProteins = new List<Protein>();

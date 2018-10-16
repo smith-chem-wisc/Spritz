@@ -63,6 +63,14 @@ namespace SpritzGUI
                 return;
             }
 
+            int ii = CmbxIndelFinding.SelectedIndex;
+            if (ii == 0)
+                Options.IndelFinder = "none";
+            if (ii == 1)
+                Options.IndelFinder = "gatk";
+            if (ii == 2)
+                Options.IndelFinder = "scalpel";
+
             //Options.SpritzDirectory = txtSpritzDirecory.Text;
             Options.AnalysisDirectory = txtAnalysisDirectory.Text;
 
@@ -192,7 +200,13 @@ namespace SpritzGUI
         private void PopulateChoices()
         {
             foreach (string aWorkFlow in Enum.GetNames(typeof(MyWorkflow)))
+            {
                 CbxWorkFlowType.Items.Add(aWorkFlow);
+            }
+            CmbxIndelFinding.Items.Add("None");
+            CmbxIndelFinding.Items.Add("GATK");
+            CmbxIndelFinding.Items.Add("Scalpel");
+            CmbxIndelFinding.SelectedIndex = 2;
         }
 
         private void txtStarFusionReference_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)

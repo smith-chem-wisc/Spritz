@@ -153,15 +153,11 @@ namespace ToolWrapperLayer
 
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(targetDirectory, "DownloadEnsemblReference.bash"), new List<string>
             {
-                "cd " + WrapperUtility.ConvertWindowsPath(targetDirectory),
-                "if [ ! -f " + Path.GetFileName(GenomeFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38PrimaryAssemblyUrl : GRCh37PrimaryAssemblyUrl) + "; fi",
-                "if [ -f " + Path.GetFileName(GenomeFastaPath) + ".gz ]; then gunzip " + Path.GetFileName(GenomeFastaPath) + ".gz; fi",
-                "if [ ! -f " + Path.GetFileName(GtfGeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38GtfGeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi",
-                "if [ -f " + Path.GetFileName(GtfGeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(GtfGeneModelPath) + ".gz; fi",
-                "if [ ! -f " + Path.GetFileName(Gff3GeneModelPath) + " ]; then wget " + (downloadGrch38 ? GRCh38Gff3GeneModelUrl : GRCh37GtfGeneModelUrl) + "; fi", // note GRCh37 calls the gtf url instead
-                "if [ -f " + Path.GetFileName(Gff3GeneModelPath) + ".gz ]; then gunzip " + Path.GetFileName(Gff3GeneModelPath) + ".gz; fi",
-                "if [ ! -f " + Path.GetFileName(ProteinFastaPath) + " ]; then wget " + (downloadGrch38 ? GRCh38ProteinFastaUrl : GRCh37ProteinFastaUrl) + "; fi", // note GRCh37 calls the gtf url instead
-                "if [ -f " + Path.GetFileName(ProteinFastaPath) + ".gz ]; then gunzip " + Path.GetFileName(ProteinFastaPath) + ".gz; fi",
+                $"cd {WrapperUtility.ConvertWindowsPath(targetDirectory)}",
+                $"if [ ! -f {Path.GetFileName(GenomeFastaPath)} ]; then wget -O - {(downloadGrch38 ? GRCh38PrimaryAssemblyUrl : GRCh37PrimaryAssemblyUrl)} | gunzip -c > {Path.GetFileName(GenomeFastaPath)}; fi",
+                $"if [ ! -f {Path.GetFileName(GtfGeneModelPath)} ]; then wget -O - {(downloadGrch38 ? GRCh38GtfGeneModelUrl : GRCh37GtfGeneModelUrl)} | gunzip -c > {Path.GetFileName(GtfGeneModelPath)}; fi",
+                $"if [ ! -f {Path.GetFileName(Gff3GeneModelPath)} ]; then wget -O - {(downloadGrch38 ? GRCh38Gff3GeneModelUrl : GRCh37GtfGeneModelUrl)} | gunzip -c > {Path.GetFileName(Gff3GeneModelPath)}; fi", // note GRCh37 calls the gtf url instead
+                $"if [ ! -f {Path.GetFileName(ProteinFastaPath)} ]; then wget -O - {(downloadGrch38 ? GRCh38ProteinFastaUrl : GRCh37ProteinFastaUrl)} | gunzip -c > {Path.GetFileName(ProteinFastaPath)}; fi", // note GRCh37 calls the gtf url instead
             }).WaitForExit();
 
             //Genome.WriteFasta(new Genome(genomeFastaPath).KaryotypicOrder(), genomeFastaPath); // todo: try this for ordering contigs before alignments; does gtf then need to be reordered?

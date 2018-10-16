@@ -20,7 +20,7 @@ namespace WorkflowLayer
         public List<string> CombinedAnnotatedProteinXmlPaths { get; private set; } = new List<string>();
 
         public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
-            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff)
+            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff, string indelFinder)
         {
             List<string> variantCallingCommands = new List<string>();
             List<SnpEffWrapper> snpeffs = new List<SnpEffWrapper>();
@@ -36,19 +36,34 @@ namespace WorkflowLayer
 
                 // Scalpel
                 var scalpel = new ScalpelWrapper();
-                variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
-                ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
-                ScalpelFilteredVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
+                bool useScalpel = indelFinder.Equals("scalpel", System.StringComparison.InvariantCultureIgnoreCase);
+                if (useScalpel)
+                {
+                    variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
+                    ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
+                    ScalpelFilteredVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
+                }
 
                 // Combine & Annotate
                 var vcftools = new VcfToolsWrapper();
-                var outprefix = Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath));
-                variantCallingCommands.Add(vcftools.Concatenate(spritzDirectory, new string[] { gatk.FilteredHaplotypeCallerVcfPath, scalpel.FilteredIndelVcfPath }, outprefix));
-                variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, analysisDirectory, vcftools.VcfConcatenatedPath, reorderedFastaPath));
-                CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
-                CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
                 var snpEff = new SnpEffWrapper();
-                variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.SortedVcfPath, quickSnpEff));
+                var outprefix = Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath));
+                if (useScalpel)
+                {
+                    variantCallingCommands.Add(vcftools.Concatenate(spritzDirectory, new string[] { gatk.FilteredHaplotypeCallerVcfPath, scalpel.FilteredIndelVcfPath }, outprefix));
+                    variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, analysisDirectory, vcftools.VcfConcatenatedPath, reorderedFastaPath));
+                    CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
+                    CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
+                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.SortedVcfPath, quickSnpEff));
+                }
+                else if (indelFinder.Equals("gatk", System.StringComparison.InvariantCultureIgnoreCase))
+                {
+                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.HaplotypeCallerVcfPath, quickSnpEff));
+                }
+                else
+                {
+                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, gatk.FilteredHaplotypeCallerVcfPath, quickSnpEff));
+                }
                 CombinedAnnotatedVcfFilePaths.Add(snpEff.AnnotatedVcfPath);
                 CombinedSnpEffHtmlFilePaths.Add(snpEff.HtmlReportPath);
                 CombinedAnnotatedProteinFastaPaths.Add(snpEff.VariantProteinFastaPath);
