@@ -152,6 +152,7 @@ namespace Test
                 1,
                 19,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read1.fastq") },
+                false,
                 out string[] readTrimmedPaths,
                 out string log);
             Assert.True(File.Exists(readTrimmedPaths[0]));
@@ -172,6 +173,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read1.fastq"),
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs","read2.fastq")
                 },
+                false,
                 out string[] readTrimmedPaths,
                 out string log);
             Assert.True(File.Exists(readTrimmedPaths[0]));
@@ -194,6 +196,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read1.fastq.gz"),
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read2.fastq.gz")
                 },
+                false,
                 out string[] readTrimmedPaths,
                 out string log);
             Assert.True(Path.GetFileName(readTrimmedPaths[0]) == "read1-trimmed-pair1.fastq");

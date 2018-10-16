@@ -43,7 +43,8 @@ namespace WorkflowLayer
                     Parameters.Threads,
                     Parameters.GenomeStarIndexDirectory,
                     new string[] { Parameters.ReorderedFasta },
-                    Parameters.GeneModelGtfOrGff))
+                    Parameters.GeneModelGtfOrGff,
+                    Parameters.Fastqs))
                 .WaitForExit();
 
             // there's trouble with the number of open files for sorting and stuff, which increases with the number of threads
@@ -66,14 +67,14 @@ namespace WorkflowLayer
             string reorderedFasta, string geneModelGtfOrGff)
         {
             // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "genomeGenerate.bash"),
-                STARWrapper.GenerateGenomeIndex(spritzDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff))
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "GenomeGenerate.bash"),
+                STARWrapper.GenerateGenomeIndex(spritzDirectory, threads, genomeStarIndexDirectory, new string[] { reorderedFasta }, geneModelGtfOrGff, new List<string[]> { fastqPaths }))
                 .WaitForExit();
 
             STARWrapper.SubsetFastqs(spritzDirectory, analysisDirectory, fastqPaths, 30000, analysisDirectory, out string[] subsetFastqs);
 
             string subsetOutPrefix = Path.Combine(Path.GetDirectoryName(subsetFastqs[0]), Path.GetFileNameWithoutExtension(subsetFastqs[0]));
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "alignSubset.bash"),
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "AlignSubset.bash"),
                 STARWrapper.BasicAlignReadCommands(spritzDirectory, threads, genomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
                 .WaitForExit();
             BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, geneModelGtfOrGff, new Genome(reorderedFasta), 0.8);
@@ -111,7 +112,7 @@ namespace WorkflowLayer
                     }
                 }
 
-                SkewerWrapper.Trim(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, threads, 19, fqForAlignment, out string[] trimmedFastqs, out string skewerLog);
+                SkewerWrapper.Trim(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, threads, 19, fqForAlignment, false, out string[] trimmedFastqs, out string skewerLog);
                 fqForAlignment = trimmedFastqs;
 
                 StrandSpecificities.Add(localStrandSpecific);
@@ -137,7 +138,7 @@ namespace WorkflowLayer
             alignmentCommands.AddRange(STARWrapper.RemoveGenome(Parameters.SpritzDirectory, Parameters.GenomeStarIndexDirectory));
             alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(FirstPassSpliceJunctions, uniqueSuffix, out string spliceJunctionStartDatabase));
             SecondPassGenomeDirectory = Parameters.GenomeStarIndexDirectory + "SecondPass" + uniqueSuffix.ToString();
-            alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, threads, SecondPassGenomeDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff, spliceJunctionStartDatabase));
+            alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, threads, SecondPassGenomeDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff, Parameters.Fastqs, spliceJunctionStartDatabase));
             foreach (string[] fq in FastqsForAlignment)
             {
                 string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));

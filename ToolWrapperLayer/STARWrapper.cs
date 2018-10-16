@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace ToolWrapperLayer
 {
@@ -123,7 +124,7 @@ namespace ToolWrapperLayer
         /// <param name="sjdbFileChrStartEnd"></param>
         /// <param name="junctionOverhang"></param>
         /// <returns></returns>
-        public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
+        public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, List<string[]> fastqsToCheck = null, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
             string fastas = string.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
@@ -136,11 +137,26 @@ namespace ToolWrapperLayer
                 (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff") ? " --sjdbGTFtagExonParentTranscript Parent" : "") +
                 " --sjdbOverhang " + junctionOverhang.ToString();
 
+            StringBuilder check = new StringBuilder();
+            check.Append($"if [[ ( ! -f { WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA"))} || ! -s {WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA"))} )");
+            if (fastqsToCheck != null)
+            {
+                check.Append(" && ( ");
+                List<string> additionalChecks = new List<string>();
+                foreach (var fq in fastqsToCheck)
+                {
+                    SkewerWrapper.Trim(spritzDirectory, spritzDirectory, threads, 10, fq, true, out string[] trimmedFastqs, out string log);
+                    string outprefix = Path.Combine(Path.GetDirectoryName(trimmedFastqs[0]), Path.GetFileNameWithoutExtension(trimmedFastqs[0]));
+                    additionalChecks.Add($"( ! -f {WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)} || ! -s {WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)} )");
+                }
+                check.Append(string.Join(" || ", additionalChecks));
+            }
+            check.Append(" ) ]]; then");
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR" + arguments + "; fi"
+                $"if [ ! -d {WrapperUtility.ConvertWindowsPath(genomeDir)} ]; then mkdir {WrapperUtility.ConvertWindowsPath(genomeDir)}; fi",
+                $"{check.ToString()} STAR {arguments}; fi"
             };
         }
 
