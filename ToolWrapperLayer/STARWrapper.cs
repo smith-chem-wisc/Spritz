@@ -137,6 +137,7 @@ namespace ToolWrapperLayer
                 (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff") ? " --sjdbGTFtagExonParentTranscript Parent" : "") +
                 " --sjdbOverhang " + junctionOverhang.ToString();
 
+            // check if alignment is needed
             StringBuilder check = new StringBuilder();
             check.Append($"if [[ ( ! -f { WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA"))} || ! -s {WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA"))} )");
             if (fastqsToCheck != null)
@@ -152,6 +153,8 @@ namespace ToolWrapperLayer
                 check.Append(string.Join(" || ", additionalChecks));
             }
             check.Append(" ) ]]; then");
+
+            // return the genome generation commands with checks
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
