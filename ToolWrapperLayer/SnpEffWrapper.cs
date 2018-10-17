@@ -61,9 +61,9 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string vcfPath, bool quick)
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string inputVcfPath, bool quick = false, bool fromReference = false)
         {
-            string outPrefix = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath));
+            string outPrefix = Path.Combine(Path.GetDirectoryName(inputVcfPath), Path.GetFileNameWithoutExtension(inputVcfPath));
             AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
             HtmlReportPath = outPrefix + ".snpEffAnnotated.html";
             AnnotatedGenesSummaryPath = outPrefix + ".snpEffAnnotated.genes.txt";
@@ -81,8 +81,7 @@ namespace ToolWrapperLayer
                     " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
                     //(quick ? " -t " : "") + // this threaded version isn't working consistently...
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
-                    " " + WrapperUtility.ConvertWindowsPath(vcfPath) +
-                    " > " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
+                    (fromReference ? "" : $" {WrapperUtility.ConvertWindowsPath(inputVcfPath)} > {WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath)}"),
 
                 // ensure that the files get closed before continuing
                 WrapperUtility.EnsureClosedFileCommands(WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath)),
@@ -94,17 +93,6 @@ namespace ToolWrapperLayer
                 "  rm " + WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath),
                 "fi",
             };
-        }
-
-        /// <summary>
-        /// Gets string command for snpEff without arguments
-        /// </summary>
-        /// <returns></returns>
-        public static string SnpEff()
-        {
-            var performance = new PerformanceCounter("Memory", "Available MBytes");
-            var memory = performance.NextValue();
-            return "java -Xmx" + Math.Floor(memory) + "M -jar SnpEff/snpEff.jar";
         }
 
         // see here for how to generate them from scratch: http://lab.loman.net/2012/11/16/how-to-get-snpeff-working-with-bacterial-genomes-from-ncbi/
@@ -155,6 +143,24 @@ namespace ToolWrapperLayer
                 "echo \"\t" + snpeffReference + ".M.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
                 "echo \"\t" + snpeffReference + ".MT.codonTable : Vertebrate_Mitochondrial\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
             }).WaitForExit();
+        }
+
+        /// <summary>
+        /// Gets string command for snpEff without arguments
+        /// </summary>
+        /// <returns></returns>
+        public static string SnpEff()
+        {
+            var performance = new PerformanceCounter("Memory", "Available MBytes");
+            var memory = performance.NextValue();
+            return "java -Xmx" + Math.Floor(memory) + "M -jar SnpEff/snpEff.jar";
+        }
+
+        public static string GenerateXmlDatabaseFromReference(string spritzDirectory, string analysisDirectory, string reference, string inputFilePathForFilePrefix)
+        {
+            var snpeff = new SnpEffWrapper();
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffGenerateProteinXml.bash"), snpeff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, inputFilePathForFilePrefix, false, true)).WaitForExit();
+            return snpeff.VariantProteinXmlPath;
         }
 
         /// <summary>

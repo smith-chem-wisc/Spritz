@@ -26,5 +26,6 @@ namespace WorkflowLayer
         public bool DoFusionAnalysis { get; set; }
         public bool DoTranscriptIsoformAnalysis { get; set; }
         public bool QuickSnpEffWithoutStats { get; set; }
+        public string IndelFinder { get; set; }
     }
 }

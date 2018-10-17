@@ -152,6 +152,7 @@ namespace Test
                 1,
                 19,
                 new string[] { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read1.fastq") },
+                false,
                 out string[] readTrimmedPaths,
                 out string log);
             Assert.True(File.Exists(readTrimmedPaths[0]));
@@ -172,6 +173,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read1.fastq"),
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs","read2.fastq")
                 },
+                false,
                 out string[] readTrimmedPaths,
                 out string log);
             Assert.True(File.Exists(readTrimmedPaths[0]));
@@ -194,6 +196,7 @@ namespace Test
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read1.fastq.gz"),
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "read2.fastq.gz")
                 },
+                false,
                 out string[] readTrimmedPaths,
                 out string log);
             Assert.True(Path.GetFileName(readTrimmedPaths[0]) == "read1-trimmed-pair1.fastq");
@@ -493,11 +496,11 @@ namespace Test
             var fastaLines = File.ReadAllLines(snpeff.VariantProteinFastaPath);
             var xmlProts = ProteinDbLoader.LoadProteinXML(snpeff.VariantProteinXmlPath, true, DecoyType.None, null, false, null, out var un);
             Assert.IsTrue(fastaLines.Any(l => l.Contains("Val204fs")));
-            Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.Description.Contains("Val204fs"))));
+            Assert.IsTrue(xmlProts.Any(p => p.SequenceVariations.Any(v => v.Description.Description.Contains("Val204fs"))));
             Assert.IsTrue(xmlProts.Count(p => p.Accession.Contains("ENST00000316027")) == 1);
 
             // Frameshift variations should be annotated regarding the protein sequence
-            Assert.IsTrue(xmlProts.FirstOrDefault(p => p.SequenceVariations.Any(v => v.Description.Contains("Val204fs")))
+            Assert.IsTrue(xmlProts.FirstOrDefault(p => p.SequenceVariations.Any(v => v.Description.Description.Contains("Val204fs")))
                 .SequenceVariations.Any(v => v.OriginalSequence.StartsWith("V") && v.VariantSequence.Length > 1));
         }
 

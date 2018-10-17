@@ -79,6 +79,9 @@ namespace CMD
         //[Option("quickSnpEffWithoutStats", Required = false, HelpText = "Use multiple threads for SnpEff and do not output stats HTML.", Default = false)]
         //public bool QuickSnpEffWithoutStats { get; set; }
 
+        [Option("indelFinder", Required = false, HelpText = "Software to use for indel finding.", Default = "")]
+        public string IndelFinder { get; set; }
+
         public string ProteinFastaPath { get; set; }
     }
 }

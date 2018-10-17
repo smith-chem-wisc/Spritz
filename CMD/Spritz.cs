@@ -67,6 +67,7 @@ namespace CMD
                 flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
                 flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
                 //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
+                flow.Parameters.IndelFinder = options.IndelFinder;
                 flow.GenerateSampleSpecificProteinDatabases();
 
                 Console.WriteLine("output databases to " + string.Join(", and ",
