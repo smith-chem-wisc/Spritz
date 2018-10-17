@@ -130,7 +130,7 @@ namespace SpritzGUI
         private void AddAFile(string filepath)
         {
             var theExtension = filepath.EndsWith("gz") ?
-                Path.GetExtension(Path.GetExtension(filepath)).ToLowerInvariant() :
+                Path.GetExtension(Path.GetFileNameWithoutExtension(filepath)).ToLowerInvariant() :
                 Path.GetExtension(filepath).ToLowerInvariant();
 
             if (theExtension == ".fa")
