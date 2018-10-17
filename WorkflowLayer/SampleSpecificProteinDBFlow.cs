@@ -64,8 +64,8 @@ namespace WorkflowLayer
 
             // Merge reference gene model and a new gene model (either specified or stringtie-generated)
             string newGeneModelPath = Parameters.NewGeneModelGtfOrGff;
-            string mergedGeneModelWithCdsPath = Path.Combine(Path.GetDirectoryName(newGeneModelPath), Path.GetFileNameWithoutExtension(newGeneModelPath) + ".withcds.gtf");
-            string mergedGeneModelProteinXml = Path.Combine(Path.GetDirectoryName(mergedGeneModelWithCdsPath), Path.GetFileNameWithoutExtension(mergedGeneModelWithCdsPath) + ".protein.xml"); // used if no fastqs are provided, but transcript isoform analysis is performed
+            string mergedGeneModelWithCdsPath = null;
+            string mergedGeneModelProteinXml = null;
             string reference = Parameters.Reference;
             if (Parameters.DoTranscriptIsoformAnalysis)
             {
@@ -77,6 +77,8 @@ namespace WorkflowLayer
                 }
                 else
                 {
+                    mergedGeneModelWithCdsPath = Path.Combine(Path.GetDirectoryName(newGeneModelPath), Path.GetFileNameWithoutExtension(newGeneModelPath) + ".withcds.gtf");
+                    mergedGeneModelProteinXml = Path.Combine(Path.GetDirectoryName(mergedGeneModelWithCdsPath), Path.GetFileNameWithoutExtension(mergedGeneModelWithCdsPath) + ".protein.xml"); // used if no fastqs are provided, but transcript isoform analysis is performed
                     newGeneModelPath = EnsemblDownloadsWrapper.ConvertFirstColumnUCSC2Ensembl(Parameters.SpritzDirectory, Parameters.Reference, Parameters.NewGeneModelGtfOrGff);
                     string mergedGeneModelPath = Path.Combine(Path.GetDirectoryName(newGeneModelPath), Path.GetFileNameWithoutExtension(newGeneModelPath) + ".merged.gtf");
                     WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "MergeTranscriptModels.bash"),
@@ -93,25 +95,20 @@ namespace WorkflowLayer
             }
 
             // SnpEff databases or outputing protein XMLs from gene models
-            if (Parameters.Fastqs != null && Parameters.DoTranscriptIsoformAnalysis) // isoform analysis, so generate a new snpeff database
+            if (Parameters.DoTranscriptIsoformAnalysis) // isoform analysis, so generate a new snpeff database
             { 
-                reference = SnpEffWrapper.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath,
-                    Parameters.ProteinFastaPath, mergedGeneModelWithCdsPath);
+                reference = SnpEffWrapper.GenerateDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Downloads.ReorderedFastaPath, Parameters.ProteinFastaPath, mergedGeneModelWithCdsPath);
+
+                if (Parameters.Fastqs == null) // isoform analysis without fastqs, so generate a protein database directly from merged gtf
+                    mergedGeneModelProteinXml = SnpEffWrapper.GenerateXmlDatabaseFromReference(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, reference, mergedGeneModelWithCdsPath);
             }
-            else if (Parameters.Fastqs != null && !Parameters.DoTranscriptIsoformAnalysis) // no isoform analysis, but there are are fastqs
+            else if (Parameters.Fastqs != null) // no isoform analysis, but there are are fastqs
             {
                 new SnpEffWrapper().DownloadSnpEffDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference);
             }
-            else if (Parameters.Fastqs == null && Parameters.DoTranscriptIsoformAnalysis) // isoform analysis without fastqs, so generate a protein database directly from merged gtf
-            {
-                GeneModel mergedGeneModel = new GeneModel(Downloads.EnsemblGenome, mergedGeneModelWithCdsPath);
-                var proteins = referenceGeneModel.Genes.SelectMany(g => g.Transcripts).Where(t => t.IsProteinCoding()).Select(t => t.Protein()).ToList();
-                ProteinDbWriter.WriteXmlDatabase(null, proteins, referenceGeneModelProteinXml);
-            }
             else // no isoform analysis and no fastqs
             {
-                var proteins = referenceGeneModel.Genes.SelectMany(g => g.Transcripts).Where(t => t.IsProteinCoding()).Select(t => t.Protein()).ToList();
-                ProteinDbWriter.WriteXmlDatabase(null, proteins, referenceGeneModelProteinXml);
+                referenceGeneModelProteinXml = SnpEffWrapper.GenerateXmlDatabaseFromReference(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference, Parameters.ReferenceGeneModelGtfOrGff);
             }
 
             // Variant Calling
