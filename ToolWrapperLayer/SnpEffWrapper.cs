@@ -61,7 +61,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string inputVcfPath, bool quick = false, bool fromReference = false)
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string reference, string inputVcfPath, bool quick = false, bool fromReference = false)
         {
             string outPrefix = Path.Combine(Path.GetDirectoryName(inputVcfPath), Path.GetFileNameWithoutExtension(inputVcfPath));
             AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
@@ -72,7 +72,6 @@ namespace ToolWrapperLayer
             Directory.CreateDirectory(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             if (File.Exists(AnnotatedVcfPath) && new FileInfo(AnnotatedVcfPath).Length > 0) return new List<string>();
-            string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -159,7 +158,7 @@ namespace ToolWrapperLayer
         public static string GenerateXmlDatabaseFromReference(string spritzDirectory, string analysisDirectory, string reference, string inputFilePathForFilePrefix)
         {
             var snpeff = new SnpEffWrapper();
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffGenerateProteinXml.bash"), snpeff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, inputFilePathForFilePrefix, false, true)).WaitForExit();
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffGenerateProteinXml.bash"), snpeff.PrimaryVariantAnnotation(spritzDirectory, reference, inputFilePathForFilePrefix, false, true)).WaitForExit();
             return snpeff.VariantProteinXmlPath;
         }
 

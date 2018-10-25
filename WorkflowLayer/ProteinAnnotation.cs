@@ -46,7 +46,7 @@ namespace WorkflowLayer
                 var uniprot = CombineProteinsWithSameSeq(uniprotProteinsSameSeq); // may be null if a pg-only seq
                 var pgProtein = CombineProteinsWithSameSeq(pgProteinsSameSeq);
 
-                if (uniprot != null && uniprot.BaseSequence != pgProtein.BaseSequence) { throw new ArgumentException("not all proteins have the same sequence"); }
+                if (uniprot != null && uniprot.BaseSequence != pgProtein.BaseSequence) { throw new ArgumentException("Not all proteins have the same sequence"); }
 
                 // keep all sequence variations
                 newProteins.Add(new Protein(
@@ -58,6 +58,7 @@ namespace WorkflowLayer
                     isDecoy: pgProtein.IsDecoy,
                     isContaminant: pgProtein.IsContaminant,
                     sequenceVariations: pgProtein.SequenceVariations.OrderBy(v => v.OneBasedBeginPosition).ToList(),
+                    spliceSites: pgProtein.SpliceSites.OrderBy(s => s.OneBasedBeginPosition).ToList(),
 
                     // combine these
                     geneNames: (uniprot != null ? uniprot.GeneNames : new List<Tuple<string, string>>()).Concat(pgProtein.GeneNames).ToList(),
@@ -96,8 +97,9 @@ namespace WorkflowLayer
                 fullName: string.Join(",", proteinsWithSameSequence.Select(p => p.FullName)),
                 isDecoy: proteinsWithSameSequence.All(p => p.IsDecoy),
                 isContaminant: proteinsWithSameSequence.Any(p => p.IsContaminant),
-                sequenceVariations: proteinsWithSameSequence.SelectMany(p => p.SequenceVariations).ToList(),
-                geneNames: proteinsWithSameSequence.SelectMany(p => p.GeneNames).ToList(),
+                sequenceVariations: new HashSet<SequenceVariation>(proteinsWithSameSequence.SelectMany(p => p.SequenceVariations)).ToList(),
+                spliceSites: new HashSet<SpliceSite>(proteinsWithSameSequence.SelectMany(p => p.SpliceSites)).ToList(),
+                geneNames: new HashSet<Tuple<string, string>>(proteinsWithSameSequence.SelectMany(p => p.GeneNames)).ToList(),
                 oneBasedModifications: CollapseMods(proteinsWithSameSequence),
                 proteolysisProducts: new HashSet<ProteolysisProduct>(proteinsWithSameSequence.SelectMany(p => p.ProteolysisProducts)).ToList(),
                 databaseReferences: new HashSet<DatabaseReference>(proteinsWithSameSequence.SelectMany(p => p.DatabaseReferences)).ToList(),

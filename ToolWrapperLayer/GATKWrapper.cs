@@ -47,12 +47,14 @@ namespace ToolWrapperLayer
 
         #endregion dbSNP URLs
 
+        private static string Version = "4.0.11.0";
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
         private static Regex getISequenceHeaderSequenceName = new Regex(@"([\w\d\.\-]+)(.+)");
         private string TargetFileLocation;
         public string UcscKnownSitesPath { get; private set; }
         public string EnsemblKnownSitesPath { get; private set; }
         public string SplitTrimBamPath { get; private set; }
+        public string HaplotypeCallerGvcfPath { get; private set; } // intermediate file with all genomic loci
         public string HaplotypeCallerVcfPath { get; private set; }
         public string FilteredHaplotypeCallerVcfPath { get; private set; }
         public string PreparedBamPath { get; private set; }
@@ -72,10 +74,10 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d gatk ]; then",
-                "  wget --no-check https://github.com/broadinstitute/gatk/releases/download/4.0.0.0/gatk-4.0.0.0.zip",
-                "  unzip gatk-4.0.0.0.zip",
-                "  rm gatk-4.0.0.0.zip",
-                "  mv gatk-4.0.0.0 gatk",
+                $"  wget --no-check https://github.com/broadinstitute/gatk/releases/download/{Version}/gatk-{Version}.zip",
+                $"  unzip gatk-{Version}.zip",
+                $"  rm gatk-{Version}.zip",
+                $"  mv gatk-{Version} gatk",
                 "fi",
                 "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
             });
@@ -313,7 +315,9 @@ namespace ToolWrapperLayer
         /// <param name="newVcf"></param>
         public List<string> VariantCalling(string spritzDirectory, int threads, string genomeFasta, string splitTrimBam, string dbsnpReferenceVcfPath)
         {
-            HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".vcf");
+            HaplotypeCallerGvcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.vcf.gz");
+            HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.gt.vcf");
+            FilteredHaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.gt.NoIndels.vcf");
             var vcftools = new VcfToolsWrapper();
 
             List<string> commands = new List<string>
@@ -326,7 +330,7 @@ namespace ToolWrapperLayer
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + "; fi",
 
                 // call variants
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ]; then " +
                     Gatk() +
                     " HaplotypeCaller" +
                     " --native-pair-hmm-threads " + threads.ToString() +
@@ -335,11 +339,32 @@ namespace ToolWrapperLayer
                     " --min-base-quality-score 20" +
                     " --dont-use-soft-clipped-bases true" + // for RNA-Seq
                     " --dbsnp " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) +
-                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
-                    "; fi",
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                    " -ERC GVCF" + // this prompts phasing!
+                    " --max-mnp-distance 3" + // note: this can't be used for joint genotyping here, but this setting is available in mutect2 for doing tumor vs normal calls
+                "; fi",
 
-                // filter out the indels, since we're using scalpel to find them
-                vcftools.RemoveAllIndels(spritzDirectory, HaplotypeCallerVcfPath, false, false),
+                // index compressed gvcf file
+                $"if [ ! -f {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}.idx ]; then {Gatk()} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}; fi",
+
+                // genotype the gvcf file into a traditional vcf file
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk() +
+                    " GenotypeGVCFs" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                "; fi",
+
+                // filter out indels
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk() +
+                    " SelectVariants" +
+                    " --select-type-to-exclude INDEL" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath) +
+                "; fi",
 
                 // filter variants (RNA-Seq specific params... need to check out recommendations before using DNA-Seq)
                 //"if [ ! -f " + WrapperUtility.ConvertWindowsPath(newVcf) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(newVcf) + " ]; then " +
@@ -354,7 +379,72 @@ namespace ToolWrapperLayer
                 //    " -o " + WrapperUtility.ConvertWindowsPath(newVcf) +
                 //    "; fi",
             };
-            FilteredHaplotypeCallerVcfPath = vcftools.VcfWithoutIndelsPath;
+            return commands;
+        }
+
+        public List<string> CombineAndGenotypeGvcfs(string spritzDirectory, string genomeFasta, List<string> gvcfPaths)
+        {
+            if (gvcfPaths == null || gvcfPaths.Count <= 1)
+            {
+                throw new ArgumentException("CombineAndGenotypeGvcfs exception: no gvcfs were specified to combine");
+            }
+            int uniqueSuffix = 1;
+            foreach (string f in gvcfPaths)
+            {
+                uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
+            }
+            HaplotypeCallerGvcfPath = Path.Combine(Path.GetDirectoryName(gvcfPaths.First()), $"combined{uniqueSuffix}.g.vcf.gz");
+            HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(HaplotypeCallerGvcfPath), $"{Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(HaplotypeCallerGvcfPath))}.gt.vcf");
+            FilteredHaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(HaplotypeCallerGvcfPath), $"{Path.GetFileNameWithoutExtension(HaplotypeCallerGvcfPath)}.NoIndels.vcf");
+
+            List<string> commands = new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
+                GenomeDictionaryIndexCommand(genomeFasta)
+            };
+
+            foreach (string gvcf in gvcfPaths)
+            {
+                // double check that the compressed gvcf file is indexed
+                commands.Add($"if [ ! -f {WrapperUtility.ConvertWindowsPath(gvcf)}.idx ]; then {Gatk()} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(gvcf)}; fi");
+            }
+
+            // combine GVCFs
+            string combineCommand =
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ]; then " +
+                    Gatk() +
+                    " CombineGVCFs" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + string.Join(" -V ", gvcfPaths.Select(gvcf => WrapperUtility.ConvertWindowsPath(gvcf))) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                "; fi";
+            commands.Add(combineCommand);
+            commands.Add($"if [ ! -f {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}.idx ]; then {Gatk()} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}; fi");
+
+            // genotype the gvcf file into a traditional vcf file
+            string genotypeCommand =
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk() +
+                    " GenotypeGVCFs" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                "; fi";
+            commands.Add(genotypeCommand);
+
+            // filter out indels
+            string filterIndelsCommand =
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk() +
+                    " SelectVariants" +
+                    " --select-type-to-exclude INDEL" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath) +
+                "; fi";
+            commands.Add(filterIndelsCommand);
+
             return commands;
         }
 

@@ -307,6 +307,7 @@ namespace ToolWrapperLayer
                 " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
+                " --outBAMcompression 10" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
 
                 // chimeric junction settings

@@ -22,11 +22,13 @@ namespace WorkflowLayer
 
             foreach (var xml in destinationXmlPaths)
             {
+                if (xml == null || !File.Exists(xml)) { continue; }
                 string outxml = Path.Combine(Path.GetDirectoryName(xml), Path.GetFileNameWithoutExtension(xml) + ".withmods.xml");
-                var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, null, out un).Concat(additionalProteins).ToList());
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), newProts, outxml);
+                var nonVariantProts = ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None, uniprotPtms, false, null, out un).Select(p => p.NonVariantProtein).Distinct();
+                var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.Concat(additionalProteins).ToList());
+                ProteinDbWriter.WriteXmlDatabase(null, newProts, outxml);
                 string outfasta = Path.Combine(Path.GetDirectoryName(xml), Path.GetFileNameWithoutExtension(xml) + ".spritz.fasta");
-                ProteinDbWriter.WriteFastaDatabase(newProts.SelectMany(p => p.GetVariantProteins()).OfType<Protein>().ToList(), outfasta, "|");
+                ProteinDbWriter.WriteFastaDatabase(newProts.SelectMany(p => p.GetVariantProteins()).ToList(), outfasta, "|");
                 outxmls.Add(outxml);
             }
             return outxmls;
@@ -35,12 +37,14 @@ namespace WorkflowLayer
         public string TransferModifications(string spritzDirectory, string sourceXmlPath, string destinationXmlPath)
         {
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(spritzDirectory);
-            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out Dictionary<string, Modification> un);
+            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out var un);
             string outxml = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withmods.xml");
-            var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, new List<string>(), out un));
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), newProts, outxml);
+            var nonVariantProts = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, null, out un).Select(p => p.NonVariantProtein).Distinct();
+            var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.ToList());
+            ProteinDbWriter.WriteXmlDatabase(null, newProts, outxml);
             string outfasta = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".spritz.fasta");
-            ProteinDbWriter.WriteFastaDatabase(newProts.SelectMany(p => p.GetVariantProteins()).OfType<Protein>().ToList(), outfasta, "|");
+            var prot = newProts.FirstOrDefault(p => p.Accession.Contains("_"));
+            ProteinDbWriter.WriteFastaDatabase(newProts.SelectMany(p => p.GetVariantProteins()).ToList(), outfasta, "|");
             return outxml;
         }
     }

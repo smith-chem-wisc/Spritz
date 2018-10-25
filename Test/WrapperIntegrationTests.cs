@@ -424,7 +424,6 @@ namespace Test
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
                 snpeff.PrimaryVariantAnnotation(
                     TestContext.CurrentContext.TestDirectory,
-                    TestContext.CurrentContext.TestDirectory,
                     reference,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs",
                         "mapper0" + reference + "-trimmedAligned.sortedByCoord.outProcessed.out.fixedQuals.split.concat.sorted.vcf"),
@@ -452,7 +451,6 @@ namespace Test
             WrapperUtility.GenerateAndRunScript(
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
                 snpeff.PrimaryVariantAnnotation(
-                    TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
@@ -488,7 +486,6 @@ namespace Test
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
                 snpeff.PrimaryVariantAnnotation(
                     TestContext.CurrentContext.TestDirectory,
-                    TestContext.CurrentContext.TestDirectory,
                     reference,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, "frameshift1.vcf"),
                     true))
@@ -519,7 +516,6 @@ namespace Test
             WrapperUtility.GenerateAndRunScript(
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
                 snpeff.PrimaryVariantAnnotation(
-                    TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     reference,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
@@ -553,7 +549,6 @@ namespace Test
             WrapperUtility.GenerateAndRunScript(
                 WrapperUtility.GetAnalysisScriptPath(TestContext.CurrentContext.TestDirectory, "snpEffTest.bash"),
                 snpeff.PrimaryVariantAnnotation(
-                    TestContext.CurrentContext.TestDirectory,
                     TestContext.CurrentContext.TestDirectory,
                     r,
                     Path.Combine(TestContext.CurrentContext.TestDirectory, "TestVcfs", reference, vcfFilename + ".vcf"),
@@ -764,9 +759,10 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
             flow.Parameters.DoTranscriptIsoformAnalysis = true;
+            flow.Parameters.IndelFinder = "scalpel";
             flow.GenerateSampleSpecificProteinDatabases();
 
-            foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
+            foreach (string database in flow.VariantCalling.CombinedAnnotatedProteinFastaPaths)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains(FunctionalClass.MISSENSE.ToString())));
@@ -782,8 +778,8 @@ namespace Test
         /// Handling multiple fastq files and chromosomes, single end
         /// </summary>
         [Test, Order(3)]
-        [TestCase("grch37")]
-        public void FullProteinRunFromTwoPairsFastqs(string reference)
+        [TestCase("grch37", "gatk")]
+        public void FullProteinRunFromTwoPairsFastqs(string reference, string indelCaller)
         {
             if (!File.Exists(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000readsAgain_1.fastq")))
                 File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000reads_1.fastq"), Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFastqs", "2000readsAgain_1.fastq"));
@@ -818,18 +814,14 @@ namespace Test
             flow.Parameters.ReferenceGeneModelGtfOrGff = geneModelPath;
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".vcf");
             flow.Parameters.UniProtXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Homo_sapiens_202022.xml.gz");
+            flow.Parameters.IndelFinder = indelCaller;
 
             flow.GenerateSampleSpecificProteinDatabases();
-            foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
+            foreach (string database in flow.VariantAnnotatedProteinXmlDatabases)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
-                //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any variations for this test set with variant filtering criteria
             }
-            foreach (string database in flow.VariantAppliedProteinFastaDatabases)
-            {
-                Assert.IsTrue(new FileInfo(database).Length > 0);
-                //Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("ANN="))); // no longer see any variations for this test set with variant filtering criteria
-            }
+            //Assert.IsTrue(flow.VariantAnnotatedProteinXmlDatabases.Any(f => f.StartsWith("combined") && new FileInfo(f).Length > 0));
         }
 
         /// <summary>
@@ -860,6 +852,7 @@ namespace Test
             flow.Parameters.EnsemblKnownSitesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "922GL" + reference + ".vcf"); // there is no equivalent of the patch; just checking that that works
             flow.Parameters.UseReadSubset = true;
             flow.Parameters.ReadSubset = 5000;
+            flow.Parameters.IndelFinder = "gatk";
 
             var writtenFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "Parameters.txt");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -889,12 +882,7 @@ namespace Test
 
             flow.GenerateSampleSpecificProteinDatabases();
 
-            foreach (string database in flow.VariantAnnotatedProteinFastaDatabases)
-            {
-                Assert.IsTrue(new FileInfo(database).Length > 0);
-                Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));// no variants anymore with the filtering criteria
-            }
-            foreach (string database in flow.VariantAppliedProteinFastaDatabases)
+            foreach (string database in flow.VariantCalling.CombinedAnnotatedProteinFastaPaths)
             {
                 Assert.IsTrue(new FileInfo(database).Length > 0);
                 Assert.IsTrue(File.ReadAllLines(database).Any(x => x.Contains("variant")));// no variants anymore with the filtering criteria

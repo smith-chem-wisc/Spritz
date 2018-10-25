@@ -70,8 +70,7 @@ namespace CMD
                 flow.Parameters.IndelFinder = options.IndelFinder;
                 flow.GenerateSampleSpecificProteinDatabases();
 
-                Console.WriteLine("output databases to " + string.Join(", and ",
-                    flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
+                Console.WriteLine("done");
             }
 
             if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
