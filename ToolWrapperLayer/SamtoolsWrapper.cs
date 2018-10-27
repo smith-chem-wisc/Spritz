@@ -69,11 +69,17 @@ namespace ToolWrapperLayer
             return megabytes + "M";
         }
 
-        public static string SortBam(string bamPath)
+        public static string SortBam(string bamPath, int threads)
         {
-            return "samtools sort -@ " + Environment.ProcessorCount.ToString() + " -m " + GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount) +
+            return "samtools sort -@ " + threads.ToString() + " -m " + GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount) +
                 " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + " " +
                 WrapperUtility.ConvertWindowsPath(bamPath);
+        }
+
+        public static string SortBamFromStdin(string outBamPath, int threads)
+        {
+            return $"samtools sort -@ {threads.ToString()} -m {GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount)}" +
+                $" -o {WrapperUtility.ConvertWindowsPath(outBamPath)} - ";
         }
 
         public static string GenomeFastaIndexCommand(string genomeFastaPath)

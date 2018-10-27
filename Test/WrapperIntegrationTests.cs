@@ -275,6 +275,7 @@ namespace Test
 
             commands.AddRange(gatk.VariantCalling(
                 TestContext.CurrentContext.TestDirectory,
+                ExperimentType.RNASequencing,
                 Environment.ProcessorCount,
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "202122" + reference + ".fa"),
                 gatk.SplitTrimBamPath,

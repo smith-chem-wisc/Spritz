@@ -18,19 +18,19 @@ namespace SpritzGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly ObservableCollection<RNASeqFastqDataGrid> rnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
-        private ObservableCollection<InRunTask> dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
-        private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
-        private readonly ObservableCollection<SRADataGrid> sraCollection = new ObservableCollection<SRADataGrid>();
-        private EverythingRunnerEngine everything;
+        private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
+        private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+        private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
+        private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
+        private EverythingRunnerEngine Everything;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            dataGridRnaSeqFastq.DataContext = rnaSeqFastqCollection;
-            workflowTreeView.DataContext = staticTasksObservableCollection;
-            LbxSRAs.ItemsSource = sraCollection;
+            DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
+            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            LbxSRAs.ItemsSource = SraCollection;
             if (!InstallationDialogAndCheck())
                 Close();
         }
@@ -53,7 +53,7 @@ namespace SpritzGUI
                     {
                         AddAFile(draggedFilePath);
                     }
-                    dataGridRnaSeqFastq.Items.Refresh();
+                    DataGridRnaSeqFastq.Items.Refresh();
                 }
             }
             UpdateOutputFolderTextbox();
@@ -75,20 +75,20 @@ namespace SpritzGUI
 
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
-            if (staticTasksObservableCollection.Count == 0)
+            if (StaticTasksObservableCollection.Count == 0)
             {
                 MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
-            for (int i = 0; i < staticTasksObservableCollection.Count; i++)
+            DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+            for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
             {
-                dynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + staticTasksObservableCollection[i].options.Command.ToString(), staticTasksObservableCollection[i].options));
+                DynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + StaticTasksObservableCollection[i].options.Command.ToString(), StaticTasksObservableCollection[i].options));
             }
-            workflowTreeView.DataContext = dynamicTasksObservableCollection;
-            everything = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
+            workflowTreeView.DataContext = DynamicTasksObservableCollection;
+            Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
             //WarningsTextBox.AppendText(string.Join("\n", everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
-            var t = new Task(everything.Run);
+            var t = new Task(Everything.Run);
             t.Start();
             t.ContinueWith(DisplayAnyErrors);
             RunWorkflowButton.IsEnabled = false;
@@ -96,14 +96,14 @@ namespace SpritzGUI
 
         private void DisplayAnyErrors(Task obj)
         {
-            if (everything.StdErr != null && everything.StdErr != "")
+            if (Everything.StdErr != null && Everything.StdErr != "")
             {
-                var message = "Run failed, Exception: " + everything.StdErr;
+                var message = "Run failed, Exception: " + Everything.StdErr;
                 Dispatcher.Invoke(() => WarningsTextBox.AppendText(message + Environment.NewLine));
                 var messageBoxResult = MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (messageBoxResult == MessageBoxResult.Yes)
                 {
-                    string body = everything.StdErr;
+                    string body = Everything.StdErr;
                     //+ "%0D%0A" + exception.Data +
                     //"%0D%0A" + exception.StackTrace +
                     //"%0D%0A" + exception.Source +
@@ -142,12 +142,12 @@ namespace SpritzGUI
                     AddAFile(filepath);
                 }
             }
-            dataGridRnaSeqFastq.Items.Refresh();
+            DataGridRnaSeqFastq.Items.Refresh();
         }
 
         private void BtnClearRnaSeqFastq_Click(object sender, RoutedEventArgs e)
         {
-            rnaSeqFastqCollection.Clear();
+            RnaSeqFastqCollection.Clear();
         }
 
         private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
@@ -171,13 +171,13 @@ namespace SpritzGUI
 
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
         {
-            staticTasksObservableCollection.Clear();
+            StaticTasksObservableCollection.Clear();
             UpdateTaskGuiStuff();
         }
 
         private void RemoveLastTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            staticTasksObservableCollection.RemoveAt(staticTasksObservableCollection.Count - 1);
+            StaticTasksObservableCollection.RemoveAt(StaticTasksObservableCollection.Count - 1);
             UpdateTaskGuiStuff();
         }
 
@@ -185,12 +185,12 @@ namespace SpritzGUI
         {
             RunWorkflowButton.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
-            for (int i = 0; i < dynamicTasksObservableCollection.Count; i++)
+            for (int i = 0; i < DynamicTasksObservableCollection.Count; i++)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(staticTasksObservableCollection[i].options));
+                StaticTasksObservableCollection.Add(new PreRunTask(StaticTasksObservableCollection[i].options));
             }
-            dynamicTasksObservableCollection.Clear();
-            workflowTreeView.DataContext = staticTasksObservableCollection;
+            DynamicTasksObservableCollection.Clear();
+            workflowTreeView.DataContext = StaticTasksObservableCollection;
         }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
@@ -201,13 +201,13 @@ namespace SpritzGUI
             }
             else
             {
-                foreach (var uu in rnaSeqFastqCollection)
+                foreach (var uu in RnaSeqFastqCollection)
                 {
                     uu.Use = false;
                 }
                 foreach (var newRnaSeqFastqData in e.StringList)
                 {
-                    rnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
+                    RnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
                 }
                 UpdateOutputFolderTextbox();
             }
@@ -230,14 +230,14 @@ namespace SpritzGUI
         {
             if (TbxSRA.Text.Contains("SR"))
             {
-                if (sraCollection.Any(s => s.Name == TbxSRA.Text))
+                if (SraCollection.Any(s => s.Name == TbxSRA.Text))
                 {
                     MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 { 
                     SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text);
-                    sraCollection.Add(sraDataGrid);
+                    SraCollection.Add(sraDataGrid);
                 }
             }
             else if (MessageBox.Show("SRA accessions are expected to start with \"SR\", such as SRX254398 or SRR791584. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
@@ -248,12 +248,12 @@ namespace SpritzGUI
 
         private void BtnClearSRA_Click(object sender, RoutedEventArgs e)
         {
-            sraCollection.Clear();
+            SraCollection.Clear();
         }
 
         private void BtnWorkFlow_Click(object sender, RoutedEventArgs e)
         {
-            if (sraCollection.Count == 0 && rnaSeqFastqCollection.Count == 0)
+            if (SraCollection.Count == 0 && RnaSeqFastqCollection.Count == 0)
             {
                 if (MessageBox.Show("You have not added any nucleic acid sequencing data (SRA accession or fastq files). Would you like to continue to make a protein database from the reference gene model?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.No)
                 {
@@ -283,7 +283,7 @@ namespace SpritzGUI
 
         private void UpdateTaskGuiStuff()
         {
-            if (staticTasksObservableCollection.Count == 0)
+            if (StaticTasksObservableCollection.Count == 0)
             {
                 RunWorkflowButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = false;
@@ -301,18 +301,18 @@ namespace SpritzGUI
         private void AddTaskToCollection(Options ye)
         {
             PreRunTask te = new PreRunTask(ye);
-            staticTasksObservableCollection.Add(te);
-            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1);
+            StaticTasksObservableCollection.Add(te);
+            StaticTasksObservableCollection.Last().DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(te) + 1);
         }
 
         private void UpdateOutputFolderTextbox()
         {
-            if (rnaSeqFastqCollection.Any())
+            if (RnaSeqFastqCollection.Any())
             {
                 var MatchingChars =
-                    from len in Enumerable.Range(0, rnaSeqFastqCollection.Select(b => b.FilePath).Min(s => s.Length)).Reverse()
-                    let possibleMatch = rnaSeqFastqCollection.Select(b => b.FilePath).First().Substring(0, len)
-                    where rnaSeqFastqCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
+                    from len in Enumerable.Range(0, RnaSeqFastqCollection.Select(b => b.FilePath).Min(s => s.Length)).Reverse()
+                    let possibleMatch = RnaSeqFastqCollection.Select(b => b.FilePath).First().Substring(0, len)
+                    where RnaSeqFastqCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
                     select possibleMatch;
 
                 OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()));
@@ -331,7 +331,7 @@ namespace SpritzGUI
                 case ".fastq":
                 case ".fastq.gz":
                     RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
-                    rnaSeqFastqCollection.Add(rnaSeqFastq);
+                    RnaSeqFastqCollection.Add(rnaSeqFastq);
                     UpdateOutputFolderTextbox();
                     break;
 
@@ -375,7 +375,7 @@ namespace SpritzGUI
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                foreach (var aFastq in rnaSeqFastqCollection)
+                foreach (var aFastq in RnaSeqFastqCollection)
                 {
                     output.WriteLine(aFastq.FileName +
                         "\t" + aFastq.Experiment +

@@ -97,6 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BEDOPSWrapper.cs" />
+    <Compile Include="ExperimentType.cs" />
     <Compile Include="RMatsWrapper.cs" />
     <Compile Include="TrinityWrapper.cs" />
     <Compile Include="VcfToolsWrapper.cs" />

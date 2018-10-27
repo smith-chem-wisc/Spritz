@@ -36,7 +36,7 @@ namespace WorkflowLayer
         //public string CombinedAnnotatedProteinFastaPath { get; private set; }
         //public string CombinedAnnotatedProteinXmlPath { get; private set; }
 
-        public void CallVariants(string spritzDirectory, string analysisDirectory, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
+        public void CallVariants(string spritzDirectory, string analysisDirectory, ExperimentType experimentType, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
             List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff, string indelFinder)
         {
             List<string> variantCallingCommands = new List<string>();
@@ -46,8 +46,13 @@ namespace WorkflowLayer
             {
                 // GATK
                 var gatk = new GATKWrapper();
-                variantCallingCommands.AddRange(gatk.SplitNCigarReads(spritzDirectory, reorderedFastaPath, dedupedBam));
-                variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, threads, reorderedFastaPath, gatk.SplitTrimBamPath, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
+                string bamForVariantCalling = dedupedBam;
+                if (experimentType == ExperimentType.RNASequencing)
+                {
+                    variantCallingCommands.AddRange(gatk.SplitNCigarReads(spritzDirectory, reorderedFastaPath, dedupedBam));
+                    bamForVariantCalling = gatk.SplitTrimBamPath;
+                }
+                variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, experimentType, threads, reorderedFastaPath, bamForVariantCalling, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
                 GatkGvcfFilePaths.Add(gatk.HaplotypeCallerGvcfPath);
                 GatkVcfFilePaths.Add(gatk.HaplotypeCallerVcfPath);
                 GatkFilteredVcfFilePaths.Add(gatk.FilteredHaplotypeCallerVcfPath);

@@ -22,7 +22,7 @@ namespace WorkflowLayer
         }
 
         public SampleSpecificProteinDBParameters Parameters { get; set; } = new SampleSpecificProteinDBParameters();
-        public STARAlignmentFlow Alignment { get; } = new STARAlignmentFlow();
+        public AlignmentFlow Alignment { get; } = new AlignmentFlow();
         public VariantCallingFlow VariantCalling { get; } = new VariantCallingFlow();
         GeneFusionDiscoveryFlow Fusion = new GeneFusionDiscoveryFlow();
         public List<string> VariantAnnotatedProteinXmlDatabases { get; private set; } = new List<string>();
@@ -35,23 +35,25 @@ namespace WorkflowLayer
         {
             // Download references and align reads
             Downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
-            if (Parameters.Fastqs != null)
+            if (Parameters.Fastqs != null && Parameters.ExperimentType.Equals(ExperimentType.RNASequencing))
             {
-                Alignment.Parameters = new STARAlignmentParameters(
-                    Parameters.SpritzDirectory,
-                    Parameters.AnalysisDirectory,
-                    Parameters.Reference,
-                    Parameters.Threads,
-                    Parameters.Fastqs,
-                    Parameters.StrandSpecific,
-                    Parameters.InferStrandSpecificity,
-                    Parameters.OverwriteStarAlignment,
-                    Parameters.GenomeStarIndexDirectory,
-                    Downloads.ReorderedFastaPath,
-                    Parameters.ReferenceGeneModelGtfOrGff,
-                    Parameters.UseReadSubset,
-                    Parameters.ReadSubset);
-                Alignment.PerformTwoPassAlignment();
+                Alignment.Parameters = new AlignmentParameters();
+                Alignment.Parameters.SpritzDirectory = Parameters.SpritzDirectory;
+                Alignment.Parameters.AnalysisDirectory = Parameters.AnalysisDirectory;
+                Alignment.Parameters.Reference = Parameters.Reference;
+                Alignment.Parameters.Threads = Parameters.Threads;
+                Alignment.Parameters.Fastqs = Parameters.Fastqs;
+                Alignment.Parameters.ExperimentType = Parameters.ExperimentType;
+                Alignment.Parameters.StrandSpecific = Parameters.StrandSpecific;
+                Alignment.Parameters.InferStrandSpecificity = Parameters.InferStrandSpecificity;
+                Alignment.Parameters.OverwriteStarAlignment = Parameters.OverwriteStarAlignment;
+                Alignment.Parameters.GenomeStarIndexDirectory = Parameters.GenomeStarIndexDirectory;
+                Alignment.Parameters.ReorderedFastaPath = Downloads.ReorderedFastaPath;
+                Alignment.Parameters.GeneModelGtfOrGffPath = Parameters.ReferenceGeneModelGtfOrGff;
+                Alignment.Parameters.UseReadSubset = Parameters.UseReadSubset;
+                Alignment.Parameters.ReadSubset = Parameters.ReadSubset;
+
+                Alignment.PerformAlignment();
                 Downloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFastaPath);
             }
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.ReferenceGeneModelGtfOrGff, Downloads.EnsemblGenome, out string filteredGeneModelForScalpel);
@@ -127,6 +129,7 @@ namespace WorkflowLayer
                 VariantCalling.CallVariants(
                     Parameters.SpritzDirectory,
                     Parameters.AnalysisDirectory,
+                    Parameters.ExperimentType,
                     reference,
                     Parameters.Threads,
                     sortedBed12Path,

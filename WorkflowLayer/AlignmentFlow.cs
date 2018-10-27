@@ -10,17 +10,17 @@ namespace WorkflowLayer
     /// <summary>
     /// Contains a workflow for running a 2-pass STAR alignment on a set of FASTQ files.
     /// </summary>
-    public class STARAlignmentFlow
+    public class AlignmentFlow
         : SpritzFlow
     {
         public const string Command = "align";
 
-        public STARAlignmentFlow()
+        public AlignmentFlow()
             : base(MyWorkflow.STARAlignment)
         {
         }
 
-        public STARAlignmentParameters Parameters { get; set; }
+        public AlignmentParameters Parameters { get; set; }
         public List<string> OutputPrefixes { get; set; } = new List<string>();
         public List<string> FirstPassSpliceJunctions { get; private set; } = new List<string>();
         public string SecondPassGenomeDirectory { get; private set; }
@@ -32,24 +32,47 @@ namespace WorkflowLayer
         public List<bool> StrandSpecificities { get; private set; } = new List<bool>();
 
         /// <summary>
-        /// Runs a two-pass alignment for a given set of fastq files.
+        /// Runs a two-pass STAR alignment for a given set of RNA-Seq fastq files,
+        /// or it performs a Bowtie2 alignment for WGS or exome sequencing files.
         /// </summary>
-        public void PerformTwoPassAlignment()
+        public void PerformAlignment()
         {
-            // Alignment preparation
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "GenomeGenerate.bash"),
-                STARWrapper.GenerateGenomeIndex(
-                    Parameters.SpritzDirectory,
-                    Parameters.Threads,
-                    Parameters.GenomeStarIndexDirectory,
-                    new string[] { Parameters.ReorderedFasta },
-                    Parameters.GeneModelGtfOrGff,
-                    Parameters.Fastqs))
-                .WaitForExit();
+            if (Parameters.ExperimentType == ExperimentType.RNASequencing)
+            {
+                // Alignment preparation
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "GenomeGenerate.bash"),
+                    STARWrapper.GenerateGenomeIndex(
+                        Parameters.SpritzDirectory,
+                        Parameters.Threads,
+                        Parameters.GenomeStarIndexDirectory,
+                        new string[] { Parameters.ReorderedFastaPath },
+                        Parameters.GeneModelGtfOrGffPath,
+                        Parameters.Fastqs))
+                    .WaitForExit();
 
-            // there's trouble with the number of open files for sorting and stuff, which increases with the number of threads
-            // 18 is the max that works with the default max number of open files
-            TwoPassAlignment(Math.Min(18, Parameters.Threads), Parameters.OverWriteStarAlignment);
+                // there's trouble with the number of open files for sorting and stuff, which increases with the number of threads
+                // 18 is the max that works with the default max number of open files
+                TwoPassAlignment(Math.Min(18, Parameters.Threads), Parameters.OverwriteStarAlignment);
+            }
+            else
+            {
+                foreach (string[] fastq in Parameters.Fastqs)
+                {
+                    SkewerWrapper.Trim(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, 19, fastq, false, out string[] trimmedFastqs, out string skewerLog);
+                    FastqsForAlignment.Add(trimmedFastqs);
+                }
+                TopHatWrapper.GenerateBowtieIndex(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.ReorderedFastaPath, out string bowtieIndexPrefix);
+                List<string> alignmentCommands = new List<string>();
+                foreach (string[] fastq in FastqsForAlignment)
+                {
+                    alignmentCommands.AddRange(TopHatWrapper.Bowtie2Align(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, 
+                        bowtieIndexPrefix, Parameters.Threads, fastq, Parameters.StrandSpecific, out string sortedBamPath));
+                    string dedupedBamPath = Path.Combine(Path.GetDirectoryName(sortedBamPath), Path.GetFileNameWithoutExtension(sortedBamPath)) + ".deduped.bam";
+                    alignmentCommands.Add(STARWrapper.StarDedupCommand(Parameters.Threads, sortedBamPath, dedupedBamPath));
+                    SortedBamFiles.Add(sortedBamPath);
+                    DedupedBamFiles.Add(dedupedBamPath);
+                }
+            }
         }
 
         /// <summary>
@@ -84,10 +107,10 @@ namespace WorkflowLayer
         /// <summary>
         /// Performs the bulk of two-pass alignments
         /// </summary>
-        public void TwoPassAlignment(int threads, bool overWriteStarAlignment)
+        private void TwoPassAlignment(int threads, bool overWriteStarAlignment)
         {
             // Trimming and strand specificity
-            Genome genome = new Genome(Parameters.ReorderedFasta);
+            Genome genome = new Genome(Parameters.ReorderedFastaPath);
             foreach (string[] fq in Parameters.Fastqs)
             {
                 // Infer strand specificity before trimming because trimming can change read pairings
@@ -107,7 +130,7 @@ namespace WorkflowLayer
                         WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "AlignSubset.bash"),
                             STARWrapper.BasicAlignReadCommands(Parameters.SpritzDirectory, threads, Parameters.GenomeStarIndexDirectory, subsetFastqs, subsetOutPrefix, false, STARGenomeLoadOption.LoadAndKeep))
                             .WaitForExit();
-                        BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, Parameters.GeneModelGtfOrGff, new Genome(Parameters.ReorderedFasta), 0.8);
+                        BAMProperties bamProperties = new BAMProperties(subsetOutPrefix + STARWrapper.BamFileSuffix, Parameters.GeneModelGtfOrGffPath, new Genome(Parameters.ReorderedFastaPath), 0.8);
                         localStrandSpecific = bamProperties.Strandedness != Strandedness.None;
                     }
                 }
@@ -138,7 +161,7 @@ namespace WorkflowLayer
             alignmentCommands.AddRange(STARWrapper.RemoveGenome(Parameters.SpritzDirectory, Parameters.GenomeStarIndexDirectory));
             alignmentCommands.AddRange(STARWrapper.ProcessFirstPassSpliceCommands(FirstPassSpliceJunctions, uniqueSuffix, out string spliceJunctionStartDatabase));
             SecondPassGenomeDirectory = Parameters.GenomeStarIndexDirectory + "SecondPass" + uniqueSuffix.ToString();
-            alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, threads, SecondPassGenomeDirectory, new string[] { Parameters.ReorderedFasta }, Parameters.GeneModelGtfOrGff, Parameters.Fastqs, spliceJunctionStartDatabase));
+            alignmentCommands.AddRange(STARWrapper.GenerateGenomeIndex(Parameters.SpritzDirectory, threads, SecondPassGenomeDirectory, new string[] { Parameters.ReorderedFastaPath }, Parameters.GeneModelGtfOrGffPath, Parameters.Fastqs, spliceJunctionStartDatabase));
             foreach (string[] fq in FastqsForAlignment)
             {
                 string outPrefix = Path.Combine(Path.GetDirectoryName(fq[0]), Path.GetFileNameWithoutExtension(fq[0]));
@@ -159,8 +182,8 @@ namespace WorkflowLayer
         /// <param name="parameters"></param>
         protected override void RunSpecific(ISpritzParameters parameters)
         {
-            Parameters = (STARAlignmentParameters)parameters;
-            PerformTwoPassAlignment();
+            Parameters = (AlignmentParameters)parameters;
+            PerformAlignment();
         }
 
         private void Clear()

@@ -82,6 +82,10 @@ namespace SpritzGUI
             {
                 commands.AddRange(new[] { "--fq2", AddQuotes(options.Fastq2) });
             }
+            if (options.ExperimentType != null && options.ExperimentType != "")
+            {
+                commands.AddRange(new[] { "-e", options.ExperimentType });
+            }
             if (options.SraAccession != null && options.SraAccession != "")
             {
                 commands.AddRange(new[] { "-s", options.SraAccession });

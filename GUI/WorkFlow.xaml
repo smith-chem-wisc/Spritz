@@ -57,6 +57,10 @@
                             <Label Content="sraAcession" Width="200"/>
                             <TextBox x:Name="txtSraAcession" Width="180" />
                         </StackPanel>-->
+                        <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
+                            <Label Content="Experiment Type"/>
+                            <ComboBox x:Name="CmbxExperimentType"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="0">
                             <Label Content="Threads" Width="200"/>
                             <TextBox x:Name="txtThreads" Width="180" />
@@ -124,8 +128,8 @@
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2"  Margin="5">
-            <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save Workflow" Click="saveButton_Click"  FontSize="18" />
+            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Workflow" Click="SaveButton_Click"  FontSize="18" />
         </StackPanel>
     </Grid>
 </Window>

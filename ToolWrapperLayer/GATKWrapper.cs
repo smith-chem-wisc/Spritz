@@ -313,7 +313,7 @@ namespace ToolWrapperLayer
         /// <param name="splitTrimBam"></param>
         /// <param name="dbsnpReferenceVcfPath"></param>
         /// <param name="newVcf"></param>
-        public List<string> VariantCalling(string spritzDirectory, int threads, string genomeFasta, string splitTrimBam, string dbsnpReferenceVcfPath)
+        public List<string> VariantCalling(string spritzDirectory, ExperimentType experimentType, int threads, string genomeFasta, string splitTrimBam, string dbsnpReferenceVcfPath)
         {
             HaplotypeCallerGvcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.vcf.gz");
             HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.gt.vcf");
@@ -337,7 +337,7 @@ namespace ToolWrapperLayer
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " --min-base-quality-score 20" +
-                    " --dont-use-soft-clipped-bases true" + // for RNA-Seq
+                    (experimentType == ExperimentType.RNASequencing ? " --dont-use-soft-clipped-bases true" : "") +
                     " --dbsnp " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) +
                     " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
                     " -ERC GVCF" + // this prompts phasing!

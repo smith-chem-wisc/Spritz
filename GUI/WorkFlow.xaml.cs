@@ -38,12 +38,12 @@ namespace SpritzGUI
 
         private MainWindow MainWindow { get; set; }
 
-        protected void cancelButton_Click(object sender, RoutedEventArgs e)
+        protected void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
         }
 
-        protected void saveButton_Click(object sender, RoutedEventArgs e)
+        protected void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             int i = CbxWorkFlowType.SelectedIndex;
             if (i == 0)
@@ -53,7 +53,7 @@ namespace SpritzGUI
             else if (i == 2)
                 Options.Command = TranscriptQuantificationFlow.Command;
             else if (i == 3)
-                Options.Command = STARAlignmentFlow.Command;
+                Options.Command = AlignmentFlow.Command;
             else if (i == 4)
                 Options.Command = GeneFusionDiscoveryFlow.Command;
             else
@@ -79,12 +79,13 @@ namespace SpritzGUI
                 return;
             }
 
-            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.dataGridRnaSeqFastq.DataContext;
+            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
             if (rnaSeqFastqCollection.Count != 0)
             {
                 Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 1.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
                 Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 2.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
             }
+            Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
             Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
 
@@ -161,7 +162,7 @@ namespace SpritzGUI
                 {
                     CbxWorkFlowType.SelectedIndex = 2;
                 }
-                else if (options.Command == STARAlignmentFlow.Command)
+                else if (options.Command == AlignmentFlow.Command)
                 {
                     CbxWorkFlowType.SelectedIndex = 3;
                 }
@@ -206,10 +207,16 @@ namespace SpritzGUI
             {
                 Options.Command = SampleSpecificProteinDBFlow.Command; // this is the only one currently allowed without FASTQ files
             }
+
             CmbxIndelFinding.Items.Add("None");
             CmbxIndelFinding.Items.Add("GATK");
             CmbxIndelFinding.Items.Add("Scalpel");
-            CmbxIndelFinding.SelectedIndex = 2;
+            CmbxIndelFinding.SelectedIndex = 1;
+
+            CmbxExperimentType.Items.Add(ExperimentType.RNASequencing.ToString());
+            CmbxExperimentType.Items.Add(ExperimentType.WholeGenomeSequencing.ToString());
+            CmbxExperimentType.Items.Add(ExperimentType.ExomeSequencing.ToString());
+            CmbxExperimentType.SelectedIndex = 0;
         }
 
         private void txtStarFusionReference_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)

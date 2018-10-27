@@ -34,11 +34,14 @@ namespace CMD
         [Option('2', "fq2", Required = false, HelpText = "FASTQ file pair2 (comma-separated for multiple files)")]
         public string Fastq2 { get; set; }
 
+        [Option('e', "experimentType", Required = false, HelpText = "Type of sequencing data contained in FASTQ files (options: RNASequencing, WholeGenomeSequencing, ExomeSequencing)")]
+        public string ExperimentType { get; set; }
+
         [Option('s', "sraAccession", Required = false, HelpText = "SRR or SRX accession for download of fastq files for analysis (comma-separated for multiple SRAs)")]
         public string SraAccession { get; set; }
 
         [Option('t', "threads", Required = false, HelpText = "Number of threads to use")]
-        public int Threads { get; set; } = Environment.ProcessorCount;
+        public int Threads { get; set; } = Environment.ProcessorCount == 1 ? 1 : Environment.ProcessorCount - 1;
 
         [Option('d', "genomeDir", Required = false, HelpText = "STAR genome directory (default = genomeFastq without extension)")]
         public string GenomeStarIndexDirectory { get; set; }

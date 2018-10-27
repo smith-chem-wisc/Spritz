@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ToolWrapperLayer;
+using System.Collections.Generic;
 
 namespace WorkflowLayer
 {
@@ -10,6 +11,7 @@ namespace WorkflowLayer
         public string Reference { get; set; }
         public int Threads { get; set; } = 1;
         public List<string[]> Fastqs { get; set; }
+        public ExperimentType ExperimentType { get; set; } = ExperimentType.RNASequencing;
         public bool StrandSpecific { get; set; }
         public bool InferStrandSpecificity { get; set; }
         public bool OverwriteStarAlignment { get; set; }
