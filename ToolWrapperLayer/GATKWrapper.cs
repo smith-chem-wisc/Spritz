@@ -174,6 +174,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
         {
+            string betterPath = Path.Combine(Path.GetDirectoryName(UcscKnownSitesPath), Path.GetFileNameWithoutExtension(UcscKnownSitesPath) + reference + ".vcf");
             if (!KnownVariantSitesFileExists(spritzDirectory, commonOnly, reference))
             {
                 WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "DownloadUcscVariants.bash"), new List<string>
@@ -181,9 +182,11 @@ namespace ToolWrapperLayer
                     "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                     "wget " + TargetFileLocation,
                     "gunzip " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz",
-                    "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz"
+                    "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz",
+                    "mv " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + " " + WrapperUtility.ConvertWindowsPath(betterPath)
                 }).WaitForExit();
             }
+            UcscKnownSitesPath = betterPath;
             return UcscKnownSitesPath;
         }
 
