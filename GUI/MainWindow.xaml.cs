@@ -4,6 +4,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,7 +23,9 @@ namespace SpritzGUI
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
+        private CancellationTokenSource TokenSource = new CancellationTokenSource();
         private EverythingRunnerEngine Everything;
+        private Task EverythingTask;
 
         public MainWindow()
         {
@@ -33,6 +36,12 @@ namespace SpritzGUI
             LbxSRAs.ItemsSource = SraCollection;
             if (!InstallationDialogAndCheck())
                 Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            // TODO: implement some way of killing EverythingTask
+            base.OnClosed(e);
         }
 
         private void Window_Drop(object sender, DragEventArgs e)

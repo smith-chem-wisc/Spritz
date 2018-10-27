@@ -124,7 +124,7 @@ namespace WorkflowLayer
             }
 
             // Variant Calling
-            if (Parameters.Fastqs != null)
+            if (Parameters.Fastqs != null && !Parameters.SkipVariantAnalysis)
             {
                 VariantCalling.CallVariants(
                     Parameters.SpritzDirectory,

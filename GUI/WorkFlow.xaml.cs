@@ -71,23 +71,13 @@ namespace SpritzGUI
                 Options.IndelFinder = "scalpel";
 
             //Options.SpritzDirectory = txtSpritzDirecory.Text;
-            Options.AnalysisDirectory = txtAnalysisDirectory.Text;
+            Options.AnalysisDirectory = TrimQuotesOrNull(txtAnalysisDirectory.Text);
 
             if (!Directory.Exists(Options.AnalysisDirectory))
             {
                 MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
                 return;
             }
-
-            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
-            if (rnaSeqFastqCollection.Count != 0)
-            {
-                Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 1.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
-                Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 2.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
-            }
-            Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
-            var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
-            Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
 
             Options.Threads = int.Parse(txtThreads.Text);
             Options.GenomeStarIndexDirectory = txtGenomeDir.Text;
@@ -148,6 +138,18 @@ namespace SpritzGUI
 
         private void UpdateFieldsFromTask(Options options)
         {
+            // Get information about the fastq and sra selections
+            var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
+            if (rnaSeqFastqCollection.Count != 0)
+            {
+                Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 1.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
+                Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 2.ToString()).OrderBy(p => p.Experiment).Select(p => p.FilePath).ToArray());
+            }
+            Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
+            var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
+            Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
+
+            // add the commands
             foreach (var aWorkFlow in Enum.GetValues(typeof(MyWorkflow)))
             {
                 if (options.Command == SampleSpecificProteinDBFlow.Command)
@@ -176,6 +178,7 @@ namespace SpritzGUI
                 }
             }
 
+            // default workflow settings
             //txtSpritzDirecory.Text = options.SpritzDirectory;
             txtAnalysisDirectory.Text = AnalysisDirectory;
             txtThreads.Text = options.Threads.ToString();
@@ -186,6 +189,7 @@ namespace SpritzGUI
             ckbOverWriteStarAlignment.IsChecked = options.OverwriteStarAlignments;
             ckbStrandSpecific.IsChecked = options.StrandSpecific;
             ckbInferStrandedness.IsChecked = options.InferStrandSpecificity;
+            CkbSkipVariantAnalysis.IsChecked = options.Fastq1 == null && options.SraAccession == null || options.SkipVariantAnalysis;
             CkbDoTranscriptIsoformAnalysis.IsChecked = options.DoTranscriptIsoformAnalysis;
             CkbDoGeneFusionAnalysis.IsChecked = options.DoFusionAnalysis;
             txtProteinFasta.Text = options.ProteinFastaPath;

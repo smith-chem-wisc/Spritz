@@ -68,9 +68,10 @@ namespace WorkflowLayer
                     alignmentCommands.AddRange(TopHatWrapper.Bowtie2Align(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, 
                         bowtieIndexPrefix, Parameters.Threads, fastq, Parameters.StrandSpecific, out string sortedBamPath));
                     string dedupedBamPath = Path.Combine(Path.GetDirectoryName(sortedBamPath), Path.GetFileNameWithoutExtension(sortedBamPath)) + ".deduped.bam";
-                    alignmentCommands.Add(STARWrapper.StarDedupCommand(Parameters.Threads, sortedBamPath, dedupedBamPath));
+                    GATKWrapper gatk = new GATKWrapper();
+                    alignmentCommands.AddRange(gatk.PrepareBamAndFasta(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, sortedBamPath, Parameters.ReorderedFastaPath, Parameters.Reference));
                     SortedBamFiles.Add(sortedBamPath);
-                    DedupedBamFiles.Add(dedupedBamPath);
+                    DedupedBamFiles.Add(gatk.PreparedBamPath);
                 }
             }
         }

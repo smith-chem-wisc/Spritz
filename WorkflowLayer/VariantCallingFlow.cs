@@ -46,13 +46,16 @@ namespace WorkflowLayer
             {
                 // GATK
                 var gatk = new GATKWrapper();
-                string bamForVariantCalling = dedupedBam;
                 if (experimentType == ExperimentType.RNASequencing)
                 {
                     variantCallingCommands.AddRange(gatk.SplitNCigarReads(spritzDirectory, reorderedFastaPath, dedupedBam));
-                    bamForVariantCalling = gatk.SplitTrimBamPath;
+                    variantCallingCommands.AddRange(gatk.BaseRecalibration(spritzDirectory, analysisDirectory, reorderedFastaPath, gatk.SplitTrimBamPath, ensemblKnownSitesPath));
                 }
-                variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, experimentType, threads, reorderedFastaPath, bamForVariantCalling, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
+                else
+                {
+                    variantCallingCommands.AddRange(gatk.BaseRecalibration(spritzDirectory, analysisDirectory, reorderedFastaPath, dedupedBam, ensemblKnownSitesPath));
+                }
+                variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, experimentType, threads, reorderedFastaPath, gatk.RecalibratedBamPath, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
                 GatkGvcfFilePaths.Add(gatk.HaplotypeCallerGvcfPath);
                 GatkVcfFilePaths.Add(gatk.HaplotypeCallerVcfPath);
                 GatkFilteredVcfFilePaths.Add(gatk.FilteredHaplotypeCallerVcfPath);

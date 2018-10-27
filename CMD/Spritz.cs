@@ -29,7 +29,7 @@ namespace CMD
             Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
             Options options = result.Value;
             FinishSetup(options);
-
+            
             // Download SRAs if they're specified
             bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
             List<string[]> fastqsSeparated = useSraMethod ?
@@ -90,6 +90,7 @@ namespace CMD
                 flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
                 flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
+                flow.Parameters.SkipVariantAnalysis = options.SkipVariantAnalysis; // default is true
                 flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
                 flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
                 //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;

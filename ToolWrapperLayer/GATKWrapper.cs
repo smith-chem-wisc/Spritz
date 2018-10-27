@@ -58,8 +58,8 @@ namespace ToolWrapperLayer
         public string HaplotypeCallerVcfPath { get; private set; }
         public string FilteredHaplotypeCallerVcfPath { get; private set; }
         public string PreparedBamPath { get; private set; }
-        public string RealignedIndelBamPath { get; private set; }
         public string RecalibrationTablePath { get; private set; }
+        public string RecalibratedBamPath { get; private set; }
         public string SortedVcfPath { get; private set; }
 
         /// <summary>
@@ -516,64 +516,19 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
-        /// Realigns indels for a given BAM file
-        ///
-        /// This is no longer a required step for HaploytypeCaller, used for variant calling
-        ///
-        /// Needs updating after switching to GATK 4.0 ... no longer called IndelRealigner, and it looks like the targetIntervals is gone
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <param name="genomeFasta"></param>
-        /// <param name="bam"></param>
-        /// <param name="knownSitesVcf"></param>
-        /// <param name="realignedIndelBam"></param>
-        public void RealignIndels(string spritzDirectory, string analysisDirectory, int threads, string genomeFasta, string bam, string knownSitesVcf = "")
-        {
-            string realignerTable = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".forIndelRealigner.intervals");
-            RealignedIndelBamPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".realigned.bam");
-
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "RealignIndels.bash"), new List<string>
-            {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
-                GenomeDictionaryIndexCommand(genomeFasta),
-
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(realignerTable) + " || ! -s " + WrapperUtility.ConvertWindowsPath(realignerTable) + " ]]; then " +
-                    Gatk() +
-                    " RealignerTargetCreator" +
-                    " --num_threads " + threads.ToString() +
-                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
-                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
-                    (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
-                    " -o " +  WrapperUtility.ConvertWindowsPath(realignerTable) +
-                    "; fi",
-
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(RealignedIndelBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(RealignedIndelBamPath) + " ]]; then " +
-                    Gatk() +
-                    " LeftAlignIndels" +
-                    //" --num_threads " + threads.ToString() + // this tool can't do threaded analysis
-                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
-                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
-                    (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
-                    " -targetIntervals " +  WrapperUtility.ConvertWindowsPath(realignerTable) +
-                    " --OUTPUT " + WrapperUtility.ConvertWindowsPath(RealignedIndelBamPath) +
-                    "; fi",
-            }).WaitForExit();
-        }
-
-        /// <summary>
-        /// Creates recalibration table for base calls.
+        /// Creates recalibration table and recalibrates reads.
         /// </summary>
         /// <param name="spritzDirectory"></param>
         /// <param name="genomeFasta"></param>
         /// <param name="bam"></param>
         /// <param name="recalibrationTablePath"></param>
         /// <param name="knownSitesVcf"></param>
-        public void BaseRecalibration(string spritzDirectory, string analysisDirectory, string genomeFasta, string bam, string knownSitesVcf)
+        public List<string> BaseRecalibration(string spritzDirectory, string analysisDirectory, string genomeFasta, string bam, string knownSitesVcf)
         {
             RecalibrationTablePath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
+            RecalibratedBamPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recal.bam");
 
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "BaseRecalibration.bash"), new List<string>
+            return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
@@ -582,13 +537,21 @@ namespace ToolWrapperLayer
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " ]; then " +
                     Gatk() +
                     " BaseRecalibrator" +
-                    //" --num_threads " + threads.ToString() + // doesn't support threaded runs
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
                     (knownSitesVcf != "" ? " -knownSites " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
                     " -O " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) +
                     "; fi",
-            }).WaitForExit();
+
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " ]; then " +
+                    Gatk() +
+                    " ApplyBQSR" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    " --bqsr-recal-file " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(RecalibratedBamPath) +
+                    "; fi",
+            };
         }
 
         /// <summary>

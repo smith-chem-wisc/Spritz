@@ -73,6 +73,9 @@ namespace CMD
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
 
+        [Option("skipVariantAnalysis", Required = false, HelpText = "Skip the variant calling analysis.", Default = false)]
+        public bool SkipVariantAnalysis { get; set; }
+
         [Option("doTranscriptIsoformAnalysis", Required = false, HelpText = "Do a transcript reconstruction analysis or use the specified new gene model (see -h option) to investigate alternative transcript isoforms.", Default = false)]
         public bool DoTranscriptIsoformAnalysis { get; set; }
 
