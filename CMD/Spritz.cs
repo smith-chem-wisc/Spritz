@@ -27,6 +27,23 @@ namespace CMD
             }
 
             Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
+            if (result == null)
+            {
+                Console.WriteLine("Please use GUI.exe if you are a first time user of Spritz.");
+                Console.WriteLine("It aims to guide you through setting up tools and running a workflow.");
+                Console.WriteLine();
+                Console.WriteLine("See above for commandline arguments for CMD.exe.");
+                Console.WriteLine("    Required: -c for a command");
+                Console.WriteLine("    1) Setting up tools: -c setup");
+                Console.WriteLine("    2) Generating a protein database from ensembl: -c proteins");
+                Console.WriteLine("    3) Analyzing variants: -c proteins");
+                Console.WriteLine("          Also required: --fq1 (and --fq2 if paired-end) for FASTQ files that exist or -s to download an SRA (see https://www.ncbi.nlm.nih.gov/sra).");
+                Console.WriteLine();
+                Console.WriteLine("Press any key to exit.");
+                Console.ReadKey();
+                return;
+            }
+
             Options options = result.Value;
             FinishSetup(options);
             

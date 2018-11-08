@@ -544,6 +544,9 @@ namespace ToolWrapperLayer
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
+                
+                // check that reference VCF is indexed
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) + ".idx ]; then " + Gatk(Workers) + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) + "; fi",
 
                 "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " ) ]]; then " +
                     Gatk(Workers) +
