@@ -17,12 +17,18 @@ namespace ToolWrapperLayer
     public class SnpEffWrapper :
         IInstallable
     {
+        public int Workers { get; }
         public string DatabaseListPath { get; private set; }
         public string HtmlReportPath { get; private set; }
         public string AnnotatedVcfPath { get; private set; }
         public string AnnotatedGenesSummaryPath { get; private set; }
         public string VariantProteinFastaPath { get; private set; }
         public string VariantProteinXmlPath { get; private set; }
+
+        public SnpEffWrapper(int workers)
+        {
+            Workers = workers;
+        }
 
         /// <summary>
         /// Writes a script for installing SnpEff.
@@ -61,7 +67,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string analysisDirectory, string reference, string inputVcfPath, bool quick = false, bool fromReference = false)
+        public List<string> PrimaryVariantAnnotation(string spritzDirectory, string reference, string inputVcfPath, bool fromReference = false)
         {
             string outPrefix = Path.Combine(Path.GetDirectoryName(inputVcfPath), Path.GetFileNameWithoutExtension(inputVcfPath));
             AnnotatedVcfPath = outPrefix + ".snpEffAnnotated.vcf";
@@ -72,14 +78,12 @@ namespace ToolWrapperLayer
             Directory.CreateDirectory(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             string[] existingDatabases = Directory.GetDirectories(Path.Combine(spritzDirectory, "Tools", "SnpEff", "data"));
             if (File.Exists(AnnotatedVcfPath) && new FileInfo(AnnotatedVcfPath).Length > 0) return new List<string>();
-            string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "snpEffAnnotation.bash");
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SnpEff() + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
+                SnpEff(Workers) + " -v -stats " + WrapperUtility.ConvertWindowsPath(HtmlReportPath) +
                     " -fastaProt " + WrapperUtility.ConvertWindowsPath(VariantProteinFastaPath) +
                     " -xmlProt " + WrapperUtility.ConvertWindowsPath(VariantProteinXmlPath) +
-                    //(quick ? " -t " : "") + // this threaded version isn't working consistently...
                     " " + Path.GetFileName(existingDatabases.FirstOrDefault(x => Path.GetFileName(x).StartsWith(reference, true, null))) +
                     (fromReference ? "" : $" {WrapperUtility.ConvertWindowsPath(inputVcfPath)} > {WrapperUtility.ConvertWindowsPath(AnnotatedVcfPath)}"),
 
@@ -114,7 +118,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Downloading list of SnpEff references\"",
-                SnpEff() + " databases > " + WrapperUtility.ConvertWindowsPath(DatabaseListPath),
+                SnpEff(Workers) + " databases > " + WrapperUtility.ConvertWindowsPath(DatabaseListPath),
                 WrapperUtility.EnsureClosedFileCommands(DatabaseListPath)
             }).WaitForExit();
 
@@ -136,7 +140,7 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "echo \"Downloading " + snpeffReference + " SnpEff reference\"",
-                SnpEff() + " download " + snpeffReference,
+                SnpEff(Workers) + " download " + snpeffReference,
                 "echo \"\n# " + snpeffReference + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
                 "echo \"" + snpeffReference + ".genome : Human genome " + snpeffReference.Split('.')[0] + " using RefSeq transcripts\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
                 "echo \"" + snpeffReference + ".reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
@@ -149,17 +153,18 @@ namespace ToolWrapperLayer
         /// Gets string command for snpEff without arguments
         /// </summary>
         /// <returns></returns>
-        public static string SnpEff()
+        public static string SnpEff(int workers)
         {
             var performance = new PerformanceCounter("Memory", "Available MBytes");
             var memory = performance.NextValue();
-            return "java -Xmx" + Math.Floor(memory) + "M -jar SnpEff/snpEff.jar";
+            return $"java -Xmx{(int)Math.Floor(memory / (double)workers)}M -jar SnpEff/snpEff.jar";
         }
 
         public static string GenerateXmlDatabaseFromReference(string spritzDirectory, string analysisDirectory, string reference, string inputFilePathForFilePrefix)
         {
-            var snpeff = new SnpEffWrapper();
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffGenerateProteinXml.bash"), snpeff.PrimaryVariantAnnotation(spritzDirectory, analysisDirectory, reference, inputFilePathForFilePrefix, false, true)).WaitForExit();
+            var snpeff = new SnpEffWrapper(1);
+            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffGenerateProteinXml.bash"), 
+                snpeff.PrimaryVariantAnnotation(spritzDirectory, reference, inputFilePathForFilePrefix, true)).WaitForExit();
             return snpeff.VariantProteinXmlPath;
         }
 
@@ -205,7 +210,7 @@ namespace ToolWrapperLayer
 
                 // build snpEff model
                 "cd ..",
-                SnpEff() + " build " + geneModelOption + " -v " + snpEffReferenceName,
+                SnpEff(1) + " build " + geneModelOption + " -v " + snpEffReferenceName,
             }).WaitForExit();
             return snpEffReferenceName;
         }

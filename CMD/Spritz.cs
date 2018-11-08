@@ -28,9 +28,9 @@ namespace CMD
 
             Parsed<Options> result = Parser.Default.ParseArguments<Options>(args) as Parsed<Options>;
             Options options = result.Value;
-
             FinishSetup(options);
-
+            
+            // Download SRAs if they're specified
             bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
             List<string[]> fastqsSeparated = useSraMethod ?
                 SRAToolkitWrapper.GetFastqsFromSras(options.SpritzDirectory, options.Threads, options.AnalysisDirectory, options.SraAccession) :
@@ -40,12 +40,37 @@ namespace CMD
             {
                 if (options.ReferenceVcf == null)
                 {
-                    options.ReferenceVcf = new GATKWrapper().DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
+                    options.ReferenceVcf = new GATKWrapper(1).DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference, false);
                 }
 
                 if (options.UniProtXml == null)
                 {
                     Console.WriteLine("Note: You can specify a UniProt XML file with the -x flag to transfer modificaitons and database references.");
+                }
+
+                // Parse the experiment type
+                ExperimentType experimentType;
+                if (options.ExperimentType == ExperimentType.RNASequencing.ToString())
+                {
+                    experimentType = ExperimentType.RNASequencing;
+                }
+                else if (options.ExperimentType == ExperimentType.WholeGenomeSequencing.ToString())
+                {
+                    experimentType = ExperimentType.WholeGenomeSequencing;
+                }
+                else if (options.ExperimentType == ExperimentType.ExomeSequencing.ToString())
+                {
+                    experimentType = ExperimentType.ExomeSequencing;
+                }
+                else
+                {
+                    throw new ArgumentException("Error: experiment type was not recognized.");
+                }
+
+                // Check that options make sense with experiment type
+                if (options.DoTranscriptIsoformAnalysis && experimentType != ExperimentType.RNASequencing)
+                {
+                    throw new ArgumentException("Error: cannot do isoform analysis without RNA sequencing data.");
                 }
 
                 SampleSpecificProteinDBFlow flow = new SampleSpecificProteinDBFlow();
@@ -54,6 +79,7 @@ namespace CMD
                 flow.Parameters.Reference = options.Reference;
                 flow.Parameters.Threads = options.Threads;
                 flow.Parameters.Fastqs = fastqsSeparated;
+                flow.Parameters.ExperimentType = experimentType;
                 flow.Parameters.StrandSpecific = options.StrandSpecific;
                 flow.Parameters.InferStrandSpecificity = options.InferStrandSpecificity;
                 flow.Parameters.OverwriteStarAlignment = options.OverwriteStarAlignments;
@@ -64,18 +90,22 @@ namespace CMD
                 flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
                 flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
+                flow.Parameters.SkipVariantAnalysis = options.SkipVariantAnalysis;
                 flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
                 flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
-                //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
                 flow.Parameters.IndelFinder = options.IndelFinder;
+                flow.Parameters.VariantCallingWorkers = options.VariantCallingWorkers;
                 flow.GenerateSampleSpecificProteinDatabases();
 
-                Console.WriteLine("output databases to " + string.Join(", and ",
-                    flow.VariantAnnotatedProteinXmlDatabases.Concat(flow.VariantAppliedProteinXmlDatabases.Concat(flow.IndelAppliedProteinXmlDatabases))));
+                Console.WriteLine("done");
             }
 
-            if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            else if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
+                if (options.ExperimentType != null && !options.ExperimentType.Equals(ExperimentType.RNASequencing.ToString()))
+                {
+                    throw new ArgumentException("Error: lncRNA discovery requires RNA-Seq reads.");
+                }
                 LncRNADiscoveryFlow lnc = new LncRNADiscoveryFlow();
                 lnc.Parameters.SpritzDirectory = options.SpritzDirectory;
                 lnc.Parameters.AnalysisDirectory = options.AnalysisDirectory;
@@ -93,8 +123,13 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals(GeneFusionDiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            else if (options.Command.Equals(GeneFusionDiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
+                if (options.ExperimentType != null && !options.ExperimentType.Equals(ExperimentType.RNASequencing.ToString()))
+                {
+                    throw new ArgumentException("Error: gene fusion discovery with STAR fusion requires RNA-Seq reads.");
+                }
+
                 GeneFusionDiscoveryFlow flow = new GeneFusionDiscoveryFlow();
                 flow.Parameters.SpritzDirectory = options.SpritzDirectory;
                 flow.Parameters.AnalysisDirectory = options.AnalysisDirectory;
@@ -105,7 +140,7 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals(TransferModificationsFlow.Command))
+            else if (options.Command.Equals(TransferModificationsFlow.Command))
             {
                 string[] xmls = options.UniProtXml.Split(',');
                 TransferModificationsFlow transfer = new TransferModificationsFlow();
@@ -113,14 +148,19 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals(TranscriptQuantificationFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            else if (options.Command.Equals(TranscriptQuantificationFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
+                if (options.ExperimentType != null && !options.ExperimentType.Equals(ExperimentType.RNASequencing.ToString()))
+                {
+                    throw new ArgumentException("Error: transcript quantification requires RNA-Seq reads.");
+                }
+
                 foreach (string[] fastq in fastqsSeparated)
                 {
                     Strandedness strandedness = options.StrandSpecific ? Strandedness.Forward : Strandedness.None;
                     if (options.InferStrandSpecificity)
                     {
-                        var bamProps = STARAlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
+                        var bamProps = AlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
                             fastq, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                         strandedness = bamProps.Strandedness;
                     }
@@ -140,15 +180,20 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals("strandedness"))
+            else if (options.Command.Equals("strandedness"))
             {
                 string[] fastqs = options.Fastq2 == null ?
                     new[] { options.Fastq1 } :
                     new[] { options.Fastq1, options.Fastq2 };
-                BAMProperties b = STARAlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
+                BAMProperties b = AlignmentFlow.InferStrandedness(options.SpritzDirectory, options.AnalysisDirectory, options.Threads,
                         fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                 Console.WriteLine(b.ToString());
                 return;
+            }
+
+            else
+            {
+                throw new ArgumentException($"Error: command not recognized, {options.Command}");
             }
         }
 

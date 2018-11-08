@@ -82,6 +82,10 @@ namespace SpritzGUI
             {
                 commands.AddRange(new[] { "--fq2", AddQuotes(options.Fastq2) });
             }
+            if (options.ExperimentType != null && options.ExperimentType != "")
+            {
+                commands.AddRange(new[] { "-e", options.ExperimentType });
+            }
             if (options.SraAccession != null && options.SraAccession != "")
             {
                 commands.AddRange(new[] { "-s", options.SraAccession });
@@ -141,6 +145,14 @@ namespace SpritzGUI
             if (options.DoFusionAnalysis)
             {
                 commands.Add("--doGeneFusionAnalysis");
+            }
+            if (options.SkipVariantAnalysis)
+            {
+                commands.Add("--skipVariantAnalysis");
+            }
+            if (options.VariantCallingWorkers > 0 && options.VariantCallingWorkers <= Environment.ProcessorCount)
+            {
+                commands.AddRange(new[] { "--variantCallingWorkers", options.VariantCallingWorkers.ToString() });
             }
             return commands.ToArray();
         }

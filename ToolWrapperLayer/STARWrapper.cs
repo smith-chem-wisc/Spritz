@@ -307,7 +307,9 @@ namespace ToolWrapperLayer
                 " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
+                " --outBAMcompression 10" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
 
                 // chimeric junction settings
                 //" --chimSegmentMin 12" +
@@ -325,16 +327,7 @@ namespace ToolWrapperLayer
                 // gatk parameters
                 " --outSAMattrRGline ID:1 PU:platform  PL:illumina SM:sample LB:library" + // this could shorten the time for samples that aren't multiplexed in preprocessing for GATK
                 " --outSAMmapqUnique 60" + // this is used to ensure compatibility with GATK without having to use the GATK hacks
-                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command; // note in the future, two sets of reads can be comma separated here, and the RGline can also be comma separated to distinguish them later
-
-            string dedupArguments =
-                " --runMode inputAlignmentsFromBAM" +
-                " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
-                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
-                " --runThreadN " + threads.ToString() +
-                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) +
-                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix + Path.GetFileNameWithoutExtension(SortedBamFileSuffix));
 
             return new List<string>
             {
@@ -347,7 +340,7 @@ namespace ToolWrapperLayer
                 SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " ) ]]; then",
-                    "  STAR" + dedupArguments,
+                    "  " + StarDedupCommand(threads, outprefix + SortedBamFileSuffix, outprefix + Path.GetFileNameWithoutExtension(SortedBamFileSuffix)),
                 overwriteStarAlignment ? "" : "fi",
                 SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix)),
 
@@ -355,6 +348,19 @@ namespace ToolWrapperLayer
                     "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
                     "",
             };
+        }
+
+        public static string StarDedupCommand(int threads, string inputBamPath, string outBamPath)
+        {
+            string dedupArguments =
+                " --runMode inputAlignmentsFromBAM" +
+                " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
+                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --runThreadN " + threads.ToString() +
+                " --outBAMcompression 10" +
+                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(inputBamPath) +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outBamPath);
+            return "STAR" + dedupArguments;
         }
 
         /// <summary>

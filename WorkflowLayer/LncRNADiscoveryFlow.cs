@@ -29,22 +29,24 @@ namespace WorkflowLayer
             // Setup and Alignments
             EnsemblDownloadsWrapper ensemblDownloads = new EnsemblDownloadsWrapper();
             ensemblDownloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
-            STARAlignmentFlow alignment = new STARAlignmentFlow();
-            alignment.Parameters = new STARAlignmentParameters(
-                Parameters.SpritzDirectory,
-                Parameters.AnalysisDirectory,
-                Parameters.Reference,
-                Parameters.Threads,
-                Parameters.Fastqs,
-                Parameters.StrandSpecific,
-                Parameters.InferStrandSpecificity,
-                Parameters.OverwriteStarAlignment,
-                Parameters.GenomeStarIndexDirectory,
-                ensemblDownloads.ReorderedFastaPath,
-                Parameters.GeneModelGtfOrGff,
-                Parameters.UseReadSubset,
-                Parameters.ReadSubset);
-            alignment.PerformTwoPassAlignment();
+            AlignmentFlow alignment = new AlignmentFlow();
+            alignment.Parameters = new AlignmentParameters();
+            alignment.Parameters.SpritzDirectory = Parameters.SpritzDirectory;
+            alignment.Parameters.AnalysisDirectory = Parameters.AnalysisDirectory;
+            alignment.Parameters.Reference = Parameters.Reference;
+            alignment.Parameters.Threads = Parameters.Threads;
+            alignment.Parameters.Fastqs = Parameters.Fastqs;
+            alignment.Parameters.ExperimentType = ExperimentType.RNASequencing;
+            alignment.Parameters.StrandSpecific = Parameters.StrandSpecific;
+            alignment.Parameters.InferStrandSpecificity = Parameters.InferStrandSpecificity;
+            alignment.Parameters.OverwriteStarAlignment = Parameters.OverwriteStarAlignment;
+            alignment.Parameters.GenomeStarIndexDirectory = Parameters.GenomeStarIndexDirectory;
+            alignment.Parameters.ReorderedFastaPath = ensemblDownloads.ReorderedFastaPath;
+            alignment.Parameters.GeneModelGtfOrGffPath = Parameters.GeneModelGtfOrGff;
+            alignment.Parameters.UseReadSubset = Parameters.UseReadSubset;
+            alignment.Parameters.ReadSubset = Parameters.ReadSubset;
+
+            alignment.PerformAlignment();
             ensemblDownloads.GetImportantProteinAccessions(Parameters.SpritzDirectory, Parameters.ProteinFasta);
             EnsemblDownloadsWrapper.FilterGeneModel(Parameters.AnalysisDirectory, Parameters.GeneModelGtfOrGff, ensemblDownloads.EnsemblGenome, out string filteredGeneModelForScalpel);
             string sortedBed12Path = BEDOPSWrapper.GffOrGtf2Bed12(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, filteredGeneModelForScalpel);
