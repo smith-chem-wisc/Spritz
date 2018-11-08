@@ -1,4 +1,5 @@
 ﻿using Proteogenomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using ToolWrapperLayer;
@@ -37,15 +38,19 @@ namespace WorkflowLayer
         //public string CombinedAnnotatedProteinXmlPath { get; private set; }
 
         public void CallVariants(string spritzDirectory, string analysisDirectory, ExperimentType experimentType, string reference, int threads, string sortedBed12Path, string ensemblKnownSitesPath,
-            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff, string indelFinder)
+            List<string> dedupedBamFiles, string reorderedFastaPath, Genome genome, bool quickSnpEff, string indelFinder, int workers)
         {
-            List<string> variantCallingCommands = new List<string>();
+            // Generate scripts for each BAM file
+            List<string> variantCallingBashScripts = new List<string>();
             List<SnpEffWrapper> snpeffs = new List<SnpEffWrapper>();
-            string scriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "VariantCalling.bash");
             foreach (string dedupedBam in dedupedBamFiles)
             {
+                List<string> variantCallingCommands = new List<string>();
+                int workerThreads = (int)Math.Floor((double)threads / (double)workers);
+                workerThreads = workerThreads == 0 ? workerThreads++ : workerThreads;
+
                 // GATK
-                var gatk = new GATKWrapper();
+                var gatk = new GATKWrapper(workers);
                 if (experimentType == ExperimentType.RNASequencing)
                 {
                     variantCallingCommands.AddRange(gatk.SplitNCigarReads(spritzDirectory, reorderedFastaPath, dedupedBam));
@@ -55,7 +60,7 @@ namespace WorkflowLayer
                 {
                     variantCallingCommands.AddRange(gatk.BaseRecalibration(spritzDirectory, analysisDirectory, reorderedFastaPath, dedupedBam, ensemblKnownSitesPath));
                 }
-                variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, experimentType, threads, reorderedFastaPath, gatk.RecalibratedBamPath, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
+                variantCallingCommands.AddRange(gatk.VariantCalling(spritzDirectory, experimentType, workerThreads, reorderedFastaPath, gatk.RecalibratedBamPath, Path.Combine(spritzDirectory, ensemblKnownSitesPath)));
                 GatkGvcfFilePaths.Add(gatk.HaplotypeCallerGvcfPath);
                 GatkVcfFilePaths.Add(gatk.HaplotypeCallerVcfPath);
                 GatkFilteredVcfFilePaths.Add(gatk.FilteredHaplotypeCallerVcfPath);
@@ -65,37 +70,63 @@ namespace WorkflowLayer
                 bool useScalpel = indelFinder.Equals("scalpel", System.StringComparison.InvariantCultureIgnoreCase);
                 if (useScalpel)
                 {
-                    variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, threads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
+                    variantCallingCommands.AddRange(scalpel.CallIndels(spritzDirectory, workerThreads, reorderedFastaPath, sortedBed12Path, dedupedBam, Path.Combine(Path.GetDirectoryName(dedupedBam), Path.GetFileNameWithoutExtension(dedupedBam) + "_scalpelOut")));
                     ScalpelVcfFilePaths.Add(scalpel.IndelVcfPath);
                     ScalpelFilteredVcfFilePaths.Add(scalpel.FilteredIndelVcfPath);
                 }
 
                 // Combine & Annotate
                 var vcftools = new VcfToolsWrapper();
-                var snpEff = new SnpEffWrapper();
-                var outprefix = Path.Combine(Path.GetDirectoryName(gatk.SplitTrimBamPath), Path.GetFileNameWithoutExtension(gatk.SplitTrimBamPath));
+                var snpEff = new SnpEffWrapper(workers);
+                var outprefix = Path.Combine(Path.GetDirectoryName(gatk.RecalibratedBamPath), Path.GetFileNameWithoutExtension(gatk.RecalibratedBamPath));
                 if (useScalpel)
                 {
                     variantCallingCommands.Add(vcftools.Concatenate(spritzDirectory, new string[] { gatk.FilteredHaplotypeCallerVcfPath, scalpel.FilteredIndelVcfPath }, outprefix));
                     variantCallingCommands.AddRange(gatk.SortVCF(spritzDirectory, analysisDirectory, vcftools.VcfConcatenatedPath, reorderedFastaPath));
                     CombinedVcfFilePaths.Add(vcftools.VcfConcatenatedPath);
                     CombinedSortedVcfFilePaths.Add(gatk.SortedVcfPath);
-                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.SortedVcfPath, quickSnpEff));
+                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.SortedVcfPath));
                 }
                 else if (indelFinder.Equals("gatk", System.StringComparison.InvariantCultureIgnoreCase))
                 {
-                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.HaplotypeCallerVcfPath, quickSnpEff));
+                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.HaplotypeCallerVcfPath));
                 }
                 else
                 {
-                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.FilteredHaplotypeCallerVcfPath, quickSnpEff));
+                    variantCallingCommands.AddRange(snpEff.PrimaryVariantAnnotation(spritzDirectory, reference, gatk.FilteredHaplotypeCallerVcfPath));
                 }
                 CombinedAnnotatedVcfFilePaths.Add(snpEff.AnnotatedVcfPath);
                 CombinedSnpEffHtmlFilePaths.Add(snpEff.HtmlReportPath);
                 CombinedAnnotatedProteinFastaPaths.Add(snpEff.VariantProteinFastaPath);
                 CombinedAnnotatedProteinXmlPaths.Add(snpEff.VariantProteinXmlPath);
                 snpeffs.Add(snpEff);
+
+                string littleScriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, $"VariantCalling{dedupedBam.GetHashCode().ToString()}.bash");
+                WrapperUtility.GenerateScript(littleScriptName, variantCallingCommands);
+                variantCallingBashScripts.Add(littleScriptName);
             }
+
+            // Run the scripts in parallel
+            string scriptName = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, $"VariantCalling.bash");
+            List<string> runnerCommands = new List<string>();
+            List<int> runners = new List<int>();
+            for (int i = 1; i <= variantCallingBashScripts.Count; i++)
+            {
+                // runs in parallel unless it's spawning enough workers or at the end of the line
+                string logPath = Path.Combine(Path.GetDirectoryName(dedupedBamFiles[i - 1]), Path.GetFileNameWithoutExtension(dedupedBamFiles[i - 1]) + ".variantCalling.log");
+                bool waitForWorkersToFinish = i % workers == 0 || i == variantCallingBashScripts.Count;
+                runnerCommands.Add($"echo \"Running {variantCallingBashScripts[i - 1]} in the background. See {WrapperUtility.ConvertWindowsPath(logPath).Trim('"')} for output.\"");
+                runnerCommands.Add($"bash {WrapperUtility.ConvertWindowsPath(variantCallingBashScripts[i - 1])} &> {WrapperUtility.ConvertWindowsPath(logPath)} &");
+                runnerCommands.Add($"proc{i.ToString()}=$!");
+                runners.Add(i);
+
+                if (waitForWorkersToFinish)
+                {
+                    runners.ForEach(r => runnerCommands.Add($"wait $proc{r.ToString()}"));
+                    runners.Clear();
+                }
+            }
+            WrapperUtility.GenerateAndRunScript(scriptName, runnerCommands).WaitForExit();
 
             // Combine GVCFs and make a final database
             // This doesn't work because CombineGVCFs doesn't handle MNPs... MergeVcfs doesn't actually decide anything about overlapping variants... 
@@ -121,8 +152,6 @@ namespace WorkflowLayer
             //    CombinedAnnotatedProteinFastaPath = snpEff.VariantProteinFastaPath;
             //    CombinedAnnotatedProteinXmlPath = snpEff.VariantProteinXmlPath;
             //}
-
-            WrapperUtility.GenerateAndRunScript(scriptName, variantCallingCommands).WaitForExit();
         }
     }
 }

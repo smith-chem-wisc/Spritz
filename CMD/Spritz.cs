@@ -40,7 +40,7 @@ namespace CMD
             {
                 if (options.ReferenceVcf == null)
                 {
-                    options.ReferenceVcf = new GATKWrapper().DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference);
+                    options.ReferenceVcf = new GATKWrapper(1).DownloadEnsemblKnownVariantSites(options.SpritzDirectory, true, options.Reference, false);
                 }
 
                 if (options.UniProtXml == null)
@@ -90,17 +90,17 @@ namespace CMD
                 flow.Parameters.NewGeneModelGtfOrGff = options.NewGeneModelGtfOrGff;
                 flow.Parameters.EnsemblKnownSitesPath = options.ReferenceVcf;
                 flow.Parameters.UniProtXmlPath = options.UniProtXml;
-                flow.Parameters.SkipVariantAnalysis = options.SkipVariantAnalysis; // default is true
+                flow.Parameters.SkipVariantAnalysis = options.SkipVariantAnalysis;
                 flow.Parameters.DoTranscriptIsoformAnalysis = options.DoTranscriptIsoformAnalysis;
                 flow.Parameters.DoFusionAnalysis = options.DoFusionAnalysis;
-                //flow.Parameters.QuickSnpEffWithoutStats = options.QuickSnpEffWithoutStats;
                 flow.Parameters.IndelFinder = options.IndelFinder;
+                flow.Parameters.VariantCallingWorkers = options.VariantCallingWorkers;
                 flow.GenerateSampleSpecificProteinDatabases();
 
                 Console.WriteLine("done");
             }
 
-            if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            else if (options.Command.Equals(LncRNADiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
                 if (options.ExperimentType != null && !options.ExperimentType.Equals(ExperimentType.RNASequencing.ToString()))
                 {
@@ -123,7 +123,7 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals(GeneFusionDiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            else if (options.Command.Equals(GeneFusionDiscoveryFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
                 if (options.ExperimentType != null && !options.ExperimentType.Equals(ExperimentType.RNASequencing.ToString()))
                 {
@@ -140,7 +140,7 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals(TransferModificationsFlow.Command))
+            else if (options.Command.Equals(TransferModificationsFlow.Command))
             {
                 string[] xmls = options.UniProtXml.Split(',');
                 TransferModificationsFlow transfer = new TransferModificationsFlow();
@@ -148,7 +148,7 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals(TranscriptQuantificationFlow.Command, StringComparison.InvariantCultureIgnoreCase))
+            else if (options.Command.Equals(TranscriptQuantificationFlow.Command, StringComparison.InvariantCultureIgnoreCase))
             {
                 if (options.ExperimentType != null && !options.ExperimentType.Equals(ExperimentType.RNASequencing.ToString()))
                 {
@@ -180,7 +180,7 @@ namespace CMD
                 return;
             }
 
-            if (options.Command.Equals("strandedness"))
+            else if (options.Command.Equals("strandedness"))
             {
                 string[] fastqs = options.Fastq2 == null ?
                     new[] { options.Fastq1 } :
@@ -189,6 +189,11 @@ namespace CMD
                         fastqs, options.GenomeStarIndexDirectory, options.GenomeFasta, options.GeneModelGtfOrGff);
                 Console.WriteLine(b.ToString());
                 return;
+            }
+
+            else
+            {
+                throw new ArgumentException($"Error: command not recognized, {options.Command}");
             }
         }
 

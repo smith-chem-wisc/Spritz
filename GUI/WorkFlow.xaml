@@ -64,7 +64,7 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="0">
                             <Label Content="Threads" Width="200"/>
-                            <TextBox x:Name="txtThreads" Width="180" />
+                            <TextBox x:Name="txtThreads" TextChanged="txtThreads_TextChanged" Width="180" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="0">
                             <Label Content="Star Genome Directory" Width="200"/>
@@ -81,6 +81,10 @@
                         <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="0">
                             <Label Content="Alternative Gene Model (Gtf/Gff)" Width="200"/>
                             <TextBox x:Name="txtNewGeneModelGtfOrGff" Width="180" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="0">
+                            <Label Content="Protein Fasta Path" Width="200"/>
+                            <TextBox x:Name="txtProteinFasta" Width="180" Height="32" VerticalAlignment="Bottom" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
@@ -113,19 +117,21 @@
                         </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="7" Grid.Column="1">
                             <Label Content="Indel Finding Software"/>
-                            <ComboBox x:Name="CmbxIndelFinding"/>
+                            <ComboBox x:Name="CmbxIndelFinding" SelectionChanged="CmbxIndelFinding_SelectionChanged"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="1">
+                        <StackPanel  Orientation="Horizontal" Grid.Row="8" Grid.Column="1">
+                            <Label Content="Variant Caller Workers"/>
+                            <TextBox x:Name="TxtVariantCallingWorkerNum" x:FieldModifier="private" Margin="5,5,0,5" Width="50" Text="0" TextChanged="TxtVariantCallingWorkerNum_TextChanged" />
+                            <Button x:Name="CmdUpVariantCallingWorkers" x:FieldModifier="private" Margin="5,5,0,5" Content="˄" Width="20" Click="CmdUpVariantCallingWorkers_Click" />
+                            <Button x:Name="CmdDownVariantCallingWorkers" x:FieldModifier="private" Margin="0,5,0,5"  Content="˅" Width="20" Click="CmdDownVariantCallingWorkers_Click" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
                             <Label Content="Do Transcript Isoform Analysis" Width="200"/>
                             <CheckBox x:Name="CkbDoTranscriptIsoformAnalysis" Width="180" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
+                        <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="1">
                             <Label Content="Do Gene Fusion Analysis" Width="200"/>
                             <CheckBox x:Name="CkbDoGeneFusionAnalysis" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="1">
-                            <Label Content="Protein Fasta Path" Width="200"/>
-                            <TextBox x:Name="txtProteinFasta" Width="180" Height="32" VerticalAlignment="Bottom" />
                         </StackPanel>
                     </Grid>
                 </GroupBox>

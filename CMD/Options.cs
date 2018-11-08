@@ -82,11 +82,11 @@ namespace CMD
         [Option("doGeneFusionAnalysis", Required = false, HelpText = "Do a gene fusion analysis to investigate gene fusion protein products.", Default = false)]
         public bool DoFusionAnalysis { get; set; }
 
-        //[Option("quickSnpEffWithoutStats", Required = false, HelpText = "Use multiple threads for SnpEff and do not output stats HTML.", Default = false)]
-        //public bool QuickSnpEffWithoutStats { get; set; }
-
         [Option("indelFinder", Required = false, HelpText = "Software to use for indel finding.", Default = "")]
         public string IndelFinder { get; set; }
+
+        [Option("variantCallingWorkers", Required = false, HelpText = "Number of workers for parallel variant calling.", Default = 1)]
+        public int VariantCallingWorkers { get; set; } = 1;
 
         public string ProteinFastaPath { get; set; }
     }

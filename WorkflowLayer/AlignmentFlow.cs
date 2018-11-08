@@ -37,6 +37,7 @@ namespace WorkflowLayer
         /// </summary>
         public void PerformAlignment()
         {
+            int starThreads = Math.Min(18, Parameters.Threads); // 18 max, otherwise it throws a segmentation fault in sorting the BAM files
             if (Parameters.ExperimentType == ExperimentType.RNASequencing)
             {
                 // Alignment preparation
@@ -52,7 +53,7 @@ namespace WorkflowLayer
 
                 // there's trouble with the number of open files for sorting and stuff, which increases with the number of threads
                 // 18 is the max that works with the default max number of open files
-                TwoPassAlignment(Math.Min(18, Parameters.Threads), Parameters.OverwriteStarAlignment);
+                TwoPassAlignment(starThreads, Parameters.OverwriteStarAlignment);
             }
             else
             {
@@ -65,14 +66,20 @@ namespace WorkflowLayer
                 List<string> alignmentCommands = new List<string>();
                 foreach (string[] fastq in FastqsForAlignment)
                 {
+                    // alignment
                     alignmentCommands.AddRange(TopHatWrapper.Bowtie2Align(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, 
                         bowtieIndexPrefix, Parameters.Threads, fastq, Parameters.StrandSpecific, out string sortedBamPath));
-                    string dedupedBamPath = Path.Combine(Path.GetDirectoryName(sortedBamPath), Path.GetFileNameWithoutExtension(sortedBamPath)) + ".deduped.bam";
-                    GATKWrapper gatk = new GATKWrapper();
+                    alignmentCommands.Add(SamtoolsWrapper.IndexBamCommand(sortedBamPath));
+
+                    // mark duplicates
+                    GATKWrapper gatk = new GATKWrapper(1);
                     alignmentCommands.AddRange(gatk.PrepareBamAndFasta(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Threads, sortedBamPath, Parameters.ReorderedFastaPath, Parameters.Reference));
+                    alignmentCommands.Add(SamtoolsWrapper.IndexBamCommand(gatk.PreparedBamPath));
+
                     SortedBamFiles.Add(sortedBamPath);
                     DedupedBamFiles.Add(gatk.PreparedBamPath);
                 }
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(Parameters.AnalysisDirectory, "BowtieAlignment.bash"), alignmentCommands).WaitForExit();
             }
         }
 

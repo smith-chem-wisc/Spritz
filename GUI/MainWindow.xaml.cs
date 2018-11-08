@@ -25,7 +25,7 @@ namespace SpritzGUI
         private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
         private CancellationTokenSource TokenSource = new CancellationTokenSource();
         private EverythingRunnerEngine Everything;
-        private Task EverythingTask;
+        //private Task EverythingTask;
 
         public MainWindow()
         {
@@ -96,7 +96,7 @@ namespace SpritzGUI
             }
             workflowTreeView.DataContext = DynamicTasksObservableCollection;
             Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            //WarningsTextBox.AppendText(string.Join("\n", everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
+            WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
             var t = new Task(Everything.Run);
             t.Start();
             t.ContinueWith(DisplayAnyErrors);
@@ -335,10 +335,10 @@ namespace SpritzGUI
         private void AddAFile(string filepath)
         {
             var theExtension = Path.GetExtension(filepath).ToLowerInvariant();
+            theExtension = theExtension == ".gz" ? Path.GetExtension(Path.GetFileNameWithoutExtension(filepath)).ToLowerInvariant() : theExtension;
             switch (theExtension)
             {
                 case ".fastq":
-                case ".fastq.gz":
                     RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
                     RnaSeqFastqCollection.Add(rnaSeqFastq);
                     UpdateOutputFolderTextbox();

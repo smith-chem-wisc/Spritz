@@ -114,14 +114,16 @@ namespace ToolWrapperLayer
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "bowtie2-2.3.4/bowtie2 " +
-                    " -x " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix) +
-                    " -p " + threads.ToString() +
-                    (fastqPaths.Length == 1 ?
-                        " -U " + WrapperUtility.ConvertWindowsPath(fastqPaths[0]) :
-                        " -1 " + WrapperUtility.ConvertWindowsPath(fastqPaths[0]) + " -2 " + WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
-                " | samtools view -b - " +
-                " | " + SamtoolsWrapper.SortBamFromStdin(sortedBamFilePath, threads)
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(sortedBamFilePath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(sortedBamFilePath) + " ) ]]; then",
+                    "  bowtie2-2.3.4/bowtie2 " +
+                        " -x " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix) +
+                        " -p " + threads.ToString() +
+                        (fastqPaths.Length == 1 ?
+                            " -U " + WrapperUtility.ConvertWindowsPath(fastqPaths[0]) :
+                            " -1 " + WrapperUtility.ConvertWindowsPath(fastqPaths[0]) + " -2 " + WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
+                    " | samtools view -b - " +
+                    " | " + SamtoolsWrapper.SortBamFromStdin(sortedBamFilePath, threads),
+                "fi",
             };
         }
 

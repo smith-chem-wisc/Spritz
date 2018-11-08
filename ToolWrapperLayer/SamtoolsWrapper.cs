@@ -27,11 +27,11 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d samtools-" + SamtoolsVersion + " ]; then",
-                "  wget --no-check https://github.com/samtools/samtools/releases/download/" + SamtoolsVersion + "/samtools-" + SamtoolsVersion + ".tar.bz2",
-                "  tar -jxvf samtools-" + SamtoolsVersion + ".tar.bz2",
-                "  rm samtools-" + SamtoolsVersion + ".tar.bz2",
-                "  cd samtools-" + SamtoolsVersion + "/htslib-" + SamtoolsVersion,
+                $"if [ ! -d samtools-{SamtoolsVersion} ]; then",
+                $"  wget --no-check https://github.com/samtools/samtools/releases/download/{SamtoolsVersion}/samtools-{SamtoolsVersion}.tar.bz2",
+                $"  tar -jxvf samtools-{SamtoolsVersion}.tar.bz2",
+                $"  rm samtools-{SamtoolsVersion}.tar.bz2",
+                $"  cd samtools-{SamtoolsVersion}/htslib-{SamtoolsVersion}",
                 "  ./configure", // configures install to /usr/local/bin and /usr/local/share
                 "  make",
                 "  make install",
@@ -66,30 +66,35 @@ namespace ToolWrapperLayer
         {
             int megabytes = (int)(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue()) * 0.9 / threads);
             megabytes = megabytes > 10000 ? 10000 : megabytes; // this is the max samtools sort can take, apparently
-            return megabytes + "M";
+            return $"{megabytes}M";
+        }
+
+        public static string CompressBam(string bamPath, string outBamPath)
+        {
+            return $"samtools view -b -l 9 {WrapperUtility.ConvertWindowsPath(bamPath)} > {WrapperUtility.ConvertWindowsPath(outBamPath)}";
         }
 
         public static string SortBam(string bamPath, int threads)
         {
-            return "samtools sort -@ " + threads.ToString() + " -m " + GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount) +
+            return "samtools sort -l 9 -@ " + threads.ToString() + " -m " + GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount) +
                 " -o " + WrapperUtility.ConvertWindowsPath(Path.Combine(Path.GetDirectoryName(bamPath), Path.GetFileNameWithoutExtension(bamPath) + ".sorted.bam")) + " " +
                 WrapperUtility.ConvertWindowsPath(bamPath);
         }
 
         public static string SortBamFromStdin(string outBamPath, int threads)
         {
-            return $"samtools sort -@ {threads.ToString()} -m {GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount)}" +
+            return $"samtools sort -l 9 -@ {threads.ToString()} -m {GetSamtoolsMemoryPerThreadString(Environment.ProcessorCount)}" +
                 $" -o {WrapperUtility.ConvertWindowsPath(outBamPath)} - ";
         }
 
         public static string GenomeFastaIndexCommand(string genomeFastaPath)
         {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + ".fai ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath($"{genomeFastaPath}.fai") + " ]; then samtools faidx " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) + "; fi";
         }
 
         public static string IndexBamCommand(string bamPath)
         {
-            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(bamPath) + ".bai ]; then samtools index " + WrapperUtility.ConvertWindowsPath(bamPath) + "; fi";
+            return "if [ ! -f " + WrapperUtility.ConvertWindowsPath($"{bamPath}.bai") + " ]; then samtools index " + WrapperUtility.ConvertWindowsPath(bamPath) + "; fi";
         }
 
         public static string GetSequencesFromFasta(string inputFasta, IEnumerable<string> sequenceNames, string outputFasta)

@@ -30,5 +30,6 @@ namespace WorkflowLayer
         public bool SkipVariantAnalysis { get; set; }
         public bool QuickSnpEffWithoutStats { get; set; }
         public string IndelFinder { get; set; }
+        public int VariantCallingWorkers { get; set; }
     }
 }

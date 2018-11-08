@@ -146,6 +146,14 @@ namespace SpritzGUI
             {
                 commands.Add("--doGeneFusionAnalysis");
             }
+            if (options.SkipVariantAnalysis)
+            {
+                commands.Add("--skipVariantAnalysis");
+            }
+            if (options.VariantCallingWorkers > 0 && options.VariantCallingWorkers <= Environment.ProcessorCount)
+            {
+                commands.AddRange(new[] { "--variantCallingWorkers", options.VariantCallingWorkers.ToString() });
+            }
             return commands.ToArray();
         }
 

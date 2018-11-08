@@ -94,14 +94,14 @@ namespace WorkflowLayer
             new VcfToolsWrapper(),
 
             // don't necessarily require root permissions
-            new GATKWrapper(),
+            new GATKWrapper(1),
             new HISAT2Wrapper(),
             new RSEMWrapper(),
             new RSeQCWrapper(),
             new ScalpelWrapper(),
             new SkewerWrapper(),
             new SlnckyWrapper(),
-            new SnpEffWrapper(),
+            new SnpEffWrapper(1),
             new SRAToolkitWrapper(),
             new STARWrapper(),
             new STARFusionWrapper(),
