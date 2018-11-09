@@ -98,13 +98,13 @@ namespace WorkflowLayer
                 if (Parameters.Fastqs == null || Parameters.SkipVariantAnalysis) // isoform analysis without variant analysis, so generate a protein database directly from merged gtf
                     mergedGeneModelProteinXml = SnpEffWrapper.GenerateXmlDatabaseFromReference(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, reference, mergedGeneModelWithCdsPath);
             }
-            else if (Parameters.Fastqs != null) // no isoform analysis, but there are are fastqs
+            else // no isoform analysis
             {
                 new SnpEffWrapper(1).DownloadSnpEffDatabase(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference);
-            }
-            else // no isoform analysis and no fastqs
-            {
-                referenceGeneModelProteinXml = SnpEffWrapper.GenerateXmlDatabaseFromReference(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference, Parameters.ReferenceGeneModelGtfOrGff);
+                if (Parameters.Fastqs == null) // no isoform analysis and no fastqs
+                {
+                    referenceGeneModelProteinXml = SnpEffWrapper.GenerateXmlDatabaseFromReference(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.Reference, Parameters.ReferenceGeneModelGtfOrGff);
+                }
             }
 
             // Gene Fusion Discovery
