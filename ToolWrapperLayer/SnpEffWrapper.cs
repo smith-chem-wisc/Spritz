@@ -134,13 +134,11 @@ namespace ToolWrapperLayer
             }
             string snpeffReference = databases.FirstOrDefault(d => d.StartsWith(reference, true, CultureInfo.InvariantCulture));
 
-            // download database
+            // download database (it downloads automatically now, with more feedback), but still need the mitochondrial references
             scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SnpEffDatabaseDownload.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "echo \"Downloading " + snpeffReference + " SnpEff reference\"",
-                SnpEff(Workers) + " download " + snpeffReference,
                 "echo \"\n# " + snpeffReference + "\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
                 "echo \"" + snpeffReference + ".genome : Human genome " + snpeffReference.Split('.')[0] + " using RefSeq transcripts\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory,"Tools", "SnpEff", "snpEff.config")),
                 "echo \"" + snpeffReference + ".reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> " + WrapperUtility.ConvertWindowsPath(Path.Combine(spritzDirectory, "Tools", "SnpEff", "snpEff.config")),
