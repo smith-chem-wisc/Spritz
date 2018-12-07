@@ -5,6 +5,8 @@ Software for RNA-Seq analysis on Windows, including creating sample-specific pro
 
 Spritz uses the Windows Subsystem for Linux (WSL) to install and run commandline tools for Next-Generation Sequencing (NGS) analysis.
 
+Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releases).
+
 ## Setting Up WSL
 1. Install [Ubuntu from the Microsoft Store](https://www.microsoft.com/store/productId/9NBLGGH4MSV6).
 2. Open the "Turn Windows features on or off" application.

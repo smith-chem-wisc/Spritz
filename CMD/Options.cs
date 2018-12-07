@@ -34,11 +34,14 @@ namespace CMD
         [Option('2', "fq2", Required = false, HelpText = "FASTQ file pair2 (comma-separated for multiple files)")]
         public string Fastq2 { get; set; }
 
+        [Option('e', "experimentType", Required = false, HelpText = "Type of sequencing data contained in FASTQ files (options: RNASequencing, WholeGenomeSequencing, ExomeSequencing)")]
+        public string ExperimentType { get; set; }
+
         [Option('s', "sraAccession", Required = false, HelpText = "SRR or SRX accession for download of fastq files for analysis (comma-separated for multiple SRAs)")]
         public string SraAccession { get; set; }
 
         [Option('t', "threads", Required = false, HelpText = "Number of threads to use")]
-        public int Threads { get; set; } = Environment.ProcessorCount;
+        public int Threads { get; set; } = Environment.ProcessorCount == 1 ? 1 : Environment.ProcessorCount - 1;
 
         [Option('d', "genomeDir", Required = false, HelpText = "STAR genome directory (default = genomeFastq without extension)")]
         public string GenomeStarIndexDirectory { get; set; }
@@ -70,14 +73,20 @@ namespace CMD
         [Option("inferStrandedness", Required = false, HelpText = "Infer the strandedness with a sample of the FASTQ files", Default = false)]
         public bool InferStrandSpecificity { get; set; }
 
+        [Option("skipVariantAnalysis", Required = false, HelpText = "Skip the variant calling analysis.", Default = false)]
+        public bool SkipVariantAnalysis { get; set; }
+
         [Option("doTranscriptIsoformAnalysis", Required = false, HelpText = "Do a transcript reconstruction analysis or use the specified new gene model (see -h option) to investigate alternative transcript isoforms.", Default = false)]
         public bool DoTranscriptIsoformAnalysis { get; set; }
 
         [Option("doGeneFusionAnalysis", Required = false, HelpText = "Do a gene fusion analysis to investigate gene fusion protein products.", Default = false)]
         public bool DoFusionAnalysis { get; set; }
 
-        //[Option("quickSnpEffWithoutStats", Required = false, HelpText = "Use multiple threads for SnpEff and do not output stats HTML.", Default = false)]
-        //public bool QuickSnpEffWithoutStats { get; set; }
+        [Option("indelFinder", Required = false, HelpText = "Software to use for indel finding.", Default = "")]
+        public string IndelFinder { get; set; }
+
+        [Option("variantCallingWorkers", Required = false, HelpText = "Number of workers for parallel variant calling.", Default = 1)]
+        public int VariantCallingWorkers { get; set; } = 1;
 
         public string ProteinFastaPath { get; set; }
     }

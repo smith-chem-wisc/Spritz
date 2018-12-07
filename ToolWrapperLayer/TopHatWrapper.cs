@@ -107,6 +107,26 @@ namespace ToolWrapperLayer
             }).WaitForExit();
         }
 
+        public static List<string> Bowtie2Align(string spritzDirectory, string analysisDirectory, string bowtieIndexPrefix, int threads, string[] fastqPaths,
+            bool strandSpecific, out string sortedBamFilePath)
+        {
+            sortedBamFilePath = Path.Combine(Path.GetDirectoryName(fastqPaths[0]), Path.GetFileNameWithoutExtension(fastqPaths[0])) + ".sorted.bam";
+            return new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(sortedBamFilePath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(sortedBamFilePath) + " ) ]]; then",
+                    "  bowtie2-2.3.4/bowtie2 " +
+                        " -x " + WrapperUtility.ConvertWindowsPath(bowtieIndexPrefix) +
+                        " -p " + threads.ToString() +
+                        (fastqPaths.Length == 1 ?
+                            " -U " + WrapperUtility.ConvertWindowsPath(fastqPaths[0]) :
+                            " -1 " + WrapperUtility.ConvertWindowsPath(fastqPaths[0]) + " -2 " + WrapperUtility.ConvertWindowsPath(fastqPaths[1])) +
+                    " | samtools view -b - " +
+                    " | " + SamtoolsWrapper.SortBamFromStdin(sortedBamFilePath, threads),
+                "fi",
+            };
+        }
+
         /// <summary>
         /// Aligns reads in fastq files using TopHat2.
         /// </summary>

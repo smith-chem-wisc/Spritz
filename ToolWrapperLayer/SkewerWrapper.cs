@@ -43,7 +43,7 @@ namespace ToolWrapperLayer
             return null;
         }
 
-        public static void Trim(string spritzDirectory, string analysisDirectory, int threads, int qualityFilter, string[] readPaths, out string[] readTrimmedPaths, out string log)
+        public static void Trim(string spritzDirectory, string analysisDirectory, int threads, int qualityFilter, string[] readPaths, bool dryRun, out string[] readTrimmedPaths, out string log)
         {
             log = "";
             readTrimmedPaths = new string[readPaths.Length];
@@ -60,7 +60,7 @@ namespace ToolWrapperLayer
             log = Path.Combine(Path.GetDirectoryName(uncompressedReadPaths[0]), Path.GetFileNameWithoutExtension(uncompressedReadPaths[0]) + "-trimmed.log");
 
             bool alreadyTrimmed = File.Exists(readTrimmedPaths[0]) && (readPaths.Length == 1 || File.Exists(readTrimmedPaths[1]));
-            if (alreadyTrimmed) return;
+            if (alreadyTrimmed || dryRun) { return; }
 
             string scriptPath = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Skewered.bash");
             WrapperUtility.GenerateAndRunScript(scriptPath, new List<string>

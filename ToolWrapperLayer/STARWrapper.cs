@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace ToolWrapperLayer
 {
@@ -123,7 +124,7 @@ namespace ToolWrapperLayer
         /// <param name="sjdbFileChrStartEnd"></param>
         /// <param name="junctionOverhang"></param>
         /// <returns></returns>
-        public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
+        public static List<string> GenerateGenomeIndex(string spritzDirectory, int threads, string genomeDir, IEnumerable<string> genomeFastas, string geneModelGtfOrGff, List<string[]> fastqsToCheck = null, string sjdbFileChrStartEnd = "", int junctionOverhang = 100)
         {
             string fastas = string.Join(" ", genomeFastas.Select(f => WrapperUtility.ConvertWindowsPath(f)));
             string arguments =
@@ -136,11 +137,29 @@ namespace ToolWrapperLayer
                 (Path.GetExtension(geneModelGtfOrGff).StartsWith(".gff") ? " --sjdbGTFtagExonParentTranscript Parent" : "") +
                 " --sjdbOverhang " + junctionOverhang.ToString();
 
+            // check if alignment is needed
+            StringBuilder check = new StringBuilder();
+            check.Append($"if [[ ( ! -f { WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA"))} || ! -s {WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA"))} )");
+            if (fastqsToCheck != null)
+            {
+                check.Append(" && ( ");
+                List<string> additionalChecks = new List<string>();
+                foreach (var fq in fastqsToCheck)
+                {
+                    SkewerWrapper.Trim(spritzDirectory, spritzDirectory, threads, 10, fq, true, out string[] trimmedFastqs, out string log);
+                    string outprefix = Path.Combine(Path.GetDirectoryName(trimmedFastqs[0]), Path.GetFileNameWithoutExtension(trimmedFastqs[0]));
+                    additionalChecks.Add($"( ! -f {WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)} || ! -s {WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)} )");
+                }
+                check.Append(string.Join(" || ", additionalChecks));
+            }
+            check.Append(" ) ]]; then");
+
+            // return the genome generation commands with checks
             return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -d " + WrapperUtility.ConvertWindowsPath(genomeDir) + " ]; then mkdir " + WrapperUtility.ConvertWindowsPath(genomeDir) + "; fi",
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " || ! -s " + WrapperUtility.ConvertWindowsPath(Path.Combine(genomeDir, "SA")) + " ) ]]; then STAR" + arguments + "; fi"
+                $"if [ ! -d {WrapperUtility.ConvertWindowsPath(genomeDir)} ]; then mkdir {WrapperUtility.ConvertWindowsPath(genomeDir)}; fi",
+                $"{check.ToString()} STAR {arguments}; fi"
             };
         }
 
@@ -288,7 +307,9 @@ namespace ToolWrapperLayer
                 " --genomeDir " + WrapperUtility.ConvertWindowsPath(genomeDir) +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
+                " --outBAMcompression 10" +
                 " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
 
                 // chimeric junction settings
                 //" --chimSegmentMin 12" +
@@ -306,16 +327,7 @@ namespace ToolWrapperLayer
                 // gatk parameters
                 " --outSAMattrRGline ID:1 PU:platform  PL:illumina SM:sample LB:library" + // this could shorten the time for samples that aren't multiplexed in preprocessing for GATK
                 " --outSAMmapqUnique 60" + // this is used to ensure compatibility with GATK without having to use the GATK hacks
-                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
                 read_command; // note in the future, two sets of reads can be comma separated here, and the RGline can also be comma separated to distinguish them later
-
-            string dedupArguments =
-                " --runMode inputAlignmentsFromBAM" +
-                " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
-                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
-                " --runThreadN " + threads.ToString() +
-                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix) +
-                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix + Path.GetFileNameWithoutExtension(SortedBamFileSuffix));
 
             return new List<string>
             {
@@ -328,7 +340,7 @@ namespace ToolWrapperLayer
                 SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + SortedBamFileSuffix)),
 
                 overwriteStarAlignment ? "" : "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " || ! -s " + WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix) + " ) ]]; then",
-                    "  STAR" + dedupArguments,
+                    "  " + StarDedupCommand(threads, outprefix + SortedBamFileSuffix, outprefix + Path.GetFileNameWithoutExtension(SortedBamFileSuffix)),
                 overwriteStarAlignment ? "" : "fi",
                 SamtoolsWrapper.IndexBamCommand(WrapperUtility.ConvertWindowsPath(outprefix + DedupedBamFileSuffix)),
 
@@ -336,6 +348,19 @@ namespace ToolWrapperLayer
                     "STAR --genomeLoad " + STARGenomeLoadOption.Remove.ToString() :
                     "",
             };
+        }
+
+        public static string StarDedupCommand(int threads, string inputBamPath, string outBamPath)
+        {
+            string dedupArguments =
+                " --runMode inputAlignmentsFromBAM" +
+                " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
+                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --runThreadN " + threads.ToString() +
+                " --outBAMcompression 10" +
+                " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(inputBamPath) +
+                " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outBamPath);
+            return "STAR" + dedupArguments;
         }
 
         /// <summary>

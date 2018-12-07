@@ -47,17 +47,26 @@ namespace ToolWrapperLayer
 
         #endregion dbSNP URLs
 
+        public GATKWrapper(int workers)
+        {
+            Workers = workers;
+        }
+
+        private static string Version = "4.0.11.0";
         private static Regex getFastaHeaderSequenceName = new Regex(@"(>)([\w\d\.\-]+)(.+)");
         private static Regex getISequenceHeaderSequenceName = new Regex(@"([\w\d\.\-]+)(.+)");
         private string TargetFileLocation;
+        public int Workers { get; }
+        public string UcscKnownSitesDownloadPath { get; private set; }
         public string UcscKnownSitesPath { get; private set; }
         public string EnsemblKnownSitesPath { get; private set; }
         public string SplitTrimBamPath { get; private set; }
+        public string HaplotypeCallerGvcfPath { get; private set; } // intermediate file with all genomic loci
         public string HaplotypeCallerVcfPath { get; private set; }
         public string FilteredHaplotypeCallerVcfPath { get; private set; }
         public string PreparedBamPath { get; private set; }
-        public string RealignedIndelBamPath { get; private set; }
         public string RecalibrationTablePath { get; private set; }
+        public string RecalibratedBamPath { get; private set; }
         public string SortedVcfPath { get; private set; }
 
         /// <summary>
@@ -72,10 +81,10 @@ namespace ToolWrapperLayer
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 "if [ ! -d gatk ]; then",
-                "  wget --no-check https://github.com/broadinstitute/gatk/releases/download/4.0.0.0/gatk-4.0.0.0.zip",
-                "  unzip gatk-4.0.0.0.zip",
-                "  rm gatk-4.0.0.0.zip",
-                "  mv gatk-4.0.0.0 gatk",
+                $"  wget --no-check https://github.com/broadinstitute/gatk/releases/download/{Version}/gatk-{Version}.zip",
+                $"  unzip gatk-{Version}.zip",
+                $"  rm gatk-{Version}.zip",
+                $"  mv gatk-{Version} gatk",
                 "fi",
                 "if [ ! -d ChromosomeMappings ]; then git clone https://github.com/dpryan79/ChromosomeMappings.git; fi",
             });
@@ -106,7 +115,7 @@ namespace ToolWrapperLayer
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "SubsetBam.bash"), new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                Gatk() +
+                Gatk(Workers) +
                     " PrintReads" +
                     " --num_threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -134,7 +143,7 @@ namespace ToolWrapperLayer
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 GenomeDictionaryIndexCommand(genomeFastaPath),
                 "if [ ! -f " + WrapperUtility.ConvertWindowsPath(SortedVcfPath) + " ]; then " +
-                    Gatk() + // formerly picard
+                    Gatk(Workers) + // formerly picard
                     " SortVcf -I " + WrapperUtility.ConvertWindowsPath(vcfPath) +
                     " -O " + WrapperUtility.ConvertWindowsPath(SortedVcfPath) +
                     " --SEQUENCE_DICTIONARY " + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
@@ -159,7 +168,8 @@ namespace ToolWrapperLayer
                     (downloadGrch37 ? CommonGRCh37UCSC : CommonGRCh38UCSC) :
                     (downloadGrch37 ? AllGRCh37UCSC : AllGRCh38UCSC);
             string ucscKnownSitesFilename = TargetFileLocation.Split('/').Last();
-            UcscKnownSitesPath = Path.Combine(spritzDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
+            UcscKnownSitesDownloadPath = Path.Combine(spritzDirectory, Path.GetFileNameWithoutExtension(ucscKnownSitesFilename));
+            UcscKnownSitesPath = Path.Combine(Path.GetDirectoryName(UcscKnownSitesDownloadPath), Path.GetFileNameWithoutExtension(UcscKnownSitesDownloadPath) + reference + ".vcf"); ;
             return (downloadGrch37 || downloadGrch38) && File.Exists(UcscKnownSitesPath);
         }
 
@@ -170,40 +180,44 @@ namespace ToolWrapperLayer
         /// <param name="commonOnly"></param>
         /// <param name="reference"></param>
         /// <returns></returns>
-        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
+        public string DownloadUCSCKnownVariantSites(string spritzDirectory, bool commonOnly, string reference, bool dryRun)
         {
-            if (!KnownVariantSitesFileExists(spritzDirectory, commonOnly, reference))
+            bool knownSitesExists = KnownVariantSitesFileExists(spritzDirectory, commonOnly, reference);
+            if (!knownSitesExists && !dryRun)
             {
                 WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "DownloadUcscVariants.bash"), new List<string>
                 {
                     "cd " + WrapperUtility.ConvertWindowsPath(spritzDirectory),
                     "wget " + TargetFileLocation,
-                    "gunzip " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz",
-                    "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".gz"
+                    "gunzip " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesDownloadPath) + ".gz",
+                    "rm " +  WrapperUtility.ConvertWindowsPath(UcscKnownSitesDownloadPath) + ".gz",
+                    "mv " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesDownloadPath) + " " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath)
                 }).WaitForExit();
             }
             return UcscKnownSitesPath;
         }
 
-        public string DownloadEnsemblKnownVariantSites(string spritzDirectory, bool commonOnly, string reference)
+        public string DownloadEnsemblKnownVariantSites(string spritzDirectory, bool commonOnly, string reference, bool dryRun)
         {
-            DownloadUCSCKnownVariantSites(spritzDirectory, commonOnly, reference);
-            EnsemblKnownSitesPath = ConvertVCFChromosomesUCSC2Ensembl(spritzDirectory, UcscKnownSitesPath, reference);
-
-            // indexing is used for most GATK tools
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "IndexKnownVariantSites.bash"), new List<string>
+            DownloadUCSCKnownVariantSites(spritzDirectory, commonOnly, reference, dryRun);
+            EnsemblKnownSitesPath = ConvertVCFChromosomesUCSC2Ensembl(spritzDirectory, UcscKnownSitesPath, reference, dryRun);
+            if (!dryRun)
             {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + "; fi",
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + "; fi",
-            }).WaitForExit();
+                // indexing is used for most GATK tools
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(spritzDirectory, "IndexKnownVariantSites.bash"), new List<string>
+                {
+                    WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                    "if [ ! -f " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + ".idx ]; then " + Gatk(Workers) + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(UcscKnownSitesPath) + "; fi",
+                    "if [ ! -f " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + ".idx ]; then " + Gatk(Workers) + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(EnsemblKnownSitesPath) + "; fi",
+                }).WaitForExit();
+            }
             return EnsemblKnownSitesPath;
         }
 
-        public string ConvertVCFChromosomesUCSC2Ensembl(string spritzDirectory, string vcfPath, string reference)
+        public string ConvertVCFChromosomesUCSC2Ensembl(string spritzDirectory, string vcfPath, string reference, bool dryRun)
         {
             string convertedEnsemblVcfPath = Path.Combine(Path.GetDirectoryName(vcfPath), Path.GetFileNameWithoutExtension(vcfPath) + ".ensembl.vcf");
-            if (File.Exists(convertedEnsemblVcfPath)) { return convertedEnsemblVcfPath; }
+            if (File.Exists(convertedEnsemblVcfPath) || dryRun) { return convertedEnsemblVcfPath; }
             Dictionary<string, string> ucsc2EnsemblChromosomeMappings = EnsemblDownloadsWrapper.UCSC2EnsemblChromosomeMappings(spritzDirectory, reference);
             using (StreamReader reader = new StreamReader(vcfPath))
             using (StreamWriter writer = new StreamWriter(convertedEnsemblVcfPath))
@@ -249,13 +263,13 @@ namespace ToolWrapperLayer
 
             // This also filters malformed reads
             string fixMisencodedQualsCmd =
-                Gatk() +
+                Gatk(Workers) +
                 " FixMisencodedBaseQualityReads" +
                 " -I " + WrapperUtility.ConvertWindowsPath(dedupedBam) +
                 " -O " + WrapperUtility.ConvertWindowsPath(fixedQualsBam);
 
             string splitNCigarReadsCmd1 =
-                Gatk() +
+                Gatk(Workers) +
                 " SplitNCigarReads" +
                 //" --num_threads " + threads.ToString() + // not supported
                 " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -268,7 +282,7 @@ namespace ToolWrapperLayer
                 ;
 
             string splitNCigarReadsCmd2 =
-                Gatk() +
+                Gatk(Workers) +
                 " SplitNCigarReads" +
                 //" --num_threads " + threads.ToString() + // not supported
                 " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
@@ -311,9 +325,11 @@ namespace ToolWrapperLayer
         /// <param name="splitTrimBam"></param>
         /// <param name="dbsnpReferenceVcfPath"></param>
         /// <param name="newVcf"></param>
-        public List<string> VariantCalling(string spritzDirectory, int threads, string genomeFasta, string splitTrimBam, string dbsnpReferenceVcfPath)
+        public List<string> VariantCalling(string spritzDirectory, ExperimentType experimentType, int threads, string genomeFasta, string splitTrimBam, string dbsnpReferenceVcfPath)
         {
-            HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".vcf");
+            HaplotypeCallerGvcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.vcf.gz");
+            HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.gt.vcf");
+            FilteredHaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(splitTrimBam), Path.GetFileNameWithoutExtension(splitTrimBam) + ".g.gt.NoIndels.vcf");
             var vcftools = new VcfToolsWrapper();
 
             List<string> commands = new List<string>
@@ -323,23 +339,46 @@ namespace ToolWrapperLayer
                 GenomeDictionaryIndexCommand(genomeFasta),
 
                 // check that reference VCF is indexed
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + ".idx ]; then " + Gatk() + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + "; fi",
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + ".idx ]; then " + Gatk(Workers) + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) + "; fi",
 
                 // call variants
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
-                    Gatk() +
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ]; then " +
+                    Gatk(Workers, 2) +
                     " HaplotypeCaller" +
                     " --native-pair-hmm-threads " + threads.ToString() +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(splitTrimBam) +
                     " --min-base-quality-score 20" +
-                    " --dont-use-soft-clipped-bases true" + // for RNA-Seq
+                    (experimentType == ExperimentType.RNASequencing ? " --dont-use-soft-clipped-bases true" : "") +
                     " --dbsnp " + WrapperUtility.ConvertWindowsPath(dbsnpReferenceVcfPath) +
-                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
-                    "; fi",
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                    " -ERC GVCF" + // this prompts phasing!
+                    " --max-mnp-distance 3" + // note: this can't be used for joint genotyping here, but this setting is available in mutect2 for doing tumor vs normal calls
+                "; fi",
 
-                // filter out the indels, since we're using scalpel to find them
-                vcftools.RemoveAllIndels(spritzDirectory, HaplotypeCallerVcfPath, false, false),
+                // index compressed gvcf file
+                $"if [ ! -f {WrapperUtility.ConvertWindowsPath($"{HaplotypeCallerGvcfPath}.tbi")} ]; then {Gatk(Workers)} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}; fi",
+
+                // genotype the gvcf file into a traditional vcf file
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk(Workers, 2) +
+                    " GenotypeGVCFs" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                "; fi",
+                $"if [ ! -f {WrapperUtility.ConvertWindowsPath($"{HaplotypeCallerVcfPath}.idx")} ]; then {Gatk(Workers)} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath)}; fi",
+
+                // filter out indels
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk(Workers, 2) +
+                    " SelectVariants" +
+                    " --select-type-to-exclude INDEL" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath) +
+                "; fi",
+                $"if [ ! -f {WrapperUtility.ConvertWindowsPath($"{FilteredHaplotypeCallerVcfPath}.idx")} ]; then {Gatk(Workers)} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath)}; fi",
 
                 // filter variants (RNA-Seq specific params... need to check out recommendations before using DNA-Seq)
                 //"if [ ! -f " + WrapperUtility.ConvertWindowsPath(newVcf) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(newVcf) + " ]; then " +
@@ -354,11 +393,74 @@ namespace ToolWrapperLayer
                 //    " -o " + WrapperUtility.ConvertWindowsPath(newVcf) +
                 //    "; fi",
             };
-            FilteredHaplotypeCallerVcfPath = vcftools.VcfWithoutIndelsPath;
             return commands;
         }
 
-        #region Defunct Methods, or might be used for DNA-Seq
+        public List<string> CombineAndGenotypeGvcfs(string spritzDirectory, string genomeFasta, List<string> gvcfPaths)
+        {
+            if (gvcfPaths == null || gvcfPaths.Count <= 1)
+            {
+                throw new ArgumentException("CombineAndGenotypeGvcfs exception: no gvcfs were specified to combine");
+            }
+            int uniqueSuffix = 1;
+            foreach (string f in gvcfPaths)
+            {
+                uniqueSuffix = uniqueSuffix ^ f.GetHashCode();
+            }
+            HaplotypeCallerGvcfPath = Path.Combine(Path.GetDirectoryName(gvcfPaths.First()), $"combined{uniqueSuffix}.g.vcf.gz");
+            HaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(HaplotypeCallerGvcfPath), $"{Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(HaplotypeCallerGvcfPath))}.gt.vcf");
+            FilteredHaplotypeCallerVcfPath = Path.Combine(Path.GetDirectoryName(HaplotypeCallerGvcfPath), $"{Path.GetFileNameWithoutExtension(HaplotypeCallerGvcfPath)}.NoIndels.vcf");
+
+            List<string> commands = new List<string>
+            {
+                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
+                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
+                GenomeDictionaryIndexCommand(genomeFasta)
+            };
+
+            foreach (string gvcf in gvcfPaths)
+            {
+                // double check that the compressed gvcf file is indexed
+                commands.Add($"if [ ! -f {WrapperUtility.ConvertWindowsPath(gvcf)}.idx ]; then {Gatk(Workers)} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(gvcf)}; fi");
+            }
+
+            // combine GVCFs
+            string combineCommand =
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) + " ]; then " +
+                    Gatk(Workers) +
+                    " CombineGVCFs" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + string.Join(" -V ", gvcfPaths.Select(gvcf => WrapperUtility.ConvertWindowsPath(gvcf))) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                "; fi";
+            commands.Add(combineCommand);
+            commands.Add($"if [ ! -f {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}.idx ]; then {Gatk(Workers)} IndexFeatureFile -F {WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath)}; fi");
+
+            // genotype the gvcf file into a traditional vcf file
+            string genotypeCommand =
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk(Workers) +
+                    " GenotypeGVCFs" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerGvcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                "; fi";
+            commands.Add(genotypeCommand);
+
+            // filter out indels
+            string filterIndelsCommand =
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ] || [ " + " ! -s " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) + " ]; then " +
+                    Gatk(Workers) +
+                    " SelectVariants" +
+                    " --select-type-to-exclude INDEL" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -V " + WrapperUtility.ConvertWindowsPath(HaplotypeCallerVcfPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(FilteredHaplotypeCallerVcfPath) +
+                "; fi";
+            commands.Add(filterIndelsCommand);
+
+            return commands;
+        }
 
         /// <summary>
         /// Groups (I'm just using one group, so it's more a formality) and sorts reads. Marks duplicates.
@@ -375,13 +477,12 @@ namespace ToolWrapperLayer
             string sortedCheckPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerSorted");
             string readGroupedCheckfile = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".headerReadGrouped");
             string sortedBam = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".sorted.bam");
-            string groupedBam = Path.Combine(Path.GetDirectoryName(sortedBam), Path.GetFileNameWithoutExtension(sortedBam) + ".grouped.bam");
-            string markedDuplicatesBam = Path.Combine(Path.GetDirectoryName(groupedBam), Path.GetFileNameWithoutExtension(groupedBam) + ".marked.bam");
-            string markedDuplicateMetrics = Path.Combine(Path.GetDirectoryName(groupedBam), Path.GetFileNameWithoutExtension(groupedBam) + ".marked.metrics");
+            string groupedBamPath = Path.Combine(Path.GetDirectoryName(sortedBam), Path.GetFileNameWithoutExtension(sortedBam) + ".grouped.bam");
+            string markedDuplicatesBamPath = Path.Combine(Path.GetDirectoryName(groupedBamPath), Path.GetFileNameWithoutExtension(groupedBamPath) + ".marked.bam");
+            string markedDuplicateMetrics = Path.Combine(Path.GetDirectoryName(groupedBamPath), Path.GetFileNameWithoutExtension(groupedBamPath) + ".marked.metrics");
 
             string tmpDir = Path.Combine(spritzDirectory, "tmp");
             Directory.CreateDirectory(tmpDir);
-            string scriptName2 = WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "picard." + Path.GetFileNameWithoutExtension(bam) + ".bash");
             List<string> commands = new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
@@ -393,123 +494,91 @@ namespace ToolWrapperLayer
                 "samtools view -H " + WrapperUtility.ConvertWindowsPath(bam) + " | grep '^@RG' > " + WrapperUtility.ConvertWindowsPath(readGroupedCheckfile),
 
                 // group and sort (note, using picard-tools works, but picard.jar somehow is trucating the BAM files)
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ) && " +
-                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) ]]; then " +
-                    Gatk() +
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(groupedBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(groupedBamPath) + " ) && " +
+                    " ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) + " ) ]]; then " +
+                    Gatk(Workers, 2) +
                     " AddOrReplaceReadGroups" +
                     " -PU platform  -PL illumina -SM sample -LB library" +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
-                    " -O " + WrapperUtility.ConvertWindowsPath(groupedBam) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(groupedBamPath) +
                     " -SO coordinate" +
                     " --TMP_DIR " + WrapperUtility.ConvertWindowsPath(tmpDir) +
                     "; fi",
-                "if [[ -f " + WrapperUtility.ConvertWindowsPath(groupedBam) + " && -s " + WrapperUtility.ConvertWindowsPath(groupedBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(sortedBam) + "; fi", // conserve space by removing former BAM
+                SamtoolsWrapper.IndexBamCommand(groupedBamPath),
 
                 // mark duplicates (AS means assume sorted; note, using picard-tools works, but picard.jar somehow is trucating the BAM files)
-                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ) ]]; then " +
-                    Gatk() + " MarkDuplicates" + // formerly picard
-                    " -I " + WrapperUtility.ConvertWindowsPath(groupedBam) +
-                    " -O " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) +
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) + " ) ]]; then " +
+                    Gatk(Workers) +
+                    " MarkDuplicates" + // formerly picard
+                    " -I " + WrapperUtility.ConvertWindowsPath(groupedBamPath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) +
                     " -M " + WrapperUtility.ConvertWindowsPath(markedDuplicateMetrics) +
                     " --TMP_DIR " + WrapperUtility.ConvertWindowsPath(tmpDir) +
                     " -AS true" +
                     "; fi",
-                "if [[ -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " && -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam) + " ]]; then rm " + WrapperUtility.ConvertWindowsPath(groupedBam) + "; fi", // conserve space by removing former BAM
-                "samtools index " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBam),
+                SamtoolsWrapper.IndexBamCommand(markedDuplicatesBamPath),
+                
+                // clean up
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(markedDuplicatesBamPath) + " ) ]]; then " +
+                    "rm " + WrapperUtility.ConvertWindowsPath(groupedBamPath) + "; fi",
             };
-            PreparedBamPath = markedDuplicatesBam;
-
-            // run commands for marking duplicates and trimming reads
-            File.Delete(sortedCheckPath);
-            File.Delete(readGroupedCheckfile);
+            PreparedBamPath = markedDuplicatesBamPath;
             return commands;
         }
 
         /// <summary>
-        /// Realigns indels for a given BAM file
-        ///
-        /// This is no longer a required step for HaploytypeCaller, used for variant calling
-        ///
-        /// Needs updating after switching to GATK 4.0 ... no longer called IndelRealigner, and it looks like the targetIntervals is gone
-        /// </summary>
-        /// <param name="spritzDirectory"></param>
-        /// <param name="genomeFasta"></param>
-        /// <param name="bam"></param>
-        /// <param name="knownSitesVcf"></param>
-        /// <param name="realignedIndelBam"></param>
-        public void RealignIndels(string spritzDirectory, string analysisDirectory, int threads, string genomeFasta, string bam, string knownSitesVcf = "")
-        {
-            string realignerTable = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".forIndelRealigner.intervals");
-            RealignedIndelBamPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".realigned.bam");
-
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "RealignIndels.bash"), new List<string>
-            {
-                WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
-                SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
-                GenomeDictionaryIndexCommand(genomeFasta),
-
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(realignerTable) + " || ! -s " + WrapperUtility.ConvertWindowsPath(realignerTable) + " ]]; then " +
-                    Gatk() +
-                    " RealignerTargetCreator" +
-                    " --num_threads " + threads.ToString() +
-                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
-                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
-                    (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
-                    " -o " +  WrapperUtility.ConvertWindowsPath(realignerTable) +
-                    "; fi",
-
-                "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(RealignedIndelBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(RealignedIndelBamPath) + " ]]; then " +
-                    Gatk() +
-                    " LeftAlignIndels" +
-                    //" --num_threads " + threads.ToString() + // this tool can't do threaded analysis
-                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
-                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
-                    (knownSitesVcf != "" ? " -known " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
-                    " -targetIntervals " +  WrapperUtility.ConvertWindowsPath(realignerTable) +
-                    " --OUTPUT " + WrapperUtility.ConvertWindowsPath(RealignedIndelBamPath) +
-                    "; fi",
-            }).WaitForExit();
-        }
-
-        /// <summary>
-        /// Creates recalibration table for base calls.
+        /// Creates recalibration table and recalibrates reads.
         /// </summary>
         /// <param name="spritzDirectory"></param>
         /// <param name="genomeFasta"></param>
         /// <param name="bam"></param>
         /// <param name="recalibrationTablePath"></param>
         /// <param name="knownSitesVcf"></param>
-        public void BaseRecalibration(string spritzDirectory, string analysisDirectory, string genomeFasta, string bam, string knownSitesVcf)
+        public List<string> BaseRecalibration(string spritzDirectory, string analysisDirectory, string genomeFasta, string bam, string knownSitesVcf)
         {
             RecalibrationTablePath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recaltable");
+            RecalibratedBamPath = Path.Combine(Path.GetDirectoryName(bam), Path.GetFileNameWithoutExtension(bam) + ".recal.bam");
 
-            WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "BaseRecalibration.bash"), new List<string>
+            return new List<string>
             {
                 WrapperUtility.ChangeToToolsDirectoryCommand(spritzDirectory),
                 SamtoolsWrapper.GenomeFastaIndexCommand(genomeFasta),
                 GenomeDictionaryIndexCommand(genomeFasta),
+                
+                // check that reference VCF is indexed
+                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) + ".idx ]; then " + Gatk(Workers) + " IndexFeatureFile -F " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) + "; fi",
 
-                "if [ ! -f " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " ]; then " +
-                    Gatk() +
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) + " ) ]]; then " +
+                    Gatk(Workers) +
                     " BaseRecalibrator" +
-                    //" --num_threads " + threads.ToString() + // doesn't support threaded runs
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
                     " -I " + WrapperUtility.ConvertWindowsPath(bam) +
-                    (knownSitesVcf != "" ? " -knownSites " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
+                    (knownSitesVcf != "" ? " --known-sites " + WrapperUtility.ConvertWindowsPath(knownSitesVcf) : "") +
                     " -O " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) +
                     "; fi",
-            }).WaitForExit();
+
+                "if [[ ( ! -f " + WrapperUtility.ConvertWindowsPath(RecalibratedBamPath) + " || ! -s " + WrapperUtility.ConvertWindowsPath(RecalibratedBamPath) + " ) ]]; then " +
+                    Gatk(Workers) +
+                    " ApplyBQSR" +
+                    " -R " + WrapperUtility.ConvertWindowsPath(genomeFasta) +
+                    " -I " + WrapperUtility.ConvertWindowsPath(bam) +
+                    " --bqsr-recal-file " + WrapperUtility.ConvertWindowsPath(RecalibrationTablePath) +
+                    " -O " + WrapperUtility.ConvertWindowsPath(RecalibratedBamPath) +
+                    "; fi",
+                SamtoolsWrapper.IndexBamCommand(RecalibratedBamPath),
+            };
         }
 
         /// <summary>
         /// Generic command for calling GATK, allowing use of all free memory.
         /// </summary>
+        /// <param name="compressionLevel">Between 0 (lowest) and 9 (highest)</param>
         /// <returns></returns>
-        public static string Gatk()
+        public static string Gatk(int workers = 1, int compressionLevel = 9)
         {
             var performance = new PerformanceCounter("Memory", "Available MBytes");
             var memory = performance.NextValue();
-            return "gatk/gatk --java-options -Xmx" + Math.Floor(memory) + "M";
+            return $"gatk/gatk --java-options \"-Xmx{(int)(Math.Floor(memory) / (double)workers)}M -Dsamjdk.compression_level={compressionLevel.ToString()}\"";
         }
 
         /// <summary>
@@ -535,15 +604,6 @@ namespace ToolWrapperLayer
         }
 
         /// <summary>
-        /// using GenotypeGVCFs on all VCF files together, for DNA sequence analysis
-        /// </summary>
-        /// <returns></returns>
-        public static Process genotype()
-        {
-            return null;
-        }
-
-        /// <summary>
         /// using VariantRecalibrator, ApplyRecalibration, and then VariantFiltration -- apparently mostly for DNAseq
         /// </summary>
         /// <returns></returns>
@@ -551,10 +611,6 @@ namespace ToolWrapperLayer
         {
             return null;
         }
-
-        #endregion Defunct Methods, or might be used for DNA-Seq
-
-        #region Private Methods
 
         /// <summary>
         /// Creates a dictionary for the genome fasta, used by many GATK tools.
@@ -565,13 +621,11 @@ namespace ToolWrapperLayer
         {
             string dictionaryPath = Path.Combine(Path.GetDirectoryName(genomeFastaPath), Path.GetFileNameWithoutExtension(genomeFastaPath) + ".dict");
             return "if [ ! -f " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + " ]; then " + //rm " + WrapperUtility.ConvertWindowsPath(dictionaryPath) + "; fi\n" +
-                Gatk() + // formerly picard
+                Gatk(Workers) + // formerly picard
                     " CreateSequenceDictionary" +
                     " -R " + WrapperUtility.ConvertWindowsPath(genomeFastaPath) +
                     " -O " + WrapperUtility.ConvertWindowsPath(dictionaryPath) +
                     "; fi";
         }
-
-        #endregion Private Methods
     }
 }

@@ -22,15 +22,5 @@ namespace SpritzGUI
         public string Experiment { get; set; }
         public string MatePair { get; set; }
         public string FilePath { get; set; }
-
-        public void SetConditionText(string text)
-        {
-            Experiment = text;
-        }
-
-        public void SetTechRepText(string text)
-        {
-            MatePair = text;
-        }
     }
 }

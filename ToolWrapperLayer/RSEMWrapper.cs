@@ -168,7 +168,7 @@ namespace ToolWrapperLayer
             string samtoolsCommands = !doOuptutBam ?
                 "" :
                 "if [[ ! -f " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " && ! -s " + WrapperUtility.ConvertWindowsPath(OutputPrefix + GenomeSortedBamSuffix) + " ]]; then\n" +
-                    "  " + SamtoolsWrapper.SortBam(OutputPrefix + GenomeBamSuffix) + "\n" +
+                    "  " + SamtoolsWrapper.SortBam(OutputPrefix + GenomeBamSuffix, threads) + "\n" +
                     "  " + SamtoolsWrapper.IndexBamCommand(OutputPrefix + GenomeSortedBamSuffix) + "\n" +
                     "fi";
 

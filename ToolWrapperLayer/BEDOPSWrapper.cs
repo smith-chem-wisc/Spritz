@@ -28,6 +28,7 @@ namespace ToolWrapperLayer
                 "if [ ! -d bedops ]; then mv bin bedops; fi",
                 "cd bedops",
                 "if [ ! -f gtfToGenePred ]; then wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred; fi",
+                "if [ ! -f gff3ToGenePred ]; then wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/gff3ToGenePred; fi",
                 "if [ ! -f genePredToBed ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/genePredToBed; fi",
                 "if [ ! -f liftOver ]; then wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver; fi",
                 "cd ..",
@@ -96,6 +97,7 @@ namespace ToolWrapperLayer
             string sortedBed12Path = Path.Combine(Path.GetDirectoryName(geneModelGtf), Path.GetFileNameWithoutExtension(geneModelGtf) + ".sorted.bed12");
             WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Bed12conversion.bash"), new List<string>
             {
+                // Note, there is a gff3ToGenePred program. Could test and replace that here for gff3 files.
                 "gtfToGenePred " + WrapperUtility.ConvertWindowsPath(geneModelGtf) + " " + WrapperUtility.ConvertWindowsPath(genePredPath),
                 "genePredToBed " + WrapperUtility.ConvertWindowsPath(genePredPath) + " " + WrapperUtility.ConvertWindowsPath(bed12Path),
                 "sort -k1,1 -k2,2n " + WrapperUtility.ConvertWindowsPath(bed12Path) + " > " + WrapperUtility.ConvertWindowsPath(sortedBed12Path),
