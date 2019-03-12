@@ -36,8 +36,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Nett, Version=0.9.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nett.0.9.2\lib\Net40\Nett.dll</HintPath>
+    <Reference Include="Nett, Version=0.11.0.0, Culture=neutral, PublicKeyToken=605dcfe7a1d3365b, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nett.0.11.0\lib\Net40\Nett.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -123,16 +123,16 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CMD\CMD.csproj">
-      <Project>{b2790356-362b-4a5f-959d-0ea33fa168b6}</Project>
-      <Name>CMD</Name>
+    <ProjectReference Include="..\CMDOptions\CMDOptions.csproj">
+      <Project>{fd63a716-0043-4f93-b7f0-2a43e7a0e219}</Project>
+      <Name>CMDOptions</Name>
     </ProjectReference>
     <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">
-      <Project>{7f0b5697-1bbb-4ff5-9bf2-434f0a9c2c60}</Project>
+      <Project>{06431fc1-53ab-4c0b-a95e-c179a32371bc}</Project>
       <Name>ToolWrapperLayer</Name>
     </ProjectReference>
     <ProjectReference Include="..\WorkflowLayer\WorkflowLayer.csproj">
-      <Project>{3f662a6d-c8c6-466e-a8f3-8bed397cb5f8}</Project>
+      <Project>{a234687b-735d-458c-982f-fb2bc3ec3a7c}</Project>
       <Name>WorkflowLayer</Name>
     </ProjectReference>
   </ItemGroup>

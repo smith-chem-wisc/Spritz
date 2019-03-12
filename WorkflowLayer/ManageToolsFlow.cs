@@ -187,7 +187,7 @@ namespace WorkflowLayer
             string installScript = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "Installation.bash");
             WrapperUtility.GenerateAndRunScript(installScript, new List<string>
             {
-                "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
+                $"echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 $"sudo bash {WrapperUtility.ConvertWindowsPath(scriptPath)}"
             }).WaitForExit();
         }

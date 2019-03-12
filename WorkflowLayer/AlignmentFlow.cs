@@ -63,7 +63,7 @@ namespace WorkflowLayer
                     FastqsForAlignment.Add(trimmedFastqs);
                 }
                 TopHatWrapper.GenerateBowtieIndex(Parameters.SpritzDirectory, Parameters.AnalysisDirectory, Parameters.ReorderedFastaPath, out string bowtieIndexPrefix);
-                List<string> alignmentCommands = new List<string>();
+                List<string> alignmentCommands = new List<string> { "echo \"Aligning reads with bowtie2.\"" };
                 foreach (string[] fastq in FastqsForAlignment)
                 {
                     // alignment

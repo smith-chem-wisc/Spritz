@@ -16,7 +16,7 @@ namespace WorkflowLayer
         /// <returns></returns>
         public static List<Modification> GetUniProtMods(string spritzDirectory)
         {
-            Loaders.LoadElements(Path.Combine(spritzDirectory, "elements.dat"));
+            Loaders.LoadElements();
             var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(spritzDirectory, "PSI-MOD.obo.xml"));
             return Loaders.LoadUniprot(Path.Combine(spritzDirectory, "ptmlist.txt"), Loaders.GetFormalChargesDictionary(psiModDeserialized)).ToList();
         }
