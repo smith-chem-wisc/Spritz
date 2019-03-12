@@ -64,7 +64,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string GetSamtoolsMemoryPerThreadString(int threads)
         {
-            int megabytes = (int)(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue()) * 0.9 / threads);
+            int megabytes = (int)(Math.Floor((double)Process.GetCurrentProcess().VirtualMemorySize64 / 1000000) * 0.9 / threads);
             megabytes = megabytes > 10000 ? 10000 : megabytes; // this is the max samtools sort can take, apparently
             return $"{megabytes}M";
         }

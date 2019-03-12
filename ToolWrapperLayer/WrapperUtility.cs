@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -9,8 +10,9 @@ namespace ToolWrapperLayer
 {
     public static class WrapperUtility
     {
-        private static Regex driveName = new Regex(@"([A-Z]:)");
-        private static Regex forwardSlashes = new Regex(@"(\\)");
+        public static bool IsWindows = Environment.OSVersion.Platform.ToString().StartsWith("Win", true, CultureInfo.InvariantCulture);
+        private static Regex DriveName = new Regex(@"([A-Z]:)");
+        private static Regex ForwardSlashes = new Regex(@"(\\)");
 
         /// <summary>
         /// Checks if ubuntu bash has been installed
@@ -19,7 +21,7 @@ namespace ToolWrapperLayer
         public static bool CheckBashSetup()
         {
             string ubuntu = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\ubuntu.exe");
-            return File.Exists(ubuntu);
+            return !IsWindows || File.Exists(ubuntu);
         }
 
         /// <summary>
@@ -80,11 +82,12 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string ConvertWindowsPath(string path)
         {
+            if (!IsWindows) return path;
             string pathTrim = path.Trim('"');
             if (pathTrim == null) return null;
             if (pathTrim == "") return "";
             if (pathTrim.StartsWith("/mnt/")) return path;
-            return "\"/mnt/" + char.ToLowerInvariant(pathTrim[0]) + driveName.Replace(forwardSlashes.Replace(pathTrim, "/"), "") + "\"";
+            return "\"/mnt/" + char.ToLowerInvariant(pathTrim[0]) + DriveName.Replace(ForwardSlashes.Replace(pathTrim, "/"), "") + "\"";
         }
 
         /// <summary>
@@ -93,11 +96,32 @@ namespace ToolWrapperLayer
         /// <param name="command"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
-        public static Process RunBashCommand(string command, string arguments)
+        public static Process RunWindowsBashCommand(string command, string arguments)
         {
             Process proc = new Process();
             proc.StartInfo.FileName = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\ubuntu.exe");
             proc.StartInfo.Arguments = $"-c {command} {arguments.Replace(" ", "\\ ")}"; // escape the spaces
+            proc.Start();
+            return proc;
+        }
+
+        public static Process RunBashScript(string scriptPath)
+        {
+            Process proc = new Process();
+            proc.StartInfo.FileName = "/bin/chmod";
+            proc.StartInfo.Arguments = $"-c 755 {scriptPath.Replace(" ", "\\ ")}"; // escape the spaces
+            //proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.CreateNoWindow = true;
+            proc.Start();
+            proc.WaitForExit();
+
+            proc = new Process();
+            proc.StartInfo.FileName = "/bin/bash";
+            proc.StartInfo.Arguments = $"-c {scriptPath.Replace(" ", "\\ ")}"; // escape the spaces
+            //proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.CreateNoWindow = true;
             proc.Start();
             return proc;
         }
@@ -129,7 +153,11 @@ namespace ToolWrapperLayer
         public static Process GenerateAndRunScript(string scriptPath, List<string> commands)
         {
             GenerateScript(scriptPath, commands);
-            return RunBashCommand(@"bash", ConvertWindowsPath(scriptPath));
+            if (IsWindows)
+                return RunWindowsBashCommand(@"bash", ConvertWindowsPath(scriptPath));
+            else
+                return RunBashScript(ConvertWindowsPath(scriptPath));
+
         }
 
         /// <summary>

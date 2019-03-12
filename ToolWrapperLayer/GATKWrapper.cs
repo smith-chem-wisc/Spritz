@@ -576,9 +576,8 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string Gatk(int workers = 1, int compressionLevel = 9)
         {
-            var performance = new PerformanceCounter("Memory", "Available MBytes");
-            var memory = performance.NextValue();
-            return $"gatk/gatk --java-options \"-Xmx{(int)(Math.Floor(memory) / (double)workers)}M -Dsamjdk.compression_level={compressionLevel.ToString()}\"";
+            var memory = Process.GetCurrentProcess().VirtualMemorySize64;
+            return $"gatk/gatk --java-options \"-Xmx{(int)(Math.Floor((double)memory / 1000000) / workers)}M -Dsamjdk.compression_level={compressionLevel.ToString()}\"";
         }
 
         /// <summary>

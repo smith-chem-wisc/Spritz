@@ -263,7 +263,7 @@ namespace ToolWrapperLayer
                 " --genomeDir \"" + WrapperUtility.ConvertWindowsPath(genomeDir) + "\"" +
                 " --readFilesIn " + reads_in +
                 " --outSAMtype " + outSamType +
-                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --limitBAMsortRAM " + Process.GetCurrentProcess().VirtualMemorySize64.ToString() +
                 " --outSAMstrandField intronMotif" + // adds XS tag to all alignments that contain a splice junction
                 " --outFilterIntronMotifs RemoveNoncanonical" + // for cufflinks
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
@@ -308,7 +308,7 @@ namespace ToolWrapperLayer
                 " --readFilesIn " + reads_in +
                 " --outSAMtype BAM SortedByCoordinate" +
                 " --outBAMcompression 10" +
-                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --limitBAMsortRAM " + Process.GetCurrentProcess().VirtualMemorySize64.ToString() +
                 " --outFileNamePrefix " + WrapperUtility.ConvertWindowsPath(outprefix) +
 
                 // chimeric junction settings
@@ -355,7 +355,7 @@ namespace ToolWrapperLayer
             string dedupArguments =
                 " --runMode inputAlignmentsFromBAM" +
                 " --bamRemoveDuplicatesType UniqueIdentical" + // this could shorten the time for samples that aren't multiplexed, too; might only work with sortedBAM input from --inputBAMfile
-                " --limitBAMsortRAM " + (Math.Round(Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue() * 1e6), 0)).ToString() +
+                " --limitBAMsortRAM " + Process.GetCurrentProcess().VirtualMemorySize64.ToString() +
                 " --runThreadN " + threads.ToString() +
                 " --outBAMcompression 10" +
                 " --inputBAMfile " + WrapperUtility.ConvertWindowsPath(inputBamPath) +

@@ -153,9 +153,7 @@ namespace ToolWrapperLayer
         /// <returns></returns>
         public static string SnpEff(int workers)
         {
-            var performance = new PerformanceCounter("Memory", "Available MBytes");
-            var memory = performance.NextValue();
-            return $"java -Xmx{(int)Math.Floor(memory / (double)workers)}M -jar SnpEff/snpEff.jar";
+            return $"java -Xmx{(int)Math.Floor((double)Process.GetCurrentProcess().VirtualMemorySize64 / 1000000)}M -jar SnpEff/snpEff.jar";
         }
 
         public static string GenerateXmlDatabaseFromReference(string spritzDirectory, string analysisDirectory, string reference, string inputFilePathForFilePrefix)

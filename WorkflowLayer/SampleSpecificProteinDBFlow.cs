@@ -32,7 +32,7 @@ namespace WorkflowLayer
         public void GenerateSampleSpecificProteinDatabases()
         {
             // Download references and align reads
-            Downloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
+            Downloads.PrepareEnsemblGenomeFasta(Parameters.AnalysisDirectory, Parameters.GenomeFasta);
             if (Parameters.Fastqs != null)
             {
                 Alignment.Parameters = new AlignmentParameters();
