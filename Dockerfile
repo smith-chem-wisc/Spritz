@@ -1,10 +1,13 @@
 FROM ubuntu:latest
 LABEL maintainer="Anthony Cesnik <cesnik@wisc.edu>"
-WORKDIR /usr/bin/local
+
+ENV TZ=America/Aruba
 
 # install dotnet core
-RUN apt-get update -y && \
-	apt-get install -y wget software-properties-common sudo && \
+WORKDIR /usr/bin/local
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+	apt-get update -y && \
+	apt-get install -y wget curl software-properties-common sudo && \
 	useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo && \
 	wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb && \
 	dpkg -i packages-microsoft-prod.deb && \
