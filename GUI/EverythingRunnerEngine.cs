@@ -4,6 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
+using YamlDotNet.Core.Events;
+using YamlDotNet.RepresentationModel;
+using YamlDotNet.Serialization;
 
 namespace SpritzGUI
 {
@@ -32,12 +36,16 @@ namespace SpritzGUI
             {
                 var ok = taskList[i];
 
-                var tomlFileName = Path.Combine(outputFolder, i.ToString() + "_Parameters.toml");
-                Toml.WriteFile(ok.Item2, tomlFileName);
+                //var tomlFileName = Path.Combine(outputFolder, i.ToString() + "_Parameters.toml");
+                //Toml.WriteFile(ok.Item2, tomlFileName);
 
                 //Put it into a function
                 var arguments = GenerateArguments(ok.Item2);
                 Arguments = string.Join(" ", arguments);
+
+                // wrote options to config file
+                // WriteConfig(ok.Item2);
+                // TODO: run docker command
 
                 //Spritz.Main(commands); // this doesn't work in releases, unfortunately
 
@@ -154,7 +162,31 @@ namespace SpritzGUI
             {
                 commands.AddRange(new[] { "--variantCallingWorkers", options.VariantCallingWorkers.ToString() });
             }
+            
             return commands.ToArray();
+        }
+
+        private void WriteConfig(Options options)
+        {
+            const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
+
+            var sr = new StringReader(initialContent);
+            var stream = new YamlStream();
+            stream.Load(sr);
+
+            var rootMappingNode = (YamlMappingNode)stream.Documents[0].RootNode;
+            
+            // right now only adds one accession
+            var accession = new YamlSequenceNode();
+            accession.Style = SequenceStyle.Flow;
+            accession.Add(options.SraAccession);
+            rootMappingNode.Add("sras", accession);
+
+            // edit directory
+            using (TextWriter writer = File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), "config.yaml"))) // add to snakemake file?
+            {
+                stream.Save(writer, false);
+            }
         }
 
         /// <summary>
