@@ -34,8 +34,8 @@ namespace SpritzGUI
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
-            if (!InstallationDialogAndCheck())
-                Close();
+            //if (!InstallationDialogAndCheck())
+            //    Close();
         }
 
         protected override void OnClosed(EventArgs e)
@@ -239,14 +239,20 @@ namespace SpritzGUI
         {
             if (TbxSRA.Text.Contains("SR"))
             {
-                if (SraCollection.Any(s => s.Name == TbxSRA.Text))
+                // temporary: only allow for one sra
+                if (SraCollection.Count > 0)
                 {
-                    MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Only one SRA can be added.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
+                //if (SraCollection.Any(s => s.Name == TbxSRA.Text))
+                //{
+                //    MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
+                //}
                 else
                 { 
                     SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text);
                     SraCollection.Add(sraDataGrid);
+                    BtnAddSRA.IsEnabled = false;
                 }
             }
             else if (MessageBox.Show("SRA accessions are expected to start with \"SR\", such as SRX254398 or SRR791584. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
@@ -258,6 +264,7 @@ namespace SpritzGUI
         private void BtnClearSRA_Click(object sender, RoutedEventArgs e)
         {
             SraCollection.Clear();
+            BtnAddSRA.IsEnabled = true;
         }
 
         private void BtnWorkFlow_Click(object sender, RoutedEventArgs e)
