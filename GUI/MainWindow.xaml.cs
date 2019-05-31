@@ -96,7 +96,8 @@ namespace SpritzGUI
             }
             workflowTreeView.DataContext = DynamicTasksObservableCollection;
             Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
+            //WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
+            WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: Powershell.exe {x}"))); // keep for debugging
             var t = new Task(Everything.Run);
             t.Start();
             t.ContinueWith(DisplayAnyErrors);
@@ -184,23 +185,23 @@ namespace SpritzGUI
             UpdateTaskGuiStuff();
         }
 
-        private void RemoveLastTaskButton_Click(object sender, RoutedEventArgs e)
-        {
-            StaticTasksObservableCollection.RemoveAt(StaticTasksObservableCollection.Count - 1);
-            UpdateTaskGuiStuff();
-        }
+        //private void RemoveLastTaskButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    StaticTasksObservableCollection.RemoveAt(StaticTasksObservableCollection.Count - 1);
+        //    UpdateTaskGuiStuff();
+        //}
 
-        private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
-        {
-            RunWorkflowButton.IsEnabled = true;
-            ResetTasksButton.IsEnabled = false;
-            for (int i = 0; i < DynamicTasksObservableCollection.Count; i++)
-            {
-                StaticTasksObservableCollection.Add(new PreRunTask(StaticTasksObservableCollection[i].options));
-            }
-            DynamicTasksObservableCollection.Clear();
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
-        }
+        //private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    RunWorkflowButton.IsEnabled = true;
+        //    ResetTasksButton.IsEnabled = false;
+        //    for (int i = 0; i < DynamicTasksObservableCollection.Count; i++)
+        //    {
+        //        StaticTasksObservableCollection.Add(new PreRunTask(StaticTasksObservableCollection[i].options));
+        //    }
+        //    DynamicTasksObservableCollection.Clear();
+        //    workflowTreeView.DataContext = StaticTasksObservableCollection;
+        //}
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
         {
@@ -239,20 +240,14 @@ namespace SpritzGUI
         {
             if (TbxSRA.Text.Contains("SR"))
             {
-                // temporary: only allow for one sra
-                if (SraCollection.Count > 0)
+                if (SraCollection.Any(s => s.Name == TbxSRA.Text))
                 {
-                    MessageBox.Show("Only one SRA can be added.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                //if (SraCollection.Any(s => s.Name == TbxSRA.Text))
-                //{
-                //    MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
-                //}
                 else
                 { 
                     SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text);
                     SraCollection.Add(sraDataGrid);
-                    BtnAddSRA.IsEnabled = false;
                 }
             }
             else if (MessageBox.Show("SRA accessions are expected to start with \"SR\", such as SRX254398 or SRR791584. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
@@ -302,15 +297,14 @@ namespace SpritzGUI
             if (StaticTasksObservableCollection.Count == 0)
             {
                 RunWorkflowButton.IsEnabled = false;
-                RemoveLastTaskButton.IsEnabled = false;
                 ClearTasksButton.IsEnabled = false;
-                ResetTasksButton.IsEnabled = false;
+                BtnWorkFlow.IsEnabled = true;
             }
             else
             {
                 RunWorkflowButton.IsEnabled = true;
-                RemoveLastTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
+                BtnWorkFlow.IsEnabled = false;
             }
         }
 
@@ -367,24 +361,24 @@ namespace SpritzGUI
             }
         }
 
-        private bool InstallationDialogAndCheck()
-        {
-            var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        //private bool InstallationDialogAndCheck()
+        //{
+        //    var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            if (!WrapperUtility.CheckToolSetup(exePath))
-            {
-                try
-                {
-                    var dialog = new InstallWindow();
-                    dialog.ShowDialog();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.ToString(), "Installation", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            return WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
-        }
+        //    if (!WrapperUtility.CheckToolSetup(exePath))
+        //    {
+        //        try
+        //        {
+        //            var dialog = new InstallWindow();
+        //            dialog.ShowDialog();
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show(ex.ToString(), "Installation", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        }
+        //    }
+        //    return WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
+        //}
 
         private void WriteExperDesignToTsv(string filePath)
         {

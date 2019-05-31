@@ -28,32 +28,20 @@ namespace SpritzGUI
 
         public void Run()
         {
-            //var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", System.Globalization.CultureInfo.InvariantCulture);
 
-            //outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
+            outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
             for (int i = 0; i < taskList.Count; i++)
             {
                 var ok = taskList[i];
-
-                //var tomlFileName = Path.Combine(outputFolder, i.ToString() + "_Parameters.toml");
-                //Toml.WriteFile(ok.Item2, tomlFileName);
-
-                //Put it into a function
-                var arguments = GenerateArguments(ok.Item2);
-                Arguments = string.Join(" ", arguments);
-
-                // wrote options to config file
-                // WriteConfig(ok.Item2);
-                // TODO: run docker command
-
-                //Spritz.Main(commands); // this doesn't work in releases, unfortunately
+                WriteConfig(ok.Item2);
 
                 Process proc = new Process();
-                proc.StartInfo.FileName = "CMD.exe";
-                proc.StartInfo.Arguments = string.Join(" ", arguments);
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz ls /app/data";
                 proc.StartInfo.CreateNoWindow = true;
-                proc.StartInfo.UseShellExecute = false; // don't fire up a shell for the CMD.exe process
+                proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.RedirectStandardError = true;
                 proc.Start();
                 proc.WaitForExit();
@@ -65,9 +53,8 @@ namespace SpritzGUI
         {
             for (int i = 0; i < taskList.Count; i++)
             {
-                var ok = taskList[i];
-                var arguments = GenerateArguments(ok.Item2);
-                yield return string.Join(" ", arguments);
+                var options = taskList[i].Item2;
+                yield return "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + options.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz ls /app/data";
             }
         }
 
@@ -175,15 +162,56 @@ namespace SpritzGUI
             stream.Load(sr);
 
             var rootMappingNode = (YamlMappingNode)stream.Documents[0].RootNode;
-            
-            // right now only adds one accession
+
+            var sras = options.SraAccession.Split(',');
+            var fq1s = options.Fastq1.Split(',') ?? new string[0];
+            var fq2s = options.Fastq2.Split(',')?? new string[0];
+
+            // write user input sras
             var accession = new YamlSequenceNode();
             accession.Style = SequenceStyle.Flow;
-            accession.Add(options.SraAccession);
-            rootMappingNode.Add("sras", accession);
+            foreach (string sra in sras)
+            {
+                if (sra.Length > 0)
+                {
+                    accession.Add(sra);
+                }
+            }
+            rootMappingNode.Add("sra", accession);
+
+            // write user defined analysis directory (input and output folder)
+            var analysisDirectory = new YamlSequenceNode();
+            analysisDirectory.Style = SequenceStyle.Flow;
+            analysisDirectory.Add(options.AnalysisDirectory);
+            rootMappingNode.Add("analysisDirectory", analysisDirectory);
+
+            // write user input fastqs
+            var fq1 = new YamlSequenceNode();
+            fq1.Style = SequenceStyle.Flow;
+            foreach (string fastq in fq1s)
+            {
+                if (fastq.Length > 0)
+                {
+                    accession.Add(fastq);
+                }
+            }
+            rootMappingNode.Add("fq1", fq1);
+
+            var fq2 = new YamlSequenceNode();
+            fq2.Style = SequenceStyle.Flow;
+            foreach (string fastq in fq2s)
+            {
+                if (fastq.Length > 0)
+                {
+                    accession.Add(fastq);
+                }
+            }
+            rootMappingNode.Add("fq2", fq2);
+
+            Directory.SetCurrentDirectory(options.AnalysisDirectory);
 
             // edit directory
-            using (TextWriter writer = File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), "config.yaml"))) // add to snakemake file?
+            using (TextWriter writer = File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), "config.yaml")))
             {
                 stream.Save(writer, false);
             }
