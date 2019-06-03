@@ -39,7 +39,7 @@ namespace SpritzGUI
 
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz ls /app/data";
+                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz";
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.RedirectStandardError = true;
@@ -54,7 +54,7 @@ namespace SpritzGUI
             for (int i = 0; i < taskList.Count; i++)
             {
                 var options = taskList[i].Item2;
-                yield return "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + options.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz ls /app/data";
+                yield return "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + options.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz";
             }
         }
 
@@ -192,7 +192,7 @@ namespace SpritzGUI
             {
                 if (fastq.Length > 0)
                 {
-                    accession.Add(fastq);
+                    fq1.Add(fastq);
                 }
             }
             rootMappingNode.Add("fq1", fq1);
@@ -203,18 +203,21 @@ namespace SpritzGUI
             {
                 if (fastq.Length > 0)
                 {
-                    accession.Add(fastq);
+                    fq2.Add(fastq);
                 }
             }
             rootMappingNode.Add("fq2", fq2);
 
-            Directory.SetCurrentDirectory(options.AnalysisDirectory);
-
-            // edit directory
+            Directory.SetCurrentDirectory(options.AnalysisDirectory); // switch to analysis directory for writing permissions
+    
+            // add config file to user defined analysis directory, will mount to docker container
             using (TextWriter writer = File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), "config.yaml")))
             {
                 stream.Save(writer, false);
             }
+
+            // switch back to current directory
+            Directory.SetCurrentDirectory(SpritzDirectory);
         }
 
         /// <summary>

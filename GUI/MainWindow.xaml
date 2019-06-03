@@ -148,6 +148,7 @@
                         </TreeView>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasksButton_Click" />
+                            <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="3" LastChildFill="True">
                             <Label Content="Output Folder:" />

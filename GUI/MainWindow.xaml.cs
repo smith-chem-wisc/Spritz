@@ -89,6 +89,12 @@ namespace SpritzGUI
                 MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            else if (RnaSeqFastqCollection.Any() && GetPathToFastqs().CompareTo(OutputFolderTextBox.Text) != 0)
+            {
+                MessageBox.Show("FASTQ files do not exist in the user-defined analysis directory.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
             for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
             {
@@ -191,17 +197,17 @@ namespace SpritzGUI
         //    UpdateTaskGuiStuff();
         //}
 
-        //private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    RunWorkflowButton.IsEnabled = true;
-        //    ResetTasksButton.IsEnabled = false;
-        //    for (int i = 0; i < DynamicTasksObservableCollection.Count; i++)
-        //    {
-        //        StaticTasksObservableCollection.Add(new PreRunTask(StaticTasksObservableCollection[i].options));
-        //    }
-        //    DynamicTasksObservableCollection.Clear();
-        //    workflowTreeView.DataContext = StaticTasksObservableCollection;
-        //}
+        private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
+        {
+            RunWorkflowButton.IsEnabled = true;
+            ResetTasksButton.IsEnabled = false;
+            for (int i = 0; i < DynamicTasksObservableCollection.Count; i++)
+            {
+                StaticTasksObservableCollection.Add(new PreRunTask(StaticTasksObservableCollection[i].options));
+            }
+            DynamicTasksObservableCollection.Clear();
+            workflowTreeView.DataContext = StaticTasksObservableCollection;
+        }
 
         private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
         {
@@ -276,6 +282,7 @@ namespace SpritzGUI
             {
                 AddTaskToCollection(dialog.Options);
                 UpdateTaskGuiStuff();
+                UpdateOutputFolderTextbox();
             }
         }
 
@@ -315,17 +322,26 @@ namespace SpritzGUI
             StaticTasksObservableCollection.Last().DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(te) + 1);
         }
 
-        private void UpdateOutputFolderTextbox()
+        private string GetPathToFastqs()
         {
-            if (RnaSeqFastqCollection.Any())
-            {
-                var MatchingChars =
+            var MatchingChars =
                     from len in Enumerable.Range(0, RnaSeqFastqCollection.Select(b => b.FilePath).Min(s => s.Length)).Reverse()
                     let possibleMatch = RnaSeqFastqCollection.Select(b => b.FilePath).First().Substring(0, len)
                     where RnaSeqFastqCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
                     select possibleMatch;
 
-                OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()));
+            return Path.Combine(Path.GetDirectoryName(MatchingChars.First()));
+        }
+
+        private void UpdateOutputFolderTextbox()
+        {
+            if (StaticTasksObservableCollection.Count > 0)
+            {
+                OutputFolderTextBox.Text = StaticTasksObservableCollection.First().options.AnalysisDirectory;
+            }
+            else if (RnaSeqFastqCollection.Any())
+            {
+                OutputFolderTextBox.Text = GetPathToFastqs();
             }
             else
             {
