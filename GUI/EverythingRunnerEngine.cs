@@ -28,7 +28,7 @@ namespace SpritzGUI
 
         public void Run()
         {
-            //var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", System.Globalization.CultureInfo.InvariantCulture);
+            //var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             //outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
