@@ -153,6 +153,20 @@ namespace SpritzGUI
             return commands.ToArray();
         }
 
+        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
+        {
+            node.Style = SequenceStyle.Flow;
+            foreach (string item in items)
+            {
+                if (item.Length > 0)
+                {
+                    node.Add(item);
+                }
+            }
+
+            return node;
+        }
+
         private void WriteConfig(Options options)
         {
             const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
@@ -169,15 +183,7 @@ namespace SpritzGUI
 
             // write user input sras
             var accession = new YamlSequenceNode();
-            accession.Style = SequenceStyle.Flow;
-            foreach (string sra in sras)
-            {
-                if (sra.Length > 0)
-                {
-                    accession.Add(sra);
-                }
-            }
-            rootMappingNode.Add("sra", accession);
+            rootMappingNode.Add("sra", AddParam(sras, accession));
 
             // write user defined analysis directory (input and output folder)
             var analysisDirectory = new YamlSequenceNode();
@@ -187,26 +193,9 @@ namespace SpritzGUI
 
             // write user input fastqs
             var fq1 = new YamlSequenceNode();
-            fq1.Style = SequenceStyle.Flow;
-            foreach (string fastq in fq1s)
-            {
-                if (fastq.Length > 0)
-                {
-                    fq1.Add(fastq);
-                }
-            }
-            rootMappingNode.Add("fq1", fq1);
-
+            rootMappingNode.Add("fq1", AddParam(fq1s, fq1));
             var fq2 = new YamlSequenceNode();
-            fq2.Style = SequenceStyle.Flow;
-            foreach (string fastq in fq2s)
-            {
-                if (fastq.Length > 0)
-                {
-                    fq2.Add(fastq);
-                }
-            }
-            rootMappingNode.Add("fq2", fq2);
+            rootMappingNode.Add("fq2", AddParam(fq2s, fq2));
 
             Directory.SetCurrentDirectory(options.AnalysisDirectory); // switch to analysis directory for writing permissions
     
