@@ -123,10 +123,17 @@ namespace SpritzGUI
             }
 
             // Options.SpritzDirectory = txtSpritzDirecory.Text;
+            var defaultAnalysisDirectory = Path.Combine(Directory.GetCurrentDirectory(), "output");
+            if (!Directory.Exists(defaultAnalysisDirectory))
+            {
+                Directory.CreateDirectory(defaultAnalysisDirectory);
+            }
+
             Options.AnalysisDirectory = TrimQuotesOrNull(txtAnalysisDirectory.Text);
 
             if (!Directory.Exists(Options.AnalysisDirectory))
             {
+
                 MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
                 return;
             }
