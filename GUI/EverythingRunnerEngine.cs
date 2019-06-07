@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
@@ -24,7 +25,9 @@ namespace SpritzGUI
 
         public string Arguments { get; set; }
         public string StdErr { get; set; }
-        public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
+        //public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
+        public static string AnalysisDirectory { get; set; }
+        public static string ConfigDirectory { get; set; }
 
         public void Run()
         {
@@ -39,7 +42,7 @@ namespace SpritzGUI
 
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz";
+                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/" + AnalysisDirectory + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" rinaibrhm /spritz";
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.RedirectStandardError = true;
@@ -180,6 +183,7 @@ namespace SpritzGUI
             var sras = options.SraAccession.Split(',');
             var fq1s = options.Fastq1.Split(',') ?? new string[0];
             var fq2s = options.Fastq2.Split(',')?? new string[0];
+            AnalysisDirectory = options.AnalysisDirectory.Split('\\').ToList().Last();
 
             // write user input sras
             var accession = new YamlSequenceNode();
@@ -188,7 +192,7 @@ namespace SpritzGUI
             // write user defined analysis directory (input and output folder)
             var analysisDirectory = new YamlSequenceNode();
             analysisDirectory.Style = SequenceStyle.Flow;
-            analysisDirectory.Add(options.AnalysisDirectory);
+            analysisDirectory.Add(AnalysisDirectory);
             rootMappingNode.Add("analysisDirectory", analysisDirectory);
 
             // write user input fastqs
@@ -196,17 +200,21 @@ namespace SpritzGUI
             rootMappingNode.Add("fq1", AddParam(fq1s, fq1));
             var fq2 = new YamlSequenceNode();
             rootMappingNode.Add("fq2", AddParam(fq2s, fq2));
+            
+            var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
 
-            Directory.SetCurrentDirectory(options.AnalysisDirectory); // switch to analysis directory for writing permissions
-    
-            // add config file to user defined analysis directory, will mount to docker container
-            using (TextWriter writer = File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), "config.yaml")))
+            // create configs folder to mount newly written config to container
+            if (!Directory.Exists(pathToConfig))
+            {
+                Directory.CreateDirectory(pathToConfig);
+            }
+            ConfigDirectory = pathToConfig;
+
+
+            using (TextWriter writer = File.CreateText(Path.Combine(pathToConfig, "config.yaml")))
             {
                 stream.Save(writer, false);
             }
-
-            // switch back to current directory
-            Directory.SetCurrentDirectory(SpritzDirectory);
         }
 
         /// <summary>
