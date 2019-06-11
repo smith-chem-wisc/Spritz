@@ -42,7 +42,7 @@ namespace SpritzGUI
 
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/" + AnalysisDirectory + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" rinaibrhm /spritz";
+                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/" + AnalysisDirectory + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" rinaibrhm/spritz";
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.RedirectStandardError = true;
