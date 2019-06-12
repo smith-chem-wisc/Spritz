@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using ToolWrapperLayer;
 using WorkflowLayer;
+using System.Diagnostics;
 
 namespace SpritzGUI
 {
@@ -41,6 +41,20 @@ namespace SpritzGUI
         protected override void OnClosed(EventArgs e)
         {
             // TODO: implement some way of killing EverythingTask
+
+            // new process that kills docker container
+            Process proc = new Process();
+            proc.StartInfo.FileName = "Powershell.exe";
+            proc.StartInfo.Arguments = "docker ps -a; docker kill spritz";
+
+            proc.StartInfo.UseShellExecute = true;
+            proc.Start();
+
+            if (proc != null && !proc.HasExited)
+            {
+                proc.WaitForExit();
+            }
+            
             base.OnClosed(e);
         }
 
@@ -84,30 +98,37 @@ namespace SpritzGUI
 
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
-            if (StaticTasksObservableCollection.Count == 0)
+            try
             {
-                MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-            else if (RnaSeqFastqCollection.Any() && GetPathToFastqs().CompareTo(OutputFolderTextBox.Text) != 0)
-            {
-                MessageBox.Show("FASTQ files do not exist in the user-defined analysis directory.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+                if (StaticTasksObservableCollection.Count == 0)
+                {
+                    MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                else if (RnaSeqFastqCollection.Any() && GetPathToFastqs().CompareTo(OutputFolderTextBox.Text) != 0)
+                {
+                    MessageBox.Show("FASTQ files do not exist in the user-defined analysis directory.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
 
-            DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
-            for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
-            {
-                DynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + StaticTasksObservableCollection[i].options.Command.ToString(), StaticTasksObservableCollection[i].options));
+                DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+                for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
+                {
+                    DynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + StaticTasksObservableCollection[i].options.Command.ToString(), StaticTasksObservableCollection[i].options));
+                }
+                workflowTreeView.DataContext = DynamicTasksObservableCollection;
+                Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
+                //WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
+                WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: Powershell.exe {x}"))); // keep for debugging
+                var t = new Task(Everything.Run);
+                t.Start();
+                t.ContinueWith(DisplayAnyErrors);
+                RunWorkflowButton.IsEnabled = false;
             }
-            workflowTreeView.DataContext = DynamicTasksObservableCollection;
-            Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-            //WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
-            WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: Powershell.exe {x}"))); // keep for debugging
-            var t = new Task(Everything.Run);
-            t.Start();
-            t.ContinueWith(DisplayAnyErrors);
-            RunWorkflowButton.IsEnabled = false;
+            catch (TaskCanceledException)
+            {
+                // Ignore error
+            }
         }
 
         private void DisplayAnyErrors(Task obj)
