@@ -42,12 +42,13 @@ namespace SpritzGUI
         {
             // TODO: implement some way of killing EverythingTask
 
-            // new process that kills docker container
+            // new process that kills docker container (if any)
             Process proc = new Process();
             proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = "docker ps -a; docker kill spritz";
-
-            proc.StartInfo.UseShellExecute = true;
+            proc.StartInfo.Arguments = "docker kill spritz";
+            proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.RedirectStandardError = true;
             proc.Start();
 
             if (proc != null && !proc.HasExited)
