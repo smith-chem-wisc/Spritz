@@ -53,7 +53,7 @@ namespace SpritzGUI
         }
 
         protected void SaveButton_Click(object sender, RoutedEventArgs e)
-        {
+        {           
             // Command selection
             int i = CbxWorkFlowType.SelectedIndex;
             if (i == 0)
@@ -205,6 +205,19 @@ namespace SpritzGUI
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
             Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
             Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.MatePair == 2.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
+
+            //use RNAFastqCollection instead
+            var fq1s = Options.Fastq1.Split(',') ?? new string[0];
+            var fq2s = Options.Fastq2.Split(',') ?? new string[0];
+
+            foreach (string fq1 in fq1s)
+            {
+                if (!fq2s.Any(fq2 => fq2.CompareTo(fq1) == 0))
+                {
+                    MessageBox.Show("Only paired end sequencing is supported. Add both paired files for " + fq1 + ".", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                    throw new InvalidOperationException();
+                }
+            }
 
             Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;

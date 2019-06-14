@@ -30,10 +30,6 @@ namespace SpritzGUI
 
         public void Run()
         {
-            //var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-
-            //outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
-
             for (int i = 0; i < taskList.Count; i++)
             {
                 var ok = taskList[i];
@@ -58,101 +54,6 @@ namespace SpritzGUI
                 var options = taskList[i].Item2;
                 yield return "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + options.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz";
             }
-        }
-
-        private string[] GenerateArguments(Options options)
-        {
-            List<string> commands = new List<string> { "-c", options.Command };
-            if (options.SpritzDirectory != null && options.SpritzDirectory != "")
-            {
-                commands.AddRange(new[] { "-b", AddQuotes(options.SpritzDirectory) });
-            }
-            if (options.AnalysisDirectory != null && options.AnalysisDirectory != "")
-            {
-                commands.AddRange(new[] { "-a", AddQuotes(options.AnalysisDirectory)});
-            }
-            if (options.Fastq1 != null && options.Fastq1 != "")
-            {
-                commands.AddRange(new[] { "--fq1", AddQuotes(options.Fastq1) });
-            }
-            if (options.Fastq2 != null && options.Fastq2 != "")
-            {
-                commands.AddRange(new[] { "--fq2", AddQuotes(options.Fastq2) });
-            }
-            if (options.ExperimentType != null && options.ExperimentType != "")
-            {
-                commands.AddRange(new[] { "-e", options.ExperimentType });
-            }
-            if (options.SraAccession != null && options.SraAccession != "")
-            {
-                commands.AddRange(new[] { "-s", options.SraAccession });
-            }
-            if (options.Threads > 0 && options.Threads <= Environment.ProcessorCount)
-            {
-                commands.AddRange(new[] { "-t", options.Threads.ToString() });
-            }
-            if (options.GenomeStarIndexDirectory != null && options.GenomeStarIndexDirectory != "")
-            {
-                commands.AddRange(new[] { "-d", AddQuotes(options.GenomeStarIndexDirectory) });
-            }
-            if (options.GenomeFasta != null && options.GenomeFasta != "")
-            {
-                commands.AddRange(new[] { "-f", AddQuotes(options.GenomeFasta) });
-            }
-            if (options.GeneModelGtfOrGff != null && options.GeneModelGtfOrGff != "")
-            {
-                commands.AddRange(new[] { "-g", AddQuotes(options.GeneModelGtfOrGff) });
-            }
-            if (options.NewGeneModelGtfOrGff != null && options.NewGeneModelGtfOrGff != "")
-            {
-                commands.AddRange(new[] { "-h", AddQuotes(options.NewGeneModelGtfOrGff) });
-            }
-            if (options.ReferenceVcf != null && options.ReferenceVcf != "")
-            {
-                commands.AddRange(new[] { "-v", AddQuotes(options.ReferenceVcf) });
-            }
-            if (options.Reference != null && options.Reference != "")
-            {
-                commands.AddRange(new[] { "-r", options.Reference });
-            }
-            if (options.UniProtXml != null && options.UniProtXml != "")
-            {
-                commands.AddRange(new[] { "-x", AddQuotes(options.UniProtXml) });
-            }
-            if (options.UniProtXml != null && options.UniProtXml != "")
-            {
-                commands.AddRange(new[] { "--indelFinder", options.IndelFinder });
-            }
-            if (options.OverwriteStarAlignments)
-            {
-                commands.Add("--overwriteStarAlignments");
-            }
-            if (options.StrandSpecific)
-            {
-                commands.Add("--strandSpecific");
-            }
-            if (options.InferStrandSpecificity)
-            {
-                commands.Add("--inferStrandedness");
-            }
-            if (options.DoTranscriptIsoformAnalysis)
-            {
-                commands.Add("--doTranscriptIsoformAnalysis");
-            }
-            if (options.DoFusionAnalysis)
-            {
-                commands.Add("--doGeneFusionAnalysis");
-            }
-            if (options.SkipVariantAnalysis)
-            {
-                commands.Add("--skipVariantAnalysis");
-            }
-            if (options.VariantCallingWorkers > 0 && options.VariantCallingWorkers <= Environment.ProcessorCount)
-            {
-                commands.AddRange(new[] { "--variantCallingWorkers", options.VariantCallingWorkers.ToString() });
-            }
-            
-            return commands.ToArray();
         }
 
         private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)

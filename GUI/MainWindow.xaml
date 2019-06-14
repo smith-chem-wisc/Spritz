@@ -108,7 +108,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="BtnAddRnaSeqFastq" Content="Add" Click="BtnAddRnaSeqFastq_Click" />
                             <Button x:Name="BtnClearRnaSeqFastq" Content="Clear" Click="BtnClearRnaSeqFastq_Click" />
-                            <Button x:Name="BtnSaveRnaSeqFastqSet" Content="Save" Click="BtnSaveRnaSeqFastqSet_Click"/>
+                            <!--<Button x:Name="BtnSaveRnaSeqFastqSet" Content="Save" Click="BtnSaveRnaSeqFastqSet_Click"/>-->
                         </StackPanel>
                     </Grid>
                 </GroupBox>

@@ -34,8 +34,7 @@ namespace SpritzGUI
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
-            //if (!InstallationDialogAndCheck())
-            //    Close();
+            MessageBox.Show("Please have Docker Desktop installed. Under \"Shared Drives\", select drives to be shared and click \"Apply\".", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         protected override void OnClosed(EventArgs e)
@@ -57,6 +56,22 @@ namespace SpritzGUI
             }
             
             base.OnClosed(e);
+        }
+
+        private void UpdateSRABox()
+        {
+            if (RnaSeqFastqCollection.Count > 0)
+            {
+                TbxSRA.IsEnabled = false;
+                BtnAddSRA.IsEnabled = false;
+                BtnClearSRA.IsEnabled = false;
+            }
+            else
+            {
+                TbxSRA.IsEnabled = true;
+                BtnAddSRA.IsEnabled = true;
+                BtnClearSRA.IsEnabled = true;
+            }
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -81,6 +96,7 @@ namespace SpritzGUI
                 }
             }
             UpdateOutputFolderTextbox();
+            UpdateSRABox();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -106,7 +122,7 @@ namespace SpritzGUI
                     MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-                else if (RnaSeqFastqCollection.Any() && GetPathToFastqs().CompareTo(OutputFolderTextBox.Text) != 0)
+                else if (RnaSeqFastqCollection.Any() && GetPathToFastqs().CompareTo(OutputFolderTextBox.Text) != 0) // to be edited
                 {
                     MessageBox.Show("FASTQ files do not exist in the user-defined analysis directory.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -181,31 +197,34 @@ namespace SpritzGUI
                 }
             }
             DataGridRnaSeqFastq.Items.Refresh();
+            UpdateSRABox();
         }
 
         private void BtnClearRnaSeqFastq_Click(object sender, RoutedEventArgs e)
         {
             RnaSeqFastqCollection.Clear();
+            UpdateOutputFolderTextbox();
+            UpdateSRABox();
         }
 
-        private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
-            {
-                Filter = "TOML files(*.toml)|*.toml",
-                FilterIndex = 1,
-                RestoreDirectory = true,
-                Multiselect = true
-            };
-            if (openPicker.ShowDialog() == true)
-            {
-                foreach (var tomlFromSelected in openPicker.FileNames)
-                {
-                    AddAFile(tomlFromSelected);
-                }
-            }
-            UpdateTaskGuiStuff();
-        }
+        //private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
+        //    {
+        //        Filter = "TOML files(*.toml)|*.toml",
+        //        FilterIndex = 1,
+        //        RestoreDirectory = true,
+        //        Multiselect = true
+        //    };
+        //    if (openPicker.ShowDialog() == true)
+        //    {
+        //        foreach (var tomlFromSelected in openPicker.FileNames)
+        //        {
+        //            AddAFile(tomlFromSelected);
+        //        }
+        //    }
+        //    UpdateTaskGuiStuff();
+        //}
 
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
         {
@@ -266,7 +285,7 @@ namespace SpritzGUI
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
-            if (TbxSRA.Text.Contains("SR"))
+            if (TbxSRA.Text.Contains("SR") || TbxSRA.Text.Contains("ER"))
             {
                 if (SraCollection.Any(s => s.Name == TbxSRA.Text))
                 {
@@ -274,11 +293,11 @@ namespace SpritzGUI
                 }
                 else
                 { 
-                    SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text);
+                    SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text.Trim());
                     SraCollection.Add(sraDataGrid);
                 }
             }
-            else if (MessageBox.Show("SRA accessions are expected to start with \"SR\", such as SRX254398 or SRR791584. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
+            else if (MessageBox.Show("SRA accessions are expected to start with \"SR\" or \"ER\", such as SRX254398 or ERR315327. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
             {
                 System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
             }
@@ -299,27 +318,34 @@ namespace SpritzGUI
                     return;
                 }
             }
-            var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options().AnalysisDirectory : OutputFolderTextBox.Text);
-            if (dialog.ShowDialog() == true)
+
+            try
             {
-                AddTaskToCollection(dialog.Options);
-                UpdateTaskGuiStuff();
-                UpdateOutputFolderTextbox();
+                var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options().AnalysisDirectory : OutputFolderTextBox.Text);
+                if (dialog.ShowDialog() == true)
+                {
+                    AddTaskToCollection(dialog.Options);
+                    UpdateTaskGuiStuff();
+                    UpdateOutputFolderTextbox();
+                }
+            } catch (InvalidOperationException)
+            {
+                // does not open workflow window until all fastq files are added, if any
             }
         }
 
-        private void BtnSaveRnaSeqFastqSet_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                WriteExperDesignToTsv(OutputFolderTextBox.Text);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Could not save experimental design!\n\n" + ex.Message, "Experimental Design", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-        }
+        //private void BtnSaveRnaSeqFastqSet_Click(object sender, RoutedEventArgs e)
+        //{
+        //    try
+        //    {
+        //        WriteExperDesignToTsv(OutputFolderTextBox.Text);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Could not save experimental design!\n\n" + ex.Message, "Experimental Design", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //        return;
+        //    }
+        //}
 
         private void UpdateTaskGuiStuff()
         {
@@ -355,6 +381,35 @@ namespace SpritzGUI
             return Path.Combine(Path.GetDirectoryName(MatchingChars.First()));
         }
 
+        //private string GetPathToFastqDirectory(string path)
+        //{
+        //    var filePath = path.Split('\\');
+        //    var newPath = string.Join("\\", filePath.Take(filePath.Length - 1));
+        //    return newPath;
+        //}
+
+
+        //private void UpdateOutputFolderTextbox(string filePath = null)
+        //{
+        //    // if new files have different path than current text in output, then throw error
+        //    if (StaticTasksObservableCollection.Count > 0)
+        //    {
+        //        OutputFolderTextBox.Text = StaticTasksObservableCollection.First().options.AnalysisDirectory;
+        //    }
+        //    else if (RnaSeqFastqCollection.Any())
+        //    {
+        //        if (filePath != null && OutputFolderTextBox.Text != "" && GetPathToFastqDirectory(filePath).CompareTo(OutputFolderTextBox.Text) != 0)
+        //        {
+        //            throw new InvalidOperationException();
+        //        }
+        //        OutputFolderTextBox.Text = GetPathToFastqs();
+        //    }
+        //    else
+        //    {
+        //        OutputFolderTextBox.Clear();
+        //    }
+        //}
+
         private void UpdateOutputFolderTextbox()
         {
             if (StaticTasksObservableCollection.Count > 0)
@@ -373,29 +428,44 @@ namespace SpritzGUI
 
         private void AddAFile(string filepath)
         {
-            var theExtension = Path.GetExtension(filepath).ToLowerInvariant();
-            theExtension = theExtension == ".gz" ? Path.GetExtension(Path.GetFileNameWithoutExtension(filepath)).ToLowerInvariant() : theExtension;
-            switch (theExtension)
+            if (SraCollection.Count == 0)
             {
-                case ".fastq":
-                    RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
-                    RnaSeqFastqCollection.Add(rnaSeqFastq);
-                    UpdateOutputFolderTextbox();
-                    break;
+                var theExtension = Path.GetExtension(filepath).ToLowerInvariant();
+                theExtension = theExtension == ".gz" ? Path.GetExtension(Path.GetFileNameWithoutExtension(filepath)).ToLowerInvariant() : theExtension;
+                switch (theExtension)
+                {
+                    case ".fastq":
+                        if (Path.GetFileName(filepath).Contains("_1") || Path.GetFileName(filepath).Contains("_2"))
+                        {
+                            RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
+                            RnaSeqFastqCollection.Add(rnaSeqFastq);
+                            UpdateOutputFolderTextbox();
+                            break;
+                        }
+                        else
+                        {
+                            MessageBox.Show("FASTQ files must have *_1.fastq and *_2.fastq extensions.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                            return;
+                        }
 
-                case ".toml":
-                    TomlTable tomlFile = null;
-                    try
-                    {
-                        tomlFile = Toml.ReadFile(filepath);
-                    }
-                    catch (Exception)
-                    {
-                        break;
-                    }
-                    var ye1 = Toml.ReadFile<Options>(filepath);
-                    AddTaskToCollection(ye1);
-                    break;
+                    //case ".toml":
+                    //    TomlTable tomlFile = null;
+                    //    try
+                    //    {
+                    //        tomlFile = Toml.ReadFile(filepath);
+                    //    }
+                    //    catch (Exception)
+                    //    {
+                    //        break;
+                    //    }
+                    //    var ye1 = Toml.ReadFile<Options>(filepath);
+                    //    AddTaskToCollection(ye1);
+                    //    break;
+                }
+            } else
+            {
+                MessageBox.Show("User already added SRA number. Please only choose one input: 1) SRA accession 2) FASTQ files.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
         }
 
