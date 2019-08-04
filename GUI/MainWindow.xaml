@@ -108,7 +108,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="BtnAddRnaSeqFastq" Content="Add" Click="BtnAddRnaSeqFastq_Click" />
                             <Button x:Name="BtnClearRnaSeqFastq" Content="Clear" Click="BtnClearRnaSeqFastq_Click" />
-                            <Button x:Name="BtnSaveRnaSeqFastqSet" Content="Save" Click="BtnSaveRnaSeqFastqSet_Click"/>
+                            <!--<Button x:Name="BtnSaveRnaSeqFastqSet" Content="Save" Click="BtnSaveRnaSeqFastqSet_Click"/>-->
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -136,27 +136,25 @@
                         </StackPanel>
                         <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="workflowTreeView_MouseDoubleClick">
                             <TreeView.Resources>
-                                <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
+                                <!--<HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="C " />
                                         <TextBlock Text="{Binding DisplayName}" />
                                         <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
-                                </HierarchicalDataTemplate>
+                                </HierarchicalDataTemplate>-->
                             </TreeView.Resources>
                         </TreeView>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
-                            <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasksButton_Click" />
-                            <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTaskButton_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="3" LastChildFill="True">
                             <Label Content="Output Folder:" />
-                            <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
+                            <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" IsEnabled="False" />
                         </DockPanel>
-                        <Button x:Name="RunWorkflowButton" Content="Run workflows!" Click="RunWorkflowButton_Click" FontSize="12" Grid.Row="4" />
+                        <Button x:Name="RunWorkflowButton" Content="Run workflow!" Click="RunWorkflowButton_Click" FontSize="12" Grid.Row="4" />
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>
