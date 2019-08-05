@@ -26,7 +26,7 @@ namespace CMD
         public string SpritzDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
         [Option('a', "analysisDirectory", Required = false, HelpText = "Target directory for downloads and analysis")]
-        public string AnalysisDirectory { get; set; } = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        public string AnalysisDirectory { get; set; } = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "output");
 
         [Option('1', "fq1", Required = false, HelpText = "FASTQ file for single-end or for pair1 (comma-separated for multiple files)")]
         public string Fastq1 { get; set; }

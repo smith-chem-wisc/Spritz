@@ -28,7 +28,7 @@ namespace WorkflowLayer
         {
             // Setup and Alignments
             EnsemblDownloadsWrapper ensemblDownloads = new EnsemblDownloadsWrapper();
-            ensemblDownloads.PrepareEnsemblGenomeFasta(Parameters.GenomeFasta);
+            ensemblDownloads.PrepareEnsemblGenomeFasta(Parameters.AnalysisDirectory, Parameters.GenomeFasta);
             AlignmentFlow alignment = new AlignmentFlow();
             alignment.Parameters = new AlignmentParameters();
             alignment.Parameters.SpritzDirectory = Parameters.SpritzDirectory;

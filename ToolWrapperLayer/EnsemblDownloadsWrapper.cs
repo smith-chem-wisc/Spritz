@@ -299,11 +299,11 @@ namespace ToolWrapperLayer
         /// <param name="genomeFasta"></param>
         /// <param name="ensemblGenome"></param>
         /// <param name="reorderedFasta"></param>
-        public void PrepareEnsemblGenomeFasta(string genomeFasta)
+        public void PrepareEnsemblGenomeFasta(string analysisDirectory, string genomeFasta)
         {
             if (Path.GetExtension(genomeFasta) == ".gz" || Path.GetExtension(genomeFasta) == ".tgz")
             {
-                WrapperUtility.RunBashCommand("gunzip", WrapperUtility.ConvertWindowsPath(genomeFasta)).WaitForExit();
+                WrapperUtility.GenerateAndRunScript(WrapperUtility.GetAnalysisScriptPath(analysisDirectory, "Gzippy.bash"), new List<string> { $"gunzip {WrapperUtility.ConvertWindowsPath(genomeFasta)}" }).WaitForExit();
                 genomeFasta = Path.ChangeExtension(genomeFasta, null);
             }
 

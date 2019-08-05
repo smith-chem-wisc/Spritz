@@ -125,7 +125,9 @@ namespace WorkflowLayer
 
             // python setup
             //commands.Add("sudo easy_install pip");
-            commands.Add("sudo -H pip install --upgrade virtualenv pip qc bitsets cython numpy bx-python pysam RSeQC h5py scipy");
+            commands.Add("sudo -H pip install --upgrade virtualenv pip"); // update pip
+            commands.Add("sudo -H pip install --upgrade numpy"); // get numpy before bx-python so it doesn't fail
+            commands.Add("sudo -H pip install --upgrade qc bitsets cython bx-python pysam RSeQC h5py scipy");
 
             // java8 setup
             commands.Add
@@ -187,7 +189,7 @@ namespace WorkflowLayer
             string installScript = WrapperUtility.GetInstallationScriptPath(spritzDirectory, "Installation.bash");
             WrapperUtility.GenerateAndRunScript(installScript, new List<string>
             {
-                "echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
+                $"echo \"Checking for updates and installing any missing dependencies. Please enter your password for this step:\n\"",
                 $"sudo bash {WrapperUtility.ConvertWindowsPath(scriptPath)}"
             }).WaitForExit();
         }

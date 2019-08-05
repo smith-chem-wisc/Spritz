@@ -46,7 +46,7 @@ namespace CMD
 
             Options options = result.Value;
             FinishSetup(options);
-            
+
             // Download SRAs if they're specified
             bool useSraMethod = options.SraAccession != null && options.SraAccession.StartsWith("SR");
             List<string[]> fastqsSeparated = useSraMethod ?

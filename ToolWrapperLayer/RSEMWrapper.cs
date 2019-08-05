@@ -157,7 +157,8 @@ namespace ToolWrapperLayer
                     string.Join(",", analysisFastqPaths[0].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f))) +
                     " " +
                     string.Join(",", analysisFastqPaths[1].Split(',').Select(f => WrapperUtility.ConvertWindowsPath(f)));
-            var megabytes = Math.Floor(new PerformanceCounter("Memory", "Available MBytes").NextValue());
+
+            var megabytes = Math.Floor((double)Process.GetCurrentProcess().VirtualMemorySize64 / 1000000);
             string bamOption = doOuptutBam ? "--output-genome-bam" : "--no-bam-output";
             OutputPrefix = Path.Combine(Path.GetDirectoryName(analysisFastqPaths[0].Split(',')[0]),
                 Path.GetFileNameWithoutExtension(analysisFastqPaths[0].Split(',')[0]) +
