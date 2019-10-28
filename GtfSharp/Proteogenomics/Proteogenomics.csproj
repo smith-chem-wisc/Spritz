@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="mzLib" Version="1.0.415" />
+    <PackageReference Include="NetBio.Core" Version="3.0.0-alpha" />
+  </ItemGroup>
+
+</Project>
