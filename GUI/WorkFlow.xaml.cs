@@ -146,6 +146,7 @@ namespace SpritzGUI
             Options.Release = ensembl.Release;
             Options.Species = EnsemblSpecies.SelectedItem.ToString();
             Options.Reference = ensembl.Genomes[Options.Species];
+            Options.SnpEff = "86";
 
             // features yet to be supported
             //Options.GenomeStarIndexDirectory = txtGenomeDir.Text;

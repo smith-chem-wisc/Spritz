@@ -98,8 +98,6 @@ namespace SpritzGUI
             // write user input fastqs
             var fq = new YamlSequenceNode();
             rootMappingNode.Add("fq", AddParam(fqs, fq));
-            //var fq2 = new YamlSequenceNode();
-            //rootMappingNode.Add("fq2", AddParam(fq2s, fq2));
 
             // write ensembl release
             var release = new YamlScalarNode(options.Release.Substring(8));
@@ -117,7 +115,7 @@ namespace SpritzGUI
             rootMappingNode.Add("genome", genome);
 
             // write snpeff (hardcoded for now)
-            var snpeff = new YamlScalarNode("86");
+            var snpeff = new YamlScalarNode(options.SnpEff);
             snpeff.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("snpeff", snpeff);
 
