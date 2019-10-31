@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using WorkflowLayer;
@@ -89,5 +90,9 @@ namespace CMD
         public int VariantCallingWorkers { get; set; } = 1;
 
         public string ProteinFastaPath { get; set; }
+
+        public string Release { get; set; }
+
+        public string Species { get; set; }
     }
 }

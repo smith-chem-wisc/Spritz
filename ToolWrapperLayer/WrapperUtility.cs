@@ -105,6 +105,18 @@ namespace ToolWrapperLayer
             return proc;
         }
 
+        public static Process RunWindowsBashCommand()
+        {
+            Process proc = new Process();
+            proc.StartInfo.FileName = "Powershell.exe";
+            proc.StartInfo.Arguments = "bash .//populate.sh"; // escape the spaces
+            proc.StartInfo.UseShellExecute = true;
+            proc.Start();
+            proc.WaitForExit();
+
+            return proc;
+        }
+
         public static Process RunBashScript(string scriptPath)
         {
             Process proc = new Process();
