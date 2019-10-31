@@ -65,6 +65,15 @@
                             <Label Content="Threads" Width="200"/>
                             <TextBox x:Name="txtThreads" TextChanged="txtThreads_TextChanged" Width="180" IsEnabled="False"/>
                         </StackPanel>
+                        <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
+                            <Label Content="Ensembl Release" Width="200"/>
+                            <ComboBox x:Name="EnsemblReleaseVersions" IsEnabled="True" Width="180" ItemsSource="{Binding EnsemblReleases}" DisplayMemberPath="Release"/>
+                        </StackPanel>
+                        <!-- depends on release-->
+                        <StackPanel  Orientation="Horizontal" Grid.Row="5" Grid.Column="0">
+                            <Label Content="Species" Width="200"/>
+                            <ComboBox x:Name="EnsemblSpecies" IsEnabled="True" Width="180" ItemsSource="{Binding SelectedItem.Species, ElementName=EnsemblReleaseVersions}" SelectionChanged="Species_SelectionChanged"/>
+                        </StackPanel>
                         <!--<StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="0">
                             <Label Content="] Genome Directory" Width="200"/>
                             <TextBox x:Name="txtGenomeDir" Width="180" />
@@ -90,10 +99,13 @@
                             <Label Content="dbSNP VCF Reference" Width="200"/>
                             <TextBox x:Name="txtDbsnpVcfReference" Width="180"/>
                         </StackPanel>-->
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
+                        
+                        <!--to do-->
+                        <!--<StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
                             <Label Content="Ensembl Reference" Width="200"/>
-                            <TextBox x:Name="txtEnsemblReference" Width="180" IsEnabled="False"/>
-                        </StackPanel>
+                            <TextBox x:Name="txtEnsemblReference" Width="180" Text="{Binding Path=Reference,ElementName=window}" IsEnabled="False"/>
+                        </StackPanel>-->
+                        
                         <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
                             <Label Content="Indel Finding Software" Width="200"/>
                             <ComboBox x:Name="CmbxIndelFinding" SelectionChanged="CmbxIndelFinding_SelectionChanged" IsEnabled="False"/>

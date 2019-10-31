@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
+using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 
@@ -20,6 +20,7 @@ namespace SpritzGUI
         {
             this.taskList = taskList;
             this.outputFolder = outputFolder;
+
         }
 
         public string Arguments { get; set; }
@@ -27,6 +28,7 @@ namespace SpritzGUI
         //public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
         public static string AnalysisDirectory { get; set; }
         public static string ConfigDirectory { get; set; }
+        public static Dictionary<string, string> Organism { get; set; }
 
         public void Run()
         {
@@ -37,13 +39,13 @@ namespace SpritzGUI
 
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/" + AnalysisDirectory + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" rinaibrhm/spritz";
-                proc.StartInfo.CreateNoWindow = true;
-                proc.StartInfo.UseShellExecute = false;
-                proc.StartInfo.RedirectStandardError = true;
+                proc.StartInfo.Arguments = "docker pull rinaibrhm/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/analysis" + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" rinaibrhm/spritz";
+                //proc.StartInfo.CreateNoWindow = true;
+                proc.StartInfo.UseShellExecute = true;
+                //proc.StartInfo.RedirectStandardError = true;
                 proc.Start();
                 proc.WaitForExit();
-                StdErr = proc.StandardError.ReadToEnd();
+                //StdErr = proc.StandardError.ReadToEnd(); 
             }
         }
 
@@ -81,9 +83,7 @@ namespace SpritzGUI
             var rootMappingNode = (YamlMappingNode)stream.Documents[0].RootNode;
 
             var sras = options.SraAccession.Split(',');
-            var fq1s = options.Fastq1.Split(',') ?? new string[0];
-            var fq2s = options.Fastq2.Split(',')?? new string[0];
-            AnalysisDirectory = options.AnalysisDirectory.Split('\\').ToList().Last();
+            var fqs = options.Fastq1.Split(',') ?? new string[0];
 
             // write user input sras
             var accession = new YamlSequenceNode();
@@ -92,15 +92,35 @@ namespace SpritzGUI
             // write user defined analysis directory (input and output folder)
             var analysisDirectory = new YamlSequenceNode();
             analysisDirectory.Style = SequenceStyle.Flow;
-            analysisDirectory.Add(AnalysisDirectory);
-            rootMappingNode.Add("analysisDirectory", analysisDirectory);
+            analysisDirectory.Add("" + AnalysisDirectory);
+            rootMappingNode.Add("analysisDirectory", "analysis");
 
             // write user input fastqs
-            var fq1 = new YamlSequenceNode();
-            rootMappingNode.Add("fq1", AddParam(fq1s, fq1));
-            var fq2 = new YamlSequenceNode();
-            rootMappingNode.Add("fq2", AddParam(fq2s, fq2));
-            
+            var fq = new YamlSequenceNode();
+            rootMappingNode.Add("fq", AddParam(fqs, fq));
+            //var fq2 = new YamlSequenceNode();
+            //rootMappingNode.Add("fq2", AddParam(fq2s, fq2));
+
+            // write ensembl release
+            var release = new YamlScalarNode(options.Release.Substring(8));
+            release.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("release", release);
+
+            // write species
+            var species = new YamlScalarNode(options.Species.First().ToString().ToUpper() + options.Species.Substring(1));
+            species.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("species", species);
+
+            // write genome [e.g. GRCm38]
+            var genome = new YamlScalarNode(options.Reference);
+            genome.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("genome", genome);
+
+            // write snpeff (hardcoded for now)
+            var snpeff = new YamlScalarNode("86");
+            snpeff.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("snpeff", snpeff);
+
             var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
 
             // create configs folder to mount newly written config to container
