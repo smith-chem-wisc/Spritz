@@ -31,24 +31,10 @@ namespace SpritzGUI
         public MainWindow()
         {
             InitializeComponent();
-            // GetEnsembl(); // run bash script to get list of releases from ensembl, only once?
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
             MessageBox.Show("Please have Docker Desktop installed. Under \"Shared Drives\", select drives to be shared and click \"Apply\".", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void GetEnsembl()
-        {
-            // generate all releases
-            string scriptPath = Path.Combine(Directory.GetCurrentDirectory(), "populate.sh");
-            if (WrapperUtility.IsWindows)
-            {
-                WrapperUtility.RunWindowsBashCommand();
-            }
-            else {
-                //todo RunBashScript
-            }
         }
 
         protected override void OnClosed(EventArgs e)

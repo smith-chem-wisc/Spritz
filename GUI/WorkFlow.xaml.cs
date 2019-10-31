@@ -320,7 +320,10 @@ namespace SpritzGUI
                 foreach (string genome in genomeDB.Where(g => g.Contains(release)))
                 {
                     var splt = genome.Split(',');
-                    genomes.Add(splt[1], splt[2]); // <Species, GenomeVer>
+                    if (splt[3] == "86") // only add species supported in snpeff (ver 86 ensembl)
+                    {
+                        genomes.Add(splt[1], splt[2]); // <Species, GenomeVer>
+                    }
                 }
 
                 EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(species), Genomes = genomes });
