@@ -34,6 +34,12 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
 
     #### Define Ensembl release
     `release: "81"`
+	
+	#### Define organism name
+    `organism: "human"`
+	
+	- Based on Uniprot's naming convention
+	- You can refer to genomes.csv
 
     #### DO NOT CHANGE: SnpEff version
     `snpeff: "86"`
