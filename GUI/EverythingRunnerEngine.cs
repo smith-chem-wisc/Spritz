@@ -92,8 +92,8 @@ namespace SpritzGUI
             // write user defined analysis directory (input and output folder)
             var analysisDirectory = new YamlSequenceNode();
             analysisDirectory.Style = SequenceStyle.Flow;
-            analysisDirectory.Add("" + AnalysisDirectory);
-            rootMappingNode.Add("analysisDirectory", "analysis");
+            analysisDirectory.Add("analysis");
+            rootMappingNode.Add("analysisDirectory", analysisDirectory);
 
             // write user input fastqs
             var fq = new YamlSequenceNode();
@@ -108,6 +108,11 @@ namespace SpritzGUI
             var species = new YamlScalarNode(options.Species.First().ToString().ToUpper() + options.Species.Substring(1));
             species.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("species", species);
+
+            // write species
+            var organism = new YamlScalarNode(options.Organism);
+            organism.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("organism", organism);
 
             // write genome [e.g. GRCm38]
             var genome = new YamlScalarNode(options.Reference);

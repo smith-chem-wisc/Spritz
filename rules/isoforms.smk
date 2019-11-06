@@ -1,10 +1,12 @@
+REF=config["species"] + "." + config["genome"]
+
 rule assemble_transcripts:
     input:
-        bam="data/combined.sorted.bam",
-        gff="data/ensembl/Homo_sapiens." + GENEMODEL_VERSION + ".gff3"
-    output: "data/combined.sorted.gtf"
+        bam="{dir}/combined.sorted.bam",
+        gff="data/ensembl/" + REF + "." + config["release"] + ".gff3"
+    output: "{dir}/combined.sorted.gtf"
     threads: 12
-    log: "data/combined.sorted.gtf.log"
+    log: "{dir}/combined.sorted.gtf.log"
     shell:
         "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} 2> {log}" # strandedness: --fr for forwared or --rf for reverse
 
@@ -24,6 +26,7 @@ rule build_gtf_sharp:
 rule filter_transcripts_add_cds:
     input:
         gtfsharp="GtfSharp/GtfSharp/bin/Release/netcoreapp2.1/GtfSharp.dll",
+<<<<<<< HEAD
         gtf="data/combined.sorted.gtf",
         fa="data/ensembl/Homo_sapiens.GRCh38.dna.primary_assembly.karyotypic.fa",
         refg="data/ensembl/Homo_sapiens.GRCh38.81.gff3"
@@ -32,13 +35,23 @@ rule filter_transcripts_add_cds:
         "data/combined.sorted.filtered.withcds.gtf",
     shell:
         "dotnet {input.gtfsharp} -f {input.fa} -g {input.gtf} -r {input.refg}"
+        gtf="{dir}/combined.sorted.gtf",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        refg="data/ensembl/" + REF + "." + config["release"] + ".gff3"
+    output:
+        temp("{dir}/combined.sorted.filtered.gtf"),
+        "{dir}/combined.sorted.filtered.withcds.gtf",
+    shell:
+        "mv {input.gtf} temporary/combined.sorted.gtf && "
+        "dotnet {input.gtfsharp} -f {input.fa} -g temporary/combined.sorted.gtf -r {input.refg} && "
+        "mv temporary/* {wildcards.dir}"
 
 rule generate_snpeff_database:
     input:
         jar="SnpEff/snpEff.jar",
-        gtf="data/combined.sorted.filtered.withcds.gtf",
-        pfa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".pep.all.fa",
-        gfa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa"
+        gtf=expand("{dir}/combined.sorted.filtered.withcds.gtf", dir=config["analysisDirectory"]),
+        pfa="data/ensembl/" + REF + ".pep.all.fa",
+        gfa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
     output:
         gtf="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf",
         pfa="SnpEff/data/combined.sorted.filtered.withcds.gtf/protein.fa",

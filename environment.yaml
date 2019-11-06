@@ -4,7 +4,7 @@ channels:
 dependencies:
   - snakemake-minimal =5.2.4
   - python =3.6
-  - gatk4 =4.0.11.0
+  - gatk4 =4.1.2.0
   - hisat2 =2.1.0
   - samtools =1.9
   - sra-tools

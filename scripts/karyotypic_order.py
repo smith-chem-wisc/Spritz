@@ -1,8 +1,15 @@
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import yaml
 
-fa = "data/ensembl/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+with open("config.yaml", 'r') as stream:
+   data = yaml.safe_load(stream)
+
+species = data["species"]
+version = data["genome"]
+
+fa = "./data/ensembl/" + species + "." + version + ".dna.primary_assembly.fa"
 
 ordered = []
 chrn = [str(x) for x in range(1, 23)]
@@ -30,6 +37,6 @@ ordered.extend(gl)
 ordered.extend(ki)
 ordered.extend(other)
 
-with open("data/ensembl/Homo_sapiens.GRCh38.dna.primary_assembly.karyotypic.fa","w") as out:
+with open("./data/ensembl/" + species + "." + version + ".dna.primary_assembly.karyotypic.fa","w") as out:
     for seq in ordered:
         out.write(seq.format("fasta"))

@@ -36,8 +36,11 @@ namespace CMD
         public string IndelFinder { get; set; }
         public int VariantCallingWorkers { get; set; } = 1;
         public string ProteinFastaPath { get; set; }
+
+        // new for snakemake
         public string Release { get; set; }
         public string Species { get; set; }
         public string SnpEff { get; set; }
+        public string Organism { get; set; }
     }
 }

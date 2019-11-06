@@ -1,16 +1,17 @@
 # see https://www.ebi.ac.uk/training/online/sites/ebi.ac.uk.training.online/files/UniProt_programmatically_py3.pdf
 
+import get_proteome
 import requests
 import sys
 
+proteome = get_proteome.proteome
 BASE = 'http://www.uniprot.org'
 KB_ENDPOINT = '/uniprot/'
 TOOL_ENDPOINT = '/uploadlists/'
 
 # query = 'name:"polymerase alpha" AND proteome:UP000005640 AND reviewed:yes'
 # query = 'proteome:UP000005640 AND reviewed:yes'
-
-query = 'proteome:UP000000589' #UP000005640
+query = 'proteome:' + proteome
 
 payload = {
     'query': query,

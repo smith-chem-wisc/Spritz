@@ -20,51 +20,42 @@ rule download_snpeff:
         """
 
 rule index_fa:
-    input: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa"
-    output: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa.fai"
-    shell: "samtools faidx data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa"
-
-rule dict_fa:
-    input: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa"
-    output: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.dict"
-    shell: "gatk CreateSequenceDictionary -R {input} -O {output}"
-
-rule tmpdir:
-    output: temp(directory("tmp"))
-    shell: "mkdir tmp"
+    input: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
+    output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa.fai"
+    shell: "samtools faidx data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
 
 rule hisat2_groupmark_bam:
     input:
-        sorted="data/combined.sorted.bam",
+        sorted="{dir}/combined.sorted.bam",
         tmp=directory("tmp")
     output:
-        grouped=temp("data/combined.sorted.grouped.bam"),
-        groupedidx=temp("data/combined.sorted.grouped.bam.bai"),
-        marked="data/combined.sorted.grouped.marked.bam",
-        markedidx="data/combined.sorted.grouped.marked.bam.bai",
-        metrics="data/combined.sorted.grouped.marked.metrics"
+        grouped=temp("{dir}/combined.sorted.grouped.bam"),
+        groupedidx=temp("{dir}/combined.sorted.grouped.bam.bai"),
+        marked="{dir}/combined.sorted.grouped.marked.bam",
+        markedidx="{dir}/combined.sorted.grouped.marked.bam.bai",
+        metrics="{dir}/combined.sorted.grouped.marked.metrics"
     resources: mem_mb=GATK_MEM
-    log: "data/combined.sorted.grouped.marked.log"
+    log: "{dir}/combined.sorted.grouped.marked.log"
     shell:
         "(gatk {GATK_JAVA} AddOrReplaceReadGroups -PU platform  -PL illumina -SM sample -LB library -I {input.sorted} -O {output.grouped} -SO coordinate --TMP_DIR {input.tmp} && "
         "samtools index {output.grouped} && "
-        "gatk {GATK_JAVA} MarkDuplicates -I {output.grouped} -O {output.marked} -M {output.metrics} --TMP_DIR {input.tmp} -AS true &&"
+        "gatk {GATK_JAVA} MarkDuplicates -I {output.grouped} -O {output.marked} -M {output.metrics} --TMP_DIR {input.tmp} -AS true && "
         "samtools index {output.marked}) &> {log}"
 
 # Checks if quality encoding is correct, and then splits n cigar reads
 rule split_n_cigar_reads:
     input:
-        bam="data/combined.sorted.grouped.marked.bam",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        fai="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa.fai",
-        fadict="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.dict",
+        bam="{dir}/combined.sorted.grouped.marked.bam",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        fai="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa.fai",
+        fadict="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.dict",
         tmp=directory("tmp")
     output:
-        fixed=temp("data/combined.fixedQuals.bam"),
-        split=temp("data/combined.sorted.grouped.marked.split.bam"),
-        splitidx=temp("data/combined.sorted.grouped.marked.split.bam.bai")
+        fixed=temp("{dir}/combined.fixedQuals.bam"),
+        split=temp("{dir}/combined.sorted.grouped.marked.split.bam"),
+        splitidx=temp("{dir}/combined.sorted.grouped.marked.split.bam.bai")
     resources: mem_mb=GATK_MEM
-    log: "data/combined.sorted.grouped.marked.split.log"
+    log: "{dir}/combined.sorted.grouped.marked.split.log"
     shell:
         "(gatk {GATK_JAVA} FixMisencodedBaseQualityReads -I {input.bam} -O {output.fixed} && "
         "gatk {GATK_JAVA} SplitNCigarReads -R {input.fa} -I {output.fixed} -O {output.split} --tmp-dir {input.tmp} || " # fix and split
@@ -73,16 +64,16 @@ rule split_n_cigar_reads:
 
 rule base_recalibration:
     input:
-        knownsites="data/ensembl/common_all_20170710.ensembl.vcf",
-        knownsitesidx="data/ensembl/common_all_20170710.ensembl.vcf.idx",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        bam="data/combined.sorted.grouped.marked.split.bam",
+        knownsites="data/ensembl/" + config["species"] + ".ensembl.vcf",
+        knownsitesidx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        bam="{dir}/combined.sorted.grouped.marked.split.bam",
         tmp=directory("tmp")
     output:
-        recaltable=temp("data/combined.sorted.grouped.marked.split.recaltable"),
-        recalbam=temp("data/combined.sorted.grouped.marked.split.recal.bam")
+        recaltable=temp("{dir}/combined.sorted.grouped.marked.split.recaltable"),
+        recalbam=temp("{dir}/combined.sorted.grouped.marked.split.recal.bam")
     resources: mem_mb=GATK_MEM
-    log: "data/combined.sorted.grouped.marked.split.recal.log"
+    log: "{dir}/combined.sorted.grouped.marked.split.recal.log"
     shell:
         "(gatk {GATK_JAVA} BaseRecalibrator -R {input.fa} -I {input.bam} --known-sites {input.knownsites} -O {output.recaltable} --tmp-dir {input.tmp} && "
         "gatk {GATK_JAVA} ApplyBQSR -R {input.fa} -I {input.bam} --bqsr-recal-file {output.recaltable} -O {output.recalbam} --tmp-dir {input.tmp} && "
@@ -90,51 +81,51 @@ rule base_recalibration:
 
 rule call_gvcf_varaints:
     input:
-        knownsites="data/ensembl/common_all_20170710.ensembl.vcf",
-        knownsitesidx="data/ensembl/common_all_20170710.ensembl.vcf.idx",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        bam="data/combined.sorted.grouped.marked.split.recal.bam",
+        knownsites="data/ensembl/" + config["species"] + ".ensembl.vcf",
+        knownsitesidx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        bam="{dir}/combined.sorted.grouped.marked.split.recal.bam",
         tmp=directory("tmp")
-    output: temp("data/combined.sorted.grouped.marked.split.recal.g.vcf.gz"),
+    output: temp("{dir}/combined.sorted.grouped.marked.split.recal.g.vcf.gz"),
     threads: 8
         # HaplotypeCaller is only fairly efficient with threading;
         # ~14000 regions/min with 24 threads,
         # and ~13000 regions/min with 8 threads,
         # so going with 8 threads max here
     resources: mem_mb=GATK_MEM
-    log: "data/combined.sorted.grouped.marked.split.recal.g.log"
+    log: "{dir}/combined.sorted.grouped.marked.split.recal.g.log"
     shell:
         "(gatk {GATK_JAVA} HaplotypeCaller"
         " --native-pair-hmm-threads {threads}"
         " -R {input.fa} -I {input.bam}"
         " --min-base-quality-score 20 --dont-use-soft-clipped-bases true"
         " --dbsnp {input.knownsites} -O {output} --tmp-dir {input.tmp}"
-        " -ERC GVCF --max-mnp-distance 3 &&"
+        " -ERC GVCF --max-mnp-distance 3 && "
         "gatk IndexFeatureFile -F {output}) &> {log}"
 
 rule call_vcf_variants:
     input:
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        gvcf="data/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        gvcf="{dir}/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
         tmp=directory("tmp")
-    output: "data/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
+    output: "{dir}/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
     resources: mem_mb=GATK_MEM
-    log: "data/combined.sorted.grouped.marked.split.recal.g.gt.log"
+    log: "{dir}/combined.sorted.grouped.marked.split.recal.g.gt.log"
     shell:
         "(gatk {GATK_JAVA} GenotypeGVCFs -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
         "gatk IndexFeatureFile -F {output}) &> {log}"
 
 rule final_vcf_naming:
-    input: "data/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
-    output: "data/combined.spritz.vcf"
+    input: "{dir}/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
+    output: "{dir}/combined.spritz.vcf"
     shell: "mv {input} {output}"
 
 rule filter_indels:
     input:
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        vcf="data/combined.spritz.vcf"
-    output: "data/combined.spritz.noindels.vcf"
-    log: "data/combined.spritz.noindels.log"
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        vcf="{dir}/combined.spritz.vcf"
+    output: "{dir}/combined.spritz.noindels.vcf"
+    log: "{dir}/combined.spritz.noindels.log"
     shell:
         "(gatk SelectVariants --select-type-to-exclude INDEL -R {input.fa} -V {input.vcf} -O {output} && "
         "gatk IndexFeatureFile -F {output}) &> {log}"
@@ -149,7 +140,7 @@ rule snpeff_database_setup:
         jar="SnpEff/snpEff.jar",
         config="SnpEff/snpEff.config"
     output: "data/SnpEffDatabases.txt"
-    params: ref=GENEMODEL_VERSION_SNPEFF
+    params: ref=REF_SNPEFF
     resources: mem_mb=16000
     shell:
         "java -Xmx{resources.mem_mb}M -jar {input.jar} databases > {output} && "
@@ -163,17 +154,17 @@ rule variant_annotation_ref:
     input:
         "data/SnpEffDatabases.txt",
         snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        vcf="data/combined.spritz.vcf",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        vcf="{dir}/combined.spritz.vcf",
     output:
-        ann="data/combined.spritz.snpeff.vcf",
-        html="data/combined.spritz.snpeff.html",
-        genesummary="data/combined.spritz.snpeff.genes.txt",
-        protfa="data/combined.spritz.snpeff.protein.fasta",
-        protxml="data/combined.spritz.snpeff.protein.xml"
-    params: ref=GENEMODEL_VERSION_SNPEFF, # no isoform reconstruction
-    resources: mem_mb=GATK_MEM
-    log: "data/combined.spritz.snpeff.log"
+        ann="{dir}/combined.spritz.snpeff.vcf",
+        html="{dir}/combined.spritz.snpeff.html",
+        genesummary="{dir}/combined.spritz.snpeff.genes.txt",
+        protfa="{dir}/combined.spritz.snpeff.protein.fasta",
+        protxml="{dir}/combined.spritz.snpeff.protein.xml"
+    params: ref=config["genome"] + "." + config["snpeff"], # no isoform reconstruction
+    resources: mem_mb=16000
+    log: "{dir}/combined.spritz.snpeff.log"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml} "
@@ -184,9 +175,9 @@ rule variant_annotation_custom:
     input:
         "data/SnpEffDatabases.txt",
         snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
-        vcf="data/combined.spritz.vcf",
-        vcfnoindels="data/combined.spritz.vcf",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        vcf="{dir}/combined.spritz.vcf",
+        vcfnoindels="{dir}/combined.spritz.vcf",
         isoform_reconstruction="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf"
     output:
         ann="{dir}/combined.spritz.isoformvariants.vcf",
@@ -210,7 +201,7 @@ rule variant_annotation_ref_noindel:
     input:
         "data/SnpEffDatabases.txt",
         snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/combined.spritz.noindels.vcf",
     output:
         ann="{dir}/combined.spritz.noindels.snpeff.vcf",
@@ -219,7 +210,7 @@ rule variant_annotation_ref_noindel:
         protfa="{dir}/combined.spritz.snpeff.noindels.protein.fasta",
         protxml=temp("{dir}/combined.spritz.snpeff.noindels.protein.xml"),
         protxmlgz="{dir}/combined.spritz.snpeff.noindels.protein.xml.gz"
-    params: ref=GENEMODEL_VERSION_SNPEFF, # no isoform reconstruction
+    params: ref=REF_SNPEFF, # no isoform reconstruction
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.spritz.snpeff.log"
     shell:
@@ -232,7 +223,7 @@ rule variant_annotation_custom_noindel:
     input:
         "data/SnpEffDatabases.txt",
         snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa",
+        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/combined.spritz.noindels.vcf",
         isoform_reconstruction="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf"
     output:
@@ -255,7 +246,7 @@ rule variant_annotation_custom_noindel:
 #     input:
 #         "data/combined.spritz.snpeff.protein.xml",
 #         "data/combined.spritz.isoform.protein.xml",
-#         "data/" + GENEMODEL_VERSION_SNPEFF + ".protein.xml", # see proteogenomics.smk
+#         "data/" + REF_SNPEFF + ".protein.xml", # see proteogenomics.smk
 #         "data/combined.spritz.isoformvariants.protein.xml" # see proteogenomics.smk
 #     output:
 #         temp("clean_snpeff")

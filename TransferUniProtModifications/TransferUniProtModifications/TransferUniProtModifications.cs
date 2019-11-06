@@ -94,7 +94,7 @@ namespace TransferUniProtModifications
             foreach (var entry in allVariants)
             {
                 foreach (var variant in entry.Value)
-                {                    
+                {
                     if (culture.CompareInfo.IndexOf(variant.Description.Description, "synonymous_variant", CompareOptions.IgnoreCase) >= 0)
                     {
                         synonymousCount++;
