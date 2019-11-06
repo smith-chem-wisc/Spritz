@@ -1,0 +1,8 @@
+sra: ["SRR521470", "SRR521476", "SRR521475", "SRR521474", "SRR521473", "SRR521472", "SRR521471"]
+analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
+species: "Homo_sapiens"
+genome: "GRCh38"
+release: "81"
+snpeff: "86" # hard coded for now
+organism: "human" # based on uniprot
+fq: []

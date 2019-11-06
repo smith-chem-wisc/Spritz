@@ -7,10 +7,43 @@ Spritz uses the Windows Subsystem for Linux (WSL) to install and run commandline
 
 Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releases).
 
-## Setting Up WSL
-1. Install [Ubuntu from the Microsoft Store](https://www.microsoft.com/store/productId/9NBLGGH4MSV6).
-2. Open the "Turn Windows features on or off" application.
-![image](https://user-images.githubusercontent.com/16342951/45467794-0907b200-b6e7-11e8-97db-1271d09544e8.png)
-3. Turn on the "Windows Subsystem for Linux"
-![wsl](https://user-images.githubusercontent.com/16342951/45467902-9945f700-b6e7-11e8-90f1-8ebdc065aedb.png)
-4. Restart your computer and fire up Ubuntu
+## Running Spritz with GUI
+
+## Running Spritz without GUI
+
+1. Launch Ubuntu and install snakemake: https://snakemake.readthedocs.io/en/stable/tutorial/setup.html
+
+2. Define config file as follows:
+
+    #### Define SRA accession
+    `sra: ["SRX159823"]`
+
+    - Separate multiple SRAs with commas
+    - Leave `sra: []` if using input fastqs.
+
+    #### Define path to analysis directory
+    `analysisDirectory: [/mnt/f/analysis]`
+
+    - Follow this path format: /mnt/`{drive}`/`{folder}`
+
+    #### Define species
+    `species: "Homo_sapiens"`
+
+    #### Define genome version
+    `genome: "GRCh38"`
+
+    #### Define Ensembl release
+    `release: "81"`
+
+    #### DO NOT CHANGE: SnpEff version
+    `snpeff: "86"`
+
+    #### Define input fastq files paired
+    `fq: [SRX159823]`
+
+    - Fastq files should have *_1.fastq & *_2.fastq extensions and follow this naming convention: `{NAME}`_1.fastq and `{NAME}`_2.fastq
+    - Leave `fq: []` if using SRA.
+
+3. Run workflow:
+
+    `snakemake -j 24`

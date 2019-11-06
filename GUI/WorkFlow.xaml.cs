@@ -146,6 +146,7 @@ namespace SpritzGUI
             Options.Release = ensembl.Release;
             Options.Species = EnsemblSpecies.SelectedItem.ToString();
             Options.Reference = ensembl.Genomes[Options.Species];
+            Options.Organism = ensembl.Organisms[Options.Species];
             Options.SnpEff = "86";
 
             // features yet to be supported
@@ -317,17 +318,23 @@ namespace SpritzGUI
                 var file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "releases", release + ".txt"));
                 var species = new List<string>(file);
                 Dictionary<string, string> genomes = new Dictionary<string, string>();
+                Dictionary<string, string> organisms = new Dictionary<string, string>();
 
+                var unsupported = new List<string>();
                 foreach (string genome in genomeDB.Where(g => g.Contains(release)))
                 {
                     var splt = genome.Split(',');
-                    if (splt[3] == "86") // only add species supported in snpeff (ver 86 ensembl)
+                    genomes.Add(splt[1], splt[3]); // <Species, GenomeVer>
+                    organisms.Add(splt[1], splt[2]); // <Species, OrganismName>
+
+                    if (!string.Equals(splt[4], "86")) // only add species supported in snpeff (ver 86 ensembl)
                     {
-                        genomes.Add(splt[1], splt[2]); // <Species, GenomeVer>
+                        unsupported.Add(splt[1]);
                     }
                 }
 
-                EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(species), Genomes = genomes });
+                var supported = species.Where(s => !unsupported.Contains(s)).ToList();
+                EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
             }
         }
 
@@ -339,6 +346,7 @@ namespace SpritzGUI
             public string Release { get; set; }
             public ObservableCollection<string> Species { get; set; }
             public Dictionary<string, string> Genomes { get; set; } // Mus_musculus GRCm38
+            public Dictionary<string, string> Organisms { get; set; } // Mus_musculus GRCm38
         }
 
         //private void txtStarFusionReference_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
