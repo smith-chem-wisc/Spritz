@@ -1,0 +1,26 @@
+### Using SRAs
+# sra: ["ERR315327","ERR315394"] # testing
+sra: ["SRR791578", "SRR791579", "SRR791580", "SRR791581", "SRR791582", "SRR791583", "SRR791584", "SRR791585", "SRR791586"] # jurkat
+# sra: ["SRR2153519", "SRR2153520"] # mcf7
+# sra: ["ERR579133", "ERR579135", "ERR579139"] # tonsil
+# sra: [ #"SRR6495337", "SRR6495338", "SRR6495339", # k562 for michele
+  #"SRR8850149", "SRR8850150", # MCF10A  for michele
+  #"SRR7994103", "SRR7994104", "SRR7994105", # MDA-MB-231 for michele
+  # "SRR8567619", 'SRR8567620', "SRR8567621", # polyA+ U2OS
+  # "SRR629563",  # HPA U2OS data
+  # "SRR4098610", "SRR4098609", # HPA SHSY5Y
+  # "SRX209076", "SRX209075", # HPA RT-4
+  # "SRX209074", "SRX209073", # HPA PC-3
+  # "SRX209072", "SRX209071", # HPA MCF-7
+  # "SRX209070", "SRX209069", # HPA HepG2
+  # "SRX209068", "SRX209067", # HPA HeLa
+  # "SRX209066", "SRX209065", # HPA Hek293
+  # "SRX209062", "SRX209061", # HPA A549
+  # "SRX209059", "SRX209058", # HPA U251-MG
+  # "SRX209057", "SRX209056", # HPA A-431
+  # "SRX209064", "SRX209063" # HPA CACO-2
+  # ]
+### Using FASTQs
+# sra: [] #  can leave empty sras as 1) empty list 2) undefined/null
+# fq1: ["exp1", "exp2"]
+# fq2: ["exp1", "exp2"]
