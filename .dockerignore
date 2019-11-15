@@ -1,2 +1,17 @@
+## SpritzSnake
+data
+tmp
+STAR*
+SnpEff
+ensembl
+ChromosomeMappings
+.snakemake
+snpEffDatabases.txt
+human.proteome.xml
+ptmlist.txt
+adapters.fa
+fast.tmp
+
+## Visual Studio
 bin\
 obj\
