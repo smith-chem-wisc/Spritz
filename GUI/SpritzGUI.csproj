@@ -64,9 +64,7 @@
     </ApplicationDefinition>
     <Compile Include="DataGrids\SRADataGrid.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
-    <Compile Include="InstallWindow.xaml.cs">
-      <DependentUpon>InstallWindow.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="Options.cs" />
     <Compile Include="WorkFlow.xaml.cs">
       <DependentUpon>WorkFlow.xaml</DependentUpon>
     </Compile>
@@ -75,10 +73,6 @@
     <Compile Include="TreeViews\InRunTask.cs" />
     <Compile Include="TreeViews\OutputFileForTreeView.cs" />
     <Compile Include="TreeViews\PreRunTask.cs" />
-    <Page Include="InstallWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -124,20 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CMDOptions\CMDOptions.csproj">
-      <Project>{fd63a716-0043-4f93-b7f0-2a43e7a0e219}</Project>
-      <Name>CMDOptions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">
-      <Project>{06431fc1-53ab-4c0b-a95e-c179a32371bc}</Project>
-      <Name>ToolWrapperLayer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\WorkflowLayer\WorkflowLayer.csproj">
-      <Project>{a234687b-735d-458c-982f-fb2bc3ec3a7c}</Project>
-      <Name>WorkflowLayer</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
