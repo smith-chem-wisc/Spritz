@@ -24,3 +24,11 @@ sra: ["SRR791578", "SRR791579", "SRR791580", "SRR791581", "SRR791582", "SRR79158
 # sra: [] #  can leave empty sras as 1) empty list 2) undefined/null
 # fq1: ["exp1", "exp2"]
 # fq2: ["exp1", "exp2"]
+# sra: ["SRR521470", "SRR521476", "SRR521475", "SRR521474", "SRR521473", "SRR521472", "SRR521471"]
+analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
+species: "Homo_sapiens"
+genome: "GRCh38"
+release: "81"
+snpeff: "86" # hard coded for now
+organism: "human" # based on uniprot
+fq: []

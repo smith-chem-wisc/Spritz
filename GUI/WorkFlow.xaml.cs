@@ -1,5 +1,6 @@
 ﻿using CMD;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace SpritzGUI
             UpdateFieldsFromTask(Options);
             SettingUp = false;
             ChooseWorkerPreset();
+            DataContext = this;
         }
 
         public WorkFlowWindow(Options options)
@@ -41,6 +43,7 @@ namespace SpritzGUI
             Options = options;
             SettingUp = false;
             ChooseWorkerPreset();
+            DataContext = this;
         }
 
         public Options Options { get; set; } = new Options();
@@ -53,7 +56,7 @@ namespace SpritzGUI
         }
 
         protected void SaveButton_Click(object sender, RoutedEventArgs e)
-        {           
+        {
             // Command selection
             int i = CbxWorkFlowType.SelectedIndex;
             if (i == 0)
@@ -139,6 +142,12 @@ namespace SpritzGUI
             }
 
             Options.Threads = int.Parse(txtThreads.Text);
+            Ensembl ensembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
+            Options.Release = ensembl.Release;
+            Options.Species = EnsemblSpecies.SelectedItem.ToString();
+            Options.Reference = ensembl.Genomes[Options.Species];
+            Options.Organism = ensembl.Organisms[Options.Species];
+            Options.SnpEff = "86";
 
             // features yet to be supported
             //Options.GenomeStarIndexDirectory = txtGenomeDir.Text;
@@ -254,8 +263,8 @@ namespace SpritzGUI
 
             txtAnalysisDirectory.Text = AnalysisDirectory;
             txtThreads.Text = options.Threads.ToString();
-            txtEnsemblReference.Text = options.Reference ?? "GRCh38";
             TxtVariantCallingWorkerNum.Text = options.VariantCallingWorkers.ToString();
+            saveButton.IsEnabled = false;
 
             //txtSpritzDirecory.Text = options.SpritzDirectory;
             //txtGenomeDir.Text = TrimQuotesOrNull(options.GenomeStarIndexDirectory);
@@ -270,7 +279,7 @@ namespace SpritzGUI
             //txtProteinFasta.Text = options.ProteinFastaPath;
             //UpdateReference();
         }
-        
+
         private string TrimQuotesOrNull(string a)
         {
             return a == null ? a : a.Trim('"');
@@ -296,6 +305,48 @@ namespace SpritzGUI
             CmbxExperimentType.Items.Add(ExperimentType.WholeGenomeSequencing.ToString());
             CmbxExperimentType.Items.Add(ExperimentType.ExomeSequencing.ToString());
             CmbxExperimentType.SelectedIndex = 0; // hard coded selection (for now)
+
+            EnsemblReleases = new ObservableCollection<Ensembl>();
+            
+            // read release.txt files into a list
+            var releases = Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), "releases"), "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
+
+            var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv"));
+            foreach (string release in releases)
+            {
+                // read txt file into obsv collection
+                var file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "releases", release + ".txt"));
+                var species = new List<string>(file);
+                Dictionary<string, string> genomes = new Dictionary<string, string>();
+                Dictionary<string, string> organisms = new Dictionary<string, string>();
+
+                var unsupported = new List<string>();
+                foreach (string genome in genomeDB.Where(g => g.Contains(release)))
+                {
+                    var splt = genome.Split(',');
+                    genomes.Add(splt[1], splt[3]); // <Species, GenomeVer>
+                    organisms.Add(splt[1], splt[2]); // <Species, OrganismName>
+
+                    if (!string.Equals(splt[4], "86")) // only add species supported in snpeff (ver 86 ensembl)
+                    {
+                        unsupported.Add(splt[1]);
+                    }
+                }
+
+                var supported = species.Where(s => !unsupported.Contains(s)).ToList();
+                EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
+            }
+        }
+
+        
+        public ObservableCollection<Ensembl> EnsemblReleases { get; set; }
+
+        public class Ensembl
+        {
+            public string Release { get; set; }
+            public ObservableCollection<string> Species { get; set; }
+            public Dictionary<string, string> Genomes { get; set; } // Mus_musculus GRCm38
+            public Dictionary<string, string> Organisms { get; set; } // Mus_musculus GRCm38
         }
 
         //private void txtStarFusionReference_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -425,7 +476,7 @@ namespace SpritzGUI
                 && validVariantCallers
                 && variantCallingWorkers <= 0)
             {
-                TxtVariantCallingWorkerNum.Text = (++variantCallingWorkers).ToString(); 
+                TxtVariantCallingWorkerNum.Text = (++variantCallingWorkers).ToString();
             }
         }
 
@@ -452,6 +503,18 @@ namespace SpritzGUI
         private void txtThreads_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             ChooseWorkerPreset();
+        }
+
+        public string Reference { get; set; } // define notify property changed
+
+        private void Species_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            saveButton.IsEnabled = true;
+            
+            // get selection from species
+            var selectedEnsembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
+            var selectedSpecies = (string)EnsemblSpecies.SelectedItem;
+            Reference = selectedEnsembl.Genomes[selectedSpecies];
         }
     }
 }

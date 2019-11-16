@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WorkflowLayer;
 using System.Diagnostics;
+using ToolWrapperLayer;
 
 namespace SpritzGUI
 {
@@ -30,7 +31,6 @@ namespace SpritzGUI
         public MainWindow()
         {
             InitializeComponent();
-
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
