@@ -26,7 +26,6 @@ rule build_gtf_sharp:
 rule filter_transcripts_add_cds:
     input:
         gtfsharp="GtfSharp/GtfSharp/bin/Release/netcoreapp2.1/GtfSharp.dll",
-<<<<<<< HEAD
         gtf="data/combined.sorted.gtf",
         fa="data/ensembl/Homo_sapiens.GRCh38.dna.primary_assembly.karyotypic.fa",
         refg="data/ensembl/Homo_sapiens.GRCh38.81.gff3"
