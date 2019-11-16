@@ -1,5 +1,0 @@
-1	PacBio	transcript	69088	70009	.	+	.	gene_id "PB2015.1"; transcript_id "PB2015.1.1";
-1	PacBio	exon	69088	70009	.	+	.	gene_id "PB2015.1"; transcript_id "PB2015.1.1";
-1	PacBio	transcript	134901	139379	.	-	.	gene_id "PB2015.2"; transcript_id "PB2015.2.1";
-1	PacBio	exon	134901	135802	.	-	.	gene_id "PB2015.2"; transcript_id "PB2015.2.1";
-1	PacBio	exon	137621	139379	.	-	.	gene_id "PB2015.2"; transcript_id "PB2015.2.1";
