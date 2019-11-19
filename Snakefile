@@ -1,20 +1,20 @@
-SPECIES = config["species"]
-GENOME_VERSION = config["genome"]
-ENSEMBL_VERSION = config["release"]
-ENSEMBL_VERSION_SNPEFF = config["snpeff"]
-GENEMODEL_VERSION = GENOME_VERSION + "." + ENSEMBL_VERSION
-GENEMODEL_VERSION_SNPEFF = GENOME_VERSION + "." + ENSEMBL_VERSION_SNPEFF
-GENOME_FA = f"data/ensembl/{SPECIES}.{GENOME_VERSION}.dna.primary_assembly.fa"
-ENSEMBL_GFF = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.gff3"
-TEST_GENOME_FA = f"data/ensembl/202122.fa"
-TEST_ENSEMBL_GFF = f"data/ensembl/202122.gff3"
-FA=GENOME_FA # for analysis; can also be TEST_GENOME_FA
-GFF3=ENSEMBL_GFF # for analysis; can also be TEST_ENSEMBL_GFF
-REFSTAR_PREFIX = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/RsemStarReference"
-REFSTAR_FOLDER = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/"
-REF_PREFIX = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/RsemReference"
-REF_FOLDER = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
-REF = SPECIES + "." + GENOME_VERSION
+# SPECIES = config["species"]
+# GENOME_VERSION = config["genome"]
+# ENSEMBL_VERSION = config["release"]
+# ENSEMBL_VERSION_SNPEFF = config["snpeff"]
+# GENEMODEL_VERSION = GENOME_VERSION + "." + ENSEMBL_VERSION
+# GENEMODEL_VERSION_SNPEFF = GENOME_VERSION + "." + ENSEMBL_VERSION_SNPEFF
+# GENOME_FA = f"data/ensembl/{SPECIES}.{GENOME_VERSION}.dna.primary_assembly.fa"
+# ENSEMBL_GFF = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.gff3"
+# TEST_GENOME_FA = f"data/ensembl/202122.fa"
+# TEST_ENSEMBL_GFF = f"data/ensembl/202122.gff3"
+# FA=GENOME_FA # for analysis; can also be TEST_GENOME_FA
+# GFF3=ENSEMBL_GFF # for analysis; can also be TEST_ENSEMBL_GFF
+# REFSTAR_PREFIX = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/RsemStarReference"
+# REFSTAR_FOLDER = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/"
+# REF_PREFIX = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/RsemReference"
+# REF_FOLDER = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
+# REF = SPECIES + "." + GENOME_VERSION
 
 configfile: "config.yaml"
 
