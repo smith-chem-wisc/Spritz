@@ -1,4 +1,4 @@
-FUSION_REF_VERSION = GENOME_VERSION + "_gencode_v29_CTAT_lib_Mar272019.plug-n-play"
+FUSION_REF_VERSION = config["genome"] + "_gencode_v29_CTAT_lib_Mar272019.plug-n-play"
 
 rule download_premade_fusion_indices:
     '''Get the premade STAR-Fusion indices'''
@@ -10,11 +10,11 @@ rule download_premade_fusion_indices:
 rule unzip_for_star_fusion:
     '''Gunzip files before STAR-Fusion because it doesn't play well with gunzip commands'''
     input:
-        fq1="{dir}/trimmed/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/{fq}_1.fastq.gz",
-        fq2="{dir}/trimmed/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}/{fq}_2.fastq.gz",
+        fq1="{dir}/trimmed/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/trimmed/{fq}.trim_1.fastq.gz",
+        fq2="{dir}/trimmed/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}/trimmed/{fq}.trim_2.fastq.gz",
     output:
-        fq1=temp("{dir}/trimmed/{sra}.trim_1.fastq") if check_sra() else "{dir}/{fq}_1.fastq",
-        fq2=temp("{dir}/trimmed/{sra}.trim_2.fastq") if check_sra() else "{dir}/{fq}_2.fastq",
+        fq1=temp("{dir}/trimmed/{sra}.trim_1.fastq") if check_sra() else temp("{dir}/trimmed/{fq}.trim_1.fastq"),
+        fq2=temp("{dir}/trimmed/{sra}.trim_2.fastq") if check_sra() else temp("{dir}/trimmed/{fq}.trim_2.fastq"),
     threads: 2
     shell:
         "gunzip -k {input.fq1} & gunzip -k {input.fq2}"
@@ -25,8 +25,8 @@ rule rsem_star_fusion:
         tmpdir=temp(directory("tmp")),
         genomelibsa="data/" + FUSION_REF_VERSION + "/ctat_genome_lib_build_dir/ref_genome.fa.star.idx/SA",
         genomelibdir=directory("data/" + FUSION_REF_VERSION + "/ctat_genome_lib_build_dir"),
-        fq1="{dir}/trimmed/{sra}.trim_1.fastq" if check_sra() else expand("data/{fq1}_1.fastq", fq1=config["fq1"]),
-        fq2="{dir}/trimmed/{sra}.trim_2.fastq" if check_sra() else expand("data/{fq2}_2.fastq", fq2=config["fq2"]),
+        fq1="{dir}/trimmed/{sra}.trim_1.fastq" if check_sra() else "{dir}/trimmed/{fq}.trim_1.fastq",
+        fq2="{dir}/trimmed/{sra}.trim_2.fastq" if check_sra() else "{dir}/trimmed/{fq}.trim_2.fastq",
     output:
         "{dir}/{sra}FusionAnalysis/star-fusion.fusion_predictions.abridged.coding_effect.tsv",
         "{dir}/{sra}FusionAnalysis/Aligned.out.bam",
@@ -52,7 +52,7 @@ rule add_srr_to_output:
 rule generate_fusion_proteins:
     '''Use coding effects to generate fusion proteins'''
     input:
-        expand("{dir}/{sra}star-fusion.fusion_predictions.abridged.coding_effect.tsv", sra=config["sra"]),
+        expand("{dir}/{sra}star-fusion.fusion_predictions.abridged.coding_effect.tsv", sra=config["sra"], dir=config["analysisDirectory"]),
         unixml=UNIPROTXML,
         transfermods=TRANSFER_MOD_DLL,
     output:
@@ -60,4 +60,4 @@ rule generate_fusion_proteins:
         "{dir}/FusionProteins.withmods.xml"
     shell:
         "dotnet {input.transfermods} -x {input.unixml} -f " +
-        ",".join(expand("{dir}/{sra}star-fusion.fusion_predictions.abridged.coding_effect.tsv", sra=config["sra"]))
+        ",".join(expand("{dir}/{sra}star-fusion.fusion_predictions.abridged.coding_effect.tsv", sra=config["sra"], dir=config["analysisDirectory"]))

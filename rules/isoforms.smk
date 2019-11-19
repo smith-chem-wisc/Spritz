@@ -1,4 +1,5 @@
 REF=config["species"] + "." + config["genome"]
+GENOME_VERSION = config["genome"]
 
 rule assemble_transcripts:
     input:
