@@ -305,7 +305,7 @@ namespace SpritzGUI
             EnsemblReleases = new ObservableCollection<Ensembl>();
 
             // read release.txt files into a list
-            var releases = Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), "releases"), "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
+            var releases = Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), "EnsemblReleases"), "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
 
             var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv"));
             foreach (string release in releases)
