@@ -123,24 +123,60 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="EnsemblReleases\release-81.txt" />
-    <Resource Include="EnsemblReleases\release-82.txt" />
-    <Resource Include="EnsemblReleases\release-83.txt" />
-    <Resource Include="EnsemblReleases\release-84.txt" />
-    <Resource Include="EnsemblReleases\release-85.txt" />
-    <Resource Include="EnsemblReleases\release-86.txt" />
-    <Resource Include="EnsemblReleases\release-87.txt" />
-    <Resource Include="EnsemblReleases\release-88.txt" />
-    <Resource Include="EnsemblReleases\release-89.txt" />
-    <Resource Include="EnsemblReleases\release-90.txt" />
-    <Resource Include="EnsemblReleases\release-91.txt" />
-    <Resource Include="EnsemblReleases\release-92.txt" />
-    <Resource Include="EnsemblReleases\release-93.txt" />
-    <Resource Include="EnsemblReleases\release-94.txt" />
-    <Resource Include="EnsemblReleases\release-95.txt" />
-    <Resource Include="EnsemblReleases\release-96.txt" />
-    <Resource Include="EnsemblReleases\release-97.txt" />
-    <Resource Include="EnsemblReleases\release-98.txt" />
+    <None Include="EnsemblReleases\release-81.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-82.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-83.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-84.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-85.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-86.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-87.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-88.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-89.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-90.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-91.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-92.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-93.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-94.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-95.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-96.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-97.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-98.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
