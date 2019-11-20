@@ -1,6 +1,4 @@
-﻿using CMD;
-
-namespace SpritzGUI
+﻿namespace SpritzGUI
 {
     internal class PreRunTask
     {

@@ -1,0 +1,318 @@
+release-81,bos_taurus,bovine,UMD3.1,86
+release-81,canis_familiaris,dog,CanFam3.1,86
+release-81,danio_rerio,zebrafish,GRCz10,86
+release-81,drosophila_melanogaster,fruit fly,BDGP6,86
+release-81,equus_caballus,horse,EquCab2,86
+release-81,felis_catus,cat,Felis_catus_6.2,86
+release-81,gallus_gallus,chicken,Galgal4,75
+release-81,homo_sapiens,human,GRCh38,86
+release-81,macaca_mulatta,rhesus macaque,MMUL_1,75
+release-81,meleagris_gallopavo,wild turkey,UMD2,86
+release-81,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-81,mus_musculus,mouse,GRCm38,86
+release-81,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-81,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-81,ovis_aries,sheep,Oar_v3.1,86
+release-81,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-81,pongo_abelii,sumatran orangutan,PPYG2,86
+release-81,rattus_norvegicus,rat,Rnor_6.0,86
+release-81,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-81,sus_scrofa,pig,Sscrofa10.2,86
+release-81,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-81,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-82,ovis_aries,sheep,Oar_v3.1,86
+release-82,bos_taurus,bovine,UMD3.1,86
+release-82,canis_familiaris,dog,CanFam3.1,86
+release-82,danio_rerio,zebrafish,GRCz10,86
+release-82,drosophila_melanogaster,fruit fly,BDGP6,86
+release-82,equus_caballus,horse,EquCab2,86
+release-82,felis_catus,cat,Felis_catus_6.2,86
+release-82,gallus_gallus,chicken,Galgal4,75
+release-82,homo_sapiens,human,GRCh38,86
+release-82,macaca_mulatta,rhesus macaque,MMUL_1,75
+release-82,meleagris_gallopavo,wild turkey,UMD2,86
+release-82,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-82,mus_musculus,mouse,GRCm38,86
+release-82,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-82,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-82,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-82,pongo_abelii,sumatran orangutan,PPYG2,86
+release-82,rattus_norvegicus,rat,Rnor_6.0,86
+release-82,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-82,sus_scrofa,pig,Sscrofa10.2,86
+release-82,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-82,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-83,ovis_aries,sheep,Oar_v3.1,86
+release-83,bos_taurus,bovine,UMD3.1,86
+release-83,canis_familiaris,dog,CanFam3.1,86
+release-83,danio_rerio,zebrafish,GRCz10,86
+release-83,drosophila_melanogaster,fruit fly,BDGP6,86
+release-83,equus_caballus,horse,EquCab2,86
+release-83,felis_catus,cat,Felis_catus_6.2,86
+release-83,gallus_gallus,chicken,Galgal4,75
+release-83,homo_sapiens,human,GRCh38,86
+release-83,macaca_mulatta,rhesus macaque,MMUL_1,75
+release-83,meleagris_gallopavo,wild turkey,UMD2,86
+release-83,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-83,mus_musculus,mouse,GRCm38,86
+release-83,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-83,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-83,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-83,pongo_abelii,sumatran orangutan,PPYG2,86
+release-83,rattus_norvegicus,rat,Rnor_6.0,86
+release-83,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-83,sus_scrofa,pig,Sscrofa10.2,86
+release-83,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-83,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-84,ovis_aries,sheep,Oar_v3.1,86
+release-84,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-84,bos_taurus,bovine,UMD3.1,86
+release-84,canis_familiaris,dog,CanFam3.1,86
+release-84,danio_rerio,zebrafish,GRCz10,86
+release-84,drosophila_melanogaster,fruit fly,BDGP6,86
+release-84,equus_caballus,horse,EquCab2,86
+release-84,felis_catus,cat,Felis_catus_6.2,86
+release-84,gallus_gallus,chicken,Galgal4,75
+release-84,homo_sapiens,human,GRCh38,86
+release-84,macaca_mulatta,rhesus macaque,MMUL_1,75
+release-84,meleagris_gallopavo,wild turkey,UMD2,86
+release-84,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-84,mus_musculus,mouse,GRCm38,86
+release-84,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-84,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-84,pongo_abelii,sumatran orangutan,PPYG2,86
+release-84,rattus_norvegicus,rat,Rnor_6.0,86
+release-84,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-84,sus_scrofa,pig,Sscrofa10.2,86
+release-84,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-84,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-85,ovis_aries,sheep,Oar_v3.1,86
+release-85,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-85,pongo_abelii,sumatran orangutan,PPYG2,86
+release-85,bos_taurus,bovine,UMD3.1,86
+release-85,canis_familiaris,dog,CanFam3.1,86
+release-85,danio_rerio,zebrafish,GRCz10,86
+release-85,drosophila_melanogaster,fruit fly,BDGP6,86
+release-85,equus_caballus,horse,EquCab2,86
+release-85,felis_catus,cat,Felis_catus_6.2,86
+release-85,gallus_gallus,chicken,Galgal4,75
+release-85,homo_sapiens,human,GRCh38,86
+release-85,macaca_mulatta,rhesus macaque,MMUL_1,75
+release-85,meleagris_gallopavo,wild turkey,UMD2,86
+release-85,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-85,mus_musculus,mouse,GRCm38,86
+release-85,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-85,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-85,rattus_norvegicus,rat,Rnor_6.0,86
+release-85,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-85,sus_scrofa,pig,Sscrofa10.2,86
+release-85,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-85,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-86,ovis_aries,sheep,Oar_v3.1,86
+release-86,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-86,pongo_abelii,sumatran orangutan,PPYG2,86
+release-86,bos_taurus,bovine,UMD3.1,86
+release-86,canis_familiaris,dog,CanFam3.1,86
+release-86,danio_rerio,zebrafish,GRCz10,86
+release-86,drosophila_melanogaster,fruit fly,BDGP6,86
+release-86,equus_caballus,horse,EquCab2,86
+release-86,felis_catus,cat,Felis_catus_6.2,86
+release-86,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-86,homo_sapiens,human,GRCh38,86
+release-86,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-86,meleagris_gallopavo,wild turkey,UMD2,86
+release-86,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-86,mus_musculus,mouse,GRCm38,86
+release-86,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-86,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-86,rattus_norvegicus,rat,Rnor_6.0,86
+release-86,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-86,sus_scrofa,pig,Sscrofa10.2,86
+release-86,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-86,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-87,ovis_aries,sheep,Oar_v3.1,86
+release-87,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-87,pongo_abelii,sumatran orangutan,PPYG2,86
+release-87,bos_taurus,bovine,UMD3.1,86
+release-87,canis_familiaris,dog,CanFam3.1,86
+release-87,danio_rerio,zebrafish,GRCz10,86
+release-87,drosophila_melanogaster,fruit fly,BDGP6,86
+release-87,equus_caballus,horse,EquCab2,86
+release-87,felis_catus,cat,Felis_catus_6.2,86
+release-87,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-87,homo_sapiens,human,GRCh38,86
+release-87,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-87,meleagris_gallopavo,wild turkey,UMD2,86
+release-87,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-87,mus_musculus,mouse,GRCm38,86
+release-87,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-87,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-87,rattus_norvegicus,rat,Rnor_6.0,86
+release-87,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-87,sus_scrofa,pig,Sscrofa10.2,86
+release-87,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-87,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-88,ovis_aries,sheep,Oar_v3.1,86
+release-88,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-88,pongo_abelii,sumatran orangutan,PPYG2,86
+release-88,rattus_norvegicus,rat,Rnor_6.0,86
+release-88,bos_taurus,bovine,UMD3.1,86
+release-88,canis_familiaris,dog,CanFam3.1,86
+release-88,danio_rerio,zebrafish,GRCz10,86
+release-88,drosophila_melanogaster,fruit fly,BDGP6,86
+release-88,equus_caballus,horse,EquCab2,86
+release-88,felis_catus,cat,Felis_catus_6.2,86
+release-88,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-88,homo_sapiens,human,GRCh38,86
+release-88,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-88,meleagris_gallopavo,wild turkey,UMD2,86
+release-88,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-88,mus_musculus,mouse,GRCm38,86
+release-88,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-88,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-88,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-88,sus_scrofa,pig,Sscrofa10.2,86
+release-88,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-88,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-89,ovis_aries,sheep,Oar_v3.1,86
+release-89,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-89,pongo_abelii,sumatran orangutan,PPYG2,86
+release-89,rattus_norvegicus,rat,Rnor_6.0,86
+release-89,bos_taurus,bovine,UMD3.1,86
+release-89,canis_familiaris,dog,CanFam3.1,86
+release-89,danio_rerio,zebrafish,GRCz10,86
+release-89,drosophila_melanogaster,fruit fly,BDGP6,86
+release-89,equus_caballus,horse,EquCab2,86
+release-89,felis_catus,cat,Felis_catus_6.2,86
+release-89,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-89,homo_sapiens,human,GRCh38,86
+release-89,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-89,meleagris_gallopavo,wild turkey,UMD2,86
+release-89,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-89,mus_musculus,mouse,GRCm38,86
+release-89,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-89,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-89,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-89,sus_scrofa,pig,Sscrofa10.2,86
+release-89,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-89,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-90,ovis_aries,sheep,Oar_v3.1,86
+release-90,pan_troglodytes,chimpanzee,CHIMP2.1.4,86
+release-90,pongo_abelii,sumatran orangutan,PPYG2,86
+release-90,rattus_norvegicus,rat,Rnor_6.0,86
+release-90,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-90,bos_taurus,bovine,UMD3.1,86
+release-90,canis_familiaris,dog,CanFam3.1,86
+release-90,danio_rerio,zebrafish,GRCz10,86
+release-90,drosophila_melanogaster,fruit fly,BDGP6,86
+release-90,equus_caballus,horse,EquCab2,86
+release-90,felis_catus,cat,Felis_catus_6.2,86
+release-90,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-90,homo_sapiens,human,GRCh38,86
+release-90,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-90,meleagris_gallopavo,wild turkey,UMD2,86
+release-90,monodelphis_domestica,gray short-tailed opossum,BROADO5,86
+release-90,mus_musculus,mouse,GRCm38,86
+release-90,nomascus_leucogenys,northern white-cheeked gibbon,Nleu1.0,86
+release-90,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-90,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-90,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-91,ovis_aries,sheep,Oar_v3.1,86
+release-91,pongo_abelii,sumatran orangutan,PPYG2,86
+release-91,rattus_norvegicus,rat,Rnor_6.0,86
+release-91,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-91,bos_taurus,bovine,UMD3.1,86
+release-91,canis_familiaris,dog,CanFam3.1,86
+release-91,danio_rerio,zebrafish,GRCz10,86
+release-91,drosophila_melanogaster,fruit fly,BDGP6,86
+release-91,equus_caballus,horse,EquCab2,86
+release-91,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-91,homo_sapiens,human,GRCh38,86
+release-91,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-91,meleagris_gallopavo,wild turkey,UMD2,86
+release-91,mus_musculus,mouse,GRCm38,86
+release-91,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-91,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-91,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-92,ovis_aries,sheep,Oar_v3.1,86
+release-92,pongo_abelii,sumatran orangutan,PPYG2,86
+release-92,rattus_norvegicus,rat,Rnor_6.0,86
+release-92,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-92,bos_taurus,bovine,UMD3.1,86
+release-92,canis_familiaris,dog,CanFam3.1,86
+release-92,drosophila_melanogaster,fruit fly,BDGP6,86
+release-92,equus_caballus,horse,EquCab2,86
+release-92,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-92,homo_sapiens,human,GRCh38,86
+release-92,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-92,meleagris_gallopavo,wild turkey,UMD2,86
+release-92,mus_musculus,mouse,GRCm38,86
+release-92,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-92,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-92,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-93,ovis_aries,sheep,Oar_v3.1,86
+release-93,pongo_abelii,sumatran orangutan,PPYG2,86
+release-93,rattus_norvegicus,rat,Rnor_6.0,86
+release-93,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-93,bos_taurus,bovine,UMD3.1,86
+release-93,canis_familiaris,dog,CanFam3.1,86
+release-93,drosophila_melanogaster,fruit fly,BDGP6,86
+release-93,equus_caballus,horse,EquCab2,86
+release-93,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-93,homo_sapiens,human,GRCh38,86
+release-93,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-93,meleagris_gallopavo,wild turkey,UMD2,86
+release-93,mus_musculus,mouse,GRCm38,86
+release-93,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-93,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-93,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-94,ovis_aries,sheep,Oar_v3.1,86
+release-94,pongo_abelii,sumatran orangutan,PPYG2,86
+release-94,rattus_norvegicus,rat,Rnor_6.0,86
+release-94,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-94,bos_taurus,bovine,UMD3.1,86
+release-94,canis_familiaris,dog,CanFam3.1,86
+release-94,drosophila_melanogaster,fruit fly,BDGP6,86
+release-94,equus_caballus,horse,EquCab2,86
+release-94,gallus_gallus,chicken,Gallus_gallus-5.0,86
+release-94,homo_sapiens,human,GRCh38,86
+release-94,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-94,meleagris_gallopavo,wild turkey,UMD2,86
+release-94,mus_musculus,mouse,GRCm38,86
+release-94,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-94,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-94,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-95,ovis_aries,sheep,Oar_v3.1,86
+release-95,pongo_abelii,sumatran orangutan,PPYG2,86
+release-95,rattus_norvegicus,rat,Rnor_6.0,86
+release-95,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-95,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-95,canis_familiaris,dog,CanFam3.1,86
+release-95,drosophila_melanogaster,fruit fly,BDGP6,86
+release-95,homo_sapiens,human,GRCh38,86
+release-95,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-95,meleagris_gallopavo,wild turkey,UMD2,86
+release-95,mus_musculus,mouse,GRCm38,86
+release-95,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-95,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-96,ovis_aries,sheep,Oar_v3.1,86
+release-96,pongo_abelii,sumatran orangutan,PPYG2,86
+release-96,rattus_norvegicus,rat,Rnor_6.0,86
+release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1,86
+release-96,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-96,canis_familiaris,dog,CanFam3.1,86
+release-96,homo_sapiens,human,GRCh38,86
+release-96,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-96,mus_musculus,mouse,GRCm38,86
+release-96,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-96,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86
+release-97,ovis_aries,sheep,Oar_v3.1,86
+release-97,pongo_abelii,sumatran orangutan,PPYG2,86
+release-97,rattus_norvegicus,rat,Rnor_6.0,86
+release-97,taeniopygia_guttata,zebra finch,taeGut3.2.4,86
+release-97,canis_familiaris,dog,CanFam3.1,86
+release-97,homo_sapiens,human,GRCh38,86
+release-97,macaca_mulatta,rhesus macaque,Mmul_8.0.1,86
+release-97,mus_musculus,mouse,GRCm38,86
+release-97,ornithorhynchus_anatinus,duckbill platypus,OANA5,86
+release-97,tetraodon_nigroviridis,spotted green pufferfish,TETRAODON8,86

@@ -1,6 +1,4 @@
-﻿using CMD;
-using Nett;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -20,13 +18,14 @@ namespace SpritzGUI
         {
             this.taskList = taskList;
             this.outputFolder = outputFolder;
-
         }
 
         public string Arguments { get; set; }
         public string StdErr { get; set; }
+
         //public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
         public static string AnalysisDirectory { get; set; }
+
         public static string ConfigDirectory { get; set; }
         public static Dictionary<string, string> Organism { get; set; }
 
@@ -45,7 +44,7 @@ namespace SpritzGUI
                 //proc.StartInfo.RedirectStandardError = true;
                 proc.Start();
                 proc.WaitForExit();
-                //StdErr = proc.StandardError.ReadToEnd(); 
+                //StdErr = proc.StandardError.ReadToEnd();
             }
         }
 
@@ -132,7 +131,6 @@ namespace SpritzGUI
                 Directory.CreateDirectory(pathToConfig);
             }
             ConfigDirectory = pathToConfig;
-
 
             using (TextWriter writer = File.CreateText(Path.Combine(pathToConfig, "config.yaml")))
             {

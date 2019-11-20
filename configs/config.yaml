@@ -1,0 +1,10 @@
+version: 1
+sra: [SRR629563]
+analysisDirectory: [analysis]
+fq: []
+release: "81"
+species: "Homo_sapiens"
+organism: "human"
+genome: "GRCh38"
+snpeff: "86"
+...

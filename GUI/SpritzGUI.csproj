@@ -21,7 +21,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -64,9 +64,7 @@
     </ApplicationDefinition>
     <Compile Include="DataGrids\SRADataGrid.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
-    <Compile Include="InstallWindow.xaml.cs">
-      <DependentUpon>InstallWindow.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="Options.cs" />
     <Compile Include="WorkFlow.xaml.cs">
       <DependentUpon>WorkFlow.xaml</DependentUpon>
     </Compile>
@@ -75,10 +73,6 @@
     <Compile Include="TreeViews\InRunTask.cs" />
     <Compile Include="TreeViews\OutputFileForTreeView.cs" />
     <Compile Include="TreeViews\PreRunTask.cs" />
-    <Page Include="InstallWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -115,6 +109,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="genomes.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -126,18 +123,60 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CMDOptions\CMDOptions.csproj">
-      <Project>{fd63a716-0043-4f93-b7f0-2a43e7a0e219}</Project>
-      <Name>CMDOptions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ToolWrapperLayer\ToolWrapperLayer.csproj">
-      <Project>{06431fc1-53ab-4c0b-a95e-c179a32371bc}</Project>
-      <Name>ToolWrapperLayer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\WorkflowLayer\WorkflowLayer.csproj">
-      <Project>{a234687b-735d-458c-982f-fb2bc3ec3a7c}</Project>
-      <Name>WorkflowLayer</Name>
-    </ProjectReference>
+    <None Include="EnsemblReleases\release-81.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-82.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-83.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-84.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-85.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-86.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-87.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-88.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-89.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-90.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-91.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-92.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-93.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-94.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-95.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-96.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-97.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="EnsemblReleases\release-98.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

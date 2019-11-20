@@ -1,8 +1,12 @@
+REF=config["species"] + "." + config["genome"]
+REFSTAR_PREFIX = "data/ensembl/" + REF + "." + config["release"] + "RsemStar/RsemStarReference"
+REFSTAR_FOLDER = "data/ensembl/" + REF + "." + config["release"] + "RsemStar/"
+
 rule rsem_star_genome:
     '''Create an RSEM reference with STAR indices'''
     input:
-        gfa=FA,
-        gff=GFF3 + ".fix.gff3"
+        gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
+        gff="data/ensembl/" + REF + "." + config["release"] + ".gff3" + ".fix.gff3"
     output:
         REFSTAR_PREFIX + ".gtf",
         suffix = REFSTAR_FOLDER + "SA"
@@ -35,7 +39,7 @@ rule rsem_star_align:
 rule make_rsem_dataframe:
     '''Take the results from RSEM and put them in a usable dataframe'''
     input:
-        expand("{dir}/{sra}.genes.results", sra=config["sra"]),
+        expand("{dir}/{sra}.genes.results", sra=config["sra"], dir=config["analysisDirectory"]),
         gff="data/ensembl/" + REF + "." + config["release"] + ".gff3" + ".fix.gff3"
     output:
         counts="{dir}/Counts.csv",

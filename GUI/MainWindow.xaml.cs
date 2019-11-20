@@ -1,7 +1,6 @@
-﻿using CMD;
-using Nett;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -9,9 +8,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WorkflowLayer;
-using System.Diagnostics;
-using ToolWrapperLayer;
 
 namespace SpritzGUI
 {
@@ -54,7 +50,7 @@ namespace SpritzGUI
             {
                 proc.WaitForExit();
             }
-            
+
             base.OnClosed(e);
         }
 
@@ -131,7 +127,7 @@ namespace SpritzGUI
                 DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
                 for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
                 {
-                    DynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1) + "-" + StaticTasksObservableCollection[i].options.Command.ToString(), StaticTasksObservableCollection[i].options));
+                    DynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1), StaticTasksObservableCollection[i].options));
                 }
                 workflowTreeView.DataContext = DynamicTasksObservableCollection;
                 Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
@@ -250,38 +246,25 @@ namespace SpritzGUI
             workflowTreeView.DataContext = StaticTasksObservableCollection;
         }
 
-        private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => AddNewRnaSeqFastq(sender, e)));
-            }
-            else
-            {
-                foreach (var uu in RnaSeqFastqCollection)
-                {
-                    uu.Use = false;
-                }
-                foreach (var newRnaSeqFastqData in e.StringList)
-                {
-                    RnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
-                }
-                UpdateOutputFolderTextbox();
-            }
-        }
-
-        private void MenuItem_Setup_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var dialog = new InstallWindow();
-                dialog.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+        //private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
+        //{
+        //    if (!Dispatcher.CheckAccess())
+        //    {
+        //        Dispatcher.BeginInvoke(new Action(() => AddNewRnaSeqFastq(sender, e)));
+        //    }
+        //    else
+        //    {
+        //        foreach (var uu in RnaSeqFastqCollection)
+        //        {
+        //            uu.Use = false;
+        //        }
+        //        foreach (var newRnaSeqFastqData in e.StringList)
+        //        {
+        //            RnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
+        //        }
+        //        UpdateOutputFolderTextbox();
+        //    }
+        //}
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
@@ -292,7 +275,7 @@ namespace SpritzGUI
                     MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
-                { 
+                {
                     SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text.Trim());
                     SraCollection.Add(sraDataGrid);
                 }
@@ -328,7 +311,8 @@ namespace SpritzGUI
                     UpdateTaskGuiStuff();
                     UpdateOutputFolderTextbox();
                 }
-            } catch (InvalidOperationException)
+            }
+            catch (InvalidOperationException)
             {
                 // does not open workflow window until all fastq files are added, if any
             }
@@ -387,7 +371,6 @@ namespace SpritzGUI
         //    var newPath = string.Join("\\", filePath.Take(filePath.Length - 1));
         //    return newPath;
         //}
-
 
         //private void UpdateOutputFolderTextbox(string filePath = null)
         //{
@@ -448,21 +431,22 @@ namespace SpritzGUI
                             return;
                         }
 
-                    //case ".toml":
-                    //    TomlTable tomlFile = null;
-                    //    try
-                    //    {
-                    //        tomlFile = Toml.ReadFile(filepath);
-                    //    }
-                    //    catch (Exception)
-                    //    {
-                    //        break;
-                    //    }
-                    //    var ye1 = Toml.ReadFile<Options>(filepath);
-                    //    AddTaskToCollection(ye1);
-                    //    break;
+                        //case ".toml":
+                        //    TomlTable tomlFile = null;
+                        //    try
+                        //    {
+                        //        tomlFile = Toml.ReadFile(filepath);
+                        //    }
+                        //    catch (Exception)
+                        //    {
+                        //        break;
+                        //    }
+                        //    var ye1 = Toml.ReadFile<Options>(filepath);
+                        //    AddTaskToCollection(ye1);
+                        //    break;
                 }
-            } else
+            }
+            else
             {
                 MessageBox.Show("User already added SRA number. Please only choose one input: 1) SRA accession 2) FASTQ files.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
