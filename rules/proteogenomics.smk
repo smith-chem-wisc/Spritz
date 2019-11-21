@@ -1,5 +1,6 @@
 UNIPROTXML="data/uniprot/" + config["species"] + ".protein.xml.gz" #"data/Homo_sapiens_202022.xml.gz"
 TRANSFER_MOD_DLL="TransferUniProtModifications/TransferUniProtModifications/bin/Release/netcoreapp2.1/TransferUniProtModifications.dll"
+REF=config["species"] + "." + config["genome"]
 
 rule download_protein_xml:
     output: UNIPROTXML

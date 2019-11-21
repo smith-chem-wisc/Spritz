@@ -1,6 +1,8 @@
 GATK_MEM=16000 # MB
 GATK_JAVA=f"--java-options \"-Xmx{GATK_MEM}M -Dsamjdk.compression_level=9\""
+REF=config["species"] + "." + config["genome"]
 GENOME_VERSION = config["genome"]
+REF_SNPEFF = config["genome"] + "." + config["snpeff"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar"
