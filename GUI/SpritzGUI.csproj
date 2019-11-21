@@ -123,58 +123,58 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="releases\release-81.txt">
+    <None Include="EnsemblReleases\release-81.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-82.txt">
+    <None Include="EnsemblReleases\release-82.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-83.txt">
+    <None Include="EnsemblReleases\release-83.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-84.txt">
+    <None Include="EnsemblReleases\release-84.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-85.txt">
+    <None Include="EnsemblReleases\release-85.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-86.txt">
+    <None Include="EnsemblReleases\release-86.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-87.txt">
+    <None Include="EnsemblReleases\release-87.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-88.txt">
+    <None Include="EnsemblReleases\release-88.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-89.txt">
+    <None Include="EnsemblReleases\release-89.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-90.txt">
+    <None Include="EnsemblReleases\release-90.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-91.txt">
+    <None Include="EnsemblReleases\release-91.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-92.txt">
+    <None Include="EnsemblReleases\release-92.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-93.txt">
+    <None Include="EnsemblReleases\release-93.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-94.txt">
+    <None Include="EnsemblReleases\release-94.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-95.txt">
+    <None Include="EnsemblReleases\release-95.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-96.txt">
+    <None Include="EnsemblReleases\release-96.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-97.txt">
+    <None Include="EnsemblReleases\release-97.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="releases\release-98.txt">
+    <None Include="EnsemblReleases\release-98.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

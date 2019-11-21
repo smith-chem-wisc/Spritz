@@ -305,13 +305,14 @@ namespace SpritzGUI
             EnsemblReleases = new ObservableCollection<Ensembl>();
 
             // read release.txt files into a list
-            var releases = Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), "releases"), "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
+            string releasefolder = Path.Combine(Directory.GetCurrentDirectory(), "EnsemblReleases");
+            var releases = Directory.GetFiles(releasefolder, "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
 
             var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv"));
             foreach (string release in releases)
             {
                 // read txt file into obsv collection
-                var file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "releases", release + ".txt"));
+                var file = File.ReadAllLines(Path.Combine(releasefolder, $"{release}.txt"));
                 var species = new List<string>(file);
                 Dictionary<string, string> genomes = new Dictionary<string, string>();
                 Dictionary<string, string> organisms = new Dictionary<string, string>();
