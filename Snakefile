@@ -19,7 +19,7 @@
 configfile: "config.yaml"
 
 def check_dir():
-    docheck = 'analysisDirectory' in config and config["analysisDirectory"] is not None) and len(config["analysisDirectory"]) > 0:
+    docheck = 'analysisDirectory' in config and config["analysisDirectory"] is not None and len(config["analysisDirectory"]) > 0
     return docheck
 
 def output(wildcards):

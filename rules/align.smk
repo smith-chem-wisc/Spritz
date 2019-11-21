@@ -46,7 +46,7 @@ def input_fq_args(fastqs):
         return f"-1 {fqs[0]} -2 {fqs[1]}"
 
 def check_sra():
-    docheck = 'sra' in config and config["sra"] is not None) and len(config["sra"]) > 0
+    docheck = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
     return docheck
 
 rule hisat2_align_bam:
