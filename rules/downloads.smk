@@ -20,22 +20,24 @@ rule unzip_index_ensembl:
         "data/ensembl/" + REF + ".dna.primary_assembly.fa",
         "data/ensembl/" + REF + "." + config["release"] + ".gff3",
         "data/ensembl/" + REF + ".pep.all.fa",
-        "data/ensembl/" + config["species"] + ".vcf",
+        vcf="data/ensembl/" + config["species"] + ".vcf",
+        vcfidx="data/ensembl/" + config["species"] + ".vcf.idx",
     log: "data/ensembl/unzip.log"
     shell:
         "(gunzip {input.gfagz} && "
         "gunzip {input.gffgz} && "
         "gunzip {input.pfagz} && "
-        "gunzip {input.vcfgz}"
+        "gunzip {input.vcfgz} && "
+        "gatk IndexFeatureFile -F {output.vcf}) 2> {log}"
 
 rule index_vcf:
     input:
         vcf="data/ensembl/" + config["species"] + ".vcf",
     output:
         "data/ensembl/" + config["species"] + ".vcf.idx",
-    log: "data/ensembl/unzip.log"
+    log: "data/ensembl/index.log"
     shell:
-        "gatk IndexFeatureFile -F {input.vcf}) 2> {log}"
+        "(gatk IndexFeatureFile -F {input.vcf}) 2> {log}"
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
