@@ -20,24 +20,23 @@ rule unzip_index_ensembl:
         "data/ensembl/" + REF + ".dna.primary_assembly.fa",
         "data/ensembl/" + REF + "." + config["release"] + ".gff3",
         "data/ensembl/" + REF + ".pep.all.fa",
-        vcf="data/ensembl/" + config["species"] + ".vcf",
-        vcfidx="data/ensembl/" + config["species"] + ".vcf.idx",
+        "data/ensembl/" + config["species"] + ".vcf",
     log: "data/ensembl/unzip.log"
     shell:
         "(gunzip {input.gfagz} && "
         "gunzip {input.gffgz} && "
         "gunzip {input.pfagz} && "
-        "gunzip {input.vcfgz} && "
-        "gatk IndexFeatureFile -F {output.vcf}) 2> {log}"
+        "gunzip {input.vcfgz}) 2> {log}"
 
-rule index_vcf:
+rule clean_and_index_vcf:
     input:
-        vcf="data/ensembl/" + config["species"] + ".vcf",
+        "data/ensembl/" + config["species"] + ".vcf",
     output:
         "data/ensembl/" + config["species"] + ".vcf.idx",
-    log: "data/ensembl/index.log"
+        clean_vcf="data/ensembl/" + config["species"] + ".clean.vcf",
     shell:
-        "(gatk IndexFeatureFile -F {input.vcf}) 2> {log}"
+        "python scripts/clean_vcf.py && "
+        "gatk IndexFeatureFile -F {output.clean_vcf}"
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
@@ -59,7 +58,7 @@ rule tmpdir:
 
 rule convert_ucsc2ensembl:
     input:
-        "data/ensembl/" + config["species"] + ".vcf",
+        "data/ensembl/" + config["species"] + ".clean.vcf",
         "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt",
         tmp=directory("tmp"),
         fa="data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa",
