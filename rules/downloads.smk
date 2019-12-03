@@ -53,8 +53,11 @@ rule dict_fa:
     shell: "gatk CreateSequenceDictionary -R {input} -O {output}"
 
 rule tmpdir:
-    output: temp(directory("tmp"))
-    shell: "mkdir tmp"
+    output:
+        temp(directory("tmp")),
+        temp(directory("temporary")),
+    shell:
+        "mkdir tmp && mkdir temporary"
 
 rule convert_ucsc2ensembl:
     input:

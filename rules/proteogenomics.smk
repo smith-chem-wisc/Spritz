@@ -16,6 +16,7 @@ rule build_transfer_mods:
 
 rule transfer_modifications_variant:
     input:
+        temp=directory("temporary"),
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
         protxml="{dir}/combined.spritz.snpeff.protein.xml"
@@ -24,13 +25,14 @@ rule transfer_modifications_variant:
         protxmlgz="{dir}/combined.spritz.snpeff.protein.withmods.xml.gz"
     log: "{dir}/combined.spritz.snpeff.protein.withmods.log"
     shell:
-        "(mv {input.protxml} temporary/combined.spritz.snpeff.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y temporary/combined.spritz.snpeff.protein.xml && "
-        "mv temporary/* {wildcards.dir} && "
+        "(mv {input.protxml} {input.temp}/combined.spritz.snpeff.protein.xml && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/combined.spritz.snpeff.protein.xml && "
+        "mv {input.temp}/* {wildcards.dir} && "
         "gzip -k {output.protxml}) &> {log}"
 
 rule transfer_modifications_isoformvariant:
     input:
+        temp=directory("temporary"),
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
         protxml="{dir}/combined.spritz.isoformvariants.protein.xml"
@@ -39,9 +41,9 @@ rule transfer_modifications_isoformvariant:
         protxmlgz="{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz"
     log: "{dir}/combined.spritz.isoformvariants.protein.withmods.log"
     shell:
-        "(mv {input.protxml} temporary/combined.spritz.isoformvariants.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y temporary/combined.spritz.isoformvariants.protein.xml && "
-        "mv temporary/* {wildcards.dir} && "
+        "(mv {input.protxml} {input.temp}/combined.spritz.isoformvariants.protein.xml && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/combined.spritz.isoformvariants.protein.xml && "
+        "mv {input.temp}/* {wildcards.dir} && "
         "gzip -k {output.protxml}) &> {log}"
 
 rule reference_protein_xml:
@@ -50,6 +52,7 @@ rule reference_protein_xml:
     """
     input:
         "data/SnpEffDatabases.txt",
+        temp=directory("temporary"),
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         transfermods=TRANSFER_MOD_DLL,
@@ -69,9 +72,9 @@ rule reference_protein_xml:
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {params.ref} && " # no isoforms, no variants
-        "mv {output.protxml} temporary/GRCm38.86.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y temporary/GRCm38.86.protein.xml && "
-        "mv temporary/* {wildcards.dir} && "
+        "mv {output.protxml} {input.temp}/{params.ref}.protein.xml && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{params.ref}.protein.xml && "
+        "mv {input.temp}/* {wildcards.dir} && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log} && touch {output.dummy}"
 
 rule custom_protein_xml:
@@ -80,6 +83,7 @@ rule custom_protein_xml:
     """
     input:
         "data/SnpEffDatabases.txt",
+        temp=directory("temporary"),
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         isoform_reconstruction="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf",
@@ -99,7 +103,7 @@ rule custom_protein_xml:
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {params.ref} && " # isoforms, no variants
-        "mv {output.protxml} temporary/combined.spritz.isoform.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y temporary/combined.spritz.isoform.protein.xml && "
-        "mv temporary/* {wildcards.dir} && "
+        "mv {output.protxml} {input.temp}/combined.spritz.isoform.protein.xml && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/combined.spritz.isoform.protein.xml && "
+        "mv {input.temp}/* {wildcards.dir} && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log}"
