@@ -1,5 +1,4 @@
 #!/bin/bash
-
 function validate(){
 if [[ `wget --spider $1 2>&1 | grep 'exists'` ]]; then return 0; else return 1; fi
 }
