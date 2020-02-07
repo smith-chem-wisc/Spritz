@@ -78,6 +78,7 @@ namespace TransferUniProtModifications
         /// <returns></returns>
         public static List<Protein> CombineAndAnnotateProteins(List<Protein> uniprotProteins, List<Protein> proteogenomicProteins)
         {
+            var uniprotOrganism = uniprotProteins.Select(p => p.Organism).Distinct().ToList();
             List<Protein> newProteins = new List<Protein>();
             Dictionary<string, List<Protein>> dictUniprot = ProteinDictionary(uniprotProteins);
             Dictionary<string, List<Protein>> dictProteogenomic = ProteinDictionary(proteogenomicProteins);
@@ -96,12 +97,21 @@ namespace TransferUniProtModifications
                 var pgProtein = CombineProteinsWithSameSeq(pgProteinsSameSeq);
 
                 if (uniprot != null && uniprot.BaseSequence != pgProtein.BaseSequence) { throw new ArgumentException("Not all proteins have the same sequence"); }
+                string proteinOrganism = null;
+                if (uniprotOrganism.Count == 1)
+                {
+                    proteinOrganism = uniprotOrganism.FirstOrDefault();
+                }
+                else
+                {
+                    proteinOrganism = uniprot != null ? uniprot.Organism : pgProtein.Organism;
+                }
 
                 // keep all sequence variations
                 newProteins.Add(new Protein(
                     pgProtein.BaseSequence,
                     uniprot != null ? uniprot.Accession : pgProtein.Accession, //comma-separated
-                    organism: uniprot != null ? uniprot.Organism : pgProtein.Organism,
+                    organism: proteinOrganism,
                     name: pgProtein.Name, //comma-separated
                     fullName: uniprot != null ? uniprot.FullName : pgProtein.FullName, //comma-separated
                     isDecoy: pgProtein.IsDecoy,
