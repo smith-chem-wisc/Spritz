@@ -38,7 +38,7 @@ namespace SpritzGUI
 
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/analysis" + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" smithlab/spritz";
+                proc.StartInfo.Arguments = "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/analysis" + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" smithlab/spritz > workflow.txt";
                 //proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = true;
                 //proc.StartInfo.RedirectStandardError = true;
@@ -53,7 +53,7 @@ namespace SpritzGUI
             for (int i = 0; i < taskList.Count; i++)
             {
                 var options = taskList[i].Item2;
-                yield return "docker pull rinaibrhm/spritz ; docker run --rm -t -i -v \"\"\"" + options.AnalysisDirectory + ":/app/data\"\"\" rinaibrhm/spritz";
+                yield return "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + options.AnalysisDirectory + ":/app/analysis" + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" smithlab/spritz";
             }
         }
 

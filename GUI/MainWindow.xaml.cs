@@ -171,7 +171,7 @@ namespace SpritzGUI
             }
             else
             {
-                Dispatcher.Invoke(() => WarningsTextBox.AppendText("Done!" + Environment.NewLine));
+                Dispatcher.Invoke(() => WarningsTextBox.AppendText(": Done!" + Environment.NewLine));
                 Dispatcher.Invoke(() => MessageBox.Show("Finished!", "Spritz Workflow", MessageBoxButton.OK, MessageBoxImage.Information));
             }
         }

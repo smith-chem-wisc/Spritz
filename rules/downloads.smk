@@ -32,7 +32,7 @@ rule clean_and_index_vcf:
     input:
         "data/ensembl/" + config["species"] + ".vcf",
     output:
-        "data/ensembl/" + config["species"] + ".vcf.idx",
+        "data/ensembl/" + config["species"] + ".clean.vcf.idx",
         clean_vcf="data/ensembl/" + config["species"] + ".clean.vcf",
     shell:
         "python scripts/clean_vcf.py && "
@@ -101,7 +101,7 @@ rule download_sras:
     log: "{dir}/{sra}.log"
     threads: 4
     shell:
-        "fasterq-dump --progress --threads {threads} --split-files --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+        "fasterq-dump --progress --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
 
 rule compress_fastqs:
     input:

@@ -1,4 +1,5 @@
 import yaml
+import re
 
 with open("config.yaml", 'r') as stream:
    data = yaml.safe_load(stream)
@@ -23,5 +24,12 @@ with open("./data/ensembl/" + species + ".clean.vcf","w") as ensembl:
         # remove any lines with empty alleles
         splitline = line.split("\t")
         if '' in splitline[0:7]: continue
+
+        # remove unparsable alleles
         if invalid(splitline[4]): continue
+
+        # remove duplicate alleles
+        duplicate = re.findall("([a-zA-z]\.)", splitline[4])
+        if len(duplicate) > 1: continue
+
         ensembl.write(line)

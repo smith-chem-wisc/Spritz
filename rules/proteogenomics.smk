@@ -23,11 +23,15 @@ rule transfer_modifications_variant:
     output:
         protxml=temp("{dir}/combined.spritz.snpeff.protein.withmods.xml"),
         protxmlgz="{dir}/combined.spritz.snpeff.protein.withmods.xml.gz"
+    params:
+        infile="combined.spritz.snpeff.protein.xml",
+        outfile="combined.spritz.snpeff.protein.withmods.xml"
     log: "{dir}/combined.spritz.snpeff.protein.withmods.log"
     shell:
-        "(mv {input.protxml} {input.temp}/combined.spritz.snpeff.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/combined.spritz.snpeff.protein.xml && "
-        "mv {input.temp}/* {wildcards.dir} && "
+        "(mv {input.protxml} {input.temp}/{params.infile} && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{params.infile} && "
+        "mv {input.temp}/{params.infile} {wildcards.dir} && "
+        "mv {input.temp}/{params.outfile} {wildcards.dir} && "
         "gzip -k {output.protxml}) &> {log}"
 
 rule transfer_modifications_isoformvariant:
@@ -39,11 +43,15 @@ rule transfer_modifications_isoformvariant:
     output:
         protxml=temp("{dir}/combined.spritz.isoformvariants.protein.withmods.xml"),
         protxmlgz="{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz"
+    params:
+        infile="combined.spritz.isoformvariants.protein.xml",
+        outfile="combined.spritz.isoformvariants.protein.withmods.xml"
     log: "{dir}/combined.spritz.isoformvariants.protein.withmods.log"
     shell:
-        "(mv {input.protxml} {input.temp}/combined.spritz.isoformvariants.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/combined.spritz.isoformvariants.protein.xml && "
-        "mv {input.temp}/* {wildcards.dir} && "
+        "(mv {input.protxml} {input.temp}/{params.infile} && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{params.infile} && "
+        "mv {input.temp}/{params.infile} {wildcards.dir} && "
+        "mv {input.temp}/{params.outfile} {wildcards.dir} && "
         "gzip -k {output.protxml}) &> {log}"
 
 rule reference_protein_xml:
@@ -74,7 +82,8 @@ rule reference_protein_xml:
         " -xmlProt {output.protxml} {params.ref} && " # no isoforms, no variants
         "mv {output.protxml} {input.temp}/{params.ref}.protein.xml && "
         "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{params.ref}.protein.xml && "
-        "mv {input.temp}/* {wildcards.dir} && "
+        "mv {input.temp}/{params.ref}.protein.xml {wildcards.dir} && "
+        "mv {input.temp}/{params.ref}.protein.withmods.xml {wildcards.dir} && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log} && touch {output.dummy}"
 
 rule custom_protein_xml:
@@ -95,7 +104,9 @@ rule custom_protein_xml:
         protxmlwithmods=temp("{dir}/combined.spritz.isoform.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/combined.spritz.isoform.protein.withmods.xml.gz"
     params:
-        ref="combined.sorted.filtered.withcds.gtf" # with isoforms
+        ref="combined.sorted.filtered.withcds.gtf", # with isoforms
+        infile="combined.spritz.isoform.protein.xml",
+        outfile="combined.spritz.isoform.protein.withmods.xml"
     resources:
         mem_mb=16000
     log:
@@ -103,7 +114,8 @@ rule custom_protein_xml:
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {params.ref} && " # isoforms, no variants
-        "mv {output.protxml} {input.temp}/combined.spritz.isoform.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/combined.spritz.isoform.protein.xml && "
-        "mv {input.temp}/* {wildcards.dir} && "
+        "mv {output.protxml} {input.temp}/{params.infile} && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{params.infile} && "
+        "mv {input.temp}/{params.infile} {wildcards.dir} && "
+        "mv {input.temp}/{params.outfile} {wildcards.dir} && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log}"
