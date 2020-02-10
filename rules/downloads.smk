@@ -8,7 +8,7 @@ rule download_ensembl_references:
         "data/ensembl/" + config["species"] + ".vcf.gz",
     log: "data/ensembl/downloads.log"
     shell:
-        "(python scripts/download_ensembl.py " + REF + ") 2> {log}"
+        "(sudo chmod 774 validate.sh && python scripts/download_ensembl.py " + REF + ") 2> {log}"
 
 rule unzip_index_ensembl:
     input:
