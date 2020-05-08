@@ -2,31 +2,35 @@ REF=config["species"] + "." + config["genome"]
 
 rule download_ensembl_references:
     output:
-        "data/ensembl/" + REF + ".dna.primary_assembly.fa.gz",
-        "data/ensembl/" + REF + "." + config["release"] + ".gff3.gz",
-        "data/ensembl/" + REF + ".pep.all.fa.gz",
-        "data/ensembl/" + config["species"] + ".vcf.gz",
-    log: "data/ensembl/downloads.log"
-    shell:
-        "(sudo chmod 774 validate.sh && python scripts/download_ensembl.py " + REF + ") 2> {log}"
-
-rule unzip_index_ensembl:
-    input:
-        gfagz="data/ensembl/" + REF + ".dna.primary_assembly.fa.gz",
-        gffgz="data/ensembl/" + REF + "." + config["release"] + ".gff3.gz",
-        pfagz="data/ensembl/" + REF + ".pep.all.fa.gz",
-        vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
-    output:
         "data/ensembl/" + REF + ".dna.primary_assembly.fa",
         "data/ensembl/" + REF + "." + config["release"] + ".gff3",
         "data/ensembl/" + REF + ".pep.all.fa",
         "data/ensembl/" + config["species"] + ".vcf",
-    log: "data/ensembl/unzip.log"
+    log: "data/ensembl/downloads.log"
     shell:
-        "(gunzip {input.gfagz} && "
-        "gunzip {input.gffgz} && "
-        "gunzip {input.pfagz} && "
-        "gunzip {input.vcfgz}) 2> {log}"
+        "(python scripts/download_ensembl.py " + REF + " && "
+        "gunzip data/ensembl/" + REF + ".dna.primary_assembly.fa.gz && "
+        "gunzip data/ensembl/" + REF + "." + config["release"] + ".gff3.gz && "
+        "gunzip data/ensembl/" + REF + ".pep.all.fa.gz && "
+        "gunzip data/ensembl/" + config["species"] + ".vcf.gz) 2> {log}"
+
+# rule unzip_index_ensembl:
+#     input:
+#         gfagz="data/ensembl/" + REF + ".dna.primary_assembly.fa.gz",
+#         gffgz="data/ensembl/" + REF + "." + config["release"] + ".gff3.gz",
+#         pfagz="data/ensembl/" + REF + ".pep.all.fa.gz",
+#         vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
+#     output:
+#         "data/ensembl/" + REF + ".dna.primary_assembly.fa",
+#         "data/ensembl/" + REF + "." + config["release"] + ".gff3",
+#         "data/ensembl/" + REF + ".pep.all.fa",
+#         "data/ensembl/" + config["species"] + ".vcf",
+#     log: "data/ensembl/unzip.log"
+#     shell:
+#         "(gunzip {input.gfagz} && "
+#         "gunzip {input.gffgz} && "
+#         "gunzip {input.pfagz} && "
+#         "gunzip {input.vcfgz}) 2> {log}"
 
 rule clean_and_index_vcf:
     input:
@@ -101,7 +105,7 @@ rule download_sras:
     log: "{dir}/{sra}.log"
     threads: 4
     shell:
-        "fasterq-dump --progress --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+        "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
 
 rule compress_fastqs:
     input:

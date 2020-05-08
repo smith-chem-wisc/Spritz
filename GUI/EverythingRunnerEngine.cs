@@ -11,50 +11,49 @@ namespace SpritzGUI
 {
     public class EverythingRunnerEngine
     {
-        private readonly List<Tuple<string, Options>> taskList;
+        private readonly Tuple<string, Options> task;
         private string outputFolder;
 
-        public EverythingRunnerEngine(List<Tuple<string, Options>> taskList, string outputFolder)
+        public EverythingRunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
-            this.taskList = taskList;
+            this.task = task;
             this.outputFolder = outputFolder;
         }
 
         public string Arguments { get; set; }
         public string StdErr { get; set; }
-
-        //public static string SpritzDirectory { get; set; } = Environment.CurrentDirectory;
         public static string AnalysisDirectory { get; set; }
-
         public static string ConfigDirectory { get; set; }
-        public static Dictionary<string, string> Organism { get; set; }
+        public static string DataDirectory { get; set; }
+        public static string PathToWorkflow { get; set; }
 
         public void Run()
         {
-            for (int i = 0; i < taskList.Count; i++)
-            {
-                var ok = taskList[i];
-                WriteConfig(ok.Item2);
+            WriteConfig(task.Item2);
 
-                Process proc = new Process();
-                proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + ok.Item2.AnalysisDirectory + ":/app/analysis" + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" smithlab/spritz > workflow.txt";
-                //proc.StartInfo.CreateNoWindow = true;
-                proc.StartInfo.UseShellExecute = true;
-                //proc.StartInfo.RedirectStandardError = true;
-                proc.Start();
-                proc.WaitForExit();
-                //StdErr = proc.StandardError.ReadToEnd();
-            }
+            Process proc = new Process();
+            proc.StartInfo.FileName = "Powershell.exe";
+            proc.StartInfo.Arguments = "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz " +
+                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
+                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
+                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
+                "smithlab/spritz > " + "\"\"\"" + PathToWorkflow + "\"\"\"";
+
+            //proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.UseShellExecute = true;
+            //proc.StartInfo.RedirectStandardError = true;
+            proc.Start();
+            proc.WaitForExit();
+            //StdErr = proc.StandardError.ReadToEnd();
         }
 
         public IEnumerable<string> GenerateCommandsDry()
         {
-            for (int i = 0; i < taskList.Count; i++)
-            {
-                var options = taskList[i].Item2;
-                yield return "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz -v \"\"\"" + options.AnalysisDirectory + ":/app/analysis" + "\"\"\" -v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" smithlab/spritz";
-            }
+            yield return "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz " +
+                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
+                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
+                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
+                "smithlab/spritz > " + "\"\"\"" + PathToWorkflow + "\"\"\"";
         }
 
         private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
@@ -69,6 +68,29 @@ namespace SpritzGUI
             }
 
             return node;
+        }
+
+        public void SetUpDirectories()
+        {
+            // set up directories to mount to docker container as volumes
+            AnalysisDirectory = task.Item2.AnalysisDirectory;
+
+            var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
+            if (!Directory.Exists(pathToConfig))
+            {
+                Directory.CreateDirectory(pathToConfig);
+            }
+            ConfigDirectory = pathToConfig;
+
+            var pathToDataFiles = Path.Combine(AnalysisDirectory, "data");
+            if (!Directory.Exists(pathToDataFiles))
+            {
+                Directory.CreateDirectory(pathToDataFiles);
+            }
+            DataDirectory = pathToDataFiles;
+
+            // path to workflow.txt
+            PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow.txt");
         }
 
         private void WriteConfig(Options options)
@@ -123,16 +145,7 @@ namespace SpritzGUI
             snpeff.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("snpeff", snpeff);
 
-            var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
-
-            // create configs folder to mount newly written config to container
-            if (!Directory.Exists(pathToConfig))
-            {
-                Directory.CreateDirectory(pathToConfig);
-            }
-            ConfigDirectory = pathToConfig;
-
-            using (TextWriter writer = File.CreateText(Path.Combine(pathToConfig, "config.yaml")))
+            using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
             {
                 stream.Save(writer, false);
             }
