@@ -30,7 +30,7 @@ namespace SpritzGUI
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
-            MessageBox.Show("Please have Docker Desktop installed. Under \"Shared Drives\", select drives to be shared and click \"Apply\".", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Please have Docker Desktop installed. Under \"Shared Drives\", you must select the C drive and any desired drive to save your Spritz analysis, then click \"Apply\". Please also allocate sufficient memory for Spritz under \"Advanced\".", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         protected override void OnClosed(EventArgs e)
@@ -125,18 +125,24 @@ namespace SpritzGUI
                 }
 
                 DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
-                for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
-                {
-                    DynamicTasksObservableCollection.Add(new InRunTask("Workflow" + (i + 1), StaticTasksObservableCollection[i].options));
-                }
+                DynamicTasksObservableCollection.Add(new InRunTask("Workflow 1", StaticTasksObservableCollection.First().options));
                 workflowTreeView.DataContext = DynamicTasksObservableCollection;
-                Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).ToList(), OutputFolderTextBox.Text);
-                //WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: CMD.exe {x}"))); // keep for debugging
+                
+                Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
+                Everything.SetUpDirectories();
+
+                WarningsTextBox.Document.Blocks.Clear();
                 WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: Powershell.exe {x}"))); // keep for debugging
+                
                 var t = new Task(Everything.Run);
                 t.Start();
                 t.ContinueWith(DisplayAnyErrors);
+
+                // update gui
                 RunWorkflowButton.IsEnabled = false;
+                ClearTasksButton.IsEnabled = true;
+                BtnWorkFlow.IsEnabled = false;
+                ResetTasksButton.IsEnabled = true;
             }
             catch (TaskCanceledException)
             {
@@ -171,8 +177,10 @@ namespace SpritzGUI
             }
             else
             {
-                Dispatcher.Invoke(() => WarningsTextBox.AppendText("Done!" + Environment.NewLine));
-                Dispatcher.Invoke(() => MessageBox.Show("Finished!", "Spritz Workflow", MessageBoxButton.OK, MessageBoxImage.Information));
+                Dispatcher.Invoke(() => WarningsTextBox.AppendText(": Done!" + Environment.NewLine));
+                Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
+                    + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
+                    MessageBoxButton.OK, MessageBoxImage.Information));
             }
         }
 
@@ -225,23 +233,18 @@ namespace SpritzGUI
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
         {
             StaticTasksObservableCollection.Clear();
+            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            WarningsTextBox.Document.Blocks.Clear();
             UpdateTaskGuiStuff();
         }
-
-        //private void RemoveLastTaskButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    StaticTasksObservableCollection.RemoveAt(StaticTasksObservableCollection.Count - 1);
-        //    UpdateTaskGuiStuff();
-        //}
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
             RunWorkflowButton.IsEnabled = true;
+            ClearTasksButton.IsEnabled = true;
+            BtnWorkFlow.IsEnabled = false;
             ResetTasksButton.IsEnabled = false;
-            for (int i = 0; i < DynamicTasksObservableCollection.Count; i++)
-            {
-                StaticTasksObservableCollection.Add(new PreRunTask(StaticTasksObservableCollection[i].options));
-            }
+
             DynamicTasksObservableCollection.Clear();
             workflowTreeView.DataContext = StaticTasksObservableCollection;
         }
@@ -270,7 +273,7 @@ namespace SpritzGUI
         {
             if (TbxSRA.Text.Contains("SR") || TbxSRA.Text.Contains("ER"))
             {
-                if (SraCollection.Any(s => s.Name == TbxSRA.Text))
+                if (SraCollection.Any(s => s.Name == TbxSRA.Text.Trim()))
                 {
                     MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
@@ -338,12 +341,14 @@ namespace SpritzGUI
                 RunWorkflowButton.IsEnabled = false;
                 ClearTasksButton.IsEnabled = false;
                 BtnWorkFlow.IsEnabled = true;
+                ResetTasksButton.IsEnabled = false;
             }
             else
             {
                 RunWorkflowButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
                 BtnWorkFlow.IsEnabled = false;
+                ResetTasksButton.IsEnabled = false;
             }
         }
 

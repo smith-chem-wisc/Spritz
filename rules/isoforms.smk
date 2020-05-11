@@ -26,15 +26,8 @@ rule build_gtf_sharp:
 
 rule filter_transcripts_add_cds:
     input:
+        temp=directory("temporary"),
         gtfsharp="GtfSharp/GtfSharp/bin/Release/netcoreapp2.1/GtfSharp.dll",
-        gtf="data/combined.sorted.gtf",
-        fa="data/ensembl/Homo_sapiens.GRCh38.dna.primary_assembly.karyotypic.fa",
-        refg="data/ensembl/Homo_sapiens.GRCh38.81.gff3"
-    output:
-        temp("data/combined.sorted.filtered.gtf"),
-        "data/combined.sorted.filtered.withcds.gtf",
-    shell:
-        "dotnet {input.gtfsharp} -f {input.fa} -g {input.gtf} -r {input.refg}"
         gtf="{dir}/combined.sorted.gtf",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         refg="data/ensembl/" + REF + "." + config["release"] + ".gff3"
@@ -42,9 +35,9 @@ rule filter_transcripts_add_cds:
         temp("{dir}/combined.sorted.filtered.gtf"),
         "{dir}/combined.sorted.filtered.withcds.gtf",
     shell:
-        "mv {input.gtf} temporary/combined.sorted.gtf && "
-        "dotnet {input.gtfsharp} -f {input.fa} -g temporary/combined.sorted.gtf -r {input.refg} && "
-        "mv temporary/* {wildcards.dir}"
+        "mv {input.gtf} {input.temp}/combined.sorted.gtf && "
+        "dotnet {input.gtfsharp} -f {input.fa} -g {input.temp}/combined.sorted.gtf -r {input.refg} && "
+        "mv {input.temp}/* {wildcards.dir}"
 
 rule generate_snpeff_database:
     input:

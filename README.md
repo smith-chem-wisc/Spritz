@@ -9,47 +9,20 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
 
 ## Running Spritz with GUI
 
-## Running Spritz without GUI
+1. Install [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows).
 
-1. Launch Ubuntu and install snakemake: https://snakemake.readthedocs.io/en/stable/tutorial/setup.html
+2. Under Docker Settings, enable C and other necessary drives and allocate sufficient resources (recommended 16GB).
 
-2. Define config file as follows:
+    ![settings](https://user-images.githubusercontent.com/42819128/70090841-8a937a80-15e0-11ea-9742-ca959a89deca.png)
 
-    #### Define SRA accession
-    `sra: ["SRX159823"]`
+3. Launch Spritz.
 
-    - Separate multiple SRAs with commas
-    - Leave `sra: []` if using input fastqs.
+    ![howto](https://user-images.githubusercontent.com/42819128/70091146-2624eb00-15e1-11ea-9230-bfd118aa03d9.png)
 
-    #### Define path to analysis directory
-    `analysisDirectory: [/mnt/f/analysis]`
+    Step 1: Input SRA accessions OR FASTQ files.
 
-    - Follow this path format: /mnt/`{drive}`/`{folder}`
-
-    #### Define species
-    `species: "Homo_sapiens"`
-
-    #### Define genome version
-    `genome: "GRCh38"`
-
-    #### Define Ensembl release
-    `release: "81"`
-	
-	#### Define organism name
-    `organism: "human"`
-	
-	- Based on Uniprot's naming convention
-	- You can refer to genomes.csv
-
-    #### DO NOT CHANGE: SnpEff version
-    `snpeff: "86"`
-
-    #### Define input fastq files paired
-    `fq: [SRX159823]`
-
-    - Fastq files should have *_1.fastq & *_2.fastq extensions and follow this naming convention: `{NAME}`_1.fastq and `{NAME}`_2.fastq
-    - Leave `fq: []` if using SRA.
-
-3. Run workflow:
-
-    `snakemake -j 24`
+    Step 2: Create and customize your Spritz workflow.
+    
+   ![workflow](https://user-images.githubusercontent.com/42819128/70091992-e65f0300-15e2-11ea-9e0f-7bb4262afefa.png)
+   
+    Step 3: Run Spritz!

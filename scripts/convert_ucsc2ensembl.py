@@ -6,15 +6,15 @@ with open("config.yaml", 'r') as stream:
 species = data["species"]
 version = data["genome"]
 
-ucsc=open("./data/ensembl/" + species + ".vcf")
+ucsc=open("./data/ensembl/" + species + ".clean.vcf")
 
 ucsc2ensembl={}
 for line in open("ChromosomeMappings/" + version + "_UCSC2ensembl.txt"):
     linesplit=line.strip().split("\t")
     if len(linesplit) <= 1: continue
     ucsc2ensembl[linesplit[0]] = linesplit[1]
-    
-with open("./data/ensembl/ensembl/" + species + ".orig.ensembl.vcf","w") as ensembl:
+
+with open("./data/ensembl/" + species + ".orig.ensembl.vcf","w") as ensembl:
     chrs={}
     max_chr=0
     for line in ucsc:
@@ -25,7 +25,6 @@ with open("./data/ensembl/ensembl/" + species + ".orig.ensembl.vcf","w") as ense
 
         # change chr from UCSC to Ensembl
         splitline = line.split("\t")
-        if '' in splitline[0:7]: continue
         if len(splitline) > 1 and splitline[0] in ucsc2ensembl:
             splitline[0] = ucsc2ensembl[splitline[0]]
         if splitline[0].isdigit() and int(splitline[0]) > max_chr:
