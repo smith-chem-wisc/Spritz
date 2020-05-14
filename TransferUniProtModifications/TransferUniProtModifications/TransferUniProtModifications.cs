@@ -86,8 +86,7 @@ namespace TransferUniProtModifications
                 if (spritzEntry.AppliedSequenceVariations.Count != 0)
                 {
                     // Make pivot tables
-                    accessionNameList.Add($"{spritzEntry.Accession}\t{spritzEntry.FullName}");
-                    accessionSequenceList.Add($"{spritzEntry.Accession}\t{spritzEntry.BaseSequence}");
+                    accessionNameList.Add($"{spritzEntry.Accession}\t{spritzEntry.FullName}\t{spritzEntry.BaseSequence}");
                     foreach (SequenceVariation variant in spritzEntry.AppliedSequenceVariations)
                     {
                         variantDescList.Add($"{spritzEntry.Accession}\t{variant.SimpleString()}\t{variant.Description}");
@@ -111,7 +110,6 @@ namespace TransferUniProtModifications
             }
             File.WriteAllLines(destinationAccessionToNameTable, accessionNameList);
             File.WriteAllLines(variantDescriptionTable, variantDescList);
-
 
             foreach (var entry in allVariants)
             {
