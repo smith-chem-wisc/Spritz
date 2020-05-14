@@ -37,12 +37,10 @@ namespace TransferUniProtModifications
             TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
             DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"), 
                 Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accseq.tsv"), true);
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"), true);
             DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
                 Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.decoy.tsv"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accseq.decoy.tsv"), false);
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"), false);
         }
 
         public static string TransferModifications(string sourceXmlPath, string destinationXmlPath)
@@ -59,7 +57,7 @@ namespace TransferUniProtModifications
             return outxml;
         }
 
-        public static void DatabaseSummary(string sourceXmlPath, string destinationXmlPath, string destinationAccessionToNameTable, string variantDescriptionTable, string variantSequenceTable, bool target)
+        public static void DatabaseSummary(string sourceXmlPath, string destinationXmlPath, string destinationAccessionToNameTable, string variantDescriptionTable, bool target)
         {
             var culture = CultureInfo.CurrentCulture;
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
