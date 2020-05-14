@@ -35,7 +35,14 @@ namespace TransferUniProtModifications
             var result = p.Parse(args);
 
             TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
-            DatabaseSummary(p.Object.UniProtXml, p.Object.SpritzXml);
+            DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"), 
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"),
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accseq.tsv"), true);
+            DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.decoy.tsv"),
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"),
+                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accseq.decoy.tsv"), false);
         }
 
         public static string TransferModifications(string sourceXmlPath, string destinationXmlPath)
@@ -52,12 +59,12 @@ namespace TransferUniProtModifications
             return outxml;
         }
 
-        public static void DatabaseSummary(string sourceXmlPath, string destinationXmlPath)
+        public static void DatabaseSummary(string sourceXmlPath, string destinationXmlPath, string destinationAccessionToNameTable, string variantDescriptionTable, string variantSequenceTable, bool target)
         {
             var culture = CultureInfo.CurrentCulture;
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
-            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out var un);
-            var spritz = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, null, out un);
+            var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, target ? DecoyType.None : DecoyType.Reverse, uniprotPtms, false, null, out var un);
+            var spritz = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, target ? DecoyType.None : DecoyType.Reverse, uniprotPtms, false, null, out un);
             var spritzCanonical = spritz.Select(p => p.NonVariantProtein).Distinct().ToList();
             int numberOfCanonicalProteinEntries = spritzCanonical.Count;
             int numberOfVariantProteinEntries = spritz.Count - spritzCanonical.Count;
@@ -70,14 +77,25 @@ namespace TransferUniProtModifications
             int frameshiftCount = 0;
             int stopGainCount = 0;
             int stopLossCount = 0;
+            List<string> accessionNameList = new List<string>();
+            List<string> variantDescList = new List<string>();
+            List<string> accessionSequenceList = new List<string>();
             Dictionary<string, List<SequenceVariation>> allVariants = new Dictionary<string, List<SequenceVariation>>();
             foreach (var spritzEntry in spritz)
             {
                 if (spritzEntry.AppliedSequenceVariations.Count != 0)
                 {
+                    // Make pivot tables
+                    accessionNameList.Add($"{spritzEntry.Accession}\t{spritzEntry.FullName}");
+                    accessionSequenceList.Add($"{spritzEntry.Accession}\t{spritzEntry.BaseSequence}");
+                    foreach (SequenceVariation variant in spritzEntry.AppliedSequenceVariations)
+                    {
+                        variantDescList.Add($"{spritzEntry.Accession}\t{variant.SimpleString()}\t{variant.Description}");
+                    }
+
                     if (allVariants.ContainsKey(spritzEntry.NonVariantProtein.Accession))
                     {
-                        foreach (var variant in spritzEntry.AppliedSequenceVariations)
+                        foreach (SequenceVariation variant in spritzEntry.AppliedSequenceVariations)
                         {
                             if (!allVariants[spritzEntry.NonVariantProtein.Accession].Contains(variant))
                             {
@@ -91,10 +109,16 @@ namespace TransferUniProtModifications
                     }
                 }
             }
+            File.WriteAllLines(destinationAccessionToNameTable, accessionNameList);
+            File.WriteAllLines(variantDescriptionTable, variantDescList);
+
+
             foreach (var entry in allVariants)
             {
                 foreach (var variant in entry.Value)
                 {
+                    variantDescList.Add($"{entry.Key}\t{variant.SimpleString()}\t{variant.Description}");
+
                     if (culture.CompareInfo.IndexOf(variant.Description.Description, "synonymous_variant", CompareOptions.IgnoreCase) >= 0)
                     {
                         synonymousCount++;
@@ -131,7 +155,7 @@ namespace TransferUniProtModifications
                         deletionCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_lost", CompareOptions.IgnoreCase) >= 0)
                     {
                         stopLossCount++;
                         totalVariants++;
@@ -143,6 +167,7 @@ namespace TransferUniProtModifications
             Console.WriteLine($"--------------------------------------------------------------");
             Console.WriteLine($"{numberOfCanonicalProteinEntries}\tTotal number of canonical protein entries (before applying variations)");
             Console.WriteLine($"{spritz.Count}\tTotal number of protein entries");
+            Console.WriteLine($"{spritzCanonical.Sum(p => p.OneBasedPossibleLocalizedModifications.Values.Sum(b => b.Count))}\tTotal modifications appended from UniProt out of {uniprot.Sum(p => p.OneBasedPossibleLocalizedModifications.Values.Sum(b => b.Count))}");
             Console.WriteLine($"{numberOfVariantProteinEntries}\tTotal number of variant containing protein entries");
             Console.WriteLine($"{totalVariants}\tTotal number of unique variants");
             Console.WriteLine($"{synonymousCount}\tTotal number of unique synonymous variants");

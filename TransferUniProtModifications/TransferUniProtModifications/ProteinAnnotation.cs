@@ -121,7 +121,8 @@ namespace TransferUniProtModifications
             }
 
             // Some stats output
-            Console.WriteLine($"{proteogenomicProteins.Count}\tCanonincal proteins translated from gene model (without applied variations)");
+            var canonical = proteogenomicProteins.Select(p => p.NonVariantProtein).Distinct();
+            Console.WriteLine($"{canonical.Count()}\tCanonincal proteins translated from gene model (without applied variations)");
             Console.WriteLine($"{seqsInCommon.Count}\tProteins with exact sequence match in UniProt");
             Console.WriteLine($"{pgOnlySeqs.Count}\tProteins without exact sequence match in UniProt");
 
