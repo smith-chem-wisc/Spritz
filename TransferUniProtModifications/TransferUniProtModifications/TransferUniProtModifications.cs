@@ -18,7 +18,6 @@ namespace TransferUniProtModifications
 
             p.Setup(arg => arg.UniProtXml)
                 .As('x', "uniprot_xml")
-                .Required()
                 .WithDescription("UniProt protein XML file.");
 
             p.Setup(arg => arg.SpritzXml)
@@ -29,14 +28,19 @@ namespace TransferUniProtModifications
                 .As('f', "fusion_coding_effect")
                 .WithDescription("Coding effects from STAR-Fusion, comma separated");
 
+            p.Setup(arg => arg.SpritzModXml)
+                .As('z', "spritz_mod_xml")
+                .WithDescription("Custom protein XML withmods file, e.g. from Spritz.");
+
             p.SetupHelp("h", "help")
                 .Callback(text => Console.WriteLine(text));
 
             var result = p.Parse(args);
 
-            Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml ?? p.Object.FusionCodingEffects}");
+            Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml ?? p.Object.SpritzModXml ?? p.Object.FusionCodingEffects}");
 
-            TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
+            if (p.Object.SpritzModXml != null) 
+                TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
             DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"), 
                 Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
                 Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"), true);
@@ -182,6 +186,7 @@ namespace TransferUniProtModifications
         public class ApplicationArguments
         {
             public string SpritzXml { get; set; }
+            public string SpritzModXml { get; set; }
             public string ReferenceGeneModel { get; set; }
             public string UniProtXml { get; set; }
             public string FusionCodingEffects { get; set; }
