@@ -39,7 +39,7 @@ namespace TransferUniProtModifications
 
             Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml ?? p.Object.SpritzModXml ?? p.Object.FusionCodingEffects}");
 
-            if (p.Object.SpritzModXml != null) 
+            if (p.Object.SpritzModXml == null) 
                 TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
             DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"), 
                 Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
