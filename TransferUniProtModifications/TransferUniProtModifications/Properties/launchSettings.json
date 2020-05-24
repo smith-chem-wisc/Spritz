@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TransferUniProtModifications": {
+      "commandName": "Project",
+      "commandLineArgs": "-x \"E:\\source\\repos\\SpritzSnake\\dataJurkat\\uniprot\\human.protein.xml.gz\" -y \"F:\\ProjectsActive\\Jurkat\\Databases\\proteome.unique.fasta\""
+    }
+  }
+}
