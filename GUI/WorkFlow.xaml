@@ -99,13 +99,13 @@
                             <Label Content="dbSNP VCF Reference" Width="200"/>
                             <TextBox x:Name="txtDbsnpVcfReference" Width="180"/>
                         </StackPanel>-->
-                        
+
                         <!--to do-->
                         <!--<StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
                             <Label Content="Ensembl Reference" Width="200"/>
                             <TextBox x:Name="txtEnsemblReference" Width="180" Text="{Binding Path=Reference,ElementName=window}" IsEnabled="False"/>
                         </StackPanel>-->
-                        
+
                         <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
                             <Label Content="Indel Finding Software" Width="200"/>
                             <ComboBox x:Name="CmbxIndelFinding" SelectionChanged="CmbxIndelFinding_SelectionChanged" IsEnabled="False"/>
@@ -116,7 +116,11 @@
                             <!--<Button x:Name="CmdUpVariantCallingWorkers" x:FieldModifier="private" Margin="5,5,0,5" Content="˄" Width="20" Click="CmdUpVariantCallingWorkers_Click" />
                             <Button x:Name="CmdDownVariantCallingWorkers" x:FieldModifier="private" Margin="0,5,0,5"  Content="˅" Width="20" Click="CmdDownVariantCallingWorkers_Click" />-->
                         </StackPanel>
-                        
+                        <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
+                            <Label Content="Recommended: release-82 for human genome" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
+                        </StackPanel>
+
+
                         <!--<StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
                             <Label Content="UniProt Protein XML" Width="200"/>
                             <TextBox x:Name="txtUniProtProteinXml" Width="180" />
