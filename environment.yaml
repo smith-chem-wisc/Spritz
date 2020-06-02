@@ -12,8 +12,7 @@ dependencies:
   - biopython
   - git
   - maven
-  - fastqc
-  - skewer
+  - fastp
   - star =2.7.0f-0
   - numpy =1.16.4
   - biopython
@@ -24,3 +23,9 @@ dependencies:
   - perl-carp-assert # for STAR-Fusion
   - igv-reports # for STAR-Fusion
   - trinity=2.8.4-0 # for STAR-Fusion
+  - r # for ProteomeGenerator
+  - bioconductor-biostrings # for ProteomeGenerator
+  - picard # for ProteomeGenerator
+  - transdecoder # for ProteomeGenerator
+  - gffread # for ProteomeGenerator
+  - blast # for ProteomeGenerdator

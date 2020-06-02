@@ -1,10 +1,14 @@
-UNIPROTXML="data/uniprot/" + config["species"] + ".protein.xml.gz" #"data/Homo_sapiens_202022.xml.gz"
 TRANSFER_MOD_DLL="TransferUniProtModifications/TransferUniProtModifications/bin/Release/netcoreapp2.1/TransferUniProtModifications.dll"
 REF=config["species"] + "." + config["genome"]
 
 rule download_protein_xml:
-    output: UNIPROTXML
-    shell: "python scripts/get_proteome.py && python scripts/download_xml.py | gzip -c > {output}" #fixme
+    output:
+        xml=UNIPROTXML,
+        fasta=UNIPROTFASTA
+    shell:
+        "python scripts/get_proteome.py && "
+        "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
+        "python scripts/download_uniprot.py fasta > {output.fasta}"
 
 rule build_transfer_mods:
     output: TRANSFER_MOD_DLL
@@ -95,7 +99,8 @@ rule custom_protein_xml:
         temp=directory("temporary"),
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
-        isoform_reconstruction="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf",
+        isoform_reconstruction=[
+            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff", "SnpEff/data/combined.transcripts.genome.gff3/protein.fa", "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa", "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
@@ -104,7 +109,7 @@ rule custom_protein_xml:
         protxmlwithmods=temp("{dir}/combined.spritz.isoform.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/combined.spritz.isoform.protein.withmods.xml.gz"
     params:
-        ref="combined.sorted.filtered.withcds.gtf", # with isoforms
+        ref="combined.transcripts.genome.gff3", # with isoforms
         infile="combined.spritz.isoform.protein.xml",
         outfile="combined.spritz.isoform.protein.withmods.xml"
     resources:

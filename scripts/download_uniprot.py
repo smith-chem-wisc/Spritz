@@ -4,6 +4,8 @@ import get_proteome
 import requests
 import sys
 
+format = sys.argv[1]
+
 proteome = get_proteome.proteome
 BASE = 'http://www.uniprot.org'
 KB_ENDPOINT = '/uniprot/'
@@ -15,7 +17,7 @@ query = 'proteome:' + proteome
 
 payload = {
     'query': query,
-    'format': 'xml',
+    'format': format,
     # 'columns': 'id,entry_name,reviewed,protein_names,organism,ec,keywords',
     }
 

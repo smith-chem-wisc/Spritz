@@ -39,6 +39,7 @@ rule hisat2_groupmark_bam:
         metrics="{dir}/combined.sorted.grouped.marked.metrics"
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.sorted.grouped.marked.log"
+    benchmark: "{dir}/combined.sorted.grouped.marked.benchmark"
     shell:
         "(gatk {GATK_JAVA} AddOrReplaceReadGroups -PU platform  -PL illumina -SM sample -LB library -I {input.sorted} -O {output.grouped} -SO coordinate --TMP_DIR {input.tmp} && "
         "samtools index {output.grouped} && "
@@ -59,6 +60,7 @@ rule split_n_cigar_reads:
         splitidx=temp("{dir}/combined.sorted.grouped.marked.split.bam.bai")
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.sorted.grouped.marked.split.log"
+    benchmark: "{dir}/combined.sorted.grouped.marked.split.benchmark"
     shell:
         "(gatk {GATK_JAVA} FixMisencodedBaseQualityReads -I {input.bam} -O {output.fixed} && "
         "gatk {GATK_JAVA} SplitNCigarReads -R {input.fa} -I {output.fixed} -O {output.split} --tmp-dir {input.tmp} || " # fix and split
@@ -77,6 +79,7 @@ rule base_recalibration:
         recalbam=temp("{dir}/combined.sorted.grouped.marked.split.recal.bam")
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.sorted.grouped.marked.split.recal.log"
+    benchmark: "{dir}/combined.sorted.grouped.marked.split.recal.benchmark"
     shell:
         "(gatk {GATK_JAVA} BaseRecalibrator -R {input.fa} -I {input.bam} --known-sites {input.knownsites} -O {output.recaltable} --tmp-dir {input.tmp} && "
         "gatk {GATK_JAVA} ApplyBQSR -R {input.fa} -I {input.bam} --bqsr-recal-file {output.recaltable} -O {output.recalbam} --tmp-dir {input.tmp} && "
@@ -97,6 +100,7 @@ rule call_gvcf_varaints:
         # so going with 8 threads max here
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.sorted.grouped.marked.split.recal.g.log"
+    benchmark: "{dir}/combined.sorted.grouped.marked.split.recal.g.benchmark"
     shell:
         "(gatk {GATK_JAVA} HaplotypeCaller"
         " --native-pair-hmm-threads {threads}"
@@ -114,6 +118,7 @@ rule call_vcf_variants:
     output: "{dir}/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.sorted.grouped.marked.split.recal.g.gt.log"
+    benchmark: "{dir}/combined.sorted.grouped.marked.split.recal.g.gt.benchmark"
     shell:
         "(gatk {GATK_JAVA} GenotypeGVCFs -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
         "gatk IndexFeatureFile -F {output}) &> {log}"
@@ -129,6 +134,7 @@ rule filter_indels:
         vcf="{dir}/combined.spritz.vcf"
     output: "{dir}/combined.spritz.noindels.vcf"
     log: "{dir}/combined.spritz.noindels.log"
+    benchmark: "{dir}/combined.spritz.noindels.benchmark"
     shell:
         "(gatk SelectVariants --select-type-to-exclude INDEL -R {input.fa} -V {input.vcf} -O {output} && "
         "gatk IndexFeatureFile -F {output}) &> {log}"
@@ -168,6 +174,7 @@ rule variant_annotation_ref:
     params: ref=config["genome"] + "." + config["snpeff"], # no isoform reconstruction
     resources: mem_mb=16000
     log: "{dir}/combined.spritz.snpeff.log"
+    benchmark: "{dir}/combined.spritz.snpeff.benchmark"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml} "
@@ -181,7 +188,8 @@ rule variant_annotation_custom:
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/combined.spritz.vcf",
         vcfnoindels="{dir}/combined.spritz.vcf",
-        isoform_reconstruction="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf"
+        isoform_reconstruction=[
+            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff", "SnpEff/data/combined.transcripts.genome.gff3/protein.fa", "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa", "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
     output:
         ann="{dir}/combined.spritz.isoformvariants.vcf",
         html="{dir}/combined.spritz.isoformvariants.html",
@@ -191,9 +199,10 @@ rule variant_annotation_custom:
         protxmlgz="{dir}/combined.spritz.isoformvariants.protein.xml.gz",
         # protnoindelxml=temp("{dir}/combined.spritz.noindels.isoformvariants.protein.xml"),
         # protnoindelxmlgz="{dir}/combined.spritz.noindels.isoformvariants.protein.xml.gz"
-    params: ref="combined.sorted.filtered.withcds.gtf" # with isoforms
+    params: ref="combined.transcripts.genome.gff3" # with isoforms
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.spritz.isoformvariants.log"
+    benchmark: "{dir}/combined.spritz.isoformvariants.benchmark"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml}"
@@ -216,6 +225,7 @@ rule variant_annotation_ref_noindel:
     params: ref=REF_SNPEFF, # no isoform reconstruction
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.spritz.snpeff.log"
+    benchmark: "{dir}/combined.spritz.snpeff.benchmark"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml} "
@@ -239,6 +249,7 @@ rule variant_annotation_custom_noindel:
     params: ref="combined.sorted.filtered.withcds.gtf" # with isoforms
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.spritz.isoformvariants.log"
+    benchmark: "{dir}/combined.spritz.isoformvariants.benchmark"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml}"

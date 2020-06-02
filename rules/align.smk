@@ -21,6 +21,7 @@ rule star_genome_generate:
         gff="data/ensembl/" + REF + "." + config["release"] + ".gff3"
     output:
         "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic/SA"
+    threads: 24
     shell:
         "{input.star} --runMode genomeGenerate --runThreadN {threads} --genomeDir {input.genomeDir} "
         "--genomeFastaFiles {input.fa} --sjdbGTFfile {input.gff} --sjdbGTFtagExonParentTranscript Parent --sjdbOverhang 100"
@@ -49,12 +50,32 @@ def check_sra():
     docheck = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
     return docheck
 
+rule fastp:
+    '''Trim adapters, read quality filtering, make QC outputs'''
+    input:
+        fq1="{dir}/{sra}_1.fastq" if check_sra() else "{dir}/{fq}_1.fastq",
+        fq2="{dir}/{sra}_2.fastq" if check_sra() else "{dir}/{fq}_2.fastq",
+    output:
+        fq1="{dir}/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/{fq}.trim_1.fastq.gz",
+        fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}{fq}.trim_2.fastq.gz",
+        html="{dir}/{sra}.trim.html" if check_sra() else "{dir}/{fq}.trim.html",
+        json="{dir}/{sra}.trim.json" if check_sra() else "{dir}/{fq}.trim.json",
+    threads: 6
+    log: "{dir}/{sra}.trim.log" if check_sra() else "{dir}/{fq}.trim.log"
+    params:
+        quality=20,
+        title="{sra}" if check_sra() else "{fq}"
+    shell:
+        "fastp -q {params.quality} -i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} "
+        "-h {output.html} -j {output.json} "
+        "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+
 rule hisat2_align_bam:
+    '''Align trimmed reads'''
     input:
         "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.1.ht2",
-        "{dir}/trimmed/{sra}.trim_1_fastqc.html" if check_sra() else "{dir}/trimmed/{fq}.trim_1_fastqc.html",
-        fq1="{dir}/trimmed/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/trimmed/{fq}.trim_1.fastq.gz",
-        fq2="{dir}/trimmed/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}/trimmed/{fq}.trim_2.fastq.gz",
+        fq1="{dir}/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/{fq}.trim_1.fastq.gz",
+        fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}{fq}.trim_2.fastq.gz",
         ss="data/ensembl/" + REF + "." + config["release"] + ".splicesites.txt"
     output:
         sorted="{dir}/{sra}.sorted.bam" if check_sra() else "{dir}/{fq,[A-Z0-9]+}.sorted.bam",
@@ -70,6 +91,7 @@ rule hisat2_align_bam:
         "samtools index {output}"
 
 rule hisat2_merge_bams:
+    '''Merge the BAM files for each sample'''
     input:
         bams=expand("{{dir}}/{sra}.sorted.bam", sra=config["sra"]) if check_sra() else expand("{{dir}}/{fq}.sorted.bam", fq=config["fq"])
     output:

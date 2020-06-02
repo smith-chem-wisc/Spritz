@@ -106,14 +106,3 @@ rule download_sras:
     threads: 4
     shell:
         "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
-
-rule compress_fastqs:
-    input:
-        temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"),
-        temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
-    output:
-        temp("{dir}/{sra,[A-Z0-9]+}_1.fastq.gz"),
-        temp("{dir}/{sra,[A-Z0-9]+}_2.fastq.gz")
-    threads: 2
-    shell:
-        "gzip {input[0]} & gzip {input[1]}"
