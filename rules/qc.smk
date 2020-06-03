@@ -2,7 +2,7 @@ rule download_adapters:
     output:
         temp(directory("BBMap")),
         "data/qc/adapters.fa"
-    shell: "git clone --depth 1 https://github.com/BioInfoTools/BBMap.git && cp BBMap/resources/adapters.fa data/qc"
+    shell: "rm -rf BBMap && git clone --depth 1 https://github.com/BioInfoTools/BBMap.git && cp BBMap/resources/adapters.fa data/qc"
 
 rule skewer:
     input:

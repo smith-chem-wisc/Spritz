@@ -90,7 +90,7 @@ namespace SpritzGUI
             DataDirectory = pathToDataFiles;
 
             // path to workflow.txt
-            PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow.txt");
+            PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
         }
 
         private void WriteConfig(Options options)

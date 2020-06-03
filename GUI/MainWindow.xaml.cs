@@ -30,7 +30,7 @@ namespace SpritzGUI
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
-            MessageBox.Show("Please have Docker Desktop installed. Under \"Shared Drives\", you must select the C drive and any desired drive to save your Spritz analysis, then click \"Apply\". Please also allocate sufficient memory for Spritz under \"Advanced\".", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Please have Docker Desktop installed and enable all shared drives.", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         protected override void OnClosed(EventArgs e)
@@ -113,6 +113,12 @@ namespace SpritzGUI
         {
             try
             {
+                if (SraCollection.Count == 0 && RnaSeqFastqCollection.Count == 0)
+                {
+                    MessageBox.Show("You have not added any nucleic acid sequencing data (SRA accession or fastq files).", "Workflow", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 if (StaticTasksObservableCollection.Count == 0)
                 {
                     MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);

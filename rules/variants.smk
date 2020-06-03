@@ -9,7 +9,8 @@ rule download_snpeff:
     log: "data/SnpEffInstall.log"
     shell:
         """
-        (git clone --depth=1 https://github.com/smith-chem-wisc/SnpEff
+        (rm -rf SnpEff
+        git clone --depth=1 https://github.com/smith-chem-wisc/SnpEff
         cd SnpEff
         mvn install:install-file -Dfile=lib/antlr-4.5.1-complete.jar -DgroupId=org.antlr -DartifactId=antlr -Dversion=4.5.1 -Dpackaging=jar
         mvn install:install-file -Dfile=lib/biojava3-core-3.0.7.jar -DgroupId=org.biojava -DartifactId=biojava3-core -Dversion=3.0.7 -Dpackaging=jar
