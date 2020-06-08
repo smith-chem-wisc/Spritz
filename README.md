@@ -26,3 +26,11 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
    ![workflow](https://user-images.githubusercontent.com/42819128/70091992-e65f0300-15e2-11ea-9e0f-7bb4262afefa.png)
    
     Step 3: Run Spritz!
+
+## Test it out! Try constructing the database for U2OS from the paper.
+
+1. Add SRR629563 to the SRA list.
+
+2. Create the Spritz workflow. Select "release-82" and "homo_sapiens."
+
+3. Run Spritz!
