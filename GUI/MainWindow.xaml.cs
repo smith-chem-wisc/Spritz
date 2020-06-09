@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace SpritzGUI
 {
@@ -31,6 +32,13 @@ namespace SpritzGUI
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
             MessageBox.Show("Please have Docker Desktop installed and enable all shared drives.", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            //var watch = new FileSystemWatcher();
+            //watch.Path = Path.Combine(Environment.CurrentDirectory, "output");
+            //watch.Filter = "test.txt";// Path.GetFileName(Everything.PathToWorkflow);
+            //watch.NotifyFilter = NotifyFilters.LastWrite;
+            //watch.Changed += new FileSystemEventHandler(OnWorkflowOutputChanged);
+            //watch.EnableRaisingEvents = true;
         }
 
         protected override void OnClosed(EventArgs e)
@@ -135,11 +143,11 @@ namespace SpritzGUI
                 workflowTreeView.DataContext = DynamicTasksObservableCollection;
                 
                 Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
-                Everything.SetUpDirectories();
 
                 WarningsTextBox.Document.Blocks.Clear();
-                WarningsTextBox.AppendText(string.Join("\n", Everything.GenerateCommandsDry().Select(x => $"Command executing: Powershell.exe {x}"))); // keep for debugging
-                
+                WarningsTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry()}\n\n"); // keep for debugging
+                WarningsTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
+
                 var t = new Task(Everything.Run);
                 t.Start();
                 t.ContinueWith(DisplayAnyErrors);
@@ -155,6 +163,18 @@ namespace SpritzGUI
                 // Ignore error
             }
         }
+
+        //private void OnWorkflowOutputChanged(object source, FileSystemEventArgs e)
+        //{
+        //    WarningsTextBox.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate ()
+        //    {
+        //        using (StreamReader reader = new StreamReader(e.FullPath))
+        //        {
+        //            WarningsTextBox.Document.Blocks.Clear();
+        //            WarningsTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry()}\n\n{reader.ReadToEnd()}");
+        //        }
+        //    }));
+        //}
 
         private void DisplayAnyErrors(Task obj)
         {
@@ -441,20 +461,6 @@ namespace SpritzGUI
                             MessageBox.Show("FASTQ files must have *_1.fastq and *_2.fastq extensions.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                             return;
                         }
-
-                        //case ".toml":
-                        //    TomlTable tomlFile = null;
-                        //    try
-                        //    {
-                        //        tomlFile = Toml.ReadFile(filepath);
-                        //    }
-                        //    catch (Exception)
-                        //    {
-                        //        break;
-                        //    }
-                        //    var ye1 = Toml.ReadFile<Options>(filepath);
-                        //    AddTaskToCollection(ye1);
-                        //    break;
                 }
             }
             else
