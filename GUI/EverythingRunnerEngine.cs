@@ -18,60 +18,7 @@ namespace SpritzGUI
         {
             this.task = task;
             this.outputFolder = outputFolder;
-        }
 
-        public string Arguments { get; set; }
-        public string StdErr { get; set; }
-        public static string AnalysisDirectory { get; set; }
-        public static string ConfigDirectory { get; set; }
-        public static string DataDirectory { get; set; }
-        public static string PathToWorkflow { get; set; }
-
-        public void Run()
-        {
-            WriteConfig(task.Item2);
-
-            Process proc = new Process();
-            proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz " +
-                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
-                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
-                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
-                "smithlab/spritz > " + "\"\"\"" + PathToWorkflow + "\"\"\"";
-
-            //proc.StartInfo.CreateNoWindow = true;
-            proc.StartInfo.UseShellExecute = true;
-            //proc.StartInfo.RedirectStandardError = true;
-            proc.Start();
-            proc.WaitForExit();
-            //StdErr = proc.StandardError.ReadToEnd();
-        }
-
-        public IEnumerable<string> GenerateCommandsDry()
-        {
-            yield return "docker pull smithlab/spritz ; docker run --rm -t -i --name spritz " +
-                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
-                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
-                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
-                "smithlab/spritz > " + "\"\"\"" + PathToWorkflow + "\"\"\"";
-        }
-
-        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
-        {
-            node.Style = SequenceStyle.Flow;
-            foreach (string item in items)
-            {
-                if (item.Length > 0)
-                {
-                    node.Add(item);
-                }
-            }
-
-            return node;
-        }
-
-        public void SetUpDirectories()
-        {
             // set up directories to mount to docker container as volumes
             AnalysisDirectory = task.Item2.AnalysisDirectory;
 
@@ -91,6 +38,52 @@ namespace SpritzGUI
 
             // path to workflow.txt
             PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
+        }
+
+        public string Arguments { get; set; }
+        public string StdErr { get; set; }
+        public string AnalysisDirectory { get; }
+        public string ConfigDirectory { get; }
+        public string DataDirectory { get; }
+        public string PathToWorkflow { get; }
+
+        public void Run()
+        {
+            WriteConfig(task.Item2);
+
+            Process proc = new Process();
+            proc.StartInfo.FileName = "Powershell.exe";
+            proc.StartInfo.Arguments = GenerateCommandsDry();
+
+            //proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.UseShellExecute = true;
+            //proc.StartInfo.RedirectStandardError = true;
+            proc.Start();
+            proc.WaitForExit();
+            //StdErr = proc.StandardError.ReadToEnd();
+        }
+
+        public string GenerateCommandsDry()
+        {
+            return "docker pull smithlab/spritz ; docker run --rm -t --name spritz " +
+                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
+                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
+                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
+                "smithlab/spritz > " + "\"\"\"" + PathToWorkflow + "\"\"\"; docker stop spritz";
+        }
+
+        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
+        {
+            node.Style = SequenceStyle.Flow;
+            foreach (string item in items)
+            {
+                if (item.Length > 0)
+                {
+                    node.Add(item);
+                }
+            }
+
+            return node;
         }
 
         private void WriteConfig(Options options)

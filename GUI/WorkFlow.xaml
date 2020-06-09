@@ -37,26 +37,10 @@
                             <RowDefinition Height="1*"/>
                             <RowDefinition Height="1*"/>
                         </Grid.RowDefinitions>
-                        <!--StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
-                            <Label Content="SpritzDirecory" Width="200"/>
-                            <TextBox x:Name="txtSpritzDirecory" Width="180" />
-                        </-->
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
                             <Label Content="AnalysisDirectory" Width="200"/>
                             <TextBox x:Name="txtAnalysisDirectory" Width="180" />
                         </StackPanel>
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
-                            <Label Content="fq1" Width="200"/>
-                            <TextBox x:Name="txtFq1" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
-                            <Label Content="fq2" Width="200"/>
-                            <TextBox x:Name="txtFq2" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
-                            <Label Content="sraAcession" Width="200"/>
-                            <TextBox x:Name="txtSraAcession" Width="180" />
-                        </StackPanel>-->
                         <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
                             <Label Content="Experiment Type" Width="200"/>
                             <ComboBox x:Name="CmbxExperimentType" IsEnabled="False" Width="180"/>
@@ -74,81 +58,11 @@
                             <Label Content="Species" Width="200"/>
                             <ComboBox x:Name="EnsemblSpecies" IsEnabled="True" Width="180" ItemsSource="{Binding SelectedItem.Species, ElementName=EnsemblReleaseVersions}" SelectionChanged="Species_SelectionChanged"/>
                         </StackPanel>
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="0">
-                            <Label Content="] Genome Directory" Width="200"/>
-                            <TextBox x:Name="txtGenomeDir" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="0">
-                            <Label Content="Genome Fasta" Width="200"/>
-                            <TextBox x:Name="txtGenomeFasta" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="0">
-                            <Label Content="Gene Model (Gtf/Gff)" Width="200"/>
-                            <TextBox x:Name="txtGeneModelGtfOrGff" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="0">
-                            <Label Content="Alternative Gene Model (Gtf/Gff)" Width="200"/>
-                            <TextBox x:Name="txtNewGeneModelGtfOrGff" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="0">
-                            <Label Content="Protein Fasta Path" Width="200"/>
-                            <TextBox x:Name="txtProteinFasta" Width="180" Height="32" VerticalAlignment="Bottom" />
-                        </StackPanel>-->
-
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
-                            <Label Content="dbSNP VCF Reference" Width="200"/>
-                            <TextBox x:Name="txtDbsnpVcfReference" Width="180"/>
-                        </StackPanel>-->
-
-                        <!--to do-->
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
-                            <Label Content="Ensembl Reference" Width="200"/>
-                            <TextBox x:Name="txtEnsemblReference" Width="180" Text="{Binding Path=Reference,ElementName=window}" IsEnabled="False"/>
-                        </StackPanel>-->
-
-                        <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
-                            <Label Content="Indel Finding Software" Width="200"/>
-                            <ComboBox x:Name="CmbxIndelFinding" SelectionChanged="CmbxIndelFinding_SelectionChanged" IsEnabled="False"/>
-                        </StackPanel>
-                        <StackPanel  Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
-                            <Label Content="Variant Caller Workers" Width="200"/>
-                            <TextBox x:Name="TxtVariantCallingWorkerNum" x:FieldModifier="private" Width="180" Text="0" IsEnabled="False"/>
-                            <!--<Button x:Name="CmdUpVariantCallingWorkers" x:FieldModifier="private" Margin="5,5,0,5" Content="˄" Width="20" Click="CmdUpVariantCallingWorkers_Click" />
-                            <Button x:Name="CmdDownVariantCallingWorkers" x:FieldModifier="private" Margin="0,5,0,5"  Content="˅" Width="20" Click="CmdDownVariantCallingWorkers_Click" />-->
-                        </StackPanel>
+                        <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="1"/>
+                        <StackPanel  Orientation="Horizontal" Grid.Row="3" Grid.Column="1"/>
                         <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
                             <Label Content="Recommended: release-82 for human genome" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
                         </StackPanel>
-
-
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
-                            <Label Content="UniProt Protein XML" Width="200"/>
-                            <TextBox x:Name="txtUniProtProteinXml" Width="180" />
-                        </StackPanel>-->
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
-                            <Label Content="Overwrite Star Alignments" Width="200"/>
-                            <CheckBox x:Name="ckbOverWriteStarAlignment" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
-                            <Label Content="Strand-Specific Protocol" Width="200"/>
-                            <CheckBox x:Name="ckbStrandSpecific" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="1">
-                            <Label Content="Infer Strandedness" Width="200"/>
-                            <CheckBox x:Name="ckbInferStrandedness" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="1">
-                            <Label Content="Skip Variant Analysis" Width="200"/>
-                            <CheckBox x:Name="CkbSkipVariantAnalysis" Width="180"/>
-                        </StackPanel>-->
-                        <!--<StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
-                            <Label Content="Do Transcript Isoform Analysis" Width="200"/>
-                            <CheckBox x:Name="CkbDoTranscriptIsoformAnalysis" Width="180" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="1">
-                            <Label Content="Do Gene Fusion Analysis" Width="200"/>
-                            <CheckBox x:Name="CkbDoGeneFusionAnalysis" Width="180" />
-                        </StackPanel>-->
                     </Grid>
                 </GroupBox>
             </DockPanel>
