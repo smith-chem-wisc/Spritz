@@ -2,29 +2,17 @@ REF=config["species"] + "." + config["genome"]
 
 rule download_ensembl_references:
     output:
-        "data/ensembl/" + REF + ".dna.primary_assembly.fa",
-        "data/ensembl/" + REF + "." + config["release"] + ".gff3",
-        "data/ensembl/" + REF + ".pep.all.fa",
-        "data/ensembl/" + config["species"] + ".vcf",
+        gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
+        gff3="data/ensembl/" + REF + "." + config["release"] + ".gff3",
+        pfa="data/ensembl/" + REF + ".pep.all.fa",
+        vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
+        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
+        vcf_idx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
     log: "data/ensembl/downloads.log"
     shell:
         "(python scripts/download_ensembl.py " + REF + " && "
-        "gunzip data/ensembl/" + REF + ".dna.primary_assembly.fa.gz && "
-        "gunzip data/ensembl/" + REF + "." + config["release"] + ".gff3.gz && "
-        "gunzip data/ensembl/" + REF + ".pep.all.fa.gz && "
-        "gunzip data/ensembl/" + config["species"] + ".vcf.gz) 2> {log}"
-
-rule clean_and_index_vcf:
-    input:
-        "data/ensembl/" + config["species"] + ".vcf",
-    output:
-        clean_vcf=temp("data/ensembl/" + config["species"] + ".clean.vcf"),
-        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
-        idx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
-    log: "data/ensembl/" + config["species"] + ".clean.log"
-    shell:
-        "(python scripts/clean_vcf.py && "
-        "mv {output.clean_vcf} {output.vcf} &&"
+        "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz && "
+        "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf} && "
         "gatk IndexFeatureFile -F {output.vcf}) 2> {log}"
 
 rule download_chromosome_mappings:
