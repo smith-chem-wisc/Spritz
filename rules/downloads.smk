@@ -14,33 +14,18 @@ rule download_ensembl_references:
         "gunzip data/ensembl/" + REF + ".pep.all.fa.gz && "
         "gunzip data/ensembl/" + config["species"] + ".vcf.gz) 2> {log}"
 
-# rule unzip_index_ensembl:
-#     input:
-#         gfagz="data/ensembl/" + REF + ".dna.primary_assembly.fa.gz",
-#         gffgz="data/ensembl/" + REF + "." + config["release"] + ".gff3.gz",
-#         pfagz="data/ensembl/" + REF + ".pep.all.fa.gz",
-#         vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
-#     output:
-#         "data/ensembl/" + REF + ".dna.primary_assembly.fa",
-#         "data/ensembl/" + REF + "." + config["release"] + ".gff3",
-#         "data/ensembl/" + REF + ".pep.all.fa",
-#         "data/ensembl/" + config["species"] + ".vcf",
-#     log: "data/ensembl/unzip.log"
-#     shell:
-#         "(gunzip {input.gfagz} && "
-#         "gunzip {input.gffgz} && "
-#         "gunzip {input.pfagz} && "
-#         "gunzip {input.vcfgz}) 2> {log}"
-
 rule clean_and_index_vcf:
     input:
         "data/ensembl/" + config["species"] + ".vcf",
     output:
-        "data/ensembl/" + config["species"] + ".clean.vcf.idx",
-        clean_vcf="data/ensembl/" + config["species"] + ".clean.vcf",
+        clean_vcf=temp("data/ensembl/" + config["species"] + ".clean.vcf"),
+        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
+        idx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
+    log: "data/ensembl/" + config["species"] + ".clean.log"
     shell:
-        "python scripts/clean_vcf.py && "
-        "gatk IndexFeatureFile -F {output.clean_vcf}"
+        "(python scripts/clean_vcf.py && "
+        "mv {output.clean_vcf} {output.vcf} &&"
+        "gatk IndexFeatureFile -F {output.vcf}) 2> {log}"
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
@@ -62,25 +47,6 @@ rule tmpdir:
         temp(directory("temporary")),
     shell:
         "mkdir tmp && mkdir temporary"
-
-rule convert_ucsc2ensembl:
-    input:
-        "data/ensembl/" + config["species"] + ".clean.vcf",
-        "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt",
-        tmp=directory("tmp"),
-        fa="data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa",
-        dict="data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.dict",
-    output:
-        ensVcf=temp("data/ensembl/" + config["species"] + ".orig.ensembl.vcf"),
-        dictVcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
-    shell:
-        "python scripts/convert_ucsc2ensembl.py && "
-        "gatk UpdateVCFSequenceDictionary -R {input.fa} --sequence-dictionary {input.dict} -V {output.ensVcf} --output {output.dictVcf} --tmp-dir {input.tmp}"
-
-rule index_ucsc2ensembl:
-    input: "data/ensembl/" + config["species"] + ".ensembl.vcf"
-    output: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
-    shell: "gatk IndexFeatureFile -F {input}"
 
 rule filter_gff3:
     input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
