@@ -44,7 +44,7 @@ rule clean_and_index_vcf:
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
-    shell: "git clone https://github.com/dpryan79/ChromosomeMappings.git"
+    shell: "rm -rf ChromosomeMappings && git clone https://github.com/dpryan79/ChromosomeMappings.git"
 
 rule reorder_genome_fasta:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
