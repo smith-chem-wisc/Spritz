@@ -331,7 +331,10 @@ namespace SpritzGUI
                 }
 
                 var supported = species.Where(s => !unsupported.Contains(s)).ToList();
-                EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
+                if (genomes.Count > 0)
+                {
+                    EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
+                }
             }
         }
 

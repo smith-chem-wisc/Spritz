@@ -6,7 +6,7 @@ REF_SNPEFF = config["genome"] + "." + config["snpeff"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar"
-    log: "data/SnpEffInstall.log"
+    log: "{dir}/SnpEffInstall.log"
     shell:
         """
         (git clone --depth=1 https://github.com/smith-chem-wisc/SnpEff
@@ -25,7 +25,7 @@ rule download_snpeff:
 rule index_fa:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
     output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa.fai"
-    shell: "samtools faidx data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
+    shell: "samtools faidx {input}"
 
 rule hisat2_groupmark_bam:
     input:
