@@ -7,13 +7,17 @@ rule download_ensembl_references:
         pfa="data/ensembl/" + REF + ".pep.all.fa",
         vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
         vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
-        vcf_idx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
     log: "data/ensembl/downloads.log"
     shell:
         "(python scripts/download_ensembl.py " + REF + " && "
         "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz && "
-        "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf} && "
-        "gatk IndexFeatureFile -F {output.vcf}) 2> {log}"
+        "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf}) 2> {log}"
+
+rule index_ensembl_vcf:
+    input: "data/ensembl/" + config["species"] + ".ensembl.vcf"
+    output: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
+    log: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx.log"
+    shell: "gatk IndexFeatureFile -F {input} 2> {log}"
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
