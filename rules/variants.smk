@@ -6,7 +6,7 @@ REF_SNPEFF = config["genome"] + "." + config["snpeff"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar"
-    log: "{dir}/SnpEffInstall.log"
+    log: "SnpEffInstall.log"
     shell:
         """
         (rm -rf SnpEff
