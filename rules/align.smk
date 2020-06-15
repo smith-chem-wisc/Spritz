@@ -57,7 +57,7 @@ rule hisat2_align_bam:
         fq2="{dir}/trimmed/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}/trimmed/{fq}.trim_2.fastq.gz",
         ss="data/ensembl/" + REF + "." + config["release"] + ".splicesites.txt"
     output:
-        sorted="{dir}/{sra}.sorted.bam" if check_sra() else "{dir}/{fq,[A-Z0-9]+}.sorted.bam",
+        sorted="{dir}/{sra}.sorted.bam" if check_sra() else "{dir}/{fq}.sorted.bam",
     threads: 12
     params:
         compression="9",
