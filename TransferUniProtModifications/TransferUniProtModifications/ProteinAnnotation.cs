@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Web;
 using System.Linq;
 using UsefulProteomicsDatabases;
 
@@ -154,17 +155,31 @@ namespace TransferUniProtModifications
             var seq = new HashSet<string>(proteinsWithSameSequence.Select(p => p.BaseSequence));
             if (seq.Count > 1) { throw new ArgumentException("not all proteins have the same sequence"); }
 
+            string accession = string.Join(",", proteinsWithSameSequence.Select(p => p.Accession));
+            string fullName = string.Join(",", proteinsWithSameSequence.Select(p => p.FullName));
+            var geneNames = new HashSet<Tuple<string, string>>(proteinsWithSameSequence.SelectMany(p => p.GeneNames)).ToList();
+            if (accession.StartsWith("MSTRG")) // make it easier to interpret proteogenomic isoform IDs
+            {
+                string accession_pt1 = geneNames.FirstOrDefault(gn => gn.Item1 == "accession").Item2;
+                string blastInformation = HttpUtility.UrlDecode(geneNames.FirstOrDefault(gn => gn.Item1 == "primary").Item2);
+                blastInformation = HttpUtility.UrlDecode(geneNames.FirstOrDefault(gn => gn.Item1 == "primary").Item2);
+                string[] blastResult = blastInformation.Split(",");
+                string accession_pt2 = blastResult.Length > 2 ? $",{blastResult[2]}" : ",NA";
+                accession = $"{accession_pt1}{accession_pt2}";
+                fullName = $"{string.Join(",", proteinsWithSameSequence.Select(p => p.Accession))}|{blastInformation}";
+            }
+
             return new Protein(
                 seq.First(),
-                string.Join(",", proteinsWithSameSequence.Select(p => p.Accession)),
+                accession,
                 organism: proteinsWithSameSequence.First().Organism,
                 name: string.Join(",", proteinsWithSameSequence.Select(p => p.Name)),
-                fullName: string.Join(",", proteinsWithSameSequence.Select(p => p.FullName)),
+                fullName: fullName,
                 isDecoy: proteinsWithSameSequence.All(p => p.IsDecoy),
                 isContaminant: proteinsWithSameSequence.Any(p => p.IsContaminant),
                 sequenceVariations: new HashSet<SequenceVariation>(proteinsWithSameSequence.SelectMany(p => p.SequenceVariations)).ToList(),
                 spliceSites: new HashSet<SpliceSite>(proteinsWithSameSequence.SelectMany(p => p.SpliceSites)).ToList(),
-                geneNames: new HashSet<Tuple<string, string>>(proteinsWithSameSequence.SelectMany(p => p.GeneNames)).ToList(),
+                geneNames: geneNames,
                 oneBasedModifications: CollapseMods(proteinsWithSameSequence),
                 proteolysisProducts: new HashSet<ProteolysisProduct>(proteinsWithSameSequence.SelectMany(p => p.ProteolysisProducts)).ToList(),
                 databaseReferences: new HashSet<DatabaseReference>(proteinsWithSameSequence.SelectMany(p => p.DatabaseReferences)).ToList(),

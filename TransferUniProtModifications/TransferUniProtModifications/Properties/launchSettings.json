@@ -2,7 +2,7 @@
   "profiles": {
     "TransferUniProtModifications": {
       "commandName": "Project",
-      "commandLineArgs": "-x \"E:\\source\\repos\\SpritzSnake\\dataJurkat\\uniprot\\human.protein.xml.gz\" -y \"F:\\ProjectsActive\\Jurkat\\Databases\\proteome.unique.fasta\""
+      "commandLineArgs": "-x \"E:\\source\\repos\\Spritz\\data\\uniprot\\Homo_sapiens.protein.xml.gz\" -y \"E:\\ProjectsActive\\Spritz\\BetterIsoformID\\combined.spritz.isoformvariants.protein.xml\""
     }
   }
 }
