@@ -50,6 +50,15 @@ def check_sra():
     docheck = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
     return docheck
 
+rule expand_fastqs:
+    input:
+        fq1="{dir}/{fq}_1.fastq.gz",
+        fq2="{dir}/{fq}_2.fastq.gz",
+    output:
+        fq1=temp("{dir}/{fq}_1.fastq"),
+        fq2=temp("{dir}/{fq}_2.fastq"),
+    shell: "gunzip -k {input.fq1} && gunzip -k {input.fq2}"
+
 rule fastp:
     '''Trim adapters, read quality filtering, make QC outputs'''
     input:
