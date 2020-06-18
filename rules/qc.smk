@@ -35,8 +35,8 @@ rule skewer:
 
 rule fastqc_analysis:
     input:
-        fq1=["{dir}/{sra}_1.fastq.gz", "{dir}/trimmed/{sra}.trim_1.fastq.gz"] if check_sra() else ["{dir}/{fq}_1.fastq.gz", "{dir}/trimmed/{fq}.trim_1.fastq.gz"],
-        fq2=["{dir}/{sra}_2.fastq.gz", "{dir}/trimmed/{sra}.trim_2.fastq.gz"] if check_sra() else ["{dir}/{fq}_2.fastq.gz", "{dir}/trimmed/{fq}.trim_2.fastq.gz"],
+        fq1=["{dir}/{sra}_1.fastq.gz", "{dir}/trimmed/{sra}.trim_1.fastq.gz"] if check_sra() else ["{dir}/{fq}_1.fastq", "{dir}/trimmed/{fq}.trim_1.fastq.gz"],
+        fq2=["{dir}/{sra}_2.fastq.gz", "{dir}/trimmed/{sra}.trim_2.fastq.gz"] if check_sra() else ["{dir}/{fq}_2.fastq", "{dir}/trimmed/{fq}.trim_2.fastq.gz"],
     output:
         fq1=["{dir}/{sra}_1_fastqc.html", "{dir}/{sra}_1_fastqc.zip", "{dir}/trimmed/{sra}.trim_1_fastqc.html", "{dir}/trimmed/{sra}.trim_1_fastqc.zip"] if check_sra() else ["{dir}/{fq}_1_fastqc.html", "{dir}/{fq}_1_fastqc.zip", "{dir}/trimmed/{fq}.trim_1_fastqc.html", "{dir}/trimmed/{fq}.trim_1_fastqc.zip"],
         fq2=["{dir}/{sra}_2_fastqc.html", "{dir}/{sra}_2_fastqc.zip", "{dir}/trimmed/{sra}.trim_2_fastqc.html", "{dir}/trimmed/{sra}.trim_2_fastqc.zip"] if check_sra() else ["{dir}/{fq}_2_fastqc.html", "{dir}/{fq}_2_fastqc.zip", "{dir}/trimmed/{fq}.trim_2_fastqc.html", "{dir}/trimmed/{fq}.trim_2_fastqc.zip"],
