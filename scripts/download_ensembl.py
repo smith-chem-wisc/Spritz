@@ -13,9 +13,10 @@ species = data["species"].lower()
 release = data["release"]
 
 path = sys.argv[1] # Mus_musculus.GRCm38
+protocol = "http" #ftp or http; http seems to work in more places
 
-primary = "ftp://ftp.ensembl.org/pub/release-" + release + "//fasta/" + species + "/dna/" + path + ".dna.primary_assembly.fa.gz"
-toplevel = "ftp://ftp.ensembl.org/pub/release-" + release + "//fasta/" + species + "/dna/" + path + ".dna.toplevel.fa.gz"
+primary = f"{protocol}://ftp.ensembl.org/pub/release-{release}//fasta/{species}/dna/{path}.dna.primary_assembly.fa.gz"
+toplevel = f"{protocol}://ftp.ensembl.org/pub/release-{release}//fasta/{species}/dna/{path}.dna.toplevel.fa.gz"
 
 # download gfa
 if subprocess.check_output(['./validate.sh', primary]) == b'true\n':
@@ -24,18 +25,18 @@ else:
     subprocess.check_call(["wget", "-P", "data/ensembl/", toplevel])
 
 # download gff
-gff = "ftp://ftp.ensembl.org/pub/release-" + release + "/gff3/" + species + "/" + path + "." + release + ".gff3.gz"
+gff = f"{protocol}://ftp.ensembl.org/pub/release-{release}/gff3/{species}/{path}.{release}.gff3.gz"
 subprocess.check_call(["wget", "-P", "data/ensembl/", gff])
 
 # download pep
-pep = "ftp://ftp.ensembl.org/pub/release-" + release + "//fasta/" + species + "/pep/" + path + ".pep.all.fa.gz"
+pep = f"{protocol}://ftp.ensembl.org/pub/release-{release}//fasta/{species}/pep/{path}.pep.all.fa.gz"
 subprocess.check_call(["wget", "-P", "data/ensembl/", pep])
 
 # download vcf
-vcf1 = "ftp://ftp.ensembl.org/pub/release-" + release + "/variation/vcf/" + species + "/" + data["species"] + ".vcf.gz"
-vcf2 = "ftp://ftp.ensembl.org/pub/release-" + release + "/variation/vcf/" + species + "/" + species + ".vcf.gz" # edit, incosistent naming convention /vcf/Mus_musculus.vcf.gz or /vcf/mus_musculus.vcf.gz
+vcf1 = f"{protocol}://ftp.ensembl.org/pub/release-{release}/variation/vcf/{species}/{data['species']}.vcf.gz"
+vcf2 = f"{protocol}://ftp.ensembl.org/pub/release-{release}/variation/vcf/{species}/{species}.vcf.gz" # edit, incosistent naming convention /vcf/Mus_musculus.vcf.gz or /vcf/mus_musculus.vcf.gz
 if subprocess.check_output(['./validate.sh', vcf1]) == b'true\n':
     subprocess.check_call(["wget", "-P", "data/ensembl/", vcf1])
 else:
     subprocess.check_call(["wget", "-P", "data/ensembl/", vcf2])
-    os.rename("data/ensembl/" + species + ".vcf.gz", "data/ensembl/" + data["species"] + ".vcf.gz")
+    os.rename(f"data/ensembl/{species}.vcf.gz", f"data/ensembl/{data['species']}.vcf.gz")
