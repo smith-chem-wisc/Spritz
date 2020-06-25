@@ -9,7 +9,7 @@ rule download_ensembl_references:
         vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
     log: "data/ensembl/downloads.log"
     shell:
-        "(python scripts/download_ensembl.py " + REF + " && "
+        "(python scripts/download_ensembl.py {REF} && "
         "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz && "
         "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf}) 2> {log}"
 
