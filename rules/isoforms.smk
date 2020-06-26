@@ -32,7 +32,9 @@ rule convert2ucsc:
 
 rule gtf_file_to_cDNA_seqs:
     '''Rule adapted from ProteomeGenerator'''
-    input: "{dir}/combined.gtf"
+    input:
+        fa=FA,
+        gtf="{dir}/combined.gtf"
     output:
         fasta="{dir}/combined.transcripts.fasta",
         gtf="{dir}/combined.transcripts.gtf"
@@ -40,8 +42,8 @@ rule gtf_file_to_cDNA_seqs:
     log: "{dir}/combined.gtf_file_to_cDNA_seqs.log"
     threads: 1
     shell:
-        "(gffread {input} -T -o {output.gtf} --no-pseudo --force-exons -M -Q && "
-        "gffread -w {output.fasta} -g {FA} {output.gtf}) 2> {log}"
+        "(gffread {input.gtf} -T -o {output.gtf} --no-pseudo --force-exons -M -Q && "
+        "gffread -w {output.fasta} -g {input.fa} {output.gtf}) 2> {log}"
 
 rule makeblastdb:
     '''Rule adapted from ProteomeGenerator'''
@@ -50,7 +52,7 @@ rule makeblastdb:
     benchmark: os.path.join(os.path.dirname(UNIPROTFASTA), os.path.basename(UNIPROTFASTA) + "makeblastdb.benchmark")
     log: os.path.join(os.path.dirname(UNIPROTFASTA), os.path.basename(UNIPROTFASTA) + "makeblastdb.log")
     threads: 1
-    shell: "makeblastdb -in {UNIPROTFASTA} -dbtype prot 2> {log}"
+    shell: "makeblastdb -in {input} -dbtype prot 2> {log}"
 
 rule blastp:
     '''Rule adapted from ProteomeGenerator'''
@@ -149,8 +151,30 @@ rule reorderFASTA:
     threads: 1
     script: "scripts/reorderFASTA.R"
 
+rule remove_exon_and_utr_information:
+    '''
+    There is an issue in SnpEff where it assumes that CDS and exons end at the
+    same position. When they do not, and when frame != 0 on the reverse strand,
+    it breaks when trying to correct the frame. However, it works just fine if
+    we remove the exons and just keep the CDS from TransDecoder.
+
+    Minimal example for future reference:
+    17	transdecoder	gene	77321555	77323854	.	-	.	ID=MSTRG.16910;Name=ORF%20type%3Acomplete%20len%3A149%20%28-%29%2Cscore%3D29.03
+    17	transdecoder	mRNA	77321604	77323854	.	-	.	ID=MSTRG.16910.2.p3;Parent=MSTRG.16910;Name=ORF%20type%3Acomplete%20len%3A149%20%28-%29%2Cscore%3D29.03
+    17	transdecoder	five_prime_UTR	77321604	77322851	.	-	.	ID=MSTRG.16910.2.p3.utr5p1;Parent=MSTRG.16910.2.p3
+    17	transdecoder	exon	77321604	77322918	.	-	.	ID=MSTRG.16910.2.p3.exon1;Parent=MSTRG.16910.2.p3
+    17	transdecoder	CDS	77322852	77322918	.	-	0	ID=cds.MSTRG.16910.2.p3;Parent=MSTRG.16910.2.p3
+    17	transdecoder	exon	77323262	77323854	.	-	.	ID=MSTRG.16910.2.p3.exon2;Parent=MSTRG.16910.2.p3
+    17	transdecoder	CDS	77323262	77323509	.	-	2	ID=cds.MSTRG.16910.2.p3;Parent=MSTRG.16910.2.p3
+    17	transdecoder	three_prime_UTR	77323510	77323854	.	-	.	ID=MSTRG.16910.2.p3.utr3p1;Parent=MSTRG.16910.2.p3
+    '''
+    input: "{dir}/combined.transcripts.genome.gff3"
+    output: "{dir}/combined.transcripts.genome.cds.gff3"
+    log: "{dir}/combined.transcripts.genome.cds.log"
+    shell: "python scripts/simplify_gff3.py {input} > {output} 2> {log}"
+
 rule copy_gff3_to_snpeff:
-    input: expand("{dir}/combined.transcripts.genome.gff3", dir=config["analysisDirectory"])
+    input: expand("{dir}/combined.transcripts.genome.cds.gff3", dir=config["analysisDirectory"])
     output: "SnpEff/data/combined.transcripts.genome.gff3/genes.gff"
     shell: "cp {input} {output}"
 
