@@ -100,7 +100,10 @@ rule custom_protein_xml:
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         isoform_reconstruction=[
-            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff", "SnpEff/data/combined.transcripts.genome.gff3/protein.fa", "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa", "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
+            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
+            "SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
+            "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
+            "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
@@ -118,7 +121,7 @@ rule custom_protein_xml:
         "{dir}/combined.spritz.isoform.log"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
-        " -xmlProt {output.protxml} {params.ref} && " # isoforms, no variants
+        " -xmlProt {output.protxml} {params.ref} < /dev/null && " # isoforms, no variants
         "mv {output.protxml} {input.temp}/{params.infile} && "
         "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{params.infile} && "
         "mv {input.temp}/{params.infile} {wildcards.dir} && "
