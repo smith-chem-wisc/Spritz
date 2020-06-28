@@ -63,7 +63,6 @@ namespace SpritzGUI
                     node.Add(item);
                 }
             }
-
             return node;
         }
 
