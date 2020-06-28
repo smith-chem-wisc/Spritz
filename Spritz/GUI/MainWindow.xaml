@@ -155,8 +155,8 @@
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>
-                <GroupBox Grid.Row="2" Header="Warnings">
-                    <RichTextBox x:Name="WarningsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
+                <GroupBox Grid.Row="2" Header="Information">
+                    <RichTextBox x:Name="WarningsTextBox" VerticalScrollBarVisibility="Visible" TextChanged="WarningsTextBox_TextChanged" IsReadOnly="True">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
                                 <Setter Property="Margin" Value="0"/>

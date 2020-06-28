@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Text.RegularExpressions;
 
 namespace SpritzGUI
 {
@@ -23,6 +25,7 @@ namespace SpritzGUI
         private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
         private CancellationTokenSource TokenSource = new CancellationTokenSource();
         private EverythingRunnerEngine Everything;
+        private Regex outputScrub = new Regex(@"(\[\d+m)");
         //private Task EverythingTask;
 
         public MainWindow()
@@ -148,7 +151,8 @@ namespace SpritzGUI
                 WarningsTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry()}\n\n"); // keep for debugging
                 WarningsTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
 
-                var t = new Task(Everything.Run);
+                Everything.WriteConfig(StaticTasksObservableCollection.First().options);
+                var t = new Task(RunEverythingRunner);
                 t.Start();
                 t.ContinueWith(DisplayAnyErrors);
 
@@ -164,50 +168,42 @@ namespace SpritzGUI
             }
         }
 
-        //private void OnWorkflowOutputChanged(object source, FileSystemEventArgs e)
-        //{
-        //    WarningsTextBox.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate ()
-        //    {
-        //        using (StreamReader reader = new StreamReader(e.FullPath))
-        //        {
-        //            WarningsTextBox.Document.Blocks.Clear();
-        //            WarningsTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry()}\n\n{reader.ReadToEnd()}");
-        //        }
-        //    }));
-        //}
+        private void RunEverythingRunner()
+        {
+            Process proc = new Process();
+            proc.StartInfo.FileName = "Powershell.exe";
+            proc.StartInfo.Arguments = Everything.GenerateCommandsDry();
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.RedirectStandardError = true;
+            proc.StartInfo.CreateNoWindow = true;
+            proc.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
+            proc.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
+            proc.Start();
+            proc.BeginOutputReadLine();
+            proc.BeginErrorReadLine();
+            proc.WaitForExit();
+        }
+
+        private void OutputHandler(object source, DataReceivedEventArgs e)
+        {
+            Dispatcher.Invoke(() => 
+            {
+                string output = outputScrub.Replace(e.Data, "");
+                WarningsTextBox.AppendText(output + Environment.NewLine);
+                using (StreamWriter sw = File.Exists(Everything.PathToWorkflow) ? File.AppendText(Everything.PathToWorkflow) : File.CreateText(Everything.PathToWorkflow))
+                {
+                    sw.WriteLine(output);
+                }
+            });
+        }
 
         private void DisplayAnyErrors(Task obj)
         {
-            if (Everything.StdErr != null && Everything.StdErr != "")
-            {
-                var message = "Run failed, Exception: " + Everything.StdErr;
-                Dispatcher.Invoke(() => WarningsTextBox.AppendText(message + Environment.NewLine));
-                var messageBoxResult = MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (messageBoxResult == MessageBoxResult.Yes)
-                {
-                    string body = Everything.StdErr;
-                    //+ "%0D%0A" + exception.Data +
-                    //"%0D%0A" + exception.StackTrace +
-                    //"%0D%0A" + exception.Source +
-                    //"%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A ???" + // TODO: implement this system info check
-                    //"%0D%0A%0D%0A Spritz: version ???" + // TODO: implement this version check.
-                    //"%0D%0A %0D%0A %0D%0A %0D%0A TOML: %0D%0A " +
-                    //tomlText;
-                    body = body.Replace('&', ' ');
-                    body = body.Replace("\n", "%0D%0A");
-                    body = body.Replace("\r", "%0D%0A");
-                    string mailto = string.Format("mailto:{0}?Subject=Spritz. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
-                    System.Diagnostics.Process.Start(mailto);
-                    Console.WriteLine(body);
-                }
-            }
-            else
-            {
-                Dispatcher.Invoke(() => WarningsTextBox.AppendText(": Done!" + Environment.NewLine));
-                Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
-                    + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
-                    MessageBoxButton.OK, MessageBoxImage.Information));
-            }
+            Dispatcher.Invoke(() => WarningsTextBox.AppendText("Done!" + Environment.NewLine));
+            Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
+                + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
+                MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -470,39 +466,6 @@ namespace SpritzGUI
             }
         }
 
-        //private bool InstallationDialogAndCheck()
-        //{
-        //    var exePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-        //    if (!WrapperUtility.CheckToolSetup(exePath))
-        //    {
-        //        try
-        //        {
-        //            var dialog = new InstallWindow();
-        //            dialog.ShowDialog();
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            MessageBox.Show(ex.ToString(), "Installation", MessageBoxButton.OK, MessageBoxImage.Error);
-        //        }
-        //    }
-        //    return WrapperUtility.CheckBashSetup() && WrapperUtility.CheckToolSetup(Environment.CurrentDirectory);
-        //}
-
-        private void WriteExperDesignToTsv(string filePath)
-        {
-            using (StreamWriter output = new StreamWriter(filePath))
-            {
-                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                foreach (var aFastq in RnaSeqFastqCollection)
-                {
-                    output.WriteLine(aFastq.FileName +
-                        "\t" + aFastq.Experiment +
-                        "\t" + aFastq.MatePair);
-                }
-            }
-        }
-
         private void workflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var a = sender as TreeView;
@@ -512,6 +475,11 @@ namespace SpritzGUI
                 workflowDialog.ShowDialog();
                 workflowTreeView.Items.Refresh();
             }
+        }
+
+        private void WarningsTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            WarningsTextBox.ScrollToEnd();
         }
     }
 }

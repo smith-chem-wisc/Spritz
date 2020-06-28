@@ -1,5 +1,6 @@
 ## SpritzSnake
 data
+AnalysisFolder
 tmp
 STAR*
 SnpEff
@@ -9,9 +10,14 @@ ChromosomeMappings
 snpEffDatabases.txt
 human.proteome.xml
 ptmlist.txt
-adapters.fa
+PSI-MOD.obo.xml
 fast.tmp
+*.svg
+.snakemake
+ag\
 
 ## Visual Studio
 bin\
 obj\
+*.vspx
+.vs\

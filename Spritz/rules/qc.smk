@@ -4,14 +4,15 @@ rule download_adapters:
         "data/qc/adapters.fa"
     shell: "rm -rf BBMap && git clone --depth 1 https://github.com/BioInfoTools/BBMap.git && cp BBMap/resources/adapters.fa data/qc"
 
-rule expand_fastqs:
-    input:
-        fq1="{dir}/{fq}_1.fastq.gz",
-        fq2="{dir}/{fq}_2.fastq.gz",
-    output:
-        fq1=temp("{dir}/{fq}_1.fastq"),
-        fq2=temp("{dir}/{fq}_2.fastq"),
-    shell: "gunzip -k {input.fq1} && gunzip -k {input.fq2}"
+if not check_sra():
+    rule expand_fastqs:
+        input:
+            fq1="{dir}/{fq}_1.fastq.gz",
+            fq2="{dir}/{fq}_2.fastq.gz",
+        output:
+            fq1=temp("{dir}/{fq}_1.fastq"),
+            fq2=temp("{dir}/{fq}_2.fastq"),
+        shell: "gunzip -k {input.fq1} && gunzip -k {input.fq2}"
 
 rule skewer:
     input:

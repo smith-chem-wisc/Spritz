@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using YamlDotNet.Core;
@@ -41,27 +39,10 @@ namespace SpritzGUI
         }
 
         public string Arguments { get; set; }
-        public string StdErr { get; set; }
         public string AnalysisDirectory { get; }
         public string ConfigDirectory { get; }
         public string DataDirectory { get; }
         public string PathToWorkflow { get; }
-
-        public void Run()
-        {
-            WriteConfig(task.Item2);
-
-            Process proc = new Process();
-            proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = GenerateCommandsDry();
-
-            //proc.StartInfo.CreateNoWindow = true;
-            proc.StartInfo.UseShellExecute = true;
-            //proc.StartInfo.RedirectStandardError = true;
-            proc.Start();
-            proc.WaitForExit();
-            //StdErr = proc.StandardError.ReadToEnd();
-        }
 
         public string GenerateCommandsDry()
         {
@@ -69,7 +50,7 @@ namespace SpritzGUI
                 "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
                 "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
                 "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
-                "smithlab/spritz > " + "\"\"\"" + PathToWorkflow + "\"\"\"; docker stop spritz";
+                "smithlab/spritz; docker stop spritz";
         }
 
         private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
@@ -82,11 +63,10 @@ namespace SpritzGUI
                     node.Add(item);
                 }
             }
-
             return node;
         }
 
-        private void WriteConfig(Options options)
+        public void WriteConfig(Options options)
         {
             const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
 
@@ -142,19 +122,6 @@ namespace SpritzGUI
             {
                 stream.Save(writer, false);
             }
-        }
-
-        /// <summary>
-        /// Needed for paths that have spaces in them to pass through properly
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private static string AddQuotes(string path)
-        {
-            if (path.StartsWith("\"") && path.EndsWith("\""))
-                return path;
-            else
-                return $"\"{path}\"";
         }
     }
 }
