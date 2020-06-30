@@ -18,6 +18,7 @@ query = 'proteome:' + proteome
 payload = {
     'query': query,
     'format': format,
+    'include': 'yes', # include isoforms in fasta
     # 'columns': 'id,entry_name,reviewed,protein_names,organism,ec,keywords',
     }
 
