@@ -44,13 +44,16 @@ namespace SpritzGUI
         public string DataDirectory { get; }
         public string PathToWorkflow { get; }
 
-        public string GenerateCommandsDry()
+        public string GenerateCommandsDry(string dockerImageName)
         {
-            return "docker pull smithlab/spritz ; docker run --rm -t --name spritz " +
-                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
-                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
-                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
-                "smithlab/spritz; docker stop spritz";
+            string command = "";
+            if (dockerImageName.Contains("smithlab")) { command += $"docker pull {dockerImageName} ;"; }
+            command += $"docker run --rm -t --name spritz{PathToWorkflow.GetHashCode()} " +
+                $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
+                $"-v \"\"\"{DataDirectory}:/app/data" + "\"\"\" " +
+                $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +
+                $"{dockerImageName}; docker stop spritz{PathToWorkflow.GetHashCode()}";
+            return command;
         }
 
         private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
@@ -122,6 +125,7 @@ namespace SpritzGUI
             {
                 stream.Save(writer, false);
             }
+            File.WriteAllLines(Path.Combine(ConfigDirectory, "threads.txt"), new[] { options.Threads.ToString() });
         }
     }
 }

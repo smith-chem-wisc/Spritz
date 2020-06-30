@@ -5,10 +5,11 @@ rule download_protein_xml:
     output:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA
+    log: UNIPROTXML + ".log"
     shell:
-        "python scripts/get_proteome.py && "
+        "(python scripts/get_proteome.py && "
         "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
-        "python scripts/download_uniprot.py fasta > {output.fasta}"
+        "python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
 
 rule build_transfer_mods:
     output: TRANSFER_MOD_DLL

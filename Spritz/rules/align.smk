@@ -6,26 +6,6 @@ rule directories:
     output: directory("data/ensembl/" + REF + ".dna.primary_assembly.karyotypic/")
     shell: "mkdir -p data/ensembl/" + REF + ".dna.primary_assembly.karyotypic/"
 
-rule star_setup:
-    output: "STAR-2.6.0c/bin/Linux_x86_64/STAR"
-    shell:
-        "wget https://github.com/alexdobin/STAR/archive/2.6.0c.tar.gz"
-        "tar xvf 2.6.0c.tar.gz"
-        "rm 2.6.0c.tar.gz"
-
-rule star_genome_generate:
-    input:
-        star="STAR-2.7.0e/bin/Linux_x86_64/STAR",
-        genomeDir=directory("data/ensembl/" + REF + ".dna.primary_assembly.karyotypic"),
-        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
-        gff="data/ensembl/" + REF + "." + config["release"] + ".gff3"
-    output:
-        "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic/SA"
-    threads: 24
-    shell:
-        "{input.star} --runMode genomeGenerate --runThreadN {threads} --genomeDir {input.genomeDir} "
-        "--genomeFastaFiles {input.fa} --sjdbGTFfile {input.gff} --sjdbGTFtagExonParentTranscript Parent --sjdbOverhang 100"
-
 rule hisat_genome:
     input:
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",

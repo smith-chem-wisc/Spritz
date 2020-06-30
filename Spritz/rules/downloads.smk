@@ -21,7 +21,8 @@ rule index_ensembl_vcf:
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
-    shell: "rm -rf ChromosomeMappings && git clone https://github.com/dpryan79/ChromosomeMappings.git"
+    log: "ChromosomeMappings/download_chromosome_mappings.log"
+    shell: "rm -rf ChromosomeMappings && git clone https://github.com/dpryan79/ChromosomeMappings.git 2> {log}"
 
 rule reorder_genome_fasta:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"

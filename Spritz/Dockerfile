@@ -22,10 +22,12 @@ RUN conda init \
         && conda update conda \
         && conda env create --name spritz --file environment.yaml
 
-# add script to execute snakemake upon activate
+# Add script to execute snakemake upon activate
+# Note that running this script outside of activation has not worked
 ADD start.sh /usr/local/envs/spritz/etc/conda/activate.d/start.sh
 RUN chmod 777 /usr/local/envs/spritz/etc/conda/activate.d/start.sh
 
+# Make script for validating downloads executable
 RUN chmod 774 validate.sh
 
 # activate environment

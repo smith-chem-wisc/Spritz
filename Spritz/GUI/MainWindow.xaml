@@ -14,6 +14,10 @@
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Wiki_Click"/>
                 <MenuItem Header="Contact" Click="MenuItem_Contact_Click" />
             </MenuItem>
+            <MenuItem Header="Settings">
+                <Label Content="Target Docker Image:"/>
+                <TextBox x:Name="tb_DockerImage" Text="smithlab/spritz" TextChanged="DockerImage_TextChanged"/>
+            </MenuItem>
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>

@@ -2,7 +2,6 @@
 _STARtmp
 ensembl
 STAR*
-2.7.0e*
 .snakemake
 ChromosomeMappings
 data/
