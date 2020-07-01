@@ -40,5 +40,6 @@ rule download_dry_run:
 
 rule test_release:
     '''Used to simplify call for dry run'''
-    input: "data/ensembl/{REF}.dryrun.txt"
-    output: "data/ensembl/test_release.txt"
+    input: "data/ensembl/" + REF + ".dryrun.txt"
+    output: temp("data/ensembl/test_release.txt")
+    shell: "touch {output}"
