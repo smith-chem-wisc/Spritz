@@ -28,9 +28,13 @@ namespace SpritzGUI
         private Regex outputScrub = new Regex(@"(\[\d+m)");
         //private Task EverythingTask;
 
+        public int DockerCPUs { get; set; }
+        public double DockerMemory { get; set; }
         private string DockerImage { get; set; } = "smithlab/spritz";
         private string DockerStdOut { get; set; }
         private bool ShowStdOut { get; set; } = true;
+        private string DockerSystemInfo { get; set; }
+
 
         public MainWindow()
         {
@@ -38,7 +42,30 @@ namespace SpritzGUI
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
             workflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
-            MessageBox.Show("Please have Docker Desktop installed and enable all shared drives.", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            Dispatcher.Invoke(() =>
+            {
+                Process proc = new Process();
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = "docker system info";
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.RedirectStandardError = true;
+                proc.StartInfo.CreateNoWindow = true;
+                proc.Start();
+                StreamReader outputReader = proc.StandardOutput;
+                DockerSystemInfo = outputReader.ReadToEnd();
+                proc.WaitForExit();
+            });
+            bool isDockerInstalled = !string.IsNullOrEmpty(DockerSystemInfo);
+            if (isDockerInstalled)
+                ParseDockerSystemInfo(DockerSystemInfo);
+            string message = isDockerInstalled ?
+                "In Docker Desktop, please ensure all shared drives are enabled, and please ensure a Disk image size of at least 80 GB is enabled." :
+                "Docker is not installed. Please have Docker Desktop installed, enable all shared drives, and ensure a Disk image size of at least 80 GB is enabled.";
+            if (isDockerInstalled && DockerMemory < 16)
+                message += $"{Environment.NewLine}{Environment.NewLine}The memory allocated to Docker is low ({DockerMemory}GB). Please raise this value above 16 GB in Docker Desktop if possible.";
+            MessageBox.Show(message, "Setup", MessageBoxButton.OK, isDockerInstalled ? MessageBoxImage.Information : MessageBoxImage.Error);
 
             //var watch = new FileSystemWatcher();
             //watch.Path = Path.Combine(Environment.CurrentDirectory, "output");
@@ -46,6 +73,19 @@ namespace SpritzGUI
             //watch.NotifyFilter = NotifyFilters.LastWrite;
             //watch.Changed += new FileSystemEventHandler(OnWorkflowOutputChanged);
             //watch.EnableRaisingEvents = true;
+        }
+
+        private void ParseDockerSystemInfo(string dockerSystemInfo)
+        {
+            string[] infoLines = dockerSystemInfo.Split('\n');
+            string cpuLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("CPUs"));
+            if (int.TryParse(cpuLine.Split(':')[1].Trim(), out int dockerThreads))
+                DockerCPUs = dockerThreads;
+
+            double gibToGbConversion = 1.07374;
+            string memoryLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("Total Memory"));
+            if (double.TryParse(memoryLine.Split(':')[1].Replace("GiB", "").Trim(), out double memoryGB))
+                DockerMemory = memoryGB * gibToGbConversion;
         }
 
         protected override void OnClosed(EventArgs e)
@@ -302,7 +342,7 @@ namespace SpritzGUI
 
             try
             {
-                var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options().AnalysisDirectory : OutputFolderTextBox.Text);
+                var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options(DockerCPUs).AnalysisDirectory : OutputFolderTextBox.Text);
                 if (dialog.ShowDialog() == true)
                 {
                     AddTaskToCollection(dialog.Options);

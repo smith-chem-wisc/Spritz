@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Diagnostics;
 
 namespace SpritzGUI
 {
@@ -15,7 +16,7 @@ namespace SpritzGUI
         private string AnalysisDirectory { get; set; }
         public string Reference { get; set; } // define notify property changed
         public ObservableCollection<Ensembl> EnsemblReleases { get; set; }
-        public Options Options { get; set; } = new Options();
+        public Options Options { get; set; } = new Options(Environment.ProcessorCount);
         private MainWindow MainWindow { get; set; }
         private int Threads { get; set; }
 
@@ -81,7 +82,7 @@ namespace SpritzGUI
                 return;
             }
 
-            Options.Threads = int.Parse(txtThreads.Text);
+            Options.Threads = Threads;
             Ensembl ensembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
             Options.Release = ensembl.Release;
             Options.Species = EnsemblSpecies.SelectedItem.ToString();
@@ -109,14 +110,14 @@ namespace SpritzGUI
                     MessageBox.Show("Only paired end sequencing is supported. Add both paired files for " + fq1 + ".", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                     throw new InvalidOperationException();
                 }
-            }
+            }            
 
             //Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
             Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
             txtAnalysisDirectory.Text = AnalysisDirectory;
-            txtThreads.Text = options.Threads.ToString();
-            Lb_ThreadInfo.Content = $"Integer between 1 and {Environment.ProcessorCount}";
+            txtThreads.Text = MainWindow.DockerCPUs.ToString();
+            Lb_ThreadInfo.Content = $"Integer between 1 and {MainWindow.DockerCPUs};\nmaximum is set in Docker Desktop";
             saveButton.IsEnabled = false;
         }
 
@@ -188,10 +189,10 @@ namespace SpritzGUI
 
         private void txtThreads_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(txtThreads.Text, out int threads) && threads <= Environment.ProcessorCount && threads > 0)
+            if (int.TryParse(txtThreads.Text, out int threads) && threads <= MainWindow.DockerCPUs && threads > 0)
                 Threads = threads;
             else
-                txtThreads.Text = Environment.ProcessorCount.ToString();
+                txtThreads.Text = MainWindow.DockerCPUs.ToString();
         }
     }
 }
