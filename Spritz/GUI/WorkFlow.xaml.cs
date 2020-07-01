@@ -13,6 +13,11 @@ namespace SpritzGUI
     public partial class WorkFlowWindow : Window
     {
         private string AnalysisDirectory { get; set; }
+        public string Reference { get; set; } // define notify property changed
+        public ObservableCollection<Ensembl> EnsemblReleases { get; set; }
+        public Options Options { get; set; } = new Options();
+        private MainWindow MainWindow { get; set; }
+        private int Threads { get; set; }
 
         public WorkFlowWindow(string analysisDirectory)
         {
@@ -33,10 +38,6 @@ namespace SpritzGUI
             Options = options;
             DataContext = this;
         }
-
-        public Options Options { get; set; } = new Options();
-
-        private MainWindow MainWindow { get; set; }
 
         protected void CancelButton_Click(object sender, RoutedEventArgs e)
         {
@@ -115,6 +116,7 @@ namespace SpritzGUI
             Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
             txtAnalysisDirectory.Text = AnalysisDirectory;
             txtThreads.Text = options.Threads.ToString();
+            Lb_ThreadInfo.Content = $"Integer between 1 and {Environment.ProcessorCount}";
             saveButton.IsEnabled = false;
         }
 
@@ -166,8 +168,6 @@ namespace SpritzGUI
             }
         }
 
-        public ObservableCollection<Ensembl> EnsemblReleases { get; set; }
-
         public class Ensembl
         {
             public string Release { get; set; }
@@ -175,12 +175,6 @@ namespace SpritzGUI
             public Dictionary<string, string> Genomes { get; set; } // Mus_musculus GRCm38
             public Dictionary<string, string> Organisms { get; set; } // Mus_musculus GRCm38
         }
-
-        private void txtThreads_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-        }
-
-        public string Reference { get; set; } // define notify property changed
 
         private void Species_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
@@ -190,6 +184,14 @@ namespace SpritzGUI
             var selectedEnsembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
             var selectedSpecies = (string)EnsemblSpecies.SelectedItem;
             Reference = selectedEnsembl.Genomes[selectedSpecies];
+        }
+
+        private void txtThreads_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(txtThreads.Text, out int threads) && threads <= Environment.ProcessorCount && threads > 0)
+                Threads = threads;
+            else
+                txtThreads.Text = Environment.ProcessorCount.ToString();
         }
     }
 }

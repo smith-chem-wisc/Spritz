@@ -11,7 +11,7 @@ namespace SpritzGUI
         public string Fastq2 { get; set; }
         //public string ExperimentType { get; set; }
         public string SraAccession { get; set; }
-        public int Threads { get; set; } = Environment.ProcessorCount == 1 ? 1 : Environment.ProcessorCount - 1;
+        public int Threads { get; set; } = Environment.ProcessorCount;
         public string Reference { get; set; }
         // new for snakemake
         public string Release { get; set; }
