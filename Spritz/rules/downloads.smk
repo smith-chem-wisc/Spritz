@@ -44,29 +44,6 @@ rule dict_fa:
     output: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.dict"
     shell: "gatk CreateSequenceDictionary -R {input} -O {output}"
 
-rule tmpdir:
-    output:
-        temp(directory("tmp")),
-        temp(directory("temporary")),
-    shell:
-        "mkdir tmp && mkdir temporary"
-
-rule filter_gff3:
-    input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
-    output: "data/ensembl/202122.gff3"
-    shell: "grep \"^#\|20\|^21\|^22\" \"data/ensembl/" + REF + "." + config["release"] + ".gff3\" > \"data/ensembl/202122.gff3\""
-
-rule fix_gff3_for_rsem:
-    '''This script changes descriptive notes in column 4 to "gene" if a gene row, and it also adds ERCCs to the gene model'''
-    input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
-    output: "data/ensembl/" + REF + "." + config["release"] + ".gff3" + ".fix.gff3"
-    shell: "python scripts/fix_gff3_for_rsem.py {input} {output}"
-
-rule filter_fa:
-    input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
-    output: "data/ensembl/202122.fa"
-    script: "../scripts/filter_fasta.py"
-
 rule download_sras:
     output:
         temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
@@ -76,3 +53,10 @@ rule download_sras:
     threads: 4
     shell:
         "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+
+rule tmpdir:
+    output:
+        temp(directory("tmp")),
+        temp(directory("temporary")),
+    shell:
+        "mkdir tmp && mkdir temporary"

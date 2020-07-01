@@ -139,12 +139,11 @@ namespace SpritzGUI
             string releasefolder = Path.Combine(Directory.GetCurrentDirectory(), "EnsemblReleases");
             var releases = Directory.GetFiles(releasefolder, "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
 
-            var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv"));
+            var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv")).Where(line => !line.StartsWith("#")).ToList();
             foreach (string release in releases)
             {
                 // read txt file into obsv collection
-                var file = File.ReadAllLines(Path.Combine(releasefolder, $"{release}.txt"));
-                var species = new List<string>(file);
+                var species = File.ReadAllLines(Path.Combine(releasefolder, $"{release}.txt")).Where(line => !line.StartsWith("#")).ToList();
                 Dictionary<string, string> genomes = new Dictionary<string, string>();
                 Dictionary<string, string> organisms = new Dictionary<string, string>();
 
