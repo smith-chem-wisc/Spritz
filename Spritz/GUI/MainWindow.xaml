@@ -17,6 +17,7 @@
             <MenuItem Header="Settings">
                 <Label Content="Target Docker Image:"/>
                 <TextBox x:Name="tb_DockerImage" Text="smithlab/spritz" TextChanged="DockerImage_TextChanged"/>
+                <Button x:Name="bt_TestReleases" Content="Test All Ensembl Releases" Click="Bt_TestReleases_Click"/>
             </MenuItem>
         </Menu>
         <Grid>
@@ -135,7 +136,7 @@
                             <!--<Button x:Name="BtnAddFastq2Proteins" Content="Fastq2Protein" Click="BtnAddFastq2Proteins_Click" />-->
                             <!--<Button x:Name="BtnAddLncRNADiscover" Content="LncRNADiscover" Click="BtnAddLncRNADiscover_Click"/>-->
                         </StackPanel>
-                        <TreeView x:Name="workflowTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="workflowTreeView_MouseDoubleClick">
+                        <TreeView x:Name="WorkflowTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="WorkflowTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <!--<HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">

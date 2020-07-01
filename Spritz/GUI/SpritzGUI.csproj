@@ -66,6 +66,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DataGrids\SRADataGrid.cs" />
+    <Compile Include="EnsemblRelease.cs" />
     <Compile Include="EverythingRunnerEngine.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="WorkFlow.xaml.cs">

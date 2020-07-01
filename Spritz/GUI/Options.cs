@@ -18,6 +18,7 @@ namespace SpritzGUI
         public string Species { get; set; }
         public string SnpEff { get; set; }
         public string Organism { get; set; }
+        public bool Test { get; set; }
 
         public Options(int dockerThreads)
         {

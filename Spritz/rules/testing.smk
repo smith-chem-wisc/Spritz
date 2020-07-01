@@ -31,4 +31,14 @@ rule generate_fastqs:
         fq2="data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.test_2.fastq",
     benchmark: "data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.test.benchmark"
     log: "data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.test.log"
-    shell: "mason_simulator -ir {input.fa} -n 100000 -iv {input.vcf} -o {output.fq1} -or {out.fq2} 2> {log}"
+    shell: "mason_simulator -ir {input.fa} -n 100000 -iv {input.vcf} -o {output.fq1} -or {output.fq2} 2> {log}"
+
+rule download_dry_run:
+    output: "data/ensembl/{REF}.dryrun.txt"
+    log: "data/ensembl/downloads{REF}.dryrun.log"
+    shell: "(python scripts/download_ensembl.py {REF} dry > {output}) 2> {log}"
+
+rule test_release:
+    '''Used to simplify call for dry run'''
+    input: "data/ensembl/{REF}.dryrun.txt"
+    output: "data/ensembl/test_release.txt"

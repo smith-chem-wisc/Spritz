@@ -126,6 +126,10 @@ namespace SpritzGUI
             snpeff.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("snpeff", snpeff);
 
+            // write test
+            var test = new YamlScalarNode(options.Test ? "True" : "False");
+            rootMappingNode.Add("test", test);
+
             using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
             {
                 stream.Save(writer, false);

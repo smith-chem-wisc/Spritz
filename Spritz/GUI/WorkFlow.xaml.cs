@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
-using System.Diagnostics;
 
 namespace SpritzGUI
 {
@@ -15,7 +13,7 @@ namespace SpritzGUI
     {
         private string AnalysisDirectory { get; set; }
         public string Reference { get; set; } // define notify property changed
-        public ObservableCollection<Ensembl> EnsemblReleases { get; set; }
+        public ObservableCollection<EnsemblRelease> EnsemblReleases { get; set; }
         public Options Options { get; set; } = new Options(Environment.ProcessorCount);
         private MainWindow MainWindow { get; set; }
         private int Threads { get; set; }
@@ -83,7 +81,7 @@ namespace SpritzGUI
             }
 
             Options.Threads = Threads;
-            Ensembl ensembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
+            EnsemblRelease ensembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
             Options.Release = ensembl.Release;
             Options.Species = EnsemblSpecies.SelectedItem.ToString();
             Options.Reference = ensembl.Genomes[Options.Species];
@@ -110,7 +108,7 @@ namespace SpritzGUI
                     MessageBox.Show("Only paired end sequencing is supported. Add both paired files for " + fq1 + ".", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                     throw new InvalidOperationException();
                 }
-            }            
+            }
 
             //Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
@@ -133,47 +131,7 @@ namespace SpritzGUI
             //CmbxExperimentType.Items.Add(ExperimentType.ExomeSequencing.ToString());
             //CmbxExperimentType.SelectedIndex = 0; // hard coded selection (for now)
 
-            EnsemblReleases = new ObservableCollection<Ensembl>();
-
-            // read release.txt files into a list
-            string releasefolder = Path.Combine(Directory.GetCurrentDirectory(), "EnsemblReleases");
-            var releases = Directory.GetFiles(releasefolder, "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
-
-            var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv")).Where(line => !line.StartsWith("#")).ToList();
-            foreach (string release in releases)
-            {
-                // read txt file into obsv collection
-                var species = File.ReadAllLines(Path.Combine(releasefolder, $"{release}.txt")).Where(line => !line.StartsWith("#")).ToList();
-                Dictionary<string, string> genomes = new Dictionary<string, string>();
-                Dictionary<string, string> organisms = new Dictionary<string, string>();
-
-                var unsupported = new List<string>();
-                foreach (string genome in genomeDB.Where(g => g.Contains(release)))
-                {
-                    var splt = genome.Split(',');
-                    genomes.Add(splt[1], splt[3]); // <Species, GenomeVer>
-                    organisms.Add(splt[1], splt[2]); // <Species, OrganismName>
-
-                    if (!string.Equals(splt[4], "86")) // only add species supported in snpeff (ver 86 ensembl)
-                    {
-                        unsupported.Add(splt[1]);
-                    }
-                }
-
-                var supported = species.Where(s => !unsupported.Contains(s)).ToList();
-                if (genomes.Count > 0)
-                {
-                    EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
-                }
-            }
-        }
-
-        public class Ensembl
-        {
-            public string Release { get; set; }
-            public ObservableCollection<string> Species { get; set; }
-            public Dictionary<string, string> Genomes { get; set; } // Mus_musculus GRCm38
-            public Dictionary<string, string> Organisms { get; set; } // Mus_musculus GRCm38
+            EnsemblReleases = EnsemblRelease.GetReleases();
         }
 
         private void Species_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -181,7 +139,7 @@ namespace SpritzGUI
             saveButton.IsEnabled = true;
 
             // get selection from species
-            var selectedEnsembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
+            var selectedEnsembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
             var selectedSpecies = (string)EnsemblSpecies.SelectedItem;
             Reference = selectedEnsembl.Genomes[selectedSpecies];
         }

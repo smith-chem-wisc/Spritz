@@ -40,7 +40,7 @@ namespace SpritzGUI
         {
             InitializeComponent();
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
 
             Dispatcher.Invoke(() =>
@@ -187,7 +187,7 @@ namespace SpritzGUI
 
                 DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
                 DynamicTasksObservableCollection.Add(new InRunTask("Workflow 1", StaticTasksObservableCollection.First().options));
-                workflowTreeView.DataContext = DynamicTasksObservableCollection;
+                WorkflowTreeView.DataContext = DynamicTasksObservableCollection;
                 
                 Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
@@ -288,7 +288,7 @@ namespace SpritzGUI
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
         {
             StaticTasksObservableCollection.Clear();
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
             InformationTextBox.Document.Blocks.Clear();
             UpdateTaskGuiStuff();
         }
@@ -301,7 +301,7 @@ namespace SpritzGUI
             ResetTasksButton.IsEnabled = false;
 
             DynamicTasksObservableCollection.Clear();
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
         }
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
@@ -438,15 +438,15 @@ namespace SpritzGUI
             }
         }
 
-        private void workflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void WorkflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var a = sender as TreeView;
-            if (a.SelectedItem is PreRunTask preRunTask)
-            {
-                var workflowDialog = new WorkFlowWindow(preRunTask.options);
-                workflowDialog.ShowDialog();
-                workflowTreeView.Items.Refresh();
-            }
+            //var a = sender as TreeView;
+            //if (a.SelectedItem is PreRunTask preRunTask)
+            //{
+            //    var workflowDialog = new WorkFlowWindow(preRunTask.options);
+            //    workflowDialog.ShowDialog();
+            //    WorkflowTreeView.Items.Refresh();
+            //}
         }
 
         private void WarningsTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -486,6 +486,38 @@ namespace SpritzGUI
             {
                 InformationTextBox.Document.Blocks.Clear();
                 InformationTextBox.AppendText(DockerStdOut);
+            }
+        }
+
+        private void RunTestRunner()
+        {
+            Process proc = new Process();
+            proc.StartInfo.FileName = "Powershell.exe";
+            proc.StartInfo.Arguments = Everything.GenerateCommandsDry(DockerImage);
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.CreateNoWindow = true;
+            proc.Start();
+            proc.WaitForExit();
+        }
+
+        private void Bt_TestReleases_Click(object sender, RoutedEventArgs e)
+        {
+            var ensemblReleases = EnsemblRelease.GetReleases();
+            foreach (EnsemblRelease release in ensemblReleases)
+            {
+                Options options = new Options(DockerCPUs);
+                EnsemblRelease ensembl = release;
+                options.Release = ensembl.Release;
+                options.SnpEff = "86";
+                options.Test = true;
+                foreach (var species in ensembl.Species)
+                {
+                    options.Species = species;
+                    options.Reference = ensembl.Genomes[species];
+                    options.Organism = ensembl.Organisms[species];
+                    Everything.WriteConfig(options);
+                    Dispatcher.Invoke(RunTestRunner);
+                }
             }
         }
     }

@@ -24,16 +24,19 @@ def check_dir():
     return docheck
 
 def output(wildcards):
-     if check_dir():
-         return expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
-         "{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",
-         "{dir}/combined.spritz.isoform.protein.withmods.xml.gz",
-         "{dir}/dummy.txt"],
-         dir=config["analysisDirectory"])
-     return expand(["output/combined.spritz.snpeff.protein.withmods.xml.gz",
-     "output/combined.spritz.isoformvariants.protein.withmods.xml.gz",
-     "output/combined.spritz.isoform.protein.withmods.xml.gz",
-     "output/dummy.txt"])
+    if config["test"]:
+        return "data/ensembl/test_release.txt"
+    elif check_dir():
+        return expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
+            "{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+            "{dir}/combined.spritz.isoform.protein.withmods.xml.gz",
+            "{dir}/dummy.txt"],
+            dir=config["analysisDirectory"])
+    else:
+        return expand(["output/combined.spritz.snpeff.protein.withmods.xml.gz",
+            "output/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+            "output/combined.spritz.isoform.protein.withmods.xml.gz",
+            "output/dummy.txt"])
 
 rule all:
     input: output
