@@ -56,6 +56,11 @@ namespace SpritzGUI
             return command;
         }
 
+        public string GenerateTopComand()
+        {
+            return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
+        }
+
         private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
         {
             node.Style = SequenceStyle.Flow;

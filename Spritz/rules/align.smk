@@ -8,11 +8,15 @@ rule directories:
 
 rule hisat_genome:
     input:
-        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
-        gtf="data/ensembl/" + REF + "." + config["release"] + ".gff3"
+        fa="data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        gtf="data/ensembl/{REF}." + config["release"] + ".gff3",
     threads: 12
-    output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.1.ht2"
-    shell: "hisat2-build -p {threads} data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa data/ensembl/" + REF + ".dna.primary_assembly.karyotypic"
+    output:
+        idx="data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+        finished="data/ensembl/done_building_hisat_genome{REF}.txt",
+    benchmark: "data/ensembl/{REF}.hisatbuild.benchmark"
+    log: "data/ensembl/{REF}.hisatbuild.log"
+    shell: "(hisat2-build -p {threads} data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) 2> {log}"
 
 rule hisat2_splice_sites:
     input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"

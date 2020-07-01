@@ -20,6 +20,7 @@ rule merge_transcripts:
         gff="data/ensembl/Homo_sapiens." + GENEMODEL_VERSION + ".gff3"
     output: "{dir}/combined.gtf"
     threads: 12
+    benchmark: "{dir}/combined.gtf.benchmark"
     log: "{dir}/combined.gtf.log"
     shell:
         "stringtie --merge -o {output} -c 2.5 -m 300 -T 1 -f .01 -p {threads} -i {input.custom_gtfs} 2> {log}"

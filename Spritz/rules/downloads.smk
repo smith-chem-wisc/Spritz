@@ -5,12 +5,20 @@ rule download_ensembl_references:
         gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
         gff3="data/ensembl/" + REF + "." + config["release"] + ".gff3",
         pfa="data/ensembl/" + REF + ".pep.all.fa",
-        vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
-        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
+    benchmark: "data/ensembl/downloads.benchmark"
     log: "data/ensembl/downloads.log"
     shell:
-        "(python scripts/download_ensembl.py {REF} && "
-        "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz && "
+        "(python scripts/download_ensembl.py {REF} not && "
+        "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz) 2> {log}"
+
+rule download_ensembl_vcf:
+    output:
+        vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
+        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
+    benchmark: "data/ensembl/downloads_vcf.benchmark"
+    log: "data/ensembl/downloads_vcf.log"
+    shell:
+        "(python scripts/download_ensembl.py {REF} vcf && "
         "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf}) 2> {log}"
 
 rule index_ensembl_vcf:
@@ -27,7 +35,9 @@ rule download_chromosome_mappings:
 rule reorder_genome_fasta:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
     output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
-    script: "../scripts/karyotypic_order.py"
+    benchmark: "data/ensembl/karyotypic_order.benchmark"
+    log: "data/ensembl/karyotypic_order.log"
+    script: "../scripts/karyotypic_order.py 2> {log}"
 
 rule dict_fa:
     input: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa"
@@ -61,6 +71,7 @@ rule download_sras:
     output:
         temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
         temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
+    benchmark: "{dir}/{sra}.benchmark"
     log: "{dir}/{sra}.log"
     threads: 4
     shell:

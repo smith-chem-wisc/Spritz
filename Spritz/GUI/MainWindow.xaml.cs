@@ -29,6 +29,8 @@ namespace SpritzGUI
         //private Task EverythingTask;
 
         private string DockerImage { get; set; } = "smithlab/spritz";
+        private string DockerStdOut { get; set; }
+        private bool ShowStdOut { get; set; } = true;
 
         public MainWindow()
         {
@@ -48,20 +50,20 @@ namespace SpritzGUI
 
         protected override void OnClosed(EventArgs e)
         {
-            // TODO: implement some way of killing EverythingTask
-
             // new process that kills docker container (if any)
-            Process proc = new Process();
-            proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = "docker kill spritz";
-            proc.StartInfo.CreateNoWindow = true;
-            proc.StartInfo.UseShellExecute = false;
-            proc.StartInfo.RedirectStandardError = true;
-            proc.Start();
-
-            if (proc != null && !proc.HasExited)
+            if (Everything != null && !string.IsNullOrEmpty(Everything.PathToWorkflow))
             {
-                proc.WaitForExit();
+                Process proc = new Process();
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = $"docker kill spritz{Everything.PathToWorkflow.GetHashCode()}";
+                proc.StartInfo.CreateNoWindow = true;
+                proc.StartInfo.UseShellExecute = false;
+                proc.Start();
+
+                if (proc != null && !proc.HasExited)
+                {
+                    proc.WaitForExit();
+                }
             }
 
             base.OnClosed(e);
@@ -149,9 +151,9 @@ namespace SpritzGUI
                 
                 Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
-                WarningsTextBox.Document.Blocks.Clear();
-                WarningsTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry(DockerImage)}\n\n"); // keep for debugging
-                WarningsTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
+                InformationTextBox.Document.Blocks.Clear();
+                InformationTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry(DockerImage)}\n\n"); // keep for debugging
+                InformationTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
 
                 Everything.WriteConfig(StaticTasksObservableCollection.First().options);
                 var t = new Task(RunEverythingRunner);
@@ -194,7 +196,12 @@ namespace SpritzGUI
                 if (!string.IsNullOrEmpty(e.Data))
                 {
                     string output = outputScrub.Replace(e.Data, "");
-                    WarningsTextBox.AppendText(output + Environment.NewLine);
+                    DockerStdOut += output + Environment.NewLine;
+                    if (ShowStdOut)
+                    {
+                        lock (InformationTextBox)
+                            InformationTextBox.AppendText(output + Environment.NewLine);
+                    }
                     using (StreamWriter sw = File.Exists(Everything.PathToWorkflow) ? File.AppendText(Everything.PathToWorkflow) : File.CreateText(Everything.PathToWorkflow))
                     {
                         sw.WriteLine(output);
@@ -205,7 +212,7 @@ namespace SpritzGUI
 
         private void DisplayAnyErrors(Task obj)
         {
-            Dispatcher.Invoke(() => WarningsTextBox.AppendText("Done!" + Environment.NewLine));
+            Dispatcher.Invoke(() => InformationTextBox.AppendText("Done!" + Environment.NewLine));
             Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
                 + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
                 MessageBoxButton.OK, MessageBoxImage.Information));
@@ -242,7 +249,7 @@ namespace SpritzGUI
         {
             StaticTasksObservableCollection.Clear();
             workflowTreeView.DataContext = StaticTasksObservableCollection;
-            WarningsTextBox.Document.Blocks.Clear();
+            InformationTextBox.Document.Blocks.Clear();
             UpdateTaskGuiStuff();
         }
 
@@ -404,12 +411,42 @@ namespace SpritzGUI
 
         private void WarningsTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            WarningsTextBox.ScrollToEnd();
+            InformationTextBox.ScrollToEnd();
         }
 
         private void DockerImage_TextChanged(object sender, TextChangedEventArgs e)
         {
             DockerImage = tb_DockerImage.Text;
+        }
+
+        private void ShowTopButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowStdOut = false;
+            Dispatcher.Invoke(() =>
+            {
+                InformationTextBox.Document.Blocks.Clear();
+
+                Process proc = new Process();
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = Everything.GenerateTopComand();
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.CreateNoWindow = true;
+                proc.Start();
+                StreamReader outputReader = proc.StandardOutput;
+                InformationTextBox.AppendText(outputReader.ReadToEnd());
+                proc.WaitForExit();
+            });
+        }
+
+        private void ShowOutputButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowStdOut = true;
+            lock (InformationTextBox)
+            {
+                InformationTextBox.Document.Blocks.Clear();
+                InformationTextBox.AppendText(DockerStdOut);
+            }
         }
     }
 }

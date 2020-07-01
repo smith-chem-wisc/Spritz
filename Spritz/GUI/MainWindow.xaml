@@ -160,13 +160,23 @@
                 </GroupBox>
                 <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>
                 <GroupBox Grid.Row="2" Header="Information">
-                    <RichTextBox x:Name="WarningsTextBox" VerticalScrollBarVisibility="Visible" TextChanged="WarningsTextBox_TextChanged" IsReadOnly="True">
-                        <RichTextBox.Resources>
-                            <Style TargetType="{x:Type Paragraph}">
-                                <Setter Property="Margin" Value="0"/>
-                            </Style>
-                        </RichTextBox.Resources>
-                    </RichTextBox>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
+                        <RichTextBox x:Name="InformationTextBox" VerticalScrollBarVisibility="Visible" TextChanged="WarningsTextBox_TextChanged" IsReadOnly="True">
+                            <RichTextBox.Resources>
+                                <Style TargetType="{x:Type Paragraph}">
+                                    <Setter Property="Margin" Value="0"/>
+                                </Style>
+                            </RichTextBox.Resources>
+                        </RichTextBox>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                            <Button x:Name="ShowOutputButton" Content="Show Output" Click="ShowOutputButton_Click" />
+                            <Button x:Name="ShowTopButton" Content="Show/Refresh Processes" Click="ShowTopButton_Click" />
+                        </StackPanel>
+                    </Grid>
                 </GroupBox>
             </Grid>
         </Grid>
