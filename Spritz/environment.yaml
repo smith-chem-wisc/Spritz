@@ -23,7 +23,8 @@ dependencies:
   - transdecoder # for ProteomeGenerator
   - gffread # for ProteomeGenerator
   - blast # for ProteomeGenerdator
-  - mason
+
+  # - mason # for generating reads for testing
 
   # - maven # for installing SnpEff; now downloading zip file directly
 
