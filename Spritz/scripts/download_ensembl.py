@@ -44,9 +44,9 @@ elif fileToGet == "not":
 
 else:
     # perform a dry run of the download_sras
-    sys.stdout.write(f"{path}primary\t{check_url_exists(primary)}\t{primary}\n")
-    sys.stdout.write(f"{path}toplevel\t{check_url_exists(toplevel)}\t{toplevel}\n")
-    sys.stdout.write(f"{path}vcf1\t{check_url_exists(vcf1)}\t{vcf1}\n")
-    sys.stdout.write(f"{path}vcf2\t{check_url_exists(vcf2)}\t{vcf2}\n")
-    sys.stdout.write(f"{path}gff\t{check_url_exists(gff)}\t{gff}\n")
-    sys.stdout.write(f"{path}pep\t{check_url_exists(pep)}\t{pep}\n")
+    sys.stdout.write(f"{path}\tprimary\t{check_url_exists(primary)}\t{primary}\n")
+    sys.stdout.write(f"{path}\ttoplevel\t{check_url_exists(toplevel)}\t{toplevel}\n")
+    sys.stdout.write(f"{path}\tvcf1\t{check_url_exists(vcf1)}\t{vcf1}\n")
+    sys.stdout.write(f"{path}\tvcf2\t{check_url_exists(vcf2)}\t{vcf2}\n")
+    sys.stdout.write(f"{path}\tgff\t{check_url_exists(gff)}\t{gff}\n")
+    sys.stdout.write(f"{path}\tpep\t{check_url_exists(pep)}\t{pep}\n")

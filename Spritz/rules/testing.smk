@@ -40,6 +40,6 @@ rule download_dry_run:
 
 rule test_release:
     '''Used to simplify call for dry run'''
-    input: "data/ensembl/" + REF + ".dryrun.txt"
+    input: "data/ensembl/" + SPECIES + "." + GENEMODEL_VERSION + ".dryrun.txt"
     output: temp("data/ensembl/test_release.txt")
     shell: "touch {output}"

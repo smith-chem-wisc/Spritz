@@ -253,9 +253,10 @@ namespace SpritzGUI
         private void DisplayAnyErrors(Task obj)
         {
             Dispatcher.Invoke(() => InformationTextBox.AppendText("Done!" + Environment.NewLine));
-            Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
-                + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
-                MessageBoxButton.OK, MessageBoxImage.Information));
+            if (StaticTasksObservableCollection.Count > 0)
+                Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
+                    + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
+                    MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -489,34 +490,34 @@ namespace SpritzGUI
             }
         }
 
-        private void RunTestRunner()
-        {
-            Process proc = new Process();
-            proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = Everything.GenerateCommandsDry(DockerImage);
-            proc.StartInfo.UseShellExecute = false;
-            proc.StartInfo.CreateNoWindow = true;
-            proc.Start();
-            proc.WaitForExit();
-        }
-
         private void Bt_TestReleases_Click(object sender, RoutedEventArgs e)
         {
-            var ensemblReleases = EnsemblRelease.GetReleases();
-            foreach (EnsemblRelease release in ensemblReleases)
+            foreach (EnsemblRelease release in EnsemblRelease.GetReleases())
             {
                 Options options = new Options(DockerCPUs);
+                Everything = new EverythingRunnerEngine(null, Path.Combine(options.AnalysisDirectory, "TestReleases"));
                 EnsemblRelease ensembl = release;
                 options.Release = ensembl.Release;
+                options.SraAccession = "SRR";
+                options.Fastq1 = "";
                 options.SnpEff = "86";
                 options.Test = true;
                 foreach (var species in ensembl.Species)
                 {
                     options.Species = species;
-                    options.Reference = ensembl.Genomes[species];
-                    options.Organism = ensembl.Organisms[species];
+                    if (ensembl.Genomes.ContainsKey(species))
+                    {
+                        options.Reference = ensembl.Genomes[species];
+                        options.Organism = ensembl.Organisms[species];
+                    }
+                    else
+                    {
+                        int i = 0;
+                    }
                     Everything.WriteConfig(options);
-                    Dispatcher.Invoke(RunTestRunner);
+                    var t = new Task(RunEverythingRunner);
+                    t.Start();
+                    t.ContinueWith(DisplayAnyErrors);
                 }
             }
         }

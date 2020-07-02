@@ -18,7 +18,7 @@ namespace SpritzGUI
             this.outputFolder = outputFolder;
 
             // set up directories to mount to docker container as volumes
-            AnalysisDirectory = task.Item2.AnalysisDirectory;
+            AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
 
             var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
             if (!Directory.Exists(pathToConfig))

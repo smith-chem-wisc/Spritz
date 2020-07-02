@@ -17,6 +17,6 @@ pan_troglodytes
 pongo_abelii
 rattus_norvegicus
 saccharomyces_cerevisiae
-sus_scrofa
+#sus_scrofa
 taeniopygia_guttata
 tetraodon_nigroviridis
