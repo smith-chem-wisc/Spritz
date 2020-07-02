@@ -115,6 +115,7 @@ namespace SpritzGUI
             Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
             txtAnalysisDirectory.Text = AnalysisDirectory;
             txtThreads.Text = MainWindow.DockerCPUs.ToString();
+            Threads = MainWindow.DockerCPUs;
             Lb_ThreadInfo.Content = $"Integer between 1 and {MainWindow.DockerCPUs};\nmaximum is set in Docker Desktop";
             saveButton.IsEnabled = false;
         }
