@@ -37,7 +37,7 @@ rule reorder_genome_fasta:
     output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
     benchmark: "data/ensembl/karyotypic_order.benchmark"
     log: "data/ensembl/karyotypic_order.log"
-    script: "../scripts/karyotypic_order.py 2> {log}"
+    shell: "python scripts/karyotypic_order.py 2> {log}"
 
 rule dict_fa:
     input: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa"
