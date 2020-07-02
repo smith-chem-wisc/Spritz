@@ -34,12 +34,11 @@ rule generate_fastqs:
     shell: "mason_simulator -ir {input.fa} -n 100000 -iv {input.vcf} -o {output.fq1} -or {output.fq2} 2> {log}"
 
 rule download_dry_run:
-    output: "data/ensembl/{REF}.dryrun.txt"
-    log: "data/ensembl/downloads{REF}.dryrun.log"
-    shell: "(python scripts/download_ensembl.py {REF} dry > {output}) 2> {log}"
+    output: "data/ensembl/tests/{species_genome_release}.dryrun.txt"
+    log: "data/ensembl/tests/downloads{species_genome_release}.dryrun.log"
+    shell: "(python scripts/download_ensembl.py {wildcards.species_genome_release} dry > {output}) 2> {log}"
 
-rule test_release:
-    '''Used to simplify call for dry run'''
-    input: "data/ensembl/" + SPECIES + "." + GENEMODEL_VERSION + ".dryrun.txt"
-    output: temp("data/ensembl/test_release.txt")
-    shell: "touch {output}"
+rule concatenate_dry_runs:
+    input: expand("data/ensembl/tests/{species_genome_release}.dryrun.txt", species_genome_release=config["test"])
+    output: "data/ensembl/dryruntests.tsv"
+    shell: "cat {input} > {output}"

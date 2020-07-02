@@ -24,8 +24,8 @@ def check_dir():
     return docheck
 
 def output(wildcards):
-    if config["test"]:
-        return "data/ensembl/test_release.txt"
+    if len(config["test"]) > 0:
+        return "data/ensembl/dryruntests.tsv"
     elif check_dir():
         return expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
             "{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",

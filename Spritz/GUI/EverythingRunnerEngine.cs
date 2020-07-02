@@ -127,8 +127,8 @@ namespace SpritzGUI
             rootMappingNode.Add("snpeff", snpeff);
 
             // write test
-            var test = new YamlScalarNode(options.Test ? "True" : "False");
-            rootMappingNode.Add("test", test);
+            var test = new YamlSequenceNode();
+            rootMappingNode.Add("test", AddParam(options.Test.ToArray(), test));
 
             using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
             {

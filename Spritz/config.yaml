@@ -32,4 +32,4 @@ release: "86"
 snpeff: "86" # hard coded for now
 organism: "human" # based on uniprot
 fq: []
-test: False
+test: []

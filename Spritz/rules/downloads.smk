@@ -8,7 +8,7 @@ rule download_ensembl_references:
     benchmark: "data/ensembl/downloads.benchmark"
     log: "data/ensembl/downloads.log"
     shell:
-        "(python scripts/download_ensembl.py {REF} not && "
+        "(python scripts/download_ensembl.py {REF}.{ENSEMBL_VERSION} not && "
         "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz) 2> {log}"
 
 rule download_ensembl_vcf:
@@ -18,7 +18,7 @@ rule download_ensembl_vcf:
     benchmark: "data/ensembl/downloads_vcf.benchmark"
     log: "data/ensembl/downloads_vcf.log"
     shell:
-        "(python scripts/download_ensembl.py {REF} vcf && "
+        "(python scripts/download_ensembl.py {REF}.{ENSEMBL_VERSION} vcf && "
         "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf}) 2> {log}"
 
 rule index_ensembl_vcf:

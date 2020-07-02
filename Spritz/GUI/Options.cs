@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace SpritzGUI
 {
@@ -18,7 +19,7 @@ namespace SpritzGUI
         public string Species { get; set; }
         public string SnpEff { get; set; }
         public string Organism { get; set; }
-        public bool Test { get; set; }
+        public List<string> Test { get; set; } = new List<string>();
 
         public Options(int dockerThreads)
         {
