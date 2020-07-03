@@ -148,9 +148,13 @@ namespace SpritzGUI
         private void txtThreads_LostFocus(object sender, RoutedEventArgs e)
         {
             if (int.TryParse(txtThreads.Text, out int threads) && threads <= MainWindow.DockerCPUs && threads > 0)
-                Threads = threads;
+            { 
+                Threads = threads; 
+            }
             else
+            {
                 txtThreads.Text = MainWindow.DockerCPUs.ToString();
+            }
         }
     }
 }

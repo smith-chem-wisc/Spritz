@@ -9,15 +9,15 @@ namespace SpritzGUI
 {
     public class EverythingRunnerEngine
     {
-        private readonly Tuple<string, Options> task;
-        private string outputFolder;
+        public string Arguments { get; set; }
+        public string AnalysisDirectory { get; }
+        public string ConfigDirectory { get; }
+        public string DataDirectory { get; }
+        public string PathToWorkflow { get; }
 
         public EverythingRunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
-            this.task = task;
-            this.outputFolder = outputFolder;
-
-            // set up directories to mount to docker container as volumes
+             // set up directories to mount to docker container as volumes
             AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
 
             var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
@@ -38,12 +38,6 @@ namespace SpritzGUI
             PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
         }
 
-        public string Arguments { get; set; }
-        public string AnalysisDirectory { get; }
-        public string ConfigDirectory { get; }
-        public string DataDirectory { get; }
-        public string PathToWorkflow { get; }
-
         public string GenerateCommandsDry(string dockerImageName)
         {
             string command = "";
@@ -59,19 +53,6 @@ namespace SpritzGUI
         public string GenerateTopComand()
         {
             return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
-        }
-
-        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
-        {
-            node.Style = SequenceStyle.Flow;
-            foreach (string item in items)
-            {
-                if (item.Length > 0)
-                {
-                    node.Add(item);
-                }
-            }
-            return node;
         }
 
         public void WriteConfig(Options options)
@@ -135,6 +116,16 @@ namespace SpritzGUI
                 stream.Save(writer, false);
             }
             File.WriteAllLines(Path.Combine(ConfigDirectory, "threads.txt"), new[] { options.Threads.ToString() });
+        }
+
+        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
+        {
+            node.Style = SequenceStyle.Flow;
+            foreach (string item in items.Where(x => x.Length > 0))
+            {
+                node.Add(item);
+            }
+            return node;
         }
     }
 }

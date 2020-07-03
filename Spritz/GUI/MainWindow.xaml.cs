@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System.Text.RegularExpressions;
-using System.Windows.Documents;
-using System.Collections.Generic;
 
 namespace SpritzGUI
 {
@@ -25,7 +21,6 @@ namespace SpritzGUI
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
-        private CancellationTokenSource TokenSource = new CancellationTokenSource();
         private EverythingRunnerEngine Everything;
         private Regex outputScrub = new Regex(@"(\[\d+m)");
         //private Task EverythingTask;
@@ -36,7 +31,6 @@ namespace SpritzGUI
         private string DockerStdOut { get; set; }
         private bool ShowStdOut { get; set; } = true;
         private string DockerSystemInfo { get; set; }
-
 
         public MainWindow()
         {
@@ -61,12 +55,16 @@ namespace SpritzGUI
             });
             bool isDockerInstalled = !string.IsNullOrEmpty(DockerSystemInfo);
             if (isDockerInstalled)
+            {
                 ParseDockerSystemInfo(DockerSystemInfo);
+            }
             string message = isDockerInstalled ?
                 "In Docker Desktop, please ensure all shared drives are enabled, and please ensure a Disk image size of at least 80 GB is enabled." :
                 "Docker is not installed. Please have Docker Desktop installed, enable all shared drives, and ensure a Disk image size of at least 80 GB is enabled.";
             if (isDockerInstalled && DockerMemory < 16)
+            {
                 message += $"{Environment.NewLine}{Environment.NewLine}The memory allocated to Docker is low ({DockerMemory}GB). Please raise this value above 16 GB in Docker Desktop if possible.";
+            }
             MessageBox.Show(message, "Setup", MessageBoxButton.OK, isDockerInstalled ? MessageBoxImage.Information : MessageBoxImage.Error);
 
             //var watch = new FileSystemWatcher();
@@ -82,12 +80,16 @@ namespace SpritzGUI
             string[] infoLines = dockerSystemInfo.Split('\n');
             string cpuLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("CPUs"));
             if (int.TryParse(cpuLine.Split(':')[1].Trim(), out int dockerThreads))
+            {
                 DockerCPUs = dockerThreads;
+            }
 
             double gibToGbConversion = 1.07374;
             string memoryLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("Total Memory"));
             if (double.TryParse(memoryLine.Split(':')[1].Replace("GiB", "").Trim(), out double memoryGB))
+            {
                 DockerMemory = memoryGB * gibToGbConversion;
+            }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -190,7 +192,7 @@ namespace SpritzGUI
                 DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
                 DynamicTasksObservableCollection.Add(new InRunTask("Workflow 1", StaticTasksObservableCollection.First().options));
                 WorkflowTreeView.DataContext = DynamicTasksObservableCollection;
-                
+
                 Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
                 InformationTextBox.Document.Blocks.Clear();
@@ -233,7 +235,7 @@ namespace SpritzGUI
 
         private void OutputHandler(object source, DataReceivedEventArgs e)
         {
-            Dispatcher.Invoke(() => 
+            Dispatcher.Invoke(() =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
                 {
@@ -256,9 +258,11 @@ namespace SpritzGUI
         {
             Dispatcher.Invoke(() => InformationTextBox.AppendText("Done!" + Environment.NewLine));
             if (StaticTasksObservableCollection.Count > 0)
-                Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
-                    + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
+            {
+                Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in "
+                    + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow",
                     MessageBoxButton.OK, MessageBoxImage.Information));
+            }
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
