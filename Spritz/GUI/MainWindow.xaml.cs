@@ -31,6 +31,7 @@ namespace SpritzGUI
         private string DockerStdOut { get; set; }
         private bool ShowStdOut { get; set; } = true;
         private string DockerSystemInfo { get; set; }
+        private bool IsRunning { get; set; }
 
         public MainWindow()
         {
@@ -94,12 +95,27 @@ namespace SpritzGUI
 
         protected override void OnClosed(EventArgs e)
         {
+            string message = "Are you sure you would like to exit Spritz?";
+            message += IsRunning ? " This will stop all Spritz processes, which may take a few moments." : "";
+            if (MessageBox.Show(message, "Exit Spritz", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                return;
+            StopDocker("stop"); // may need to kill processes if we see that they get stuck in the future, but killing leaves some files open, which makes them hard to delete
+            base.OnClosed(e);
+        }
+
+        private void CancelTasksButton_Click(object sender, RoutedEventArgs e)
+        {
+            StopDocker("stop");
+        }
+
+        private void StopDocker(string command)
+        {
             // new process that kills docker container (if any)
             if (Everything != null && !string.IsNullOrEmpty(Everything.PathToWorkflow))
             {
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = $"docker kill spritz{Everything.PathToWorkflow.GetHashCode()}";
+                proc.StartInfo.Arguments = $"docker {command} spritz{Everything.PathToWorkflow.GetHashCode()}";
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false;
                 proc.Start();
@@ -109,8 +125,6 @@ namespace SpritzGUI
                     proc.WaitForExit();
                 }
             }
-
-            base.OnClosed(e);
         }
 
         private void UpdateSRABox()
@@ -199,6 +213,7 @@ namespace SpritzGUI
                 InformationTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry(DockerImage)}\n\n"); // keep for debugging
                 InformationTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
 
+                IsRunning = true;
                 Everything.WriteConfig(StaticTasksObservableCollection.First().options);
                 var t = new Task(RunEverythingRunner);
                 t.Start();
@@ -263,6 +278,7 @@ namespace SpritzGUI
                     + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow",
                     MessageBoxButton.OK, MessageBoxImage.Information));
             }
+            IsRunning = false;
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -518,6 +534,7 @@ namespace SpritzGUI
                     }
                 }
             }
+            IsRunning = true;
             Everything.WriteConfig(options);
             var t = new Task(RunEverythingRunner);
             t.Start();

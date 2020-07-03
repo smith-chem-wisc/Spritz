@@ -1,4 +1,5 @@
 REF=config["species"] + "." + config["genome"]
+SPECIES_LOWER = config["species"].lower()
 
 rule download_ensembl_references:
     output:
@@ -11,9 +12,9 @@ rule download_ensembl_references:
         "(python scripts/download_ensembl.py {REF}.{ENSEMBL_VERSION} not && "
         "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz) 2> {log}"
 
-if config["organism"] == "human":
+if SPECIES_LOWER == "homo_sapiens":
     rule download_dbsnp_vcf:
-    '''Download dbsnp known variant sites if we are analyzing human data'''
+        '''Download dbsnp known variant sites if we are analyzing human data'''
         input: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
         output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
         benchmark: "data/ensembl/downloads_dbsnp_vcf.benchmark"
@@ -23,12 +24,11 @@ if config["organism"] == "human":
             "zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
 else:
     # first get the possible VCF urls; note that Ensembl has started listing variants for each chromosome for human but not other species, but that may change
-    SPECIES_LOWER = config["species"].lower()
     vcf1 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES}.vcf.gz"
     vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz"
 
     rule download_ensembl_vcf:
-    '''Use Ensembl known variant sites if we are analyzing nonhuman data'''
+        '''Use Ensembl known variant sites if we are analyzing nonhuman data'''
         output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
         benchmark: "data/ensembl/downloads_ensembl_vcf.benchmark"
         log: "data/ensembl/downloads_ensembl_vcf.log"
