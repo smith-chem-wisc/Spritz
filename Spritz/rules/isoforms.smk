@@ -6,7 +6,7 @@ rule assemble_transcripts:
     '''Rule adapted from ProteomeGenerator'''
     input:
         bam="{dir}/{sra}.sorted.bam" if check_sra() else "{dir}/{fq}.sorted.bam",
-        gff="data/ensembl/Homo_sapiens." + GENEMODEL_VERSION + ".gff3"
+        gff=GFF3,
     output: "{dir}/{sra}.sorted.gtf" if check_sra() else "{dir}/{fq}.sorted.gtf"
     threads: 6
     log: "{dir}/{sra}.sorted.gtf.log" if check_sra() else "{dir}/{fq}.sorted.gtf"
@@ -17,7 +17,7 @@ rule merge_transcripts:
     '''Rule adapted from ProteomeGenerator'''
     input:
         custom_gtfs=expand("{{dir}}/{sra}.sorted.gtf", sra=config["sra"]) if check_sra() is True else expand("{{dir}}/{fq}.sorted.gtf", fq=config["fq"]),
-        gff="data/ensembl/Homo_sapiens." + GENEMODEL_VERSION + ".gff3"
+        gff=GFF3,
     output: "{dir}/combined.gtf"
     threads: 12
     benchmark: "{dir}/combined.gtf.benchmark"
