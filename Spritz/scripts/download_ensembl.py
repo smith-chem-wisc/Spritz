@@ -4,9 +4,10 @@
 import subprocess
 import sys
 import os
+import requests
 
 def check_url_exists(url):
-    return subprocess.check_output(['./validate.sh', url]) == b'true\n'
+    return requests.get(vcf1).status_code == 200
 
 speciesOrig = sys.argv[1].split('.')[0]
 species = speciesOrig.lower()
@@ -17,24 +18,12 @@ protocol = "http" #ftp or http; http seems to work in more places
 
 primary = f"{protocol}://ftp.ensembl.org/pub/release-{release}//fasta/{species}/dna/{path}.dna.primary_assembly.fa.gz"
 toplevel = f"{protocol}://ftp.ensembl.org/pub/release-{release}//fasta/{species}/dna/{path}.dna.toplevel.fa.gz"
-
-vcf1 = f"{protocol}://ftp.ensembl.org/pub/release-{release}/variation/vcf/{species}/{speciesOrig}.vcf.gz"
-vcf2 = f"{protocol}://ftp.ensembl.org/pub/release-{release}/variation/vcf/{species}/{species}.vcf.gz" # edit, incosistent naming convention /vcf/Mus_musculus.vcf.gz or /vcf/mus_musculus.vcf.gz
 gff = f"{protocol}://ftp.ensembl.org/pub/release-{release}/gff3/{species}/{path}.{release}.gff3.gz"
 pep = f"{protocol}://ftp.ensembl.org/pub/release-{release}//fasta/{species}/pep/{path}.pep.all.fa.gz"
 
-if fileToGet == "vcf":
-    if check_url_exists(vcf1):
-        subprocess.check_call(["wget", "-P", "data/ensembl/", vcf1])
-    else:
-        subprocess.check_call(["wget", "-P", "data/ensembl/", vcf2])
-        os.rename(f"data/ensembl/{species}.vcf.gz", f"data/ensembl/{speciesOrig}.vcf.gz")
-
-elif fileToGet == "not":
-    if check_url_exists(primary):
-        subprocess.check_call(["wget", "-P", "data/ensembl/", primary])
-    else:
-        subprocess.check_call(["wget", "-P", "data/ensembl/", toplevel])
+if fileToGet == "not":
+    gfa = primary if check_url_exists(primary) else toplevel
+    subprocess.check_call(["wget", "-P", "data/ensembl/", gfa])
     subprocess.check_call(["wget", "-P", "data/ensembl/", gff])
     subprocess.check_call(["wget", "-P", "data/ensembl/", pep])
 

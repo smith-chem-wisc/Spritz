@@ -1,4 +1,4 @@
-import yaml
+import sys, yaml
 
 with open("config.yaml", 'r') as stream:
    data = yaml.safe_load(stream)
@@ -6,21 +6,19 @@ with open("config.yaml", 'r') as stream:
 species = data["species"]
 version = data["genome"]
 
-ucsc=open("./data/ensembl/" + species + ".clean.vcf")
-
 ucsc2ensembl={}
 for line in open("ChromosomeMappings/" + version + "_UCSC2ensembl.txt"):
     linesplit=line.strip().split("\t")
     if len(linesplit) <= 1: continue
     ucsc2ensembl[linesplit[0]] = linesplit[1]
 
-with open("./data/ensembl/" + species + ".orig.ensembl.vcf","w") as ensembl:
+with open("./data/ensembl/" + species + ".ensembl.vcf","w") as ensembl:
     chrs={}
     max_chr=0
-    for line in ucsc:
+    for line in sys.stdin:
         # header
         if line.startswith("#"):
-            ensembl.write(line)
+            sys.stdout.write(line)
             continue
 
         # change chr from UCSC to Ensembl
@@ -46,4 +44,4 @@ with open("./data/ensembl/" + species + ".orig.ensembl.vcf","w") as ensembl:
     for chr in chrn:
         if chr in chrs:
             for line in chrs[chr]:
-                ensembl.write(line)
+                sys.stdout.write(line)

@@ -27,9 +27,6 @@ RUN conda init \
 ADD start.sh /usr/local/envs/spritz/etc/conda/activate.d/start.sh
 RUN chmod 777 /usr/local/envs/spritz/etc/conda/activate.d/start.sh
 
-# Make script for validating downloads executable
-RUN chmod 774 validate.sh
-
 # activate environment
 RUN echo "source activate spritz" > ~/.bashrc
 ENV PATH /opt/conda/envs/spritz/bin:$PATH

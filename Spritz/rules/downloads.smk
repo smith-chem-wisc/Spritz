@@ -11,15 +11,28 @@ rule download_ensembl_references:
         "(python scripts/download_ensembl.py {REF}.{ENSEMBL_VERSION} not && "
         "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz) 2> {log}"
 
-rule download_ensembl_vcf:
-    output:
-        vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
-        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
-    benchmark: "data/ensembl/downloads_vcf.benchmark"
-    log: "data/ensembl/downloads_vcf.log"
-    shell:
-        "(python scripts/download_ensembl.py {REF}.{ENSEMBL_VERSION} vcf && "
-        "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf}) 2> {log}"
+if config["organism"] == "human":
+    rule download_dbsnp_vcf:
+    '''Download dbsnp known variant sites if we are analyzing human data'''
+        input: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
+        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
+        benchmark: "data/ensembl/downloads_dbsnp_vcf.benchmark"
+        log: "data/ensembl/downloads_dbsnp_vcf.log"
+        shell:
+            "(wget -O - https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz | "
+            "zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
+else:
+    # first get the possible VCF urls; note that Ensembl has started listing variants for each chromosome for human but not other species, but that may change
+    SPECIES_LOWER = config["species"].lower()
+    vcf1 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES}.vcf.gz"
+    vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz"
+
+    rule download_ensembl_vcf:
+    '''Use Ensembl known variant sites if we are analyzing nonhuman data'''
+        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
+        benchmark: "data/ensembl/downloads_ensembl_vcf.benchmark"
+        log: "data/ensembl/downloads_ensembl_vcf.log"
+        shell: "((wget -O - {vcf1} || wget -O - {vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
 
 rule index_ensembl_vcf:
     input: "data/ensembl/" + config["species"] + ".ensembl.vcf"
@@ -30,7 +43,9 @@ rule index_ensembl_vcf:
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
     log: "ChromosomeMappings/download_chromosome_mappings.log"
-    shell: "rm -rf ChromosomeMappings && git clone https://github.com/dpryan79/ChromosomeMappings.git 2> {log}"
+    shell:
+        "(if [ -d ChromosomeMappings ]; then rm -rf ChromosomeMappings; fi && "
+        "git clone https://github.com/dpryan79/ChromosomeMappings.git) 2> {log}"
 
 rule reorder_genome_fasta:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
