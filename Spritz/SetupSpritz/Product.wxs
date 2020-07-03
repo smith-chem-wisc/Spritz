@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="SetupSpritz" Language="1033" Version="1.0.0.0" Manufacturer="" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
+	<Product Id="*" Name="SetupSpritz" Language="1033" Version="1.0.0.0" Manufacturer="Smith Group" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Icon Id="icon.ico" SourceFile="Spritz.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
+    
+		<MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of Spritz is already installed." />
+		<Condition Message="This application is only supported on Windows 7 or higher.">
+			<![CDATA[Installed OR (VersionNT >= 601)]]>
+    </Condition>
+		<MediaTemplate EmbedCab="yes"/>
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate />
 
-		<Feature Id="ProductFeature" Title="SetupSpritz" Level="1">
-			<ComponentGroupRef Id="ProductComponents" />
-		</Feature>
+      
 	</Product>
 
 	<Fragment>
