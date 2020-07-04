@@ -66,15 +66,20 @@ rule dict_fa:
     output: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.dict"
     shell: "gatk CreateSequenceDictionary -R {input} -O {output}"
 
-rule download_sras:
-    output:
-        temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
-        temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
-    benchmark: "{dir}/{sra}.benchmark"
-    log: "{dir}/{sra}.log"
-    threads: 4
-    shell:
-        "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+def check_sra():
+    docheck = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
+    return docheck
+
+if check_sra():
+    rule download_sras:
+        output:
+            temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
+            temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
+        benchmark: "{dir}/{sra}.benchmark"
+        log: "{dir}/{sra}.log"
+        threads: 4
+        shell:
+            "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
 
 rule tmpdir:
     output:
