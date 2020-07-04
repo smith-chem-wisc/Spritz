@@ -7,7 +7,7 @@ import os
 import requests
 
 def check_url_exists(url):
-    return requests.get(vcf1).status_code == 200
+    return requests.get(url).status_code == 200
 
 speciesOrig = sys.argv[1].split('.')[0]
 species = speciesOrig.lower()
@@ -28,10 +28,12 @@ if fileToGet == "not":
     subprocess.check_call(["wget", "-P", "data/ensembl/", pep])
 
 else:
-    # perform a dry run of the download_sras
+    # perform a dry run of the download
+    vcf1 = f"http://ftp.ensembl.org/pub/release-{release}/variation/vcf/{species}/{speciesOrig}.vcf.gz"
+    vcf2 = f"http://ftp.ensembl.org/pub/release-{release}/variation/vcf/{species}/{species}.vcf.gz"
     sys.stdout.write(f"{path}.{release}\tprimary\t{check_url_exists(primary)}\t{primary}\n")
     sys.stdout.write(f"{path}.{release}\ttoplevel\t{check_url_exists(toplevel)}\t{toplevel}\n")
-    sys.stdout.write(f"{path}.{release}\tvcf1\t{check_url_exists(vcf1)}\t{vcf1}\n")
-    sys.stdout.write(f"{path}.{release}\tvcf2\t{check_url_exists(vcf2)}\t{vcf2}\n")
     sys.stdout.write(f"{path}.{release}\tgff\t{check_url_exists(gff)}\t{gff}\n")
     sys.stdout.write(f"{path}.{release}\tpep\t{check_url_exists(pep)}\t{pep}\n")
+    sys.stdout.write(f"{path}.{release}\tgff\t{check_url_exists(vcf1)}\t{vcf1}\n")
+    sys.stdout.write(f"{path}.{release}\tpep\t{check_url_exists(vcf2)}\t{vcf2}\n")

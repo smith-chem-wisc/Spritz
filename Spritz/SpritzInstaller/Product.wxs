@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?define SpritzTargetDir=$(var.Spritz.TargetDir)?>
+	<Product Id="*" Name="SetupSpritz" Language="1033" Version="0.2.0" Manufacturer="Smith Group" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <MediaTemplate EmbedCab="yes"/>
+
+    <!-- Add installer icon-->
+    <Icon Id="icon.ico" SourceFile="$(var.Spritz.TargetDir)..\..\..\Spritz.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
+
+    <!-- Check version information -->
+		<MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of Spritz is already installed." />
+		<Condition Message="This application is only supported on Windows 7 or higher.">
+			<![CDATA[Installed OR (VersionNT >= 601)]]>
+    </Condition>
+  
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!--Desktop Shortcut Installation-->
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="6e96b733-3903-4233-ac2a-137c5ec6df0b">
+          <Condition>INSTALLDESKTOPSHORTCUT</Condition>
+          <RegistryKey Root="HKCU" Key="Software\SmithGroup\Spritz">
+            <RegistryValue Name="SpritzDesktop" Value="1" Type="integer" KeyPath="yes" />
+          </RegistryKey>
+          <Shortcut Id="AppDesktopSC" Name="Spritz" Description="Shortcut to App" Target="[#Spritz.exe]" WorkingDirectory="APPLICATIONROOTDIRECTORY" />
+        </Component>
+      </Directory>
+          
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="APPLICATIONROOTDIRECTORY" Name="Spritz" />
+			</Directory>
+			<Directory Id="ProgramMenuFolder">
+				<Directory Id="ApplicationProgramsFolder" Name="Spritz"/>
+			</Directory>
+		</Directory>
+     
+    <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
+      <Component Id="Spritz.exe" Guid="db335543-8505-4ebb-891e-45714a221d4f">
+        <File Id="Spritz.exe" Source="$(var.Spritz.TargetDir)Spritz.exe"/>
+      </Component>
+      <Component Id="Spritz.dll" Guid="c2c65dc1-dd51-4fa2-aec2-be5896e56697">
+        <File Id="Spritz.dll" Source="$(var.Spritz.TargetDir)Spritz.dll"/>
+      </Component>
+      <Component Id="Spritz.dll.config" Guid="2a840952-3a85-4e83-b640-6aa90fe7fd16">
+        <File Id="Spritz.dll.config" Source="$(var.Spritz.TargetDir)Spritz.dll.config"/>
+      </Component>
+      <Component Id="Spritz.deps.json" Guid="1efa3589-e218-4e54-945d-1af43a041def">
+        <File Id="Spritz.deps.json" Source="$(var.Spritz.TargetDir)Spritz.deps.json"/>
+      </Component>
+      <Component Id="Spritz.pdb" Guid="f8db6112-f469-45d8-8b7c-42cff7bf8f08">
+        <File Id="Spritz.pdb" Source="$(var.Spritz.TargetDir)Spritz.pdb"/>
+      </Component>
+      <Component Id="Spritz.runtimeconfig.dev.json" Guid="198b6180-bcdd-485e-988a-e1f6e743e8b3">
+        <File Id="Spritz.runtimeconfig.dev.json" Source="$(var.Spritz.TargetDir)Spritz.runtimeconfig.dev.json"/>
+      </Component>
+      <Component Id="Spritz.runtimeconfig.json" Guid="e8c02dcf-8a7e-4a47-a29a-8c106415699f">
+        <File Id="Spritz.runtimeconfig.json" Source="$(var.Spritz.TargetDir)Spritz.runtimeconfig.json"/>
+      </Component>
+      <Component Id="Nett.dll" Guid="4280c01e-6bba-414e-ba96-c74059ab8fdc">
+        <File Id="Nett.dll" Source="$(var.Spritz.TargetDir)Nett.dll"/>
+      </Component>
+      <Component Id="YamlDotNet.dll" Guid="b95ebdb8-499e-4062-9e76-4ab24619d2c3">
+        <File Id="YamlDotNet.dll" Source="$(var.Spritz.TargetDir)YamlDotNet.dll"/>
+      </Component>
+      <Component Id="genomes.csv" Guid="14093f17-6247-40e0-92a9-8b0c504438de">
+        <File Id="genomes.csv" Source="$(var.Spritz.TargetDir)genomes.csv"/>
+      </Component>
+    </DirectoryRef>
+    
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="">
+        <Shortcut Id="ApplicationStartMenuShortcut" Name="Spritz" Description="Proteogenomic Database Engine" Target="[#Spritz.exe]" WorkingDirectory="APPLICATIONROOTDIRECTORY"/>
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\Spritz" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+    
+    <Feature Id="Spritz" Title="Spritz" Level="1">
+      <ComponentRef Id="Spritz.exe"/>
+      <ComponentRef Id="Spritz.dll"/>
+      <ComponentRef Id="Spritz.deps.json"/>
+      <ComponentRef Id="Spritz.dll.config"/>
+      <ComponentRef Id="Spritz.pdb"/>
+      <ComponentRef Id="Spritz.runtimeconfig.json"/>
+      <ComponentRef Id="Spritz.runtimeconfig.dev.json"/>
+      <ComponentRef Id="Nett.dll"/>
+      <ComponentRef Id="YamlDotNet.dll"/>
+      <ComponentRef Id="genomes.csv"/>
+      <ComponentRef Id="DesktopShortcut"/>
+      <ComponentRef Id="ApplicationShortcut"/>
+    </Feature>
+
+    <UI>
+      <UIRef Id="WixUI_Mondo" />
+      <UIRef Id="ShortcutOptions" />
+      <UIRef Id="Maintenance" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
+      <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1">1</Publish>
+      <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1">1</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
+      <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
+      <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
+      <Publish Dialog="ExitDialog"
+        Control="Finish"
+        Event="DoAction"
+        Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+
+    <CustomAction Id='LaunchFile' FileKey='Spritz.exe' ExeCommand='' Return="asyncNoWait" />
+    <Property Id="OVERWRITEAPPDATA" Value="1" />
+    <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Spritz" />
+    <Property Id="WixShellExecTarget" Value="[#Spritz.exe]" />
+
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+  </Product>
+</Wix>

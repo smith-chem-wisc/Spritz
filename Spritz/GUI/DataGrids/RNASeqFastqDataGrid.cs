@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace SpritzGUI
+namespace Spritz
 {
     internal class RNASeqFastqDataGrid
     {

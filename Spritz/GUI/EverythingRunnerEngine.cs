@@ -5,7 +5,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 
-namespace SpritzGUI
+namespace Spritz
 {
     public class EverythingRunnerEngine
     {
@@ -20,7 +20,7 @@ namespace SpritzGUI
              // set up directories to mount to docker container as volumes
             AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
 
-            var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
+            var pathToConfig = Path.Combine(AnalysisDirectory, "configs");
             if (!Directory.Exists(pathToConfig))
             {
                 Directory.CreateDirectory(pathToConfig);

@@ -2,9 +2,11 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Security;
+using System.Security.Permissions;
 using System.Windows;
 
-namespace SpritzGUI
+namespace Spritz
 {
     /// <summary>
     /// Interaction logic for workflows
@@ -65,19 +67,22 @@ namespace SpritzGUI
             //    return;
             //}
 
-            // Options.SpritzDirectory = txtSpritzDirecory.Text;
-            var defaultAnalysisDirectory = Path.Combine(Directory.GetCurrentDirectory(), "output");
-            if (!Directory.Exists(defaultAnalysisDirectory))
-            {
-                Directory.CreateDirectory(defaultAnalysisDirectory);
-            }
-
             Options.AnalysisDirectory = TrimQuotesOrNull(txtAnalysisDirectory.Text);
+            try
+            {
+                string testDirectory = Path.Combine(Options.AnalysisDirectory, $"TestSpritzPermissions{Options.AnalysisDirectory.GetHashCode()}");
+                Directory.CreateDirectory(testDirectory);
+                Directory.Delete(testDirectory);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Error: Cannot write to specified analysis directory: {Options.AnalysisDirectory}. Please choose another directory.", "Write Permissions", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
             if (!Directory.Exists(Options.AnalysisDirectory))
             {
-                MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
-                return;
+                Directory.CreateDirectory(Options.AnalysisDirectory);
             }
 
             Options.Threads = Threads;
@@ -148,8 +153,8 @@ namespace SpritzGUI
         private void txtThreads_LostFocus(object sender, RoutedEventArgs e)
         {
             if (int.TryParse(txtThreads.Text, out int threads) && threads <= MainWindow.DockerCPUs && threads > 0)
-            { 
-                Threads = threads; 
+            {
+                Threads = threads;
             }
             else
             {

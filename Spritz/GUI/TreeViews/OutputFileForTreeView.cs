@@ -1,4 +1,4 @@
-﻿namespace SpritzGUI
+﻿namespace Spritz
 {
     public class OutputFileForTreeView : ForTreeView
     {

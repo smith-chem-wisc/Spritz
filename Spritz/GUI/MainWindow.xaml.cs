@@ -10,13 +10,15 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-namespace SpritzGUI
+namespace Spritz
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static readonly string CurrentVersion = "0.2.0";
+
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
@@ -40,6 +42,17 @@ namespace SpritzGUI
             WorkflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
 
+            // Version information
+            try
+            {
+                SpritzUpdater.GetVersionNumbersFromWeb();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not get newest version from web: " + e.Message, "Setup", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            // Check Docker setup
             Dispatcher.Invoke(() =>
             {
                 Process proc = new Process();
@@ -67,13 +80,6 @@ namespace SpritzGUI
                 message += $"{Environment.NewLine}{Environment.NewLine}The memory allocated to Docker is low ({DockerMemory}GB). Please raise this value above 16 GB in Docker Desktop if possible.";
             }
             MessageBox.Show(message, "Setup", MessageBoxButton.OK, isDockerInstalled ? MessageBoxImage.Information : MessageBoxImage.Error);
-
-            //var watch = new FileSystemWatcher();
-            //watch.Path = Path.Combine(Environment.CurrentDirectory, "output");
-            //watch.Filter = "test.txt";// Path.GetFileName(Everything.PathToWorkflow);
-            //watch.NotifyFilter = NotifyFilters.LastWrite;
-            //watch.Changed += new FileSystemEventHandler(OnWorkflowOutputChanged);
-            //watch.EnableRaisingEvents = true;
         }
 
         private void ParseDockerSystemInfo(string dockerSystemInfo)
@@ -170,6 +176,18 @@ namespace SpritzGUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (SpritzUpdater.NewestKnownVersion != null && !SpritzUpdater.IsVersionLower(SpritzUpdater.NewestKnownVersion))
+            {
+                try
+                {
+                    SpritzUpdater newwind = new SpritzUpdater();
+                    newwind.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+            }
         }
 
         private void MenuItem_Wiki_Click(object sender, RoutedEventArgs e)
@@ -365,7 +383,7 @@ namespace SpritzGUI
 
             try
             {
-                var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options(DockerCPUs).AnalysisDirectory : OutputFolderTextBox.Text);
+                var dialog = new WorkFlowWindow(string.IsNullOrEmpty(OutputFolderTextBox.Text) ? new Options(DockerCPUs).AnalysisDirectory : OutputFolderTextBox.Text);
                 if (dialog.ShowDialog() == true)
                 {
                     AddTaskToCollection(dialog.Options);

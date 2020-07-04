@@ -1,4 +1,4 @@
-﻿namespace SpritzGUI
+﻿namespace Spritz
 {
     internal class SRADataGrid
     {

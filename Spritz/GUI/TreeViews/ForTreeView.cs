@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace SpritzGUI
+namespace Spritz
 {
     public class ForTreeView : INotifyPropertyChanged
     {

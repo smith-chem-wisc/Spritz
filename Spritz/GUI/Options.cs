@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 
-namespace SpritzGUI
+namespace Spritz
 {
     public class Options
     {
@@ -24,6 +24,16 @@ namespace SpritzGUI
         public Options(int dockerThreads)
         {
             Threads = dockerThreads;
+            try
+            {
+                string testDirectory = Path.Combine(AnalysisDirectory, $"TestSpritzPermissions{AnalysisDirectory.GetHashCode()}");
+                Directory.CreateDirectory(testDirectory);
+                Directory.Delete(testDirectory);
+            }
+            catch (Exception)
+            {
+                AnalysisDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Spritz", "output");
+            }
         }
     }
 }

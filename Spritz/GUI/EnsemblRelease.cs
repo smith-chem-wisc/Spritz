@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.IO;
+using System.Linq;
 
-namespace SpritzGUI
+namespace Spritz
 {
     public class EnsemblRelease
     {
@@ -17,14 +17,12 @@ namespace SpritzGUI
             var ensemblReleases = new ObservableCollection<EnsemblRelease>();
 
             // read release.txt files into a list
-            string releasefolder = Path.Combine(Directory.GetCurrentDirectory(), "EnsemblReleases");
-            var releases = Directory.GetFiles(releasefolder, "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
-
             var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv")).Where(line => !line.StartsWith("#")).ToList();
+            var releases = genomeDB.Select(g => g.Split(',')[0]).Distinct().ToList();
             foreach (string release in releases)
             {
                 // read txt file into obsv collection
-                var species = File.ReadAllLines(Path.Combine(releasefolder, $"{release}.txt")).Where(line => !line.StartsWith("#")).ToList();
+                var species = genomeDB.Select(g => g.Split(',')[1]).Distinct().ToList();
                 Dictionary<string, string> genomes = new Dictionary<string, string>();
                 Dictionary<string, string> organisms = new Dictionary<string, string>();
 

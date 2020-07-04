@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SetupSpritz", "SetupSpritz\SetupSpritz.wixproj", "{4EEF0CDD-8CFF-4E4C-8488-5F0F12847737}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SpritzInstaller", "SpritzInstaller\SpritzInstaller.wixproj", "{4EEF0CDD-8CFF-4E4C-8488-5F0F12847737}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spritz", "GUI\Spritz.csproj", "{5FE72284-B831-4E52-89E3-C7B929B9B6F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spritz", "GUI\Spritz.csproj", "{5FE72284-B831-4E52-89E3-C7B929B9B6F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
