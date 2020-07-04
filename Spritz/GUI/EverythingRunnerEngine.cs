@@ -42,7 +42,7 @@ namespace Spritz
         {
             string command = "";
             if (dockerImageName.Contains("smithlab")) { command += $"docker pull {dockerImageName} ;"; }
-            command += $"docker run --rm -t --name spritz{PathToWorkflow.GetHashCode()} " +
+            command += $"docker run --rm -i -t --name spritz{PathToWorkflow.GetHashCode()} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
                 $"-v \"\"\"{DataDirectory}:/app/data" + "\"\"\" " +
                 $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +

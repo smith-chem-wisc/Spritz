@@ -1,6 +1,12 @@
 REF=config["species"] + "." + config["genome"]
 SPECIES_LOWER = config["species"].lower()
 
+protocol = "http"
+primary = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.primary_assembly.fa.gz"
+toplevel = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.toplevel.fa.gz"
+gff = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/gff3/{SPECIES_LOWER}/{REF}.{ENSEMBL_VERSION}.gff3.gz"
+pep = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/pep/{REF}.pep.all.fa.gz"
+
 rule download_ensembl_references:
     output:
         gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
@@ -9,8 +15,9 @@ rule download_ensembl_references:
     benchmark: "data/ensembl/downloads.benchmark"
     log: "data/ensembl/downloads.log"
     shell:
-        "(python scripts/download_ensembl.py {REF}.{ENSEMBL_VERSION} not && "
-        "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz) 2> {log}"
+        "((wget -O - {primary} || wget -O - {toplevel}) | gunzip -c - > {output.gfa} && "
+        "wget -O - {gff} | gunzip -c - > {output.gff3} && "
+        "wget -O - {pep} | gunzip -c - > {output.pfa}) 2> {log}"
 
 if SPECIES_LOWER == "homo_sapiens":
     rule download_dbsnp_vcf:

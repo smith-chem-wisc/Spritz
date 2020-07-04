@@ -17,7 +17,6 @@
             <MenuItem Header="Settings">
                 <Label Content="Target Docker Image:"/>
                 <TextBox x:Name="tb_DockerImage" Text="smithlab/spritz" TextChanged="DockerImage_TextChanged"/>
-                <Button x:Name="bt_TestReleases" Content="Test All Ensembl Releases" Click="Bt_TestReleases_Click"/>
             </MenuItem>
         </Menu>
         <Grid>

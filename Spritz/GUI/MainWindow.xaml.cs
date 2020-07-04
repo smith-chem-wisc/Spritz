@@ -529,34 +529,5 @@ namespace Spritz
                 InformationTextBox.AppendText(DockerStdOut);
             }
         }
-
-        private void Bt_TestReleases_Click(object sender, RoutedEventArgs e)
-        {
-            Options options = new Options(DockerCPUs);
-            options.SraAccession = "SRR";
-            options.Fastq1 = "";
-            options.SnpEff = "86";
-            foreach (EnsemblRelease release in EnsemblRelease.GetReleases())
-            {
-                EnsemblRelease ensembl = release;
-                options.Release = ensembl.Release;
-                foreach (var species in ensembl.Species)
-                {
-                    Everything = new EverythingRunnerEngine(null, Path.Combine(options.AnalysisDirectory, "TestReleases"));
-                    options.Species = species;
-                    if (ensembl.Genomes.ContainsKey(species))
-                    {
-                        options.Test.Add($"{species}.{ensembl.Genomes[species]}.{ensembl.Release.Substring(8)}");
-                        options.Reference = ensembl.Genomes[species];
-                        options.Organism = ensembl.Organisms[species];
-                    }
-                }
-            }
-            IsRunning = true;
-            Everything.WriteConfig(options);
-            var t = new Task(RunEverythingRunner);
-            t.Start();
-            t.ContinueWith(DisplayAnyErrors);
-        }
     }
 }
