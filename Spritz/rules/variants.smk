@@ -2,7 +2,6 @@ GATK_MEM=16000 # MB
 GATK_JAVA=f"--java-options \"-Xmx{GATK_MEM}M -Dsamjdk.compression_level=9\""
 REF=config["species"] + "." + config["genome"]
 GENOME_VERSION = config["genome"]
-REF_SNPEFF = config["genome"] + "." + config["snpeff"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar", temp("SnpEff_4.3_SmithChemWisc_v2.zip")
@@ -128,29 +127,9 @@ rule filter_indels:
         "(gatk SelectVariants --select-type-to-exclude INDEL -R {input.fa} -V {input.vcf} -O {output} && "
         "gatk IndexFeatureFile -F {output}) &> {log}"
 
-# rule snpeff_data_folder:
-#     output: directory("SnpEff/data")
-#     shell: "mkdir SnpEff/data"
-
-rule snpeff_database_setup:
-    input:
-        # dir="SnpEff/data",
-        jar="SnpEff/snpEff.jar",
-        config="SnpEff/snpEff.config"
-    output: "data/SnpEffDatabases.txt"
-    params: ref=REF_SNPEFF
-    resources: mem_mb=16000
-    shell:
-        "java -Xmx{resources.mem_mb}M -jar {input.jar} databases > {output} && "
-        "echo \"\n# {params.ref}\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.genome : Human genome " + GENOME_VERSION + " using RefSeq transcripts\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> SnpEff/snpEff.config && "
-        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
-        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config"
-
 rule variant_annotation_ref:
     input:
-        "data/SnpEffDatabases.txt",
+        "SnpEff/data/" + REF + "/done" + REF + ".txt",
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/combined.spritz.vcf",
@@ -160,7 +139,7 @@ rule variant_annotation_ref:
         genesummary="{dir}/combined.spritz.snpeff.genes.txt",
         protfa="{dir}/combined.spritz.snpeff.protein.fasta",
         protxml="{dir}/combined.spritz.snpeff.protein.xml"
-    params: ref=config["genome"] + "." + config["snpeff"], # no isoform reconstruction
+    params: ref=REF, # no isoform reconstruction
     resources: mem_mb=16000
     log: "{dir}/combined.spritz.snpeff.log"
     benchmark: "{dir}/combined.spritz.snpeff.benchmark"
@@ -172,13 +151,15 @@ rule variant_annotation_ref:
 
 rule variant_annotation_custom:
     input:
-        "data/SnpEffDatabases.txt",
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/combined.spritz.vcf",
         vcfnoindels="{dir}/combined.spritz.vcf",
         isoform_reconstruction=[
-            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff", "SnpEff/data/combined.transcripts.genome.gff3/protein.fa", "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa", "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
+            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
+            "SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
+            "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
+            "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
     output:
         ann="{dir}/combined.spritz.isoformvariants.vcf",
         html="{dir}/combined.spritz.isoformvariants.html",
@@ -197,65 +178,3 @@ rule variant_annotation_custom:
         " -fastaProt {output.protfa} -xmlProt {output.protxml}"
         " {params.ref} {input.vcf}" # with isoforms and variants
         " > {output.ann}) 2> {log} && gzip -k {output.protxml}"
-
-rule variant_annotation_ref_noindel:
-    input:
-        "data/SnpEffDatabases.txt",
-        snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
-        vcf="{dir}/combined.spritz.noindels.vcf",
-    output:
-        ann="{dir}/combined.spritz.noindels.snpeff.vcf",
-        html="{dir}/combined.spritz.noindels.snpeff.html",
-        genesummary="{dir}/combined.spritz.noindels.snpeff.genes.txt",
-        protfa="{dir}/combined.spritz.snpeff.noindels.protein.fasta",
-        protxml=temp("{dir}/combined.spritz.snpeff.noindels.protein.xml"),
-        protxmlgz="{dir}/combined.spritz.snpeff.noindels.protein.xml.gz"
-    params: ref=REF_SNPEFF, # no isoform reconstruction
-    resources: mem_mb=GATK_MEM
-    log: "{dir}/combined.spritz.snpeff.log"
-    benchmark: "{dir}/combined.spritz.snpeff.benchmark"
-    shell:
-        "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
-        " -fastaProt {output.protfa} -xmlProt {output.protxml} "
-        " {params.ref} {input.vcf}" # no isoforms, with variants
-        " > {output.ann}) 2> {log} && gzip -k {output.protxml}"
-
-rule variant_annotation_custom_noindel:
-    input:
-        "data/SnpEffDatabases.txt",
-        snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
-        vcf="{dir}/combined.spritz.noindels.vcf",
-        isoform_reconstruction="SnpEff/data/combined.sorted.filtered.withcds.gtf/genes.gtf"
-    output:
-        ann="{dir}/combined.spritz.noindels.isoformvariants.vcf",
-        html="{dir}/combined.spritz.noindels.isoformvariants.html",
-        genesummary="{dir}/combined.spritz.noindels.noindels.isoformvariants.genes.txt",
-        protfa="{dir}/combined.spritz.noindels.isoformvariants.protein.fasta",
-        protxml=temp("{dir}/combined.spritz.noindels.isoformvariants.protein.xml"),
-        protxmlgz="{dir}/combined.spritz.noindels.isoformvariants.protein.xml.gz",
-    params: ref="combined.sorted.filtered.withcds.gtf" # with isoforms
-    resources: mem_mb=GATK_MEM
-    log: "{dir}/combined.spritz.isoformvariants.log"
-    benchmark: "{dir}/combined.spritz.isoformvariants.benchmark"
-    shell:
-        "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
-        " -fastaProt {output.protfa} -xmlProt {output.protxml}"
-        " {params.ref} {input.vcf}" # with isoforms and variants
-        " > {output.ann}) 2> {log} && gzip -k {output.protxml}"
-
-# rule cleanup_snpeff:
-#     input:
-#         "data/combined.spritz.snpeff.protein.xml",
-#         "data/combined.spritz.isoform.protein.xml",
-#         "data/" + REF_SNPEFF + ".protein.xml", # see proteogenomics.smk
-#         "data/combined.spritz.isoformvariants.protein.xml" # see proteogenomics.smk
-#     output:
-#         temp("clean_snpeff")
-#     shell:
-#         # clean up SnpEff
-#         "touch snpeff_complete && "
-#         "cd SnpEff && git checkout -- snpEff.config && " # revert changes to config
-#         "rm -r data/combined.sorted.filtered.withcds.gtf data/genomes/combined.sorted.filtered.withcds.gtf.fa && " # remove custom gene model files
-#         "cd .. && rm data/SnpEffDatabases.txt" # remove database list to trigger the setup next time

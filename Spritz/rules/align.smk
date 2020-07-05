@@ -3,8 +3,8 @@ import os
 REF=config["species"] + "." + config["genome"]
 
 rule directories:
-    output: directory("data/ensembl/" + REF + ".dna.primary_assembly.karyotypic/")
-    shell: "mkdir -p data/ensembl/" + REF + ".dna.primary_assembly.karyotypic/"
+    output: directory("data/ensembl/{REF}.dna.primary_assembly.karyotypic/")
+    shell: "mkdir -p data/ensembl/{REF}.dna.primary_assembly.karyotypic/"
 
 rule hisat_genome:
     input:
@@ -16,7 +16,7 @@ rule hisat_genome:
         finished="data/ensembl/done_building_hisat_genome{REF}.txt",
     benchmark: "data/ensembl/{REF}.hisatbuild.benchmark"
     log: "data/ensembl/{REF}.hisatbuild.log"
-    shell: "(hisat2-build -p {threads} data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) 2> {log}"
+    shell: "(hisat2-build -p {threads} data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) &> {log}"
 
 rule hisat2_splice_sites:
     input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
@@ -29,16 +29,6 @@ def input_fq_args(fastqs):
         return f"-U {fqs[0]}"
     else:
         return f"-1 {fqs[0]} -2 {fqs[1]}"
-
-if not check_sra():
-    rule expand_fastqs:
-        input:
-            fq1="{dir}/{fq}_1.fastq.gz",
-            fq2="{dir}/{fq}_2.fastq.gz",
-        output:
-            fq1=temp("{dir}/{fq}_1.fastq"),
-            fq2=temp("{dir}/{fq}_2.fastq"),
-        shell: "gunzip -k {input.fq1} && gunzip -k {input.fq2}"
 
 rule fastp:
     '''Trim adapters, read quality filtering, make QC outputs'''

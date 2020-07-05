@@ -26,23 +26,16 @@ namespace Spritz
                 Dictionary<string, string> genomes = new Dictionary<string, string>();
                 Dictionary<string, string> organisms = new Dictionary<string, string>();
 
-                var unsupported = new List<string>();
                 foreach (string genome in genomeDB.Where(g => g.Contains(release)))
                 {
                     var splt = genome.Split(',');
                     genomes.Add(splt[1], splt[3]); // <Species, GenomeVer>
                     organisms.Add(splt[1], splt[2]); // <Species, OrganismName>
-
-                    if (!string.Equals(splt[4], "86")) // only add species supported in snpeff (ver 86 ensembl)
-                    {
-                        unsupported.Add(splt[1]);
-                    }
                 }
 
-                var supported = species.Where(s => !unsupported.Contains(s)).ToList();
                 if (genomes.Count > 0)
                 {
-                    ensemblReleases.Add(new EnsemblRelease() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
+                    ensemblReleases.Add(new EnsemblRelease() { Release = release, Species = new ObservableCollection<string>(species), Genomes = genomes, Organisms = organisms });
                 }
             }
             return ensemblReleases;

@@ -189,18 +189,16 @@ rule generate_snpeff_database:
         pfa="SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
         gfa="SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
         done="SnpEff/data/combined.transcripts.genome.gff3/done.txt"
-    params:
-        ref="combined.transcripts.genome.gff3"
-    resources:
-        mem_mb=16000
-    log:
-        "SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.log"
+    params: ref="combined.transcripts.genome.gff3"
+    resources: mem_mb=16000
+    benchmark: "SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.benchmark"
+    log: "SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.log"
     shell:
         "cp {input.pfa} {output.pfa} && "
         "cp {input.gfa} {output.gfa} && "
         "echo \"\n# {params.ref}\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.genome : Human genome " + GENOME_VERSION + " using RefSeq transcripts\" >> SnpEff/snpEff.config && "
+        "echo \"{params.ref}.genome : Human genome {GENOME_VERSION} using RefSeq transcripts\" >> SnpEff/snpEff.config && "
         "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> SnpEff/snpEff.config && "
         "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
         "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
-        "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) 2> {log} && touch {output.done}"
+        "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) &> {log} && touch {output.done}"

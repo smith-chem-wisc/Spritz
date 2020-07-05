@@ -102,11 +102,6 @@ namespace Spritz
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
 
-            // write snpeff (hardcoded for now)
-            var snpeff = new YamlScalarNode(options.SnpEff);
-            snpeff.Style = ScalarStyle.DoubleQuoted;
-            rootMappingNode.Add("snpeff", snpeff);
-
             // write test
             var test = new YamlSequenceNode();
             rootMappingNode.Add("test", AddParam(options.Test.ToArray(), test));

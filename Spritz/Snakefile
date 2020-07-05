@@ -2,9 +2,7 @@ configfile: "config.yaml"
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
-ENSEMBL_VERSION_SNPEFF = config["snpeff"]
 GENEMODEL_VERSION = GENOME_VERSION + "." + ENSEMBL_VERSION
-GENEMODEL_VERSION_SNPEFF = GENOME_VERSION + "." + ENSEMBL_VERSION_SNPEFF
 GENOME_FA = f"data/ensembl/{SPECIES}.{GENOME_VERSION}.dna.primary_assembly.fa"
 ENSEMBL_GFF = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.gff3"
 TEST_GENOME_FA = f"data/ensembl/202122.fa"
@@ -30,13 +28,13 @@ def output(wildcards):
         return expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
             "{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",
             "{dir}/combined.spritz.isoform.protein.withmods.xml.gz",
-            "{dir}/dummy.txt"],
+            "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
             dir=config["analysisDirectory"])
     else:
         return expand(["output/combined.spritz.snpeff.protein.withmods.xml.gz",
             "output/combined.spritz.isoformvariants.protein.withmods.xml.gz",
             "output/combined.spritz.isoform.protein.withmods.xml.gz",
-            "output/dummy.txt"])
+            "output/done" + REF + "." + ENSEMBL_VERSION + ".txt"])
 
 rule all:
     input: output
