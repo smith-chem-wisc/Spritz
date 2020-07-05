@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <?define SpritzTargetDir=$(var.Spritz.TargetDir)?>
-	<Product Id="*" Name="SetupSpritz" Language="1033" Version="0.2.0" Manufacturer="Smith Group" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
+	<Product Id="*" Name="Spritz" Language="1033" Version="0.2.0" Manufacturer="Smith Group" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <MediaTemplate EmbedCab="yes"/>
 

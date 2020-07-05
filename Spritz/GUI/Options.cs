@@ -17,9 +17,10 @@ namespace Spritz
         // new for snakemake
         public string Release { get; set; }
         public string Species { get; set; }
-        public string SnpEff { get; set; }
         public string Organism { get; set; }
         public List<string> Test { get; set; } = new List<string>();
+        public bool AnalyzeVariants { get; set; } = true;
+        public bool AnalyzeIsoforms { get; set; }
 
         public Options(int dockerThreads)
         {

@@ -91,7 +91,8 @@ namespace Spritz
             Options.Species = EnsemblSpecies.SelectedItem.ToString();
             Options.Reference = ensembl.Genomes[Options.Species];
             Options.Organism = ensembl.Organisms[Options.Species];
-            Options.SnpEff = "86";
+            Options.AnalyzeVariants = (bool)Cb_AnalyzeVariants.IsChecked;
+            Options.AnalyzeIsoforms = (bool)Cb_AnalyzeIsoforms.IsChecked;
             DialogResult = true;
         }
 

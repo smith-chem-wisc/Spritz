@@ -32,13 +32,3 @@ rule generate_fastqs:
     benchmark: "data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.test.benchmark"
     log: "data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.test.log"
     shell: "mason_simulator -ir {input.fa} -n 100000 -iv {input.vcf} -o {output.fq1} -or {output.fq2} 2> {log}"
-
-rule download_dry_run:
-    output: "data/ensembl/tests/{species_genome_release}.dryrun.txt"
-    log: "data/ensembl/tests/downloads{species_genome_release}.dryrun.log"
-    shell: "(python scripts/download_ensembl.py {wildcards.species_genome_release} dry > {output}) 2> {log}"
-
-rule concatenate_dry_runs:
-    input: expand("data/ensembl/tests/{species_genome_release}.dryrun.txt", species_genome_release=config["test"])
-    output: "data/ensembl/dryruntests.tsv"
-    shell: "cat {input} > {output}"

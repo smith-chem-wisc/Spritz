@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Windows.Documents;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
+using System.Collections.Generic;
 
 namespace Spritz
 {
@@ -14,6 +16,7 @@ namespace Spritz
         public string ConfigDirectory { get; }
         public string DataDirectory { get; }
         public string PathToWorkflow { get; }
+        public string SpritzContainerName { get; set; }
 
         public EverythingRunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
@@ -36,13 +39,14 @@ namespace Spritz
 
             // path to workflow.txt
             PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
+            SpritzContainerName = $"spritz{PathToWorkflow.GetHashCode()}";
         }
 
         public string GenerateCommandsDry(string dockerImageName)
         {
             string command = "";
             if (dockerImageName.Contains("smithlab")) { command += $"docker pull {dockerImageName} ;"; }
-            command += $"docker run --rm -i -t --name spritz{PathToWorkflow.GetHashCode()} " +
+            command += $"docker run --rm -i -t --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
                 $"-v \"\"\"{DataDirectory}:/app/data" + "\"\"\" " +
                 $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +
@@ -67,6 +71,9 @@ namespace Spritz
 
             var sras = options.SraAccession.Split(',');
             var fqs = options.Fastq1.Split(',') ?? new string[0];
+            var analysisStrings = new List<string>();
+            if (options.AnalyzeVariants) analysisStrings.Add("variant");
+            if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
 
             // write user input sras
             var accession = new YamlSequenceNode();
@@ -102,9 +109,9 @@ namespace Spritz
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
 
-            // write test
-            var test = new YamlSequenceNode();
-            rootMappingNode.Add("test", AddParam(options.Test.ToArray(), test));
+            // list the analyses to perform
+            var analyses = new YamlSequenceNode();
+            rootMappingNode.Add("analyses", AddParam(analysisStrings.ToArray(), analyses));
 
             using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
             {

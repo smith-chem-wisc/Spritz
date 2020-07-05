@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>4eef0cdd-8cff-4e4c-8488-5f0f12847737</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>SetupSpritz</OutputName>
+    <OutputName>Spritz</OutputName>
     <OutputType>Package</OutputType>
     <Name>SpritzInstaller</Name>
   </PropertyGroup>

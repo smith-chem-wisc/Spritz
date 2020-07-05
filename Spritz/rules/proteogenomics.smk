@@ -107,10 +107,10 @@ rule reference_protein_xml:
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {REF} && " # no isoforms, no variants
-        "mv {output.protxml} {input.temp}/{REF}.protein.xml && "
-        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/{REF}.protein.xml && "
-        "mv {input.temp}/{REF}.protein.xml {wildcards.dir} && "
-        "mv {input.temp}/{REF}.protein.withmods.xml {wildcards.dir} && "
+        "mv {output.protxml} {input.temp}/" + REF + "." + ENSEMBL_VERSION + ".protein.xml && "
+        "dotnet {input.transfermods} -x {input.unixml} -y {input.temp}/" + REF + "." + ENSEMBL_VERSION + ".protein.xml && "
+        "mv {input.temp}/" + REF + "." + ENSEMBL_VERSION + ".protein.xml {wildcards.dir} && "
+        "mv {input.temp}/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml {wildcards.dir} && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log} && touch {output.done}"
 
 rule custom_protein_xml:

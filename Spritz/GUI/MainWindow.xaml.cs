@@ -121,7 +121,7 @@ namespace Spritz
             {
                 Process proc = new Process();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = $"docker {command} spritz{Everything.PathToWorkflow.GetHashCode()}";
+                proc.StartInfo.Arguments = $"docker {command} {Everything.SpritzContainerName}";
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false;
                 proc.Start();
@@ -204,12 +204,6 @@ namespace Spritz
         {
             try
             {
-                if (SraCollection.Count == 0 && RnaSeqFastqCollection.Count == 0)
-                {
-                    MessageBox.Show("You have not added any nucleic acid sequencing data (SRA accession or fastq files).", "Workflow", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
                 if (StaticTasksObservableCollection.Count == 0)
                 {
                     MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);

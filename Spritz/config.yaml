@@ -31,4 +31,4 @@ genome: "GRCh38"
 release: "100"
 organism: "human" # based on uniprot
 fq: []
-test: []
+analyses: [isoform,variant]
