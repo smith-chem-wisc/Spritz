@@ -119,6 +119,14 @@ namespace Spritz
             //Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
             Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
+            if (Options.SraAccession.Count() == 0 && options.Fastq1.Count() == 0)
+            {
+                Cb_AnalyzeIsoforms.IsChecked = false;
+                Cb_AnalyzeIsoforms.IsEnabled = false;
+                Cb_AnalyzeVariants.IsChecked = false;
+                Cb_AnalyzeVariants.IsEnabled = false;
+            }
+
             txtAnalysisDirectory.Text = AnalysisDirectory;
             txtThreads.Text = MainWindow.DockerCPUs.ToString();
             Threads = MainWindow.DockerCPUs;

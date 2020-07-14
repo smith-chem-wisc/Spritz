@@ -6,6 +6,7 @@ STAR*
 ChromosomeMappings
 data/
 AnalysisFolder/
+AnalysisFolder._*
 SnpEff
 tmp
 snpEffDatabases.txt

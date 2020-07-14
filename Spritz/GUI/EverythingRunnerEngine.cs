@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows.Documents;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
-using System.Collections.Generic;
 
 namespace Spritz
 {
@@ -20,7 +19,7 @@ namespace Spritz
 
         public EverythingRunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
-             // set up directories to mount to docker container as volumes
+            // set up directories to mount to docker container as volumes
             AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
 
             var pathToConfig = Path.Combine(AnalysisDirectory, "configs");
