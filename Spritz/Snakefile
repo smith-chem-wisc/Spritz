@@ -25,9 +25,11 @@ def output(wildcards):
     outputs = []
     if check_dir():
         if len(config["analyses"]) == 0:
-            outputs = expand("{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"], dir=config["analysisDirectory"]))
+            outputs = expand("{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt", dir=config["analysisDirectory"])
         elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
-            outputs = expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz", "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"], dir=config["analysisDirectory"])
+            outputs = expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
+                "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
+                dir=config["analysisDirectory"])
         elif "isoform" in config["analyses"] and len(config["analyses"]) == 1:
             outputs = expand("{dir}/combined.spritz.isoform.protein.withmods.xml.gz", dir=config["analysisDirectory"])
         elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
