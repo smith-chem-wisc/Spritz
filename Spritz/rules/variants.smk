@@ -6,7 +6,7 @@ REF_SNPEFF = config["genome"] + "." + config["snpeff"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar", temp("SnpEff_4.3_SmithChemWisc_v2.zip")
-    log: "SnpEffInstall.log"
+    log: "data/SnpEffInstall.log"
     shell:
         "(wget https://github.com/smith-chem-wisc/SnpEff/releases/download/4.3_SCW1/SnpEff_4.3_SmithChemWisc_v2.zip && "
         "unzip SnpEff_4.3_SmithChemWisc_v2.zip -d SnpEff) &> {log}"
