@@ -5,23 +5,11 @@ GENOME_VERSION = config["genome"]
 REF_SNPEFF = config["genome"] + "." + config["snpeff"]
 
 rule download_snpeff:
-    output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar"
-    log: "data/SnpEffInstall.log"
+    output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar", temp("SnpEff_4.3_SmithChemWisc_v2.zip")
+    log: "SnpEffInstall.log"
     shell:
-        """
-        (rm -rf SnpEff
-        git clone --depth=1 https://github.com/smith-chem-wisc/SnpEff
-        cd SnpEff
-        mvn install:install-file -Dfile=lib/antlr-4.5.1-complete.jar -DgroupId=org.antlr -DartifactId=antlr -Dversion=4.5.1 -Dpackaging=jar
-        mvn install:install-file -Dfile=lib/biojava3-core-3.0.7.jar -DgroupId=org.biojava -DartifactId=biojava3-core -Dversion=3.0.7 -Dpackaging=jar
-        mvn install:install-file -Dfile=lib/biojava3-structure-3.0.7.jar -DgroupId=org.biojava -DartifactId=biojava3-structure -Dversion=3.0.7 -Dpackaging=jar
-        export VERSION=4.3
-        export VERSION_UND=`echo $VERSION | tr '.' '_'`
-        mvn clean compile assembly:assembly
-        mvn install:install-file -Dfile=target/SnpEff-$VERSION.jar -DgroupId=org.snpeff -DartifactId=SnpEff -Dversion=$VERSION -Dpackaging=jar -DgeneratePom=true --quiet
-        cp target/SnpEff-$VERSION-jar-with-dependencies.jar snpEff.jar
-        cd ..) &> {log}
-        """
+        "(wget https://github.com/smith-chem-wisc/SnpEff/releases/download/4.3_SCW1/SnpEff_4.3_SmithChemWisc_v2.zip && "
+        "unzip SnpEff_4.3_SmithChemWisc_v2.zip -d SnpEff) &> {log}"
 
 rule index_fa:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
