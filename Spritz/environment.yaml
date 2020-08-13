@@ -11,7 +11,7 @@ dependencies:
   - stringtie
   - biopython
   - git
-  - maven
+  - unzip
   - fastqc
   - skewer
   - star =2.7.0f-0
