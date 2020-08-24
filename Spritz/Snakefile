@@ -24,24 +24,28 @@ def output(wildcards):
             "{dir}/please_update_spritz.txt",
             dir=config["analysisDirectory"])
     elif len(config["analyses"]) == 0:
-        outputs = expand(
-            "{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt",
+        outputs = expand([
+            "{dir}/prose.txt",
+            "{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt"], # reference
             dir=config["analysisDirectory"])
     elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
         outputs = expand([
-            "{dir}/final/combined.spritz.snpeff.protein.withmods.xml.gz",
-            "{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
+            "{dir}/prose.txt",
+            "{dir}/final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
+            "{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt"], # reference
             dir=config["analysisDirectory"])
     elif "isoform" in config["analyses"] and len(config["analyses"]) == 1:
-        outputs = expand(
-            "{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz",
+        outputs = expand([
+            "{dir}/prose.txt",
+            "{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz"], # isoforms
             dir=config["analysisDirectory"])
     elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
         outputs = expand([
-            "{dir}/final/combined.spritz.snpeff.protein.withmods.xml.gz",
-            "{dir}/final/combined.spritz.isoformvariants.protein.withmods.xml.gz",
-            "{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz",
-            "{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
+            "{dir}/prose.txt",
+            "{dir}/final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
+            "{dir}/final/combined.spritz.isoformvariants.protein.withmods.xml.gz", # isoform variants
+            "{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz", # isoforms
+            "{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt"], # reference
             dir=config["analysisDirectory"])
     return outputs
 

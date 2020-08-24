@@ -79,7 +79,7 @@ rule LongOrfs:
     input: "{dir}/isoforms/combined.transcripts.fasta"
     output:
         "{dir}/isoforms/longest_orfs.pep",
-        # temp(directory("{dir}.__checkpoints_longorfs"))
+        temp(directory("{dir}/isoforms.__checkpoints_longorfs"))
     benchmark: "{dir}/isoforms/combined.LongOrfs.benchmark"
     log: "{dir}/isoforms/combined.LongOrfs.log"
     threads: 1
@@ -91,16 +91,17 @@ rule Predict:
         orfs="{dir}/isoforms/longest_orfs.pep",
         fasta="{dir}/isoforms/combined.transcripts.fasta",
         blastp="{dir}/isoforms/combined.blastp.outfmt6",
+        longest_orf_ckpts=directory("{dir}/isoforms.__checkpoints_longorfs"),
     output:
         "{dir}/isoforms/combined.transcripts.fasta.transdecoder.pep",
-        temp(directory("{dir}/isoforms/..__checkpoints")),
+        temp(directory("{dir}/isoforms.__checkpoints")),
         gff3="{dir}/isoforms/combined.transcripts.fasta.transdecoder.gff3"
-    benchmark: "{dir}/combined.Predict.benchmark"
-    log: "{dir}/combined.Predict.log"
+    benchmark: "{dir}/isoforms/combined.Predict.benchmark"
+    log: "{dir}/isoforms/combined.Predict.log"
     threads: 1
     shell:
-        "cd {wildcards.dir}/isoforms && TransDecoder.Predict -O . -t ../{input.fasta} "
-        "--single_best_only --retain_blastp_hits ../{input.blastp} 2> ../{log}"
+        "cd {wildcards.dir}/isoforms && TransDecoder.Predict -O . -t ../../{input.fasta} "
+        "--single_best_only --retain_blastp_hits ../../{input.blastp} 2> ../../{log}"
 
 rule gtf_to_alignment_gff3:
     '''Rule adapted from ProteomeGenerator'''
