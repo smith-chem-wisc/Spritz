@@ -23,7 +23,9 @@ def check_dir():
 
 def output(wildcards):
     outputs = []
-    if check_dir():
+    if not "spritzversion" in config:
+        outputs = "{dir}/please_update_spritz.txt" if check_dir() else "output/please_update_spritz.txt"
+    elif check_dir():
         if len(config["analyses"]) == 0:
             outputs = expand("{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt", dir=config["analysisDirectory"])
         elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
@@ -60,6 +62,10 @@ rule clean:
         "rm -rf data/ ChromosomeMappings/ SnpEff/ tmp/ fast.tmp/ && "
         "cd GtfSharp && dotnet clean && cd .. && "
         "cd TransferUniProtModifications && dotnet clean && cd .."
+
+rule update_message:
+    output: "{dir}/please_update_spritz.txt"
+    shell: "echo \"Please update Spritz at https://github.com/smith-chem-wisc/Spritz/releases\" > {output}"
 
 include: "rules/downloads.smk"
 include: "rules/align.smk"

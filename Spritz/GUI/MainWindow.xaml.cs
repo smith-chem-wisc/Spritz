@@ -25,7 +25,6 @@ namespace Spritz
         private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
         private EverythingRunnerEngine Everything;
         private Regex outputScrub = new Regex(@"(\[\d+m)");
-        //private Task EverythingTask;
 
         public int DockerCPUs { get; set; }
         public double DockerMemory { get; set; }

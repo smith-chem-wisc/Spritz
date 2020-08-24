@@ -32,3 +32,4 @@ release: "100"
 organism: "human" # based on uniprot
 fq: []
 analyses: [isoform,variant]
+spritzversion: "0.2.0"

@@ -62,8 +62,13 @@ namespace TransferUniProtModifications
             var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.ToList());
             ProteinDbWriter.WriteXmlDatabase(null, newProts, outxml);
             string outfasta = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".fasta");
+            string outfastaWithDecoys = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withdecoys.fasta");
             var prot = newProts.FirstOrDefault(p => p.Accession.Contains("_"));
-            ProteinDbWriter.WriteFastaDatabase(newProts.SelectMany(p => p.GetVariantProteins()).ToList(), outfasta, "|");
+            var protsForFasta = newProts.SelectMany(p => p.GetVariantProteins()).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
+            var decoyProtsForFasta = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.Reverse, uniprotPtms, false, null, out un).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
+            ProteinDbWriter.WriteFastaDatabase(protsForFasta, outfasta, "|");
+            ProteinDbWriter.WriteFastaDatabase(decoyProtsForFasta, outfastaWithDecoys, "|");
+            File.WriteAllLines(outfastaWithDecoys, File.ReadAllLines(outfastaWithDecoys).Select(line => line.Replace("mz|DECOY_", "rev_mz|")));
             return outxml;
         }
 

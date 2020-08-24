@@ -68,7 +68,7 @@ rule dict_fa:
 
 def check_sra():
     docheck = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
-    return docheck    
+    return docheck
 
 if check_sra():
     rule download_sras: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
@@ -79,7 +79,8 @@ if check_sra():
         log: "{dir}/{sra}.log"
         threads: 4
         shell:
-            "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+            "fasterq-dump -b 10MB -c 100MB -m 1000MB -p --threads {threads}" # use 10x the default memory allocation for larger SRAs
+            " --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
 else:
     rule expand_fastqs:
         input:
