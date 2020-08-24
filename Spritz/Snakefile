@@ -24,7 +24,7 @@ def check_dir():
 def output(wildcards):
     outputs = []
     if not "spritzversion" in config:
-        outputs = "{dir}/please_update_spritz.txt" if check_dir() else "output/please_update_spritz.txt"
+        outputs = expand("{dir}/please_update_spritz.txt", dir=config["analysisDirectory"]) if check_dir() else "output/please_update_spritz.txt"
     elif check_dir():
         if len(config["analyses"]) == 0:
             outputs = expand("{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt", dir=config["analysisDirectory"])
@@ -64,7 +64,7 @@ rule clean:
         "cd TransferUniProtModifications && dotnet clean && cd .."
 
 rule update_message:
-    output: "{dir}/please_update_spritz.txt"
+    output: "{dir}/please_update_spritz.txt" if check_dir() else "output/please_update_spritz.txt"
     shell: "echo \"Please update Spritz at https://github.com/smith-chem-wisc/Spritz/releases\" > {output}"
 
 include: "rules/downloads.smk"

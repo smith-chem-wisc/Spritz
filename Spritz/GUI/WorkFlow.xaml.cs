@@ -93,6 +93,7 @@ namespace Spritz
             Options.Organism = ensembl.Organisms[Options.Species];
             Options.AnalyzeVariants = (bool)Cb_AnalyzeVariants.IsChecked;
             Options.AnalyzeIsoforms = (bool)Cb_AnalyzeIsoforms.IsChecked;
+            Options.SpritzVersion = MainWindow.CurrentVersion;
             DialogResult = true;
         }
 

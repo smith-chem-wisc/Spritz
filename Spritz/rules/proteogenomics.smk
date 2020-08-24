@@ -118,7 +118,6 @@ rule custom_protein_xml:
     Create protein XML with sequences from the isoform discovery gene model.
     """
     input:
-        "data/SnpEffDatabases.txt",
         temp=directory("temporary"),
         snpeff="SnpEff/snpEff.jar",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",

@@ -112,6 +112,11 @@ namespace Spritz
             var analyses = new YamlSequenceNode();
             rootMappingNode.Add("analyses", AddParam(analysisStrings.ToArray(), analyses));
 
+            // record the version of spritz
+            var version = new YamlScalarNode(options.SpritzVersion);
+            version.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("spritzversion", version);
+
             using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
             {
                 stream.Save(writer, false);

@@ -25,6 +25,7 @@ namespace Spritz
         public List<string> Test { get; set; } = new List<string>();
         public bool AnalyzeVariants { get; set; } = true;
         public bool AnalyzeIsoforms { get; set; }
+        public string SpritzVersion { get; set; }
 
         public Options(int dockerThreads)
         {
