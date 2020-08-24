@@ -5,7 +5,7 @@ GENOME_VERSION = config["genome"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar", temp("SnpEff_4.3_SmithChemWisc_v2.zip")
-    log: "SnpEffInstall.log"
+    log: "{dir}/SnpEffInstall.log"
     shell:
         "(wget https://github.com/smith-chem-wisc/SnpEff/releases/download/4.3_SCW1/SnpEff_4.3_SmithChemWisc_v2.zip && "
         "unzip SnpEff_4.3_SmithChemWisc_v2.zip -d SnpEff) &> {log}"
