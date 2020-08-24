@@ -83,7 +83,7 @@ rule LongOrfs:
     benchmark: "{dir}/isoforms/combined.LongOrfs.benchmark"
     log: "{dir}/isoforms/combined.LongOrfs.log"
     threads: 1
-    shell: "TransDecoder.LongOrfs -O {wildcards.dir} -t {input} -m 100 2> {log}" # -S for strand-specific
+    shell: "TransDecoder.LongOrfs -O {wildcards.dir}/isoforms -t {input} -m 100 2> {log}" # -S for strand-specific
 
 rule Predict:
     '''Rule adapted from ProteomeGenerator'''
@@ -93,13 +93,13 @@ rule Predict:
         blastp="{dir}/isoforms/combined.blastp.outfmt6",
     output:
         "{dir}/isoforms/combined.transcripts.fasta.transdecoder.pep",
-        temp(directory("{dir}/..__checkpoints")),
+        temp(directory("{dir}/isoforms/..__checkpoints")),
         gff3="{dir}/isoforms/combined.transcripts.fasta.transdecoder.gff3"
     benchmark: "{dir}/combined.Predict.benchmark"
     log: "{dir}/combined.Predict.log"
     threads: 1
     shell:
-        "cd {wildcards.dir} && TransDecoder.Predict -O . -t ../{input.fasta} "
+        "cd {wildcards.dir}/isoforms && TransDecoder.Predict -O . -t ../{input.fasta} "
         "--single_best_only --retain_blastp_hits ../{input.blastp} 2> ../{log}"
 
 rule gtf_to_alignment_gff3:

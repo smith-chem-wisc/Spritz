@@ -58,6 +58,10 @@ rule update_message:
     output: "{dir}/please_update_spritz.txt"
     shell: "echo \"Please update Spritz at https://github.com/smith-chem-wisc/Spritz/releases\" > {output}"
 
+rule prose:
+    output: "{dir}/prose.txt"
+    shell: "python scripts/prose.py {output}"
+
 include: "rules/downloads.smk"
 include: "rules/align.smk"
 include: "rules/variants.smk"
