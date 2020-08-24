@@ -5,7 +5,7 @@ GENOME_VERSION = config["genome"]
 
 rule download_snpeff:
     output: "SnpEff/snpEff.config", "SnpEff/snpEff.jar", temp("SnpEff_4.3_SmithChemWisc_v2.zip")
-    log: "{dir}/SnpEffInstall.log"
+    log: "data/SnpEffInstall.log"
     shell:
         "(wget https://github.com/smith-chem-wisc/SnpEff/releases/download/4.3_SCW1/SnpEff_4.3_SmithChemWisc_v2.zip && "
         "unzip SnpEff_4.3_SmithChemWisc_v2.zip -d SnpEff) &> {log}"
@@ -166,9 +166,6 @@ rule variant_annotation_custom:
         genesummary="{dir}/combined.spritz.isoformvariants.genes.txt",
         protfa="{dir}/combined.spritz.isoformvariants.protein.fasta",
         protxml=temp("{dir}/combined.spritz.isoformvariants.protein.xml"),
-        protxmlgz="{dir}/combined.spritz.isoformvariants.protein.xml.gz",
-        # protnoindelxml=temp("{dir}/combined.spritz.noindels.isoformvariants.protein.xml"),
-        # protnoindelxmlgz="{dir}/combined.spritz.noindels.isoformvariants.protein.xml.gz"
     params: ref="combined.transcripts.genome.gff3" # with isoforms
     resources: mem_mb=GATK_MEM
     log: "{dir}/combined.spritz.isoformvariants.log"
@@ -177,4 +174,4 @@ rule variant_annotation_custom:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml}"
         " {params.ref} {input.vcf}" # with isoforms and variants
-        " > {output.ann}) 2> {log} && gzip -k {output.protxml}"
+        " > {output.ann}) 2> {log}"

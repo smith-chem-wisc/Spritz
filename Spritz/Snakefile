@@ -17,41 +17,24 @@ REF = SPECIES + "." + GENOME_VERSION
 UNIPROTXML="data/uniprot/" + config["species"] + ".protein.xml.gz" #"data/Homo_sapiens_202022.xml.gz"
 UNIPROTFASTA="data/uniprot/" + config["species"] + ".protein.fasta" #"data/Homo_sapiens_202022.xml.gz"
 
-def check_dir():
-    docheck = 'analysisDirectory' in config and config["analysisDirectory"] is not None and len(config["analysisDirectory"]) > 0
-    return docheck
-
 def output(wildcards):
     outputs = []
     if not "spritzversion" in config:
-        outputs = expand("{dir}/please_update_spritz.txt", dir=config["analysisDirectory"]) if check_dir() else "output/please_update_spritz.txt"
-    elif check_dir():
-        if len(config["analyses"]) == 0:
-            outputs = expand("{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt", dir=config["analysisDirectory"])
-        elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
-            outputs = expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
-                "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
-                dir=config["analysisDirectory"])
-        elif "isoform" in config["analyses"] and len(config["analyses"]) == 1:
-            outputs = expand("{dir}/combined.spritz.isoform.protein.withmods.xml.gz", dir=config["analysisDirectory"])
-        elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
-            outputs = expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
-                "{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",
-                "{dir}/combined.spritz.isoform.protein.withmods.xml.gz",
-                "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
-                dir=config["analysisDirectory"])
-    else:
-        if len(config["analyses"]) == 0:
-            outputs = ["output/done" + REF + "." + ENSEMBL_VERSION + ".txt"]
-        elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
-            outputs = ["output/combined.spritz.snpeff.protein.withmods.xml.gz", "output/done" + REF + "." + ENSEMBL_VERSION + ".txt"]
-        if "isoform" in config["analyses"] and len(config["analyses"]) == 1:
-            outputs = "output/combined.spritz.isoform.protein.withmods.xml.gz"
-        elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
-            outputs = ["output/combined.spritz.snpeff.protein.withmods.xml.gz",
-                "output/combined.spritz.isoformvariants.protein.withmods.xml.gz",
-                "output/combined.spritz.isoform.protein.withmods.xml.gz",
-                "output/done" + REF + "." + ENSEMBL_VERSION + ".txt"]
+        outputs = expand("{dir}/please_update_spritz.txt", dir=config["analysisDirectory"])
+    elif len(config["analyses"]) == 0:
+        outputs = expand("{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt", dir=config["analysisDirectory"])
+    elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
+        outputs = expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
+            "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
+            dir=config["analysisDirectory"])
+    elif "isoform" in config["analyses"] and len(config["analyses"]) == 1:
+        outputs = expand("{dir}/combined.spritz.isoform.protein.withmods.xml.gz", dir=config["analysisDirectory"])
+    elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
+        outputs = expand(["{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
+            "{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+            "{dir}/combined.spritz.isoform.protein.withmods.xml.gz",
+            "{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt"],
+            dir=config["analysisDirectory"])
     return outputs
 
 rule all:
@@ -64,7 +47,7 @@ rule clean:
         "cd TransferUniProtModifications && dotnet clean && cd .."
 
 rule update_message:
-    output: "{dir}/please_update_spritz.txt" if check_dir() else "output/please_update_spritz.txt"
+    output: "{dir}/please_update_spritz.txt"
     shell: "echo \"Please update Spritz at https://github.com/smith-chem-wisc/Spritz/releases\" > {output}"
 
 include: "rules/downloads.smk"

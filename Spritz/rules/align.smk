@@ -16,7 +16,9 @@ rule hisat_genome:
         finished="data/ensembl/done_building_hisat_genome{REF}.txt",
     benchmark: "data/ensembl/{REF}.hisatbuild.benchmark"
     log: "data/ensembl/{REF}.hisatbuild.log"
-    shell: "(hisat2-build -p {threads} data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) &> {log}"
+    shell: 
+        "(hisat2-build -p {threads} data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
+        " data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) &> {log}"
 
 rule hisat2_splice_sites:
     input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
