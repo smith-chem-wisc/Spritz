@@ -198,6 +198,9 @@ rule finish_variants:
         "cp {input.protfa} {output.protfa} && "
         "cp {input.protwithdecoysfa} {output.protwithdecoysfa} && "
         "cp {input.protxmlwithmodsgz} {output.protxmlwithmodsgz}"
+        "cp {input.refprotfa} {output.refprotfa}"
+        "cp {input.refprotwithdecoysfa} {output.refprotwithdecoysfa}"
+        "cp {input.refprotwithmodsxml} {output.refprotwithmodsxml}"
 
 rule finish_isoform_variants:
     '''Copy final output files from isoform-variant workflow to main directory'''
