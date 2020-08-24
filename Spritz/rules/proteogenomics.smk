@@ -23,11 +23,12 @@ rule transfer_modifications_variant:
     input:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
-        protxml="{dir}/combined.spritz.snpeff.protein.xml"
+        protxml="{dir}/variants/combined.spritz.snpeff.protein.xml"
     output:
-        protxmlgz="{dir}/combined.spritz.snpeff.protein.xml.gz",
-        protxmlwithmods=temp("{dir}/combined.spritz.snpeff.protein.withmods.xml"),
-        protxmlwithmodsgz="{dir}/combined.spritz.snpeff.protein.withmods.xml.gz",
+        protfastawithdecoys="{dir}/variants/combined.spritz.snpeff.protein.withdecoys.fasta",
+        protxmlgz="{dir}/variants/combined.spritz.snpeff.protein.xml.gz",
+        protxmlwithmods=temp("{dir}/variants/combined.spritz.snpeff.protein.withmods.xml"),
+        protxmlwithmodsgz="{dir}/variants/combined.spritz.snpeff.protein.withmods.xml.gz",
     log: "{dir}/combined.spritz.snpeff.protein.withmods.log"
     shell:
         "(mv {input.protxml} {input.temp}/{params.infile} && "
@@ -38,11 +39,12 @@ rule transfer_modifications_isoformvariant:
     input:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
-        protxml="{dir}/combined.spritz.isoformvariants.protein.xml"
+        protxml="{dir}/variants/combined.spritz.isoformvariants.protein.xml"
     output:
-        protxmlgz="{dir}/combined.spritz.isoformvariants.protein.xml.gz",
-        protxmlwithmods=temp("{dir}/combined.spritz.isoformvariants.protein.withmods.xml"),
-        protxmlwithmodsgz="{dir}/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+        protfastawithdecoys="{dir}/variants/combined.spritz.isoformvariants.protein.withdecoys.fasta",
+        protxmlgz="{dir}/variants/combined.spritz.isoformvariants.protein.xml.gz",
+        protxmlwithmods=temp("{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml"),
+        protxmlwithmodsgz="{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml.gz",
     log: "{dir}/combined.spritz.isoformvariants.protein.withmods.log"
     shell:
         "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
@@ -84,14 +86,16 @@ rule reference_protein_xml:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
-        done="{dir}/done" + REF + "." + ENSEMBL_VERSION + ".txt",
-        protxml=temp("{dir}/" + REF + "." + ENSEMBL_VERSION + ".protein.xml"),
-        protxmlgz="{dir}/" + REF + "." + ENSEMBL_VERSION + ".protein.xml.gz",
-        protxmlwithmods=temp("{dir}/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml"),
-        protxmlwithmodsgz="{dir}/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml.gz",
+        done="{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt",
+        protxml=temp("{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.xml"),
+        protxmlgz="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.xml.gz",
+        protfa="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.fasta",
+        protwithdecoysfa="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.withdecoys.fasta",
+        protxmlwithmods=temp("{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml"),
+        protxmlwithmodsgz="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml.gz",
     resources: mem_mb=16000
-    benchmark: "{dir}/" + REF + "." + ENSEMBL_VERSION + ".spritz.benchmark"
-    log: "{dir}/" + REF + "." + ENSEMBL_VERSION + ".spritz.log"
+    benchmark: "{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".spritz.benchmark"
+    log: "{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".spritz.log"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {REF} && " # no isoforms, no variants
@@ -113,15 +117,17 @@ rule custom_protein_xml:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
-        protxml=temp("{dir}/combined.spritz.isoform.protein.xml"),
-        protxmlgz="{dir}/combined.spritz.isoform.protein.xml.gz",
-        protxmlwithmods=temp("{dir}/combined.spritz.isoform.protein.withmods.xml"),
-        protxmlwithmodsgz="{dir}/combined.spritz.isoform.protein.withmods.xml.gz",
+        protxml=temp("{dir}/isoforms/combined.spritz.isoform.protein.xml"),
+        protwithdecoysfa="{dir}/isoforms/combined.spritz.isoform.protein.withdecoys.fasta",
+        protxmlgz="{dir}/isoforms/combined.spritz.isoform.protein.xml.gz",
+        protxmlwithmods=temp("{dir}/isoforms/combined.spritz.isoform.protein.withmods.xml"),
+        protxmlwithmodsgz="{dir}/isoforms/combined.spritz.isoform.protein.withmods.xml.gz",
+        protfa="{dir}/isoforms/combined.spritz.isoform.protein.fasta",
     params:
         ref="combined.transcripts.genome.gff3", # with isoforms
     resources: mem_mb=16000
-    benchmark: "{dir}/combined.spritz.isoform.benchmark"
-    log: "{dir}/combined.spritz.isoform.log"
+    benchmark: "{dir}/isoforms/combined.spritz.isoform.benchmark"
+    log: "{dir}/isoforms/combined.spritz.isoform.log"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {params.ref} < /dev/null && " # isoforms, no variants

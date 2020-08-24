@@ -16,7 +16,7 @@ rule hisat_genome:
         finished="data/ensembl/done_building_hisat_genome{REF}.txt",
     benchmark: "data/ensembl/{REF}.hisatbuild.benchmark"
     log: "data/ensembl/{REF}.hisatbuild.log"
-    shell: 
+    shell:
         "(hisat2-build -p {threads} data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
         " data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) &> {log}"
 
@@ -60,12 +60,12 @@ rule hisat2_align_bam:
         fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}{fq}.trim_2.fastq.gz",
         ss="data/ensembl/" + REF + "." + config["release"] + ".splicesites.txt"
     output:
-        sorted="{dir}/{sra}.sorted.bam" if check_sra() else "{dir}/{fq}.sorted.bam",
+        sorted="{dir}/align/{sra}.sorted.bam" if check_sra() else "{dir}/align/{fq}.sorted.bam",
     threads: 12
     params:
         compression="9",
-        tempprefix="{dir}/{sra}.sorted" if check_sra() else "{dir}/{fq}.sorted",
-    log: "{dir}/{sra}.hisat2.log" if check_sra() else "{dir}/{fq}.hisat2.log"
+        tempprefix="{dir}/align/{sra}.sorted" if check_sra() else "{dir}/align/{fq}.sorted",
+    log: "{dir}/align/{sra}.hisat2.log" if check_sra() else "{dir}/align/{fq}.hisat2.log"
     shell:
         "(hisat2 -p {threads} -x data/ensembl/" + REF + ".dna.primary_assembly.karyotypic -1 {input.fq1} -2 {input.fq2} --known-splicesite-infile {input.ss} | " # align the suckers
         "samtools view -h -F4 - | " # get mapped reads only
@@ -75,14 +75,14 @@ rule hisat2_align_bam:
 rule hisat2_merge_bams:
     '''Merge the BAM files for each sample'''
     input:
-        bams=expand("{{dir}}/{sra}.sorted.bam", sra=config["sra"]) if check_sra() else expand("{{dir}}/{fq}.sorted.bam", fq=config["fq"])
+        bams=expand("{{dir}}/align/{sra}.sorted.bam", sra=config["sra"]) if check_sra() else expand("{{dir}}/align/{fq}.sorted.bam", fq=config["fq"])
     output:
-        sorted="{dir}/combined.sorted.bam",
-        stats="{dir}/combined.sorted.stats"
+        sorted="{dir}/align/combined.sorted.bam",
+        stats="{dir}/align/combined.sorted.stats"
     params:
         compression="9",
-        tempprefix="{dir}/combined.sorted"
-    log: "{dir}/combined.sorted.log"
+        tempprefix="{dir}/align/combined.sorted"
+    log: "{dir}/align/combined.sorted.log"
     threads: 12
     resources: mem_mb=16000
     shell:
