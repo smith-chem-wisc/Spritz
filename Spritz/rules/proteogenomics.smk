@@ -4,7 +4,7 @@ REF=config["species"] + "." + config["genome"]
 rule download_protein_xml:
     output:
         xml=UNIPROTXML,
-        fasta=UNIPROTFASTA
+        fasta=UNIPROTFASTA,
     log: UNIPROTXML + ".log"
     shell:
         "(python scripts/get_proteome.py && "
@@ -23,7 +23,7 @@ rule transfer_modifications_variant:
     input:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
-        protxml="{dir}/variants/combined.spritz.snpeff.protein.xml"
+        protxml="{dir}/variants/combined.spritz.snpeff.protein.xml",
     output:
         protfastawithdecoys="{dir}/variants/combined.spritz.snpeff.protein.withdecoys.fasta",
         protxmlgz="{dir}/variants/combined.spritz.snpeff.protein.xml.gz",
@@ -31,15 +31,14 @@ rule transfer_modifications_variant:
         protxmlwithmodsgz="{dir}/variants/combined.spritz.snpeff.protein.withmods.xml.gz",
     log: "{dir}/combined.spritz.snpeff.protein.withmods.log"
     shell:
-        "(mv {input.protxml} {input.temp}/{params.infile} && "
-        "dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
+        "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
         "gzip -k {input.protxml} {output.protxmlwithmods}) &> {log}"
 
 rule transfer_modifications_isoformvariant:
     input:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
-        protxml="{dir}/variants/combined.spritz.isoformvariants.protein.xml"
+        protxml="{dir}/variants/combined.spritz.isoformvariants.protein.xml",
     output:
         protfastawithdecoys="{dir}/variants/combined.spritz.isoformvariants.protein.withdecoys.fasta",
         protxmlgz="{dir}/variants/combined.spritz.isoformvariants.protein.xml.gz",
@@ -55,12 +54,12 @@ rule generate_reference_snpeff_database:
         jar="SnpEff/snpEff.jar",
         gff3=GFF3,
         pfa="data/ensembl/{REF}.pep.all.fa",
-        gfa="data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
+        gfa="data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
     output:
         pfa="SnpEff/data/{REF}/protein.fa",
         gff3="SnpEff/data/{REF}/genes.gff",
         gfa="SnpEff/data/genomes/{REF}.fa",
-        done="SnpEff/data/{REF}/done{REF}.txt"
+        done="SnpEff/data/{REF}/done{REF}.txt",
     resources: mem_mb=16000
     benchmark: "SnpEff/data/{REF}/snpeffdatabase.benchmark"
     log: "SnpEff/data/{REF}/snpeffdatabase.log"

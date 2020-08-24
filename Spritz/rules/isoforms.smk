@@ -90,7 +90,7 @@ rule Predict:
     input:
         orfs="{dir}/isoforms/longest_orfs.pep",
         fasta="{dir}/isoforms/combined.transcripts.fasta",
-        blastp="{dir}/isoforms/combined.blastp.outfmt6"
+        blastp="{dir}/isoforms/combined.blastp.outfmt6",
     output:
         "{dir}/isoforms/combined.transcripts.fasta.transdecoder.pep",
         temp(directory("{dir}/..__checkpoints")),
@@ -184,11 +184,11 @@ rule generate_snpeff_database:
         jar="SnpEff/snpEff.jar",
         gff3="SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
         pfa="data/ensembl/" + REF + ".pep.all.fa",
-        gfa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
+        gfa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
     output:
         pfa="SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
         gfa="SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
-        done="SnpEff/data/combined.transcripts.genome.gff3/done.txt"
+        done="SnpEff/data/combined.transcripts.genome.gff3/done.txt",
     params: ref="combined.transcripts.genome.gff3"
     resources: mem_mb=16000
     benchmark: "SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.benchmark"
