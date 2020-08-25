@@ -1,26 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 
-namespace SpritzGUI
+namespace Spritz
 {
     public class EverythingRunnerEngine
     {
-        private readonly Tuple<string, Options> task;
-        private string outputFolder;
+        public string Arguments { get; set; }
+        public string AnalysisDirectory { get; }
+        public string ConfigDirectory { get; }
+        public string DataDirectory { get; }
+        public string PathToWorkflow { get; }
+        public string SpritzContainerName { get; set; }
 
         public EverythingRunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
-            this.task = task;
-            this.outputFolder = outputFolder;
-
             // set up directories to mount to docker container as volumes
-            AnalysisDirectory = task.Item2.AnalysisDirectory;
+            AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
 
-            var pathToConfig = Path.Combine(Directory.GetCurrentDirectory(), "configs");
+            var pathToConfig = Path.Combine(AnalysisDirectory, "configs");
             if (!Directory.Exists(pathToConfig))
             {
                 Directory.CreateDirectory(pathToConfig);
@@ -36,34 +38,24 @@ namespace SpritzGUI
 
             // path to workflow.txt
             PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
+            SpritzContainerName = $"spritz{PathToWorkflow.GetHashCode()}";
         }
 
-        public string Arguments { get; set; }
-        public string AnalysisDirectory { get; }
-        public string ConfigDirectory { get; }
-        public string DataDirectory { get; }
-        public string PathToWorkflow { get; }
-
-        public string GenerateCommandsDry()
+        public string GenerateCommandsDry(string dockerImageName)
         {
-            return "docker pull smithlab/spritz ; docker run --rm -t --name spritz " +
-                "-v \"\"\"" + AnalysisDirectory + ":/app/analysis" + "\"\"\" " +
-                "-v \"\"\"" + DataDirectory + ":/app/data" + "\"\"\" " +
-                "-v \"\"\"" + ConfigDirectory + ":/app/configs\"\"\" " +
-                "smithlab/spritz; docker stop spritz";
+            string command = "";
+            if (dockerImageName.Contains("smithlab")) { command += $"docker pull {dockerImageName} ;"; }
+            command += $"docker run --rm -i -t --name {SpritzContainerName} " +
+                $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
+                $"-v \"\"\"{DataDirectory}:/app/data" + "\"\"\" " +
+                $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +
+                $"{dockerImageName}; docker stop spritz{PathToWorkflow.GetHashCode()}";
+            return command;
         }
 
-        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
+        public string GenerateTopComand()
         {
-            node.Style = SequenceStyle.Flow;
-            foreach (string item in items)
-            {
-                if (item.Length > 0)
-                {
-                    node.Add(item);
-                }
-            }
-            return node;
+            return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
         }
 
         public void WriteConfig(Options options)
@@ -78,6 +70,9 @@ namespace SpritzGUI
 
             var sras = options.SraAccession.Split(',');
             var fqs = options.Fastq1.Split(',') ?? new string[0];
+            var analysisStrings = new List<string>();
+            if (options.AnalyzeVariants) analysisStrings.Add("variant");
+            if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
 
             // write user input sras
             var accession = new YamlSequenceNode();
@@ -113,15 +108,30 @@ namespace SpritzGUI
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
 
-            // write snpeff (hardcoded for now)
-            var snpeff = new YamlScalarNode(options.SnpEff);
-            snpeff.Style = ScalarStyle.DoubleQuoted;
-            rootMappingNode.Add("snpeff", snpeff);
+            // list the analyses to perform
+            var analyses = new YamlSequenceNode();
+            rootMappingNode.Add("analyses", AddParam(analysisStrings.ToArray(), analyses));
+
+            // record the version of spritz
+            var version = new YamlScalarNode(options.SpritzVersion);
+            version.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("spritzversion", version);
 
             using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
             {
                 stream.Save(writer, false);
             }
+            File.WriteAllLines(Path.Combine(ConfigDirectory, "threads.txt"), new[] { options.Threads.ToString() });
+        }
+
+        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
+        {
+            node.Style = SequenceStyle.Flow;
+            foreach (string item in items.Where(x => x.Length > 0))
+            {
+                node.Add(item);
+            }
+            return node;
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Security;
+using System.Security.Permissions;
 using System.Windows;
 
-namespace SpritzGUI
+namespace Spritz
 {
     /// <summary>
     /// Interaction logic for workflows
@@ -13,6 +14,11 @@ namespace SpritzGUI
     public partial class WorkFlowWindow : Window
     {
         private string AnalysisDirectory { get; set; }
+        public string Reference { get; set; } // define notify property changed
+        public ObservableCollection<EnsemblRelease> EnsemblReleases { get; set; }
+        public Options Options { get; set; } = new Options(Environment.ProcessorCount);
+        private MainWindow MainWindow { get; set; }
+        private int Threads { get; set; }
 
         public WorkFlowWindow(string analysisDirectory)
         {
@@ -33,10 +39,6 @@ namespace SpritzGUI
             Options = options;
             DataContext = this;
         }
-
-        public Options Options { get; set; } = new Options();
-
-        private MainWindow MainWindow { get; set; }
 
         protected void CancelButton_Click(object sender, RoutedEventArgs e)
         {
@@ -65,28 +67,33 @@ namespace SpritzGUI
             //    return;
             //}
 
-            // Options.SpritzDirectory = txtSpritzDirecory.Text;
-            var defaultAnalysisDirectory = Path.Combine(Directory.GetCurrentDirectory(), "output");
-            if (!Directory.Exists(defaultAnalysisDirectory))
-            {
-                Directory.CreateDirectory(defaultAnalysisDirectory);
-            }
-
             Options.AnalysisDirectory = TrimQuotesOrNull(txtAnalysisDirectory.Text);
-
-            if (!Directory.Exists(Options.AnalysisDirectory))
+            try
             {
-                MessageBox.Show("Analysis directory does not exist.", "Workflow", MessageBoxButton.OK);
+                string testDirectory = Path.Combine(Options.AnalysisDirectory, $"TestSpritzPermissions{Options.AnalysisDirectory.GetHashCode()}");
+                Directory.CreateDirectory(testDirectory);
+                Directory.Delete(testDirectory);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Error: Cannot write to specified analysis directory: {Options.AnalysisDirectory}. Please choose another directory.", "Write Permissions", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            Options.Threads = int.Parse(txtThreads.Text);
-            Ensembl ensembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
+            if (!Directory.Exists(Options.AnalysisDirectory))
+            {
+                Directory.CreateDirectory(Options.AnalysisDirectory);
+            }
+
+            Options.Threads = Threads;
+            EnsemblRelease ensembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
             Options.Release = ensembl.Release;
             Options.Species = EnsemblSpecies.SelectedItem.ToString();
             Options.Reference = ensembl.Genomes[Options.Species];
             Options.Organism = ensembl.Organisms[Options.Species];
-            Options.SnpEff = "86";
+            Options.AnalyzeVariants = (bool)Cb_AnalyzeVariants.IsChecked;
+            Options.AnalyzeIsoforms = (bool)Cb_AnalyzeIsoforms.IsChecked;
+            Options.SpritzVersion = MainWindow.CurrentVersion;
             DialogResult = true;
         }
 
@@ -113,8 +120,18 @@ namespace SpritzGUI
             //Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
             Options.SraAccession = string.Join(",", sraCollection.Select(p => p.Name).ToArray());
+            if (Options.SraAccession.Count() == 0 && options.Fastq1.Count() == 0)
+            {
+                Cb_AnalyzeIsoforms.IsChecked = false;
+                Cb_AnalyzeIsoforms.IsEnabled = false;
+                Cb_AnalyzeVariants.IsChecked = false;
+                Cb_AnalyzeVariants.IsEnabled = false;
+            }
+
             txtAnalysisDirectory.Text = AnalysisDirectory;
-            txtThreads.Text = options.Threads.ToString();
+            txtThreads.Text = MainWindow.DockerCPUs.ToString();
+            Threads = MainWindow.DockerCPUs;
+            Lb_ThreadInfo.Content = $"Integer between 1 and {MainWindow.DockerCPUs};\nmaximum is set in Docker Desktop";
             saveButton.IsEnabled = false;
         }
 
@@ -130,63 +147,29 @@ namespace SpritzGUI
             //CmbxExperimentType.Items.Add(ExperimentType.ExomeSequencing.ToString());
             //CmbxExperimentType.SelectedIndex = 0; // hard coded selection (for now)
 
-            EnsemblReleases = new ObservableCollection<Ensembl>();
-
-            // read release.txt files into a list
-            string releasefolder = Path.Combine(Directory.GetCurrentDirectory(), "EnsemblReleases");
-            var releases = Directory.GetFiles(releasefolder, "*.txt").Select(Path.GetFileNameWithoutExtension).ToList();
-
-            var genomeDB = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv"));
-            foreach (string release in releases)
-            {
-                // read txt file into obsv collection
-                var file = File.ReadAllLines(Path.Combine(releasefolder, $"{release}.txt"));
-                var species = new List<string>(file);
-                Dictionary<string, string> genomes = new Dictionary<string, string>();
-                Dictionary<string, string> organisms = new Dictionary<string, string>();
-
-                var unsupported = new List<string>();
-                foreach (string genome in genomeDB.Where(g => g.Contains(release)))
-                {
-                    var splt = genome.Split(',');
-                    genomes.Add(splt[1], splt[3]); // <Species, GenomeVer>
-                    organisms.Add(splt[1], splt[2]); // <Species, OrganismName>
-
-                    if (!string.Equals(splt[4], "86")) // only add species supported in snpeff (ver 86 ensembl)
-                    {
-                        unsupported.Add(splt[1]);
-                    }
-                }
-
-                var supported = species.Where(s => !unsupported.Contains(s)).ToList();
-                EnsemblReleases.Add(new Ensembl() { Release = release, Species = new ObservableCollection<string>(supported), Genomes = genomes, Organisms = organisms });
-            }
+            EnsemblReleases = EnsemblRelease.GetReleases();
         }
-
-        public ObservableCollection<Ensembl> EnsemblReleases { get; set; }
-
-        public class Ensembl
-        {
-            public string Release { get; set; }
-            public ObservableCollection<string> Species { get; set; }
-            public Dictionary<string, string> Genomes { get; set; } // Mus_musculus GRCm38
-            public Dictionary<string, string> Organisms { get; set; } // Mus_musculus GRCm38
-        }
-
-        private void txtThreads_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-        }
-
-        public string Reference { get; set; } // define notify property changed
 
         private void Species_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             saveButton.IsEnabled = true;
 
             // get selection from species
-            var selectedEnsembl = (Ensembl)EnsemblReleaseVersions.SelectedItem;
+            var selectedEnsembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
             var selectedSpecies = (string)EnsemblSpecies.SelectedItem;
             Reference = selectedEnsembl.Genomes[selectedSpecies];
+        }
+
+        private void txtThreads_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(txtThreads.Text, out int threads) && threads <= MainWindow.DockerCPUs && threads > 0)
+            {
+                Threads = threads;
+            }
+            else
+            {
+                txtThreads.Text = MainWindow.DockerCPUs.ToString();
+            }
         }
     }
 }

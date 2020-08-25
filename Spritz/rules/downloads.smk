@@ -1,17 +1,45 @@
 REF=config["species"] + "." + config["genome"]
+SPECIES_LOWER = config["species"].lower()
+
+protocol = "http"
+primary = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.primary_assembly.fa.gz"
+toplevel = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.toplevel.fa.gz"
+gff = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/gff3/{SPECIES_LOWER}/{REF}.{ENSEMBL_VERSION}.gff3.gz"
+pep = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/pep/{REF}.pep.all.fa.gz"
 
 rule download_ensembl_references:
     output:
         gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
         gff3="data/ensembl/" + REF + "." + config["release"] + ".gff3",
         pfa="data/ensembl/" + REF + ".pep.all.fa",
-        vcfgz="data/ensembl/" + config["species"] + ".vcf.gz",
-        vcf="data/ensembl/" + config["species"] + ".ensembl.vcf",
+    benchmark: "data/ensembl/downloads.benchmark"
     log: "data/ensembl/downloads.log"
     shell:
-        "(python scripts/download_ensembl.py {REF} && "
-        "gunzip {output.gfa}.gz {output.gff3}.gz {output.pfa}.gz && "
-        "zcat {output.vcfgz} | python scripts/clean_vcf.py > {output.vcf}) 2> {log}"
+        "((wget -O - {primary} || wget -O - {toplevel}) | gunzip -c - > {output.gfa} && "
+        "wget -O - {gff} | gunzip -c - > {output.gff3} && "
+        "wget -O - {pep} | gunzip -c - > {output.pfa}) 2> {log}"
+
+if SPECIES_LOWER == "homo_sapiens":
+    rule download_dbsnp_vcf:
+        '''Download dbsnp known variant sites if we are analyzing human data'''
+        input: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
+        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
+        benchmark: "data/ensembl/downloads_dbsnp_vcf.benchmark"
+        log: "data/ensembl/downloads_dbsnp_vcf.log"
+        shell:
+            "(wget -O - https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz | "
+            "zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
+else:
+    # first get the possible VCF urls; note that Ensembl has started listing variants for each chromosome for human but not other species, but that may change
+    vcf1 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES}.vcf.gz"
+    vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz"
+
+    rule download_ensembl_vcf:
+        '''Use Ensembl known variant sites if we are analyzing nonhuman data'''
+        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
+        benchmark: "data/ensembl/downloads_ensembl_vcf.benchmark"
+        log: "data/ensembl/downloads_ensembl_vcf.log"
+        shell: "((wget -O - {vcf1} || wget -O - {vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
 
 rule index_ensembl_vcf:
     input: "data/ensembl/" + config["species"] + ".ensembl.vcf"
@@ -21,12 +49,17 @@ rule index_ensembl_vcf:
 
 rule download_chromosome_mappings:
     output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
-    shell: "rm -rf ChromosomeMappings && git clone https://github.com/dpryan79/ChromosomeMappings.git"
+    log: "ChromosomeMappings/download_chromosome_mappings.log"
+    shell:
+        "(if [ -d ChromosomeMappings ]; then rm -rf ChromosomeMappings; fi && "
+        "git clone https://github.com/dpryan79/ChromosomeMappings.git) 2> {log}"
 
 rule reorder_genome_fasta:
     input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
     output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
-    script: "../scripts/karyotypic_order.py"
+    benchmark: "data/ensembl/karyotypic_order.benchmark"
+    log: "data/ensembl/karyotypic_order.log"
+    shell: "python scripts/karyotypic_order.py 2> {log}"
 
 rule dict_fa:
     input: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa"
@@ -39,39 +72,3 @@ rule tmpdir:
         temp(directory("temporary")),
     shell:
         "mkdir tmp && mkdir temporary"
-
-rule filter_gff3:
-    input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
-    output: "data/ensembl/202122.gff3"
-    shell: "grep \"^#\|20\|^21\|^22\" \"data/ensembl/" + REF + "." + config["release"] + ".gff3\" > \"data/ensembl/202122.gff3\""
-
-rule fix_gff3_for_rsem:
-    '''This script changes descriptive notes in column 4 to "gene" if a gene row, and it also adds ERCCs to the gene model'''
-    input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
-    output: "data/ensembl/" + REF + "." + config["release"] + ".gff3" + ".fix.gff3"
-    shell: "python scripts/fix_gff3_for_rsem.py {input} {output}"
-
-rule filter_fa:
-    input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
-    output: "data/ensembl/202122.fa"
-    script: "../scripts/filter_fasta.py"
-
-rule download_sras:
-    output:
-        temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
-        temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
-    log: "{dir}/{sra}.log"
-    threads: 4
-    shell:
-        "fasterq-dump -p --threads {threads} --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
-
-rule compress_fastqs:
-    input:
-        temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"),
-        temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
-    output:
-        temp("{dir}/{sra,[A-Z0-9]+}_1.fastq.gz"),
-        temp("{dir}/{sra,[A-Z0-9]+}_2.fastq.gz")
-    threads: 2
-    shell:
-        "gzip {input[0]} & gzip {input[1]}"
