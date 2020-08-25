@@ -55,4 +55,4 @@ if "isoform" in workflows:
         ""])
 
 with open(outf, 'w') as file:
-    file.writelines([f"{x}\n".encode().decode() for x in lines]) # make sure it's UTF-8 compatible
+    file.writelines([f"{x}\n" for x in lines]) # note: all text above needs to be UTF-8 characters
