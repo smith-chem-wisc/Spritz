@@ -69,7 +69,7 @@ rule fastp:
         fq2="{dir}/{sra}_2.fastq" if check_sra() else "{dir}/{fq}_2.fastq",
     output:
         fq1="{dir}/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/{fq}.trim_1.fastq.gz",
-        fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}{fq}.trim_2.fastq.gz",
+        fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}/{fq}.trim_2.fastq.gz",
         html="{dir}/{sra}.trim.html" if check_sra() else "{dir}/{fq}.trim.html",
         json="{dir}/{sra}.trim.json" if check_sra() else "{dir}/{fq}.trim.json",
     threads: 6
@@ -87,7 +87,7 @@ rule hisat2_align_bam:
     input:
         "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.1.ht2",
         fq1="{dir}/{sra}.trim_1.fastq.gz" if check_sra() else "{dir}/{fq}.trim_1.fastq.gz",
-        fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}{fq}.trim_2.fastq.gz",
+        fq2="{dir}/{sra}.trim_2.fastq.gz" if check_sra() else "{dir}/{fq}.trim_2.fastq.gz",
         ss="data/ensembl/" + REF + "." + config["release"] + ".splicesites.txt"
     output:
         sorted="{dir}/align/{sra}.sorted.bam" if check_sra() else "{dir}/align/{fq}.sorted.bam",
