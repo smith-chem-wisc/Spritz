@@ -29,7 +29,7 @@ rule transfer_modifications_variant:
         protxmlgz="{dir}/variants/combined.spritz.snpeff.protein.xml.gz",
         protxmlwithmods=temp("{dir}/variants/combined.spritz.snpeff.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/variants/combined.spritz.snpeff.protein.withmods.xml.gz",
-    log: "{dir}/combined.spritz.snpeff.protein.withmods.log"
+    log: "{dir}/variants/combined.spritz.snpeff.protein.withmods.log"
     shell:
         "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
         "gzip -k {input.protxml} {output.protxmlwithmods}) &> {log}"
@@ -44,7 +44,7 @@ rule transfer_modifications_isoformvariant:
         protxmlgz="{dir}/variants/combined.spritz.isoformvariants.protein.xml.gz",
         protxmlwithmods=temp("{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml.gz",
-    log: "{dir}/combined.spritz.isoformvariants.protein.withmods.log"
+    log: "{dir}/variants/combined.spritz.isoformvariants.protein.withmods.log"
     shell:
         "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
         "gzip -k {output.protxmlwithmods} {input.protxml}) &> {log}"
