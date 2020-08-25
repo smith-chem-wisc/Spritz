@@ -17,7 +17,7 @@ namespace Spritz
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly string CurrentVersion = "0.2.0";
+        public static readonly string CurrentVersion = "0.2.1";
 
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
@@ -36,63 +36,70 @@ namespace Spritz
 
         public MainWindow()
         {
-            InitializeComponent();
-            DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
-            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
-            LbxSRAs.ItemsSource = SraCollection;
-
-            // Version information
             try
             {
-                SpritzUpdater.GetVersionNumbersFromWeb();
+                InitializeComponent();
+                DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
+                WorkflowTreeView.DataContext = StaticTasksObservableCollection;
+                LbxSRAs.ItemsSource = SraCollection;
+
+                // Version information
+                try
+                {
+                    SpritzUpdater.GetVersionNumbersFromWeb();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Could not get newest version from web: " + e.Message, "Setup", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // Check Docker setup
+                Dispatcher.Invoke(() =>
+                {
+                    Process proc = new Process();
+                    proc.StartInfo.FileName = "Powershell.exe";
+                    proc.StartInfo.Arguments = "docker system info";
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.StartInfo.CreateNoWindow = true;
+                    proc.Start();
+                    StreamReader outputReader = proc.StandardOutput;
+                    DockerSystemInfo = outputReader.ReadToEnd();
+                    proc.WaitForExit();
+                });
+                bool isDockerInstalled = !string.IsNullOrEmpty(DockerSystemInfo) && !DockerSystemInfo.Contains("error", StringComparison.InvariantCultureIgnoreCase);
+                if (isDockerInstalled)
+                {
+                    ParseDockerSystemInfo(DockerSystemInfo);
+                }
+                string message = isDockerInstalled ?
+                    "In Docker Desktop, please ensure all shared drives are enabled, and please ensure a Disk image size of at least 80 GB is enabled." :
+                    "Docker is not running or not installed. Please have Docker Desktop installed and running, enable all shared drives, and ensure a Disk image size of at least 80 GB is enabled.";
+                if (isDockerInstalled && DockerMemory < 16)
+                {
+                    message += $"{Environment.NewLine}{Environment.NewLine}The memory allocated to Docker is low ({DockerMemory}GB). Please raise this value above 16 GB in Docker Desktop if possible.";
+                }
+                MessageBox.Show(message, "Setup", MessageBoxButton.OK, isDockerInstalled ? MessageBoxImage.Information : MessageBoxImage.Error);
             }
             catch (Exception e)
             {
-                MessageBox.Show("Could not get newest version from web: " + e.Message, "Setup", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show($"ERROR: {e.Message}", "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            // Check Docker setup
-            Dispatcher.Invoke(() =>
-            {
-                Process proc = new Process();
-                proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = "docker system info";
-                proc.StartInfo.UseShellExecute = false;
-                proc.StartInfo.RedirectStandardOutput = true;
-                proc.StartInfo.RedirectStandardError = true;
-                proc.StartInfo.CreateNoWindow = true;
-                proc.Start();
-                StreamReader outputReader = proc.StandardOutput;
-                DockerSystemInfo = outputReader.ReadToEnd();
-                proc.WaitForExit();
-            });
-            bool isDockerInstalled = !string.IsNullOrEmpty(DockerSystemInfo);
-            if (isDockerInstalled)
-            {
-                ParseDockerSystemInfo(DockerSystemInfo);
-            }
-            string message = isDockerInstalled ?
-                "In Docker Desktop, please ensure all shared drives are enabled, and please ensure a Disk image size of at least 80 GB is enabled." :
-                "Docker is not installed. Please have Docker Desktop installed, enable all shared drives, and ensure a Disk image size of at least 80 GB is enabled.";
-            if (isDockerInstalled && DockerMemory < 16)
-            {
-                message += $"{Environment.NewLine}{Environment.NewLine}The memory allocated to Docker is low ({DockerMemory}GB). Please raise this value above 16 GB in Docker Desktop if possible.";
-            }
-            MessageBox.Show(message, "Setup", MessageBoxButton.OK, isDockerInstalled ? MessageBoxImage.Information : MessageBoxImage.Error);
         }
 
         private void ParseDockerSystemInfo(string dockerSystemInfo)
         {
             string[] infoLines = dockerSystemInfo.Split('\n');
-            string cpuLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("CPUs"));
-            if (int.TryParse(cpuLine.Split(':')[1].Trim(), out int dockerThreads))
+            string cpuLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("CPUs", StringComparison.InvariantCultureIgnoreCase));
+            if (cpuLine != null && int.TryParse(cpuLine.Split(':')[1].Trim(), out int dockerThreads))
             {
                 DockerCPUs = dockerThreads;
             }
 
             double gibToGbConversion = 1.07374;
-            string memoryLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("Total Memory"));
-            if (double.TryParse(memoryLine.Split(':')[1].Replace("GiB", "").Trim(), out double memoryGB))
+            string memoryLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("Total Memory", StringComparison.InvariantCultureIgnoreCase));
+            if (memoryLine != null && double.TryParse(memoryLine.Split(':')[1].Replace("GiB", "").Trim(), out double memoryGB))
             {
                 DockerMemory = memoryGB * gibToGbConversion;
             }
