@@ -195,7 +195,7 @@ rule finish_variants:
         refprotwithmodsxml="{dir}/final/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml.gz",
     shell:
         "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz}"
-        " {input.refprotfa} {input.refprotwithdecoysfa} {input.refprotwithmodsxml} {dir}/final"
+        " {input.refprotfa} {input.refprotwithdecoysfa} {input.refprotwithmodsxml} {wildcards.dir}/final"
 
 rule finish_isoform_variants:
     '''Copy final output files from isoform-variant workflow to main directory'''
@@ -210,4 +210,4 @@ rule finish_isoform_variants:
         protwithdecoysfa="{dir}/final/combined.spritz.isoformvariants.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/final/combined.spritz.isoformvariants.protein.withmods.xml.gz",
     shell:
-        "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {dir}/final"
+        "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {wildcards.dir}/final"

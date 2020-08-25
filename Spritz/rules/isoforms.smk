@@ -215,4 +215,4 @@ rule finish_isoform:
         protwithdecoysfa="{dir}/final/combined.spritz.isoform.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz",
     shell:
-        "cp {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {dir}/final"
+        "cp {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {wildcards.dir}/final"
