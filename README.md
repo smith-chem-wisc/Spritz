@@ -11,8 +11,6 @@ Spritz uses snakemake and Docker to install and run commandline tools for Next-G
 
 Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releases).
 
-![image](https://user-images.githubusercontent.com/16342951/84078314-55585280-a99e-11ea-9096-bebfcbb06bef.png)
-
 ## Running Spritz with GUI
 
 1. Install [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows).
@@ -39,7 +37,7 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
   * .NET Core 3.1:
      * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer
 * 16 GB RAM recommended
-* Note that the installer (Spritz.msi) only works on Windows. 
+* Note that the installer (Spritz.msi) only works on Windows.
 * Spritz will also work on the commandline within a Unix system (Linux, Mac, WSL on Windows). First, install [miniconda3](https://docs.conda.io/en/latest/miniconda.html), and then create a `conda` environment for spritz by running `conda env create --name spritz --file environment.yaml; conda activate spritz`. After adapting the `config.yaml` file manually, Spritz may be run using `snakemake -j {threads} --resources mem_mb={memory_megabytes}`, where `{threads}` and `{memory_megabytes}` are replaced with your specifications.
 
 ## Test it out! Try constructing the database for U2OS from the paper.

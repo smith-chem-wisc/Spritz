@@ -2,36 +2,20 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - snakemake-minimal =5.2.4
+  - snakemake-minimal
+  - graphviz
   - python =3.6
-  - gatk4 =4.1.2.0
+  - gatk4 =4.0.11.0
   - hisat2 =2.1.0
   - samtools =1.9
-  - sra-tools
+  - sra-tools=2.10.8
   - stringtie
   - biopython
   - git
-  - fastp
+  - maven
+  - fastqc
+  - skewer
   - numpy =1.16.4
   - biopython
   - bcbio-gff
   - pandas
-  - unzip
-  - r # for ProteomeGenerator
-  - bioconductor-biostrings # for ProteomeGenerator
-  - picard # for ProteomeGenerator
-  - transdecoder # for ProteomeGenerator
-  - gffread # for ProteomeGenerator
-  - blast # for ProteomeGenerdator
-
-  # - mason # for generating reads for testing
-
-  # - maven # for installing SnpEff; now downloading zip file directly
-
-  # - rsem =1.3.2-0
-  # - star =2.7.0f-0
-
-  # - star-fusion =1.6.0 # for STAR-Fusion
-  # - perl-carp-assert # for STAR-Fusion
-  # - igv-reports # for STAR-Fusion
-  # - trinity=2.8.4-0 # for STAR-Fusion

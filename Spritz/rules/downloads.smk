@@ -1,74 +1,87 @@
-REF=config["species"] + "." + config["genome"]
-SPECIES_LOWER = config["species"].lower()
-
-protocol = "http"
-primary = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.primary_assembly.fa.gz"
-toplevel = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.toplevel.fa.gz"
-gff = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/gff3/{SPECIES_LOWER}/{REF}.{ENSEMBL_VERSION}.gff3.gz"
-pep = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/pep/{REF}.pep.all.fa.gz"
-
 rule download_ensembl_references:
     output:
-        gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
-        gff3="data/ensembl/" + REF + "." + config["release"] + ".gff3",
-        pfa="data/ensembl/" + REF + ".pep.all.fa",
-    benchmark: "data/ensembl/downloads.benchmark"
+        gfa=GENOME_FA,
+        gff=ENSEMBL_GFF,
+        pfa="data/ensembl/Homo_sapiens." + GENOME_VERSION + ".pep.all.fa",
+        vcf="data/ensembl/common_all_20170710.vcf",
+        vcfidx="data/ensembl/common_all_20170710.vcf.idx"
     log: "data/ensembl/downloads.log"
     shell:
-        "((wget -O - {primary} || wget -O - {toplevel}) | gunzip -c - > {output.gfa} && "
-        "wget -O - {gff} | gunzip -c - > {output.gff3} && "
-        "wget -O - {pep} | gunzip -c - > {output.pfa}) 2> {log}"
-
-if SPECIES_LOWER == "homo_sapiens":
-    rule download_dbsnp_vcf:
-        '''Download dbsnp known variant sites if we are analyzing human data'''
-        input: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
-        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
-        benchmark: "data/ensembl/downloads_dbsnp_vcf.benchmark"
-        log: "data/ensembl/downloads_dbsnp_vcf.log"
-        shell:
-            "(wget -O - https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz | "
-            "zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
-else:
-    # first get the possible VCF urls; note that Ensembl has started listing variants for each chromosome for human but not other species, but that may change
-    vcf1 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES}.vcf.gz"
-    vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz"
-
-    rule download_ensembl_vcf:
-        '''Use Ensembl known variant sites if we are analyzing nonhuman data'''
-        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
-        benchmark: "data/ensembl/downloads_ensembl_vcf.benchmark"
-        log: "data/ensembl/downloads_ensembl_vcf.log"
-        shell: "((wget -O - {vcf1} || wget -O - {vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
-
-rule index_ensembl_vcf:
-    input: "data/ensembl/" + config["species"] + ".ensembl.vcf"
-    output: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
-    log: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx.log"
-    shell: "gatk IndexFeatureFile -F {input} 2> {log}"
+        "if [ -e {output.gfa}.gz ] && [ -e {output.gff}.gz ] && [ -e {output.pfa}.gz ] && [ -e {output.vcf}.gz ]; then "
+            "gunzip -c {output.gfa}.gz > {output.gfa} && "
+            "gunzip -c {output.gff}.gz > {output.gff} && "
+            "gunzip -c {output.pfa}.gz > {output.pfa} && "
+            "gunzip -c {output.vcf}.gz > {output.vcf} && "
+            "gatk IndexFeatureFile -F {output.vcf}; "
+        "else "
+            "(wget -O - ftp://ftp.ensembl.org/pub/release-" + ENSEMBL_VERSION + "//fasta/homo_sapiens/dna/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.fa.gz | "
+            "gunzip -c > {output.gfa} && "
+            "wget -O - ftp://ftp.ensembl.org/pub/release-" + ENSEMBL_VERSION + "/gff3/homo_sapiens/Homo_sapiens." + GENEMODEL_VERSION + ".gff3.gz | "
+            "gunzip -c > {output.gff} && "
+            "wget -O - ftp://ftp.ensembl.org/pub/release-" + ENSEMBL_VERSION + "//fasta/homo_sapiens/pep/Homo_sapiens." + GENOME_VERSION + ".pep.all.fa.gz | "
+            "gunzip -c > {output.pfa} && "
+            "wget -O - ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606_b150_GRCh38p7/VCF/GATK/common_all_20170710.vcf.gz | "
+            "gunzip -c > {output.vcf} && "
+            "gatk IndexFeatureFile -F {output.vcf}) 2> {log}; "
+        "fi"
 
 rule download_chromosome_mappings:
-    output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
-    log: "ChromosomeMappings/download_chromosome_mappings.log"
-    shell:
-        "(if [ -d ChromosomeMappings ]; then rm -rf ChromosomeMappings; fi && "
-        "git clone https://github.com/dpryan79/ChromosomeMappings.git) 2> {log}"
+    output: "ChromosomeMappings/GRCh38_UCSC2ensembl.txt"
+    shell: "git clone https://github.com/dpryan79/ChromosomeMappings.git"
 
 rule reorder_genome_fasta:
-    input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
-    output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
-    benchmark: "data/ensembl/karyotypic_order.benchmark"
-    log: "data/ensembl/karyotypic_order.log"
-    shell: "python scripts/karyotypic_order.py 2> {log}"
+    input: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.fa"
+    output: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.karyotypic.fa"
+    script: "../scripts/karyotypic_order.py"
 
-rule dict_fa:
-    input: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa"
-    output: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.dict"
-    shell: "gatk CreateSequenceDictionary -R {input} -O {output}"
-
-rule tmpdir:
+rule convert_ucsc2ensembl:
+    input:
+        "data/ensembl/common_all_20170710.vcf",
+        "ChromosomeMappings/GRCh38_UCSC2ensembl.txt"
     output:
-        temp(directory("tmp")),
-        temp(directory("temporary")),
+        "data/ensembl/common_all_20170710.ensembl.vcf",
+    script:
+        "../scripts/convert_ucsc2ensembl.py"
+
+rule index_ucsc2ensembl:
+    input: "data/ensembl/common_all_20170710.ensembl.vcf"
+    output: "data/ensembl/common_all_20170710.ensembl.vcf.idx"
+    shell: "gatk IndexFeatureFile -F {input}"
+
+rule filter_gff3:
+    input: ENSEMBL_GFF
+    output: "data/ensembl/202122.gff3"
+    shell: "grep \"^#\|^20\|^21\|^22\" \"data/ensembl/Homo_sapiens." + GENEMODEL_VERSION + ".gff3\" > \"data/ensembl/202122.gff3\""
+
+rule fix_gff3_for_rsem:
+    '''This script changes descriptive notes in column 4 to "gene" if a gene row, and it also adds ERCCs to the gene model'''
+    input: ENSEMBL_GFF
+    output: ENSEMBL_GFF + ".fix.gff3"
+    shell: "python scripts/fix_gff3_for_rsem.py {input} {output}"
+
+rule filter_fa:
+    input: "data/ensembl/Homo_sapiens." + GENOME_VERSION + ".dna.primary_assembly.fa"
+    output: "data/ensembl/202122.fa"
+    script: "../scripts/filter_fasta.py"
+
+rule download_sras:
+    output:
+        temp("data/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
+        temp("data/{sra,[A-Z0-9]+}_2.fastq")
+    log: "data/{sra}.log"
+    threads: 6
+    resources:
+        mem_mb=1000
     shell:
-        "mkdir tmp && mkdir temporary"
+        "fasterq-dump --progress -b 10MB -c 100MB -m {resources.mem_mb}MB --threads {threads} --split-files --outdir data {wildcards.sra} 2> {log}"
+
+rule compress_fastqs:
+    input:
+        temp("data/{sra,[A-Z0-9]+}_1.fastq"),
+        temp("data/{sra,[A-Z0-9]+}_2.fastq")
+    output:
+        temp("data/{sra,[A-Z0-9]+}_1.fastq.gz"),
+        temp("data/{sra,[A-Z0-9]+}_2.fastq.gz")
+    threads: 2
+    shell:
+        "gzip {input[0]} & gzip {input[1]}"

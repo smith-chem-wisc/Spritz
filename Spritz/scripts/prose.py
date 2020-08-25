@@ -24,8 +24,8 @@ if used_sras:
 
 # TRIMMING AND ALIGNMENT
 lines.extend([
-    "Reads are trimmed and analyzed for quality scores using fastp: ",
-    "- https://academic.oup.com/bioinformatics/article/34/17/i884/5093234",
+    "Reads are trimmed and analyzed for quality scores using skewer: ",
+    "- https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-15-182",
     "",
     "Reads are aligned using hisat2: ",
     "- Kim, D.; et al. Graph-Based Genome Alignment and Genotyping with HISAT2 and HISAT-Genotype. Nat. Biotechnol. 2019, 37 (8), 907-915. https://doi.org/10.1038/s41587-019-0201-4.",
@@ -45,13 +45,6 @@ if "variant" in workflows:
         "",
         "SnpEff is used for variant annotation and customized in Spritz to output a proteogenomic database: ",
         "- Cingolani, P.; et al. A Program for Annotating and Predicting the Effects of Single Nucleotide Polymorphisms, SnpEff: SNPs in the Genome of Drosophila Melanogaster Strain W1118; Iso-2; Iso-3. Fly (Austin) 2012, 6 (2), 80-92. https://doi.org/10.4161/fly.19695.",
-        ""])
-
-# ISOFORM ANALYSIS
-if "isoform" in workflows:
-    lines.extend([
-        "Isoform analysis is performed using a pipeline from ProteomeGenerator: ",
-        "- Cifani, P.; et al. ProteomeGenerator: A Framework for Comprehensive Proteomics Based on de Novo Transcriptome Assembly and High-Accuracy Peptide Mass Spectral Matching. J. Proteome Res. 2018, 17 (11), 3681-3692. https://doi.org/10.1021/acs.jproteome.8b00295.",
         ""])
 
 with open(outf, 'w') as file:
