@@ -94,7 +94,7 @@ rule Predict:
         longest_orf_ckpts=directory("{dir}/isoforms.__checkpoints_longorfs"),
     output:
         "{dir}/isoforms/combined.transcripts.fasta.transdecoder.pep",
-        # temp(directory("{dir}/.__checkpoints")),
+        temp(directory("{dir}/isoforms/..__checkpoints")),
         gff3="{dir}/isoforms/combined.transcripts.fasta.transdecoder.gff3"
     benchmark: "{dir}/isoforms/combined.Predict.benchmark"
     log: "{dir}/isoforms/combined.Predict.log"
