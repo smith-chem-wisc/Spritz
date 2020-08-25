@@ -49,6 +49,10 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
 
 3. Run Spritz!
 
-Monitor progress in the Information textbox. The final database named `combined.spritz.snpeff.protein.withmods.xml.gz` can be used to search MS/MS with [MetaMorpheus](https://github.com/smith-chem-wisc/MetaMorpheus) to find variant peptides and proteoforms, possibly with modifications. We recommend performing 1) Calibration, 2) Global PTM Discovery (G-PTM-D), and 3) Search tasks to get the best results.
+Monitor progress in the Information textbox. The final database named `final/combined.spritz.snpeff.protein.withmods.xml.gz` can be used to search MS/MS with [MetaMorpheus](https://github.com/smith-chem-wisc/MetaMorpheus) to find variant peptides and proteoforms, possibly with modifications. We recommend performing 1) Calibration, 2) Global PTM Discovery (G-PTM-D), and 3) Search tasks to get the best results.
 
 ![image](https://user-images.githubusercontent.com/16342951/85874687-a76be700-b798-11ea-9bff-9f68646b03de.png)
+
+The final database named `final/combined.spritz.snpeff.protein.fasta` is generated to contain variant protein sequences, and it may be used in other search software, such as Proteome Discoverer, ProSight, and MASH Explorer.
+
+The final database named `final/combined.spritz.snpeff.protein.withdecoys.fasta` is ready for use in MSFragger. It is generated to contain variant protein sequences with decoy protein sequences appended.

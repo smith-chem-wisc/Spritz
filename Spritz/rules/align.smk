@@ -7,6 +7,7 @@ rule directories:
     shell: "mkdir -p data/ensembl/{REF}.dna.primary_assembly.karyotypic/"
 
 rule hisat_genome:
+    '''Build genome index for hisat2'''
     input:
         fa="data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         gtf="data/ensembl/{REF}." + config["release"] + ".gff3",
@@ -21,6 +22,7 @@ rule hisat_genome:
         " data/ensembl/{REF}.dna.primary_assembly.karyotypic && touch {output.finished}) &> {log}"
 
 rule hisat2_splice_sites:
+    '''Fetch the splice sites from the gene model for hisat2'''
     input: "data/ensembl/" + REF + "." + config["release"] + ".gff3"
     output: "data/ensembl/" + REF + "." + config["release"] + ".splicesites.txt"
     shell: "hisat2_extract_splice_sites.py {input} > {output}"
@@ -31,6 +33,34 @@ def input_fq_args(fastqs):
         return f"-U {fqs[0]}"
     else:
         return f"-1 {fqs[0]} -2 {fqs[1]}"
+
+def check_sra():
+    '''Check if SRAs should be downloaded'''
+    docheck = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
+    return docheck
+
+if check_sra():
+    rule download_sras: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
+        '''Download fastqs from GEO SRA for quality control and alignment'''
+        output:
+            temp("{dir}/{sra,[A-Z0-9]+}_1.fastq"), # constrain wildcards, so it doesn't soak up SRR######.trim_1.fastq
+            temp("{dir}/{sra,[A-Z0-9]+}_2.fastq")
+        benchmark: "{dir}/{sra}.benchmark"
+        log: "{dir}/{sra}.log"
+        threads: 4
+        shell:
+            "fasterq-dump -b 10MB -c 100MB -m 1000MB -p --threads {threads}" # use 10x the default memory allocation for larger SRAs
+            " --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+else:
+    rule expand_fastqs:
+        '''Prepare compressed input fastqs for quality control'''
+        input:
+            fq1="{dir}/{fq}_1.fastq.gz",
+            fq2="{dir}/{fq}_2.fastq.gz",
+        output:
+            fq1=temp("{dir}/{fq}_1.fastq"),
+            fq2=temp("{dir}/{fq}_2.fastq"),
+        shell: "gunzip -k {input.fq1} && gunzip -k {input.fq2}"
 
 rule fastp:
     '''Trim adapters, read quality filtering, make QC outputs'''
