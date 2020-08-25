@@ -1,68 +1,135 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System.Text.RegularExpressions;
 
-namespace SpritzGUI
+namespace Spritz
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static readonly string CurrentVersion = "0.2.0";
+
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
-        private CancellationTokenSource TokenSource = new CancellationTokenSource();
         private EverythingRunnerEngine Everything;
         private Regex outputScrub = new Regex(@"(\[\d+m)");
-        //private Task EverythingTask;
+
+        public int DockerCPUs { get; set; }
+        public double DockerMemory { get; set; }
+        private string DockerImage { get; set; } = "smithlab/spritz";
+        private string DockerStdOut { get; set; }
+        private bool ShowStdOut { get; set; } = true;
+        private string DockerSystemInfo { get; set; }
+        private bool IsRunning { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
             DataGridRnaSeqFastq.DataContext = RnaSeqFastqCollection;
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
             LbxSRAs.ItemsSource = SraCollection;
-            MessageBox.Show("Please have Docker Desktop installed and enable all shared drives.", "Setup", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            //var watch = new FileSystemWatcher();
-            //watch.Path = Path.Combine(Environment.CurrentDirectory, "output");
-            //watch.Filter = "test.txt";// Path.GetFileName(Everything.PathToWorkflow);
-            //watch.NotifyFilter = NotifyFilters.LastWrite;
-            //watch.Changed += new FileSystemEventHandler(OnWorkflowOutputChanged);
-            //watch.EnableRaisingEvents = true;
+            // Version information
+            try
+            {
+                SpritzUpdater.GetVersionNumbersFromWeb();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not get newest version from web: " + e.Message, "Setup", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            // Check Docker setup
+            Dispatcher.Invoke(() =>
+            {
+                Process proc = new Process();
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = "docker system info";
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.RedirectStandardError = true;
+                proc.StartInfo.CreateNoWindow = true;
+                proc.Start();
+                StreamReader outputReader = proc.StandardOutput;
+                DockerSystemInfo = outputReader.ReadToEnd();
+                proc.WaitForExit();
+            });
+            bool isDockerInstalled = !string.IsNullOrEmpty(DockerSystemInfo);
+            if (isDockerInstalled)
+            {
+                ParseDockerSystemInfo(DockerSystemInfo);
+            }
+            string message = isDockerInstalled ?
+                "In Docker Desktop, please ensure all shared drives are enabled, and please ensure a Disk image size of at least 80 GB is enabled." :
+                "Docker is not installed. Please have Docker Desktop installed, enable all shared drives, and ensure a Disk image size of at least 80 GB is enabled.";
+            if (isDockerInstalled && DockerMemory < 16)
+            {
+                message += $"{Environment.NewLine}{Environment.NewLine}The memory allocated to Docker is low ({DockerMemory}GB). Please raise this value above 16 GB in Docker Desktop if possible.";
+            }
+            MessageBox.Show(message, "Setup", MessageBoxButton.OK, isDockerInstalled ? MessageBoxImage.Information : MessageBoxImage.Error);
+        }
+
+        private void ParseDockerSystemInfo(string dockerSystemInfo)
+        {
+            string[] infoLines = dockerSystemInfo.Split('\n');
+            string cpuLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("CPUs"));
+            if (int.TryParse(cpuLine.Split(':')[1].Trim(), out int dockerThreads))
+            {
+                DockerCPUs = dockerThreads;
+            }
+
+            double gibToGbConversion = 1.07374;
+            string memoryLine = infoLines.FirstOrDefault(line => line.Trim().StartsWith("Total Memory"));
+            if (double.TryParse(memoryLine.Split(':')[1].Replace("GiB", "").Trim(), out double memoryGB))
+            {
+                DockerMemory = memoryGB * gibToGbConversion;
+            }
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            // TODO: implement some way of killing EverythingTask
-
-            // new process that kills docker container (if any)
-            Process proc = new Process();
-            proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = "docker kill spritz";
-            proc.StartInfo.CreateNoWindow = true;
-            proc.StartInfo.UseShellExecute = false;
-            proc.StartInfo.RedirectStandardError = true;
-            proc.Start();
-
-            if (proc != null && !proc.HasExited)
-            {
-                proc.WaitForExit();
-            }
-
+            string message = "Are you sure you would like to exit Spritz?";
+            message += IsRunning ? " This will stop all Spritz processes, which may take a few moments." : "";
+            if (MessageBox.Show(message, "Exit Spritz", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                return;
+            StopDocker("stop"); // may need to kill processes if we see that they get stuck in the future, but killing leaves some files open, which makes them hard to delete
             base.OnClosed(e);
+        }
+
+        private void CancelTasksButton_Click(object sender, RoutedEventArgs e)
+        {
+            StopDocker("stop");
+        }
+
+        private void StopDocker(string command)
+        {
+            // new process that kills docker container (if any)
+            if (Everything != null && !string.IsNullOrEmpty(Everything.PathToWorkflow))
+            {
+                Process proc = new Process();
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = $"docker {command} {Everything.SpritzContainerName}";
+                proc.StartInfo.CreateNoWindow = true;
+                proc.StartInfo.UseShellExecute = false;
+                proc.Start();
+
+                if (proc != null && !proc.HasExited)
+                {
+                    proc.WaitForExit();
+                }
+            }
         }
 
         private void UpdateSRABox()
@@ -108,28 +175,34 @@ namespace SpritzGUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (SpritzUpdater.NewestKnownVersion != null && !SpritzUpdater.IsVersionLower(SpritzUpdater.NewestKnownVersion))
+            {
+                try
+                {
+                    SpritzUpdater newwind = new SpritzUpdater();
+                    newwind.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+            }
         }
 
         private void MenuItem_Wiki_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/Spritz/wiki");
+            Process.Start(@"https://github.com/smith-chem-wisc/Spritz/wiki");
         }
 
         private void MenuItem_Contact_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/Spritz");
+            Process.Start(@"https://github.com/smith-chem-wisc/Spritz");
         }
 
         private void RunWorkflowButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (SraCollection.Count == 0 && RnaSeqFastqCollection.Count == 0)
-                {
-                    MessageBox.Show("You have not added any nucleic acid sequencing data (SRA accession or fastq files).", "Workflow", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
                 if (StaticTasksObservableCollection.Count == 0)
                 {
                     MessageBox.Show("You must add a workflow before a run.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -143,14 +216,15 @@ namespace SpritzGUI
 
                 DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
                 DynamicTasksObservableCollection.Add(new InRunTask("Workflow 1", StaticTasksObservableCollection.First().options));
-                workflowTreeView.DataContext = DynamicTasksObservableCollection;
-                
+                WorkflowTreeView.DataContext = DynamicTasksObservableCollection;
+
                 Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
-                WarningsTextBox.Document.Blocks.Clear();
-                WarningsTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry()}\n\n"); // keep for debugging
-                WarningsTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
+                InformationTextBox.Document.Blocks.Clear();
+                InformationTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry(DockerImage)}\n\n"); // keep for debugging
+                InformationTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
 
+                IsRunning = true;
                 Everything.WriteConfig(StaticTasksObservableCollection.First().options);
                 var t = new Task(RunEverythingRunner);
                 t.Start();
@@ -172,7 +246,7 @@ namespace SpritzGUI
         {
             Process proc = new Process();
             proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = Everything.GenerateCommandsDry();
+            proc.StartInfo.Arguments = Everything.GenerateCommandsDry(DockerImage);
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;
@@ -187,23 +261,35 @@ namespace SpritzGUI
 
         private void OutputHandler(object source, DataReceivedEventArgs e)
         {
-            Dispatcher.Invoke(() => 
+            Dispatcher.Invoke(() =>
             {
-                string output = outputScrub.Replace(e.Data, "");
-                WarningsTextBox.AppendText(output + Environment.NewLine);
-                using (StreamWriter sw = File.Exists(Everything.PathToWorkflow) ? File.AppendText(Everything.PathToWorkflow) : File.CreateText(Everything.PathToWorkflow))
+                if (!string.IsNullOrEmpty(e.Data))
                 {
-                    sw.WriteLine(output);
+                    string output = outputScrub.Replace(e.Data, "");
+                    DockerStdOut += output + Environment.NewLine;
+                    if (ShowStdOut)
+                    {
+                        lock (InformationTextBox)
+                            InformationTextBox.AppendText(output + Environment.NewLine);
+                    }
+                    using (StreamWriter sw = File.Exists(Everything.PathToWorkflow) ? File.AppendText(Everything.PathToWorkflow) : File.CreateText(Everything.PathToWorkflow))
+                    {
+                        sw.WriteLine(output);
+                    }
                 }
             });
         }
 
         private void DisplayAnyErrors(Task obj)
         {
-            Dispatcher.Invoke(() => WarningsTextBox.AppendText("Done!" + Environment.NewLine));
-            Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in " 
-                + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow", 
-                MessageBoxButton.OK, MessageBoxImage.Information));
+            Dispatcher.Invoke(() => InformationTextBox.AppendText("Done!" + Environment.NewLine));
+            if (StaticTasksObservableCollection.Count > 0)
+            {
+                Dispatcher.Invoke(() => MessageBox.Show("Finished! Workflow summary is located in "
+                    + StaticTasksObservableCollection.First().options.AnalysisDirectory, "Spritz Workflow",
+                    MessageBoxButton.OK, MessageBoxImage.Information));
+            }
+            IsRunning = false;
         }
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
@@ -233,30 +319,11 @@ namespace SpritzGUI
             UpdateSRABox();
         }
 
-        //private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
-        //    {
-        //        Filter = "TOML files(*.toml)|*.toml",
-        //        FilterIndex = 1,
-        //        RestoreDirectory = true,
-        //        Multiselect = true
-        //    };
-        //    if (openPicker.ShowDialog() == true)
-        //    {
-        //        foreach (var tomlFromSelected in openPicker.FileNames)
-        //        {
-        //            AddAFile(tomlFromSelected);
-        //        }
-        //    }
-        //    UpdateTaskGuiStuff();
-        //}
-
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
         {
             StaticTasksObservableCollection.Clear();
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
-            WarningsTextBox.Document.Blocks.Clear();
+            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
+            InformationTextBox.Document.Blocks.Clear();
             UpdateTaskGuiStuff();
         }
 
@@ -268,28 +335,8 @@ namespace SpritzGUI
             ResetTasksButton.IsEnabled = false;
 
             DynamicTasksObservableCollection.Clear();
-            workflowTreeView.DataContext = StaticTasksObservableCollection;
+            WorkflowTreeView.DataContext = StaticTasksObservableCollection;
         }
-
-        //private void AddNewRnaSeqFastq(object sender, StringListEventArgs e)
-        //{
-        //    if (!Dispatcher.CheckAccess())
-        //    {
-        //        Dispatcher.BeginInvoke(new Action(() => AddNewRnaSeqFastq(sender, e)));
-        //    }
-        //    else
-        //    {
-        //        foreach (var uu in RnaSeqFastqCollection)
-        //        {
-        //            uu.Use = false;
-        //        }
-        //        foreach (var newRnaSeqFastqData in e.StringList)
-        //        {
-        //            RnaSeqFastqCollection.Add(new RNASeqFastqDataGrid(newRnaSeqFastqData));
-        //        }
-        //        UpdateOutputFolderTextbox();
-        //    }
-        //}
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
@@ -307,7 +354,7 @@ namespace SpritzGUI
             }
             else if (MessageBox.Show("SRA accessions are expected to start with \"SR\" or \"ER\", such as SRX254398 or ERR315327. View the GEO SRA website?", "Workflow", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
             {
-                System.Diagnostics.Process.Start("https://www.ncbi.nlm.nih.gov/sra");
+                Process.Start("https://www.ncbi.nlm.nih.gov/sra");
             }
         }
 
@@ -329,7 +376,7 @@ namespace SpritzGUI
 
             try
             {
-                var dialog = new WorkFlowWindow(OutputFolderTextBox.Text == "" ? new Options().AnalysisDirectory : OutputFolderTextBox.Text);
+                var dialog = new WorkFlowWindow(string.IsNullOrEmpty(OutputFolderTextBox.Text) ? new Options(DockerCPUs).AnalysisDirectory : OutputFolderTextBox.Text);
                 if (dialog.ShowDialog() == true)
                 {
                     AddTaskToCollection(dialog.Options);
@@ -342,19 +389,6 @@ namespace SpritzGUI
                 // does not open workflow window until all fastq files are added, if any
             }
         }
-
-        //private void BtnSaveRnaSeqFastqSet_Click(object sender, RoutedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        WriteExperDesignToTsv(OutputFolderTextBox.Text);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Could not save experimental design!\n\n" + ex.Message, "Experimental Design", MessageBoxButton.OK, MessageBoxImage.Warning);
-        //        return;
-        //    }
-        //}
 
         private void UpdateTaskGuiStuff()
         {
@@ -391,34 +425,6 @@ namespace SpritzGUI
 
             return Path.Combine(Path.GetDirectoryName(MatchingChars.First()));
         }
-
-        //private string GetPathToFastqDirectory(string path)
-        //{
-        //    var filePath = path.Split('\\');
-        //    var newPath = string.Join("\\", filePath.Take(filePath.Length - 1));
-        //    return newPath;
-        //}
-
-        //private void UpdateOutputFolderTextbox(string filePath = null)
-        //{
-        //    // if new files have different path than current text in output, then throw error
-        //    if (StaticTasksObservableCollection.Count > 0)
-        //    {
-        //        OutputFolderTextBox.Text = StaticTasksObservableCollection.First().options.AnalysisDirectory;
-        //    }
-        //    else if (RnaSeqFastqCollection.Any())
-        //    {
-        //        if (filePath != null && OutputFolderTextBox.Text != "" && GetPathToFastqDirectory(filePath).CompareTo(OutputFolderTextBox.Text) != 0)
-        //        {
-        //            throw new InvalidOperationException();
-        //        }
-        //        OutputFolderTextBox.Text = GetPathToFastqs();
-        //    }
-        //    else
-        //    {
-        //        OutputFolderTextBox.Clear();
-        //    }
-        //}
 
         private void UpdateOutputFolderTextbox()
         {
@@ -466,20 +472,55 @@ namespace SpritzGUI
             }
         }
 
-        private void workflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void WorkflowTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var a = sender as TreeView;
-            if (a.SelectedItem is PreRunTask preRunTask)
-            {
-                var workflowDialog = new WorkFlowWindow(preRunTask.options);
-                workflowDialog.ShowDialog();
-                workflowTreeView.Items.Refresh();
-            }
+            //var a = sender as TreeView;
+            //if (a.SelectedItem is PreRunTask preRunTask)
+            //{
+            //    var workflowDialog = new WorkFlowWindow(preRunTask.options);
+            //    workflowDialog.ShowDialog();
+            //    WorkflowTreeView.Items.Refresh();
+            //}
         }
 
         private void WarningsTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            WarningsTextBox.ScrollToEnd();
+            InformationTextBox.ScrollToEnd();
+        }
+
+        private void DockerImage_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            DockerImage = tb_DockerImage.Text;
+        }
+
+        private void ShowTopButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowStdOut = false;
+            Dispatcher.Invoke(() =>
+            {
+                InformationTextBox.Document.Blocks.Clear();
+
+                Process proc = new Process();
+                proc.StartInfo.FileName = "Powershell.exe";
+                proc.StartInfo.Arguments = Everything.GenerateTopComand();
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.CreateNoWindow = true;
+                proc.Start();
+                StreamReader outputReader = proc.StandardOutput;
+                InformationTextBox.AppendText(outputReader.ReadToEnd());
+                proc.WaitForExit();
+            });
+        }
+
+        private void ShowOutputButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowStdOut = true;
+            lock (InformationTextBox)
+            {
+                InformationTextBox.Document.Blocks.Clear();
+                InformationTextBox.AppendText(DockerStdOut);
+            }
         }
     }
 }

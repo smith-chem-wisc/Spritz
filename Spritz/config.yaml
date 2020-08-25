@@ -28,7 +28,8 @@ sra: ["SRR791578", "SRR791579", "SRR791580", "SRR791581", "SRR791582", "SRR79158
 analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
 species: "Homo_sapiens"
 genome: "GRCh38"
-release: "81"
-snpeff: "86" # hard coded for now
+release: "100"
 organism: "human" # based on uniprot
 fq: []
+analyses: [isoform,variant]
+spritzversion: "0.2.0"

@@ -1,9 +1,9 @@
-﻿<Window x:Class="SpritzGUI.WorkFlowWindow"
+﻿<Window x:Class="Spritz.WorkFlowWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SpritzGUI"
+        xmlns:local="clr-namespace:Spritz"
         mc:Ignorable="d"
         Title="WorkFlow Windows" Height="450" Width="800">
     <Grid>
@@ -47,7 +47,7 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
                             <Label Content="Threads" Width="200"/>
-                            <TextBox x:Name="txtThreads" TextChanged="txtThreads_TextChanged" Width="180" IsEnabled="False"/>
+                            <TextBox x:Name="txtThreads" LostFocus="txtThreads_LostFocus" Width="180"/>
                         </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
                             <Label Content="Ensembl Release" Width="200"/>
@@ -58,8 +58,18 @@
                             <Label Content="Species" Width="200"/>
                             <ComboBox x:Name="EnsemblSpecies" IsEnabled="True" Width="180" ItemsSource="{Binding SelectedItem.Species, ElementName=EnsemblReleaseVersions}" SelectionChanged="Species_SelectionChanged"/>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="0">
+                            <Label Content="Analyze Variants" Width="200"/>
+                            <CheckBox x:Name="Cb_AnalyzeVariants" IsEnabled="True" IsChecked="True"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="0">
+                            <Label Content="Analyze Isoforms (beta)" Width="200"/>
+                            <CheckBox x:Name="Cb_AnalyzeIsoforms" IsEnabled="True" IsChecked="False"/>
+                        </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="1"/>
-                        <StackPanel  Orientation="Horizontal" Grid.Row="3" Grid.Column="1"/>
+                        <StackPanel  Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                            <Label Name="Lb_ThreadInfo" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
+                        </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
                             <Label Content="Recommended: release-82 for human genome" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
                         </StackPanel>
