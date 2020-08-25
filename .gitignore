@@ -4,11 +4,11 @@ ensembl
 STAR*
 .snakemake
 ChromosomeMappings
-data/
+data*/
 AnalysisFolder/
 AnalysisFolder._*
 SnpEff
-tmp
+tmp*/
 snpEffDatabases.txt
 human.protein.xml*
 ptmlist.txt

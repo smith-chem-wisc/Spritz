@@ -2,11 +2,7 @@ TRANSFER_MOD_DLL="TransferUniProtModifications/TransferUniProtModifications/bin/
 
 rule download_protein_xml:
     output: UNIPROTXML
-    shell: "python scripts/download_protein_xml.py xml | gzip -c > {output}"
-
-rule download_protein_fasta:
-    output: UNIPROTFASTA
-    shell: "python scripts/download_protein_xml.py fasta > {output}"
+    shell: "python scripts/download_uniprot_xml.py xml | gzip -c > {output}"
 
 rule build_transfer_mods:
     output: TRANSFER_MOD_DLL

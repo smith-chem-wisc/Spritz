@@ -1,5 +1,3 @@
 ### Using SRAs
-sra: ["SRR791578", "SRR791579", "SRR791580", "SRR791581", "SRR791582", "SRR791583", "SRR791584", "SRR791585", "SRR791586"] # jurkat
-# sra: ["SRR629563"] # u2os
-analyses: [variant]
-spritzversion: "0.2.0"
+#sra: ["SRR791578", "SRR791579", "SRR791580", "SRR791581", "SRR791582", "SRR791583", "SRR791584", "SRR791585", "SRR791586"] # jurkat
+sra: ["SRR629563"] # u2os
