@@ -44,13 +44,13 @@ namespace Spritz
             DialogResult = true;
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/Spritz/releases/download/" + NewestKnownVersion + @"/SpritzInstaller.msi");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/Spritz/releases/download/" + NewestKnownVersion + @"/Spritz.msi");
 
                 Exception exception = null;
                 try
                 {
                     // download and start the installer
-                    var tempDownloadLocation = Path.Combine(System.IO.Path.GetTempPath(), "SpritzInstaller.msi");
+                    var tempDownloadLocation = Path.Combine(System.IO.Path.GetTempPath(), "Spritz.msi");
                     client.DownloadFile(uri, tempDownloadLocation);
                     var p = new Process();
                     p.StartInfo = new ProcessStartInfo()
@@ -97,7 +97,7 @@ namespace Spritz
                         allVersionsText.AppendLine();
                         if (!IsMsiAvailableForUpdate)
                         {
-                            allVersionsText.AppendLine("Warning: A new version of MetaMorpheus was detected, but the installer file hasn't been uploaded yet. Please try again in a few minutes.");
+                            allVersionsText.AppendLine("Warning: A new version of Spritz was detected, but the installer file hasn't been uploaded yet. Please try again in a few minutes.");
                             Bt_DownloadAndRunInstaller.IsEnabled = false;
                         }
                         allVersionsText.AppendLine("</font>");
@@ -123,7 +123,7 @@ namespace Spritz
                     if (!IsVersionLower(NewestKnownVersion))
                     {
                         var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
-                        IsMsiAvailableForUpdate =  assets.Contains("SpritzInstaller.msi");
+                        IsMsiAvailableForUpdate =  assets.Contains("Spritz.msi");
                     }
                 }
             }
