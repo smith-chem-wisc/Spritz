@@ -17,7 +17,7 @@ namespace Spritz
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly string CurrentVersion = "0.2.1";
+        public static readonly string CurrentVersion = "0.2.2";
 
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
