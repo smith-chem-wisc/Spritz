@@ -66,6 +66,12 @@
       <Component Id="genomes.csv" Guid="14093f17-6247-40e0-92a9-8b0c504438de">
         <File Id="genomes.csv" Source="$(var.Spritz.TargetDir)genomes.csv"/>
       </Component>
+      <Component Id="MarkdownSharp.dll" Guid="78087d4d-78f8-4607-abfc-2d90c96da22d">
+        <File Id="MarkdownSharp.dll" Source="$(var.Spritz.TargetDir)MarkdownSharp.dll"/>
+      </Component>
+      <Component Id="Newtonsoft.Json.dll" Guid="c1ccf400-1374-4ed4-8466-140dc5969d33">
+        <File Id="Newtonsoft.Json.dll" Source="$(var.Spritz.TargetDir)Newtonsoft.Json.dll"/>
+      </Component>
     </DirectoryRef>
     
     <DirectoryRef Id="ApplicationProgramsFolder">
@@ -87,6 +93,8 @@
       <ComponentRef Id="Nett.dll"/>
       <ComponentRef Id="YamlDotNet.dll"/>
       <ComponentRef Id="genomes.csv"/>
+      <ComponentRef Id="MarkdownSharp.dll"/>
+      <ComponentRef Id="Newtonsoft.Json.dll"/>
       <ComponentRef Id="DesktopShortcut"/>
       <ComponentRef Id="ApplicationShortcut"/>
     </Feature>
