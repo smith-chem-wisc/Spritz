@@ -11,7 +11,7 @@ Spritz uses snakemake and Docker to install and run commandline tools for Next-G
 
 Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releases).
 
-![image](https://user-images.githubusercontent.com/16342951/84078314-55585280-a99e-11ea-9096-bebfcbb06bef.png)
+![image](https://user-images.githubusercontent.com/16342951/93616557-7f0c1700-f99a-11ea-8758-f185ec9f4c82.png)
 
 ## Running Spritz with GUI
 
