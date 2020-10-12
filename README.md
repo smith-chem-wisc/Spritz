@@ -17,36 +17,11 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
 
 1. Install [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows).
 
-2. Allocate resources to Docker. 
+2. Allocate resources to Docker. There are two ways to do this, described in the Spritz wiki: 
+    1. The [recommended method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-WSL2-(recommended-method)) requires Windows 10 version 2004 and is more robust. Here, we allocate computer resources to Docker like any other program. 
+    2. The [alternate method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-Vmmem-(alternate-method)) is available on all Windows versions but is less robust. Here, we allocate computer resources to Docker using a virtual machine that's packaged with Docker.
 
-    This is the preferred method; it requires Windows 10 version 2004, but it is more robust. Proceed to the alternate method below if you do not have Windows version 2004 or greater installed. 
-
-    This utilizes a new Windows feature, [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10), that provides a native Linux subsystem that [Docker can utilize](https://docs.docker.com/docker-for-windows/wsl/).
-
-    Steps displayed below:
-    * Check that your Windows version is > 2004 in "About your PC"
-    * Install Ubuntu 20.04 from Microsoft store
-    * Enable the WSL feature
-    * Restart your computer
-    * Start up Ubuntu 20.04 and complete setup
-    * Ensure that WSL2 is enabled in Docker Desktop.
-
-    ![wsl2setup](https://user-images.githubusercontent.com/16342951/95661576-03633d00-0af6-11eb-90e5-2f12cf9f5c18.png)
-    
-    This is the alternate method, which is less robust but available on all Windows versions.
-
-    This utilizes the virtual machine "Vmmem" that comes with Docker.
-
-    First, ensure that the C:\ drive and any data drive you plan to use are enabled for use. 
-    
-    Then, allocate enough resources: 
-    * Allow all CPUs to be utilized.
-    * Provide at least 16 MB of RAM, but more is better, and allowing Docker to utilize all available RAM is most robust.
-    * Provide at least 60 GB of disk space, but more is better, and allowing Docker to utilize all available disk space is most robust.
-
-    ![vmmemSetup](https://user-images.githubusercontent.com/16342951/95661738-3c4fe180-0af7-11eb-8d61-a2c86172a22c.png)
-
-4. Launch Spritz.
+3. Launch Spritz.
 
     ![howto](https://user-images.githubusercontent.com/42819128/70091146-2624eb00-15e1-11ea-9230-bfd118aa03d9.png)
 
