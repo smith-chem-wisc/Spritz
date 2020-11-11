@@ -91,7 +91,7 @@ rule Predict:
         orfs="{dir}/isoforms/longest_orfs.pep",
         fasta="{dir}/isoforms/combined.transcripts.fasta",
         blastp="{dir}/isoforms/combined.blastp.outfmt6",
-        longest_orf_ckpts=directory("{dir}/isoforms.__checkpoints_longorfs"),
+        longest_orf_ckpts="{dir}/isoforms.__checkpoints_longorfs",
     output:
         "{dir}/isoforms/combined.transcripts.fasta.transdecoder.pep",
         temp(directory("{dir}/isoforms/..__checkpoints")),

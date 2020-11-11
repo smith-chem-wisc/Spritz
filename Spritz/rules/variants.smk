@@ -18,7 +18,7 @@ rule index_fa:
 rule hisat2_groupmark_bam:
     input:
         sorted="{dir}/align/combined.sorted.bam",
-        tmp=directory("tmp")
+        tmp="tmp"
     output:
         grouped=temp("{dir}/variants/combined.sorted.grouped.bam"),
         groupedidx=temp("{dir}/variants/combined.sorted.grouped.bam.bai"),
@@ -41,7 +41,7 @@ rule split_n_cigar_reads:
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         fai="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa.fai",
         fadict="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.dict",
-        tmp=directory("tmp")
+        tmp="tmp"
     output:
         fixed=temp("{dir}/variants/combined.fixedQuals.bam"),
         split=temp("{dir}/variants/combined.sorted.grouped.marked.split.bam"),
@@ -61,7 +61,7 @@ rule base_recalibration:
         knownsitesidx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         bam="{dir}/variants/combined.sorted.grouped.marked.split.bam",
-        tmp=directory("tmp")
+        tmp="tmp"
     output:
         recaltable=temp("{dir}/variants/combined.sorted.grouped.marked.split.recaltable"),
         recalbam=temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.bam")
@@ -79,7 +79,7 @@ rule call_gvcf_varaints:
         knownsitesidx="data/ensembl/" + config["species"] + ".ensembl.vcf.idx",
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         bam="{dir}/variants/combined.sorted.grouped.marked.split.recal.bam",
-        tmp=directory("tmp")
+        tmp="tmp"
     output: temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz"),
     threads: 8
         # HaplotypeCaller is only fairly efficient with threading;
@@ -102,7 +102,7 @@ rule call_vcf_variants:
     input:
         fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
         gvcf="{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
-        tmp=directory("tmp")
+        tmp="tmp"
     output: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
     resources: mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.log"

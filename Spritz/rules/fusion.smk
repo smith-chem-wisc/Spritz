@@ -22,9 +22,9 @@ rule unzip_for_star_fusion:
 rule rsem_star_fusion:
     '''Align with chimeric alignments and analyze coding effects with STAR-Fusion'''
     input:
-        tmpdir=temp(directory("tmp")),
+        tmpdir="tmp",
         genomelibsa="data/" + FUSION_REF_VERSION + "/ctat_genome_lib_build_dir/ref_genome.fa.star.idx/SA",
-        genomelibdir=directory("data/" + FUSION_REF_VERSION + "/ctat_genome_lib_build_dir"),
+        genomelibdir="data/" + FUSION_REF_VERSION + "/ctat_genome_lib_build_dir",
         fq1="{dir}/trimmed/{sra}.trim_1.fastq" if check_sra() else "{dir}/trimmed/{fq}.trim_1.fastq",
         fq2="{dir}/trimmed/{sra}.trim_2.fastq" if check_sra() else "{dir}/trimmed/{fq}.trim_2.fastq",
     output:

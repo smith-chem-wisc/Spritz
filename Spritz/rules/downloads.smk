@@ -1,5 +1,5 @@
-REF=config["species"] + "." + config["genome"]
-SPECIES_LOWER = config["species"].lower()
+REF=config['species'] + "." + config['genome']
+SPECIES_LOWER = config['species'].lower()
 
 protocol = "http"
 primary = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.primary_assembly.fa.gz"
@@ -9,9 +9,9 @@ pep = f"{protocol}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECI
 
 rule download_ensembl_references:
     output:
-        gfa="data/ensembl/" + REF + ".dna.primary_assembly.fa",
-        gff3="data/ensembl/" + REF + "." + config["release"] + ".gff3",
-        pfa="data/ensembl/" + REF + ".pep.all.fa",
+        gfa=f"data/ensembl/{REF}.dna.primary_assembly.fa",
+        gff3=f"data/ensembl/{REF}.{config['release']}.gff3",
+        pfa=f"data/ensembl/{REF}.pep.all.fa",
     benchmark: "data/ensembl/downloads.benchmark"
     log: "data/ensembl/downloads.log"
     shell:
@@ -22,8 +22,8 @@ rule download_ensembl_references:
 if SPECIES_LOWER == "homo_sapiens":
     rule download_dbsnp_vcf:
         '''Download dbsnp known variant sites if we are analyzing human data'''
-        input: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
-        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
+        input: f"ChromosomeMappings/{config['genome']}_UCSC2ensembl.txt"
+        output: f"data/ensembl/{config['species']}.ensembl.vcf",
         benchmark: "data/ensembl/downloads_dbsnp_vcf.benchmark"
         log: "data/ensembl/downloads_dbsnp_vcf.log"
         shell:
@@ -36,34 +36,34 @@ else:
 
     rule download_ensembl_vcf:
         '''Use Ensembl known variant sites if we are analyzing nonhuman data'''
-        output: "data/ensembl/" + config["species"] + ".ensembl.vcf",
+        output: f"data/ensembl/{config['species']}.ensembl.vcf",
         benchmark: "data/ensembl/downloads_ensembl_vcf.benchmark"
         log: "data/ensembl/downloads_ensembl_vcf.log"
         shell: "((wget -O - {vcf1} || wget -O - {vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
 
 rule index_ensembl_vcf:
-    input: "data/ensembl/" + config["species"] + ".ensembl.vcf"
-    output: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx"
-    log: "data/ensembl/" + config["species"] + ".ensembl.vcf.idx.log"
+    input: f"data/ensembl/{config['species']}.ensembl.vcf"
+    output: f"data/ensembl/{config['species']}.ensembl.vcf.idx"
+    log: f"data/ensembl/{config['species']}.ensembl.vcf.idx.log"
     shell: "gatk IndexFeatureFile -F {input} 2> {log}"
 
 rule download_chromosome_mappings:
-    output: "ChromosomeMappings/" + config["genome"] + "_UCSC2ensembl.txt"
+    output: f"ChromosomeMappings/{config['genome']}_UCSC2ensembl.txt"
     log: "ChromosomeMappings/download_chromosome_mappings.log"
     shell:
         "(if [ -d ChromosomeMappings ]; then rm -rf ChromosomeMappings; fi && "
         "git clone https://github.com/dpryan79/ChromosomeMappings.git) 2> {log}"
 
 rule reorder_genome_fasta:
-    input: "data/ensembl/" + REF + ".dna.primary_assembly.fa"
-    output: "data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa"
+    input: f"data/ensembl/{REF}.dna.primary_assembly.fa"
+    output: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
     benchmark: "data/ensembl/karyotypic_order.benchmark"
     log: "data/ensembl/karyotypic_order.log"
     shell: "python scripts/karyotypic_order.py 2> {log}"
 
 rule dict_fa:
-    input: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.fa"
-    output: "data/ensembl/" + config["species"] + "." + config["genome"] + ".dna.primary_assembly.karyotypic.dict"
+    input: f"data/ensembl/{config['species']}.{config['genome']}.dna.primary_assembly.karyotypic.fa"
+    output: f"data/ensembl/{config['species']}.{config['genome']}.dna.primary_assembly.karyotypic.dict"
     shell: "gatk CreateSequenceDictionary -R {input} -O {output}"
 
 rule tmpdir:
