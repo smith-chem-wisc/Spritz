@@ -47,7 +47,7 @@ rule index_ensembl_vcf:
     input: f"data/ensembl/{config['species']}.ensembl.vcf"
     output: f"data/ensembl/{config['species']}.ensembl.vcf.idx"
     log: f"data/ensembl/{config['species']}.ensembl.vcf.idx.log"
-    shell: "gatk IndexFeatureFile -F {input} 2> {log}"
+    shell: "gatk IndexFeatureFile -I {input} 2> {log}"
 
 rule download_chromosome_mappings:
     output: f"ChromosomeMappings/{config['genome']}_UCSC2ensembl.txt"

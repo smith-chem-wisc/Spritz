@@ -1,5 +1,4 @@
 import os
-import numpy as np
 
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
