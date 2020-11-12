@@ -28,9 +28,10 @@ rule hisat2_groupmark_bam:
         marked="{dir}/variants/combined.sorted.grouped.marked.bam",
         markedidx="{dir}/variants/combined.sorted.grouped.marked.bam.bai",
         metrics="{dir}/variants/combined.sorted.grouped.marked.metrics"
-    resources:
-        mem_mb=GATK_MEM,
+    params:
         gatk_java=GATK_JAVA
+    resources:
+        mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.benchmark"
     shell:
@@ -51,9 +52,10 @@ rule split_n_cigar_reads:
         fixed=temp("{dir}/variants/combined.fixedQuals.bam"),
         split=temp("{dir}/variants/combined.sorted.grouped.marked.split.bam"),
         splitidx=temp("{dir}/variants/combined.sorted.grouped.marked.split.bam.bai")
-    resources:
-        mem_mb=GATK_MEM,
+    params:
         gatk_java=GATK_JAVA
+    resources:
+        mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.benchmark"
     shell:
@@ -72,9 +74,10 @@ rule base_recalibration:
     output:
         recaltable=temp("{dir}/variants/combined.sorted.grouped.marked.split.recaltable"),
         recalbam=temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.bam")
-    resources:
-        mem_mb=GATK_MEM,
+    params:
         gatk_java=GATK_JAVA
+    resources:
+        mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.benchmark"
     shell:
@@ -86,7 +89,7 @@ rule call_gvcf_varaints:
     input:
         knownsites=f"data/ensembl/{config['species']}.ensembl.vcf",
         knownsitesidx=f"data/ensembl/{config['species']}.ensembl.vcf.idx",
-        fa="data/ensembl/{{REF}}.dna.primary_assembly.karyotypic.fa",
+        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         bam="{dir}/variants/combined.sorted.grouped.marked.split.recal.bam",
         tmp="tmp"
     output: temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz"),
@@ -95,9 +98,10 @@ rule call_gvcf_varaints:
         # ~14000 regions/min with 24 threads,
         # and ~13000 regions/min with 8 threads,
         # so going with 8 threads max here
-    resources:
-        mem_mb=GATK_MEM,
+    params:
         gatk_java=GATK_JAVA
+    resources:
+        mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.benchmark"
     shell:
@@ -115,9 +119,10 @@ rule call_vcf_variants:
         gvcf="{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
         tmp="tmp"
     output: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
-    resources:
-        mem_mb=GATK_MEM,
+    params:
         gatk_java=GATK_JAVA
+    resources:
+        mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.benchmark"
     shell:

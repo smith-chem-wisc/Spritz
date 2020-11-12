@@ -49,12 +49,11 @@ if check('fq_se'):
 rule merge_transcripts:
     '''Rule adapted from ProteomeGenerator'''
     input:
-        custom_gtfs=lambda w: np.concatenate((
-            [] if not check('sra') else expand("{{dir}}/quant/{sra}.sra.sorted.gtf", sra=config["sra"]),
-            [] if not check('sra_se') else expand("{{dir}}/quant/{sra_se}.sra_se.sorted.gtf", sra_se=config["sra_se"]),
-            [] if not check('fq') else expand("{{dir}}/quant/{fq}.fq.sorted.gtf", fq=config["fq"]),
-            [] if not check('fq_se') else expand("{{dir}}/quant/{fq_se}.fq_se.sorted.gtf", fq_se=config["fq_se"]),
-        )),
+        custom_gtfs=lambda w:
+            [] if not check('sra') else expand("{{dir}}/isoforms/{sra}.sra.sorted.gtf", sra=config["sra"]) + \
+            [] if not check('sra_se') else expand("{{dir}}/isoforms/{sra_se}.sra_se.sorted.gtf", sra_se=config["sra_se"]) + \
+            [] if not check('fq') else expand("{{dir}}/isoforms/{fq}.fq.sorted.gtf", fq=config["fq"]) + \
+            [] if not check('fq_se') else expand("{{dir}}/isoforms/{fq_se}.fq_se.sorted.gtf", fq_se=config["fq_se"]),
         gff=GFF3,
     output: "{dir}/isoforms/combined.gtf"
     threads: 12

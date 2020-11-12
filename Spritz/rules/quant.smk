@@ -101,12 +101,11 @@ if check('fq_se'):
 rule make_rsem_dataframe:
     '''Take the results from RSEM and put them in a usable dataframe'''
     input:
-        lambda w: np.concatenate((
-            [] if not check('sra') else expand("{{dir}}/quant/{sra}.sra.gene.results", sra=config["sra"]),
-            [] if not check('sra_se') else expand("{{dir}}/quant/{sra_se}.sra_se.gene.results", sra_se=config["sra_se"]),
-            [] if not check('fq') else expand("{{dir}}/quant/{fq}.fq.gene.results", fq=config["fq"]),
+        lambda w:
+            [] if not check('sra') else expand("{{dir}}/quant/{sra}.sra.gene.results", sra=config["sra"]) + \
+            [] if not check('sra_se') else expand("{{dir}}/quant/{sra_se}.sra_se.gene.results", sra_se=config["sra_se"]) + \
+            [] if not check('fq') else expand("{{dir}}/quant/{fq}.fq.gene.results", fq=config["fq"]) + \
             [] if not check('fq_se') else expand("{{dir}}/quant/{fq_se}.fq_se.gene.results", fq_se=config["fq_se"]),
-        )),
         gff=f"data/ensembl/{REF}.{config['release']}.gff3.fix.gff3"
     output:
         counts="{dir}/Counts.csv",

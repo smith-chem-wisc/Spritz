@@ -22,34 +22,27 @@ UNIPROTFASTA=f"data/uniprot/{config['species']}.protein.fasta" #"data/Homo_sapie
 def all_output(wildcards):
     outputs = []
     if not "spritzversion" in config:
-        outputs = expand(
-            "{dir}/please_update_spritz.txt",
-            dir=config["analysisDirectory"])
+        outputs = ["please_update_spritz.txt"]
     elif len(config["analyses"]) == 0:
-        outputs = expand([
-            "{dir}/prose.txt",
-            "{dir}/variants/done{{REF}}.{{ENSEMBL_VERSION}}.txt"], # reference
-            dir=config["analysisDirectory"])
+        outputs = ["prose.txt",
+            os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")] # reference
     elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
-        outputs = expand([
-            "{dir}/prose.txt",
-            "{dir}/final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
-            "{dir}/variants/done{{REF}}.{{ENSEMBL_VERSION}}.txt"], # reference
-            dir=config["analysisDirectory"])
+        outputs = ["prose.txt",
+            "final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
+            os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")] # reference
     elif "isoform" in config["analyses"] and len(config["analyses"]) == 1:
-        outputs = expand([
-            "{dir}/prose.txt",
-            "{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz"], # isoforms
-            dir=config["analysisDirectory"])
+        outputs = ["prose.txt",
+            "final/combined.spritz.isoform.protein.withmods.xml.gz"] # isoforms
     elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
-        outputs = expand([
-            "{dir}/prose.txt",
-            "{dir}/final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
-            "{dir}/final/combined.spritz.isoformvariants.protein.withmods.xml.gz", # isoform variants
-            "{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz", # isoforms
-            "{dir}/variants/done{{REF}}.{{ENSEMBL_VERSION}}.txt"], # reference
-            dir=config["analysisDirectory"])
-    return outputs
+        outputs = ["prose.txt",
+            "final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
+            "final/combined.spritz.isoformvariants.protein.withmods.xml.gz", # isoform variants
+            "final/combined.spritz.isoform.protein.withmods.xml.gz", # isoforms
+            os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")] # reference
+    expanded_outputs = expand(
+        [os.path.join("{dir}", file) for file in outputs],
+        dir=config["analysisDirectory"])
+    return expanded_outputs
 
 def check(field):
     return field in config and config[field] is not None and len(config[field]) > 0

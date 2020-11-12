@@ -87,7 +87,7 @@ rule reference_protein_xml:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
-        done=os.path.join("{dir}/variants/done", f"{REF}.{ENSEMBL_VERSION}.txt"),
+        done=os.path.join("{dir}/variants/", f"done{REF}.{ENSEMBL_VERSION}.txt"),
         protxml=temp(os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml")),
         protxmlgz=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml.gz"),
         protfa=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fasta"),

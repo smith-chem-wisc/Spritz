@@ -228,18 +228,17 @@ if check('fq_se'):
 rule hisat2_merge_bams:
     '''Merge the BAM files for each sample'''
     input:
-        lambda w: np.concatenate((
-            [] if not check('sra') else expand("{{dir}}/align/{sra}.sra.sorted.bam", sra=config["sra"]),
-            [] if not check('sra_se') else expand("{{dir}}/align/{sra_se}.sra_se.sorted.bam", sra_se=config["sra_se"]),
-            [] if not check('fq') else expand("{{dir}}/align/{fq}.fq.sorted.bam", fq=config["fq"]),
+        lambda w:
+            [] if not check('sra') else expand("{{dir}}/align/{sra}.sra.sorted.bam", sra=config["sra"]) + \
+            [] if not check('sra_se') else expand("{{dir}}/align/{sra_se}.sra_se.sorted.bam", sra_se=config["sra_se"]) + \
+            [] if not check('fq') else expand("{{dir}}/align/{fq}.fq.sorted.bam", fq=config["fq"]) + \
             [] if not check('fq_se') else expand("{{dir}}/align/{fq_se}.fq_se.sorted.bam", fq_se=config["fq_se"]),
-        )),
     output:
         sorted="{dir}/align/combined.sorted.bam",
         stats="{dir}/align/combined.sorted.stats"
     params:
         compression="9",
-        tempprefix=lambda w: os.path.splitext(input[0])[0]
+        tempprefix=lambda w, input: os.path.splitext(input[0])[0]
     log: "{dir}/align/combined.sorted.log"
     threads: 12
     resources: mem_mb=16000
