@@ -1,4 +1,4 @@
-FUSION_REF_VERSION = config["genome"] + "_gencode_v29_CTAT_lib_Mar272019.plug-n-play"
+FUSION_REF_VERSION = f"{config['genome']}_gencode_v29_CTAT_lib_Mar272019.plug-n-play"
 
 rule download_premade_fusion_indices:
     '''Get the premade STAR-Fusion indices'''

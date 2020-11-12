@@ -1,11 +1,10 @@
 TRANSFER_MOD_DLL="TransferUniProtModifications/TransferUniProtModifications/bin/Release/netcoreapp2.1/TransferUniProtModifications.dll"
-REF=config["species"] + "." + config["genome"]
 
 rule download_protein_xml:
     output:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA,
-    log: UNIPROTXML + ".log"
+    log: f"{UNIPROTXML}.log"
     shell:
         "(python scripts/get_proteome.py && "
         "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
@@ -53,51 +52,55 @@ rule generate_reference_snpeff_database:
     input:
         jar="SnpEff/snpEff.jar",
         gff3=GFF3,
-        pfa="data/ensembl/{REF}.pep.all.fa",
-        gfa="data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        pfa=f"data/ensembl/{REF}.pep.all.fa",
+        gfa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
     output:
-        pfa="SnpEff/data/{REF}/protein.fa",
-        gff3="SnpEff/data/{REF}/genes.gff",
-        gfa="SnpEff/data/genomes/{REF}.fa",
-        done="SnpEff/data/{REF}/done{REF}.txt",
+        pfa=f"SnpEff/data/{REF}/protein.fa",
+        gff3=f"SnpEff/data/{REF}/genes.gff",
+        gfa=f"SnpEff/data/genomes/{REF}.fa",
+        done=f"SnpEff/data/{REF}/done{REF}.txt",
     resources: mem_mb=16000
-    benchmark: "SnpEff/data/{REF}/snpeffdatabase.benchmark"
-    log: "SnpEff/data/{REF}/snpeffdatabase.log"
+    params:
+        ref=REF,
+        genome_version=GENOME_VERSION
+    benchmark: f"SnpEff/data/{REF}/snpeffdatabase.benchmark"
+    log: f"SnpEff/data/{REF}/snpeffdatabase.log"
     shell:
         "cp {input.gff3} {output.gff3} && "
         "cp {input.pfa} {output.pfa} && "
         "cp {input.gfa} {output.gfa} && "
-        "echo \"\n# {REF}\" >> SnpEff/snpEff.config && "
-        "echo \"{REF}.genome : Human genome " + GENOME_VERSION + " using RefSeq transcripts\" >> SnpEff/snpEff.config && "
-        "echo \"{REF}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> SnpEff/snpEff.config && "
-        "echo \"\t{REF}.M.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
-        "echo \"\t{REF}.MT.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
-        "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {REF}) &> {log} && touch {output.done}"
+        "echo \"\n# {params.ref}\" >> SnpEff/snpEff.config && "
+        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> SnpEff/snpEff.config && "
+        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> SnpEff/snpEff.config && "
+        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
+        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
+        "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) &> {log} && touch {output.done}"
 
 rule reference_protein_xml:
     """
     Create protein XML with sequences from the reference gene model.
     """
     input:
-        "SnpEff/data/" + REF + "/done" + REF + ".txt",
+        f"SnpEff/data/{REF}/done{REF}.txt",
         snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
-        done="{dir}/variants/done" + REF + "." + ENSEMBL_VERSION + ".txt",
-        protxml=temp("{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.xml"),
-        protxmlgz="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.xml.gz",
-        protfa="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.fasta",
-        protwithdecoysfa="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.withdecoys.fasta",
-        protxmlwithmods=temp("{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml"),
-        protxmlwithmodsgz="{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".protein.withmods.xml.gz",
+        done=os.path.join("{dir}/variants/done", f"{REF}.{ENSEMBL_VERSION}.txt"),
+        protxml=temp(os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml")),
+        protxmlgz=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml.gz"),
+        protfa=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fasta"),
+        protwithdecoysfa=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
+        protxmlwithmods=temp(os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml")),
+        protxmlwithmodsgz=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
+    params: ref=REF,
     resources: mem_mb=16000
-    benchmark: "{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".spritz.benchmark"
-    log: "{dir}/variants/" + REF + "." + ENSEMBL_VERSION + ".spritz.log"
+    benchmark: os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
+    log: os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.log")
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
-        " -xmlProt {output.protxml} {REF} && " # no isoforms, no variants
+        " -xmlProt {output.protxml} {params.ref} && " # no isoforms, no variants
         "dotnet {input.transfermods} -x {input.unixml} -y {output.protxml} && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log} && touch {output.done}"
 
@@ -107,7 +110,7 @@ rule custom_protein_xml:
     """
     input:
         snpeff="SnpEff/snpEff.jar",
-        fa="data/ensembl/" + REF + ".dna.primary_assembly.karyotypic.fa",
+        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         isoform_reconstruction=[
             "SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
             "SnpEff/data/combined.transcripts.genome.gff3/protein.fa",

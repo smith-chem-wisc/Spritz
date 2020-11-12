@@ -21,6 +21,7 @@ dependencies:
   - wget
   - curl
   - dotnet-sdk
+  - java-jdk
   - r # for ProteomeGenerator
   - bioconductor-biostrings # for ProteomeGenerator
   - picard # for ProteomeGenerator

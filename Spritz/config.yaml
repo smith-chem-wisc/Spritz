@@ -1,9 +1,11 @@
-sra: [SRR629563] #  can leave empty sras as 1) empty list 2) undefined/null
+sra: [SRR629563] #  paired-end SRAs, can leave empty
+fq: [] # paired-end fastqs, can leave empty
+sra_se: [SRR12567861] # single-end SRAs, can leave empty
+fq_se: [] # single-end fastqs, can leave empty
 analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
 species: "Homo_sapiens"
 genome: "GRCh38"
 release: "100"
 organism: "human" # based on uniprot
-fq: []
 analyses: [isoform,variant]
-spritzversion: "0.2.0"
+spritzversion: "0.2.2"
