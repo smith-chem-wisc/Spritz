@@ -119,7 +119,7 @@ if check('sra_se'):
             compression="9",
             tempprefix="{dir}/align/{sra_se}.sra_se.sorted",
             ref=REF
-        log: "{dir}/align/{sra_se}.sra_se.hisat2.log"
+        log: "{dir}/logs/align/{sra_se}.sra_se.hisat2.log"
         shell:
             "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic "
             "-U {input.fq} "
@@ -132,7 +132,8 @@ if check('fq'):
     rule compress_fq_se:
         input: "{dir}/{fq}_1.fastq", "{dir}/{fq}_2.fastq"
         output: "{dir}/{fq}_1.fastq.gz", "{dir}/{fq}_2.fastq.gz"
-        shell: "gzip -k {input}"
+        log: "{dir}/{fq}.compress.log"
+        shell: "gzip -k {input} 2> {log}"
 
     rule fastp_sra_fq:
         '''Trim adapters, read quality filtering, make QC outputs'''
@@ -182,7 +183,8 @@ if check('fq_se'):
     rule compress_fq_se:
         input: "{dir}/{fq_se}_1.fastq"
         output: "{dir}/{fq_se}_1.fastq.gz"
-        shell: "gzip -k {input}"
+        log: "{dir}/{fq_se}.compress.log"
+        shell: "gzip -k {input} 2> {log}"
 
     rule fastp_fq_se:
         '''Trim adapters, read quality filtering, make QC outputs'''
