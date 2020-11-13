@@ -15,13 +15,6 @@ rule filter_fa:
     log: "data/ensembl/202122.fa.log"
     script: "../scripts/filter_fasta.py 2> {log}"
 
-rule fix_gff3_for_rsem:
-    '''This script changes descriptive notes in column 4 to "gene" if a gene row, and it also adds ERCCs to the gene model'''
-    input: f"data/ensembl/{REF}/{config['release']}.gff3"
-    output: f"data/ensembl/{REF}/{config['release']}.gff3.fix.gff3"
-    log: f"data/ensembl/{REF}/{config['release']}.gff3.fix.log"
-    shell: "python scripts/fix_gff3_for_rsem.py {input} {output} 2> {log}"
-
 rule simulate_variants:
     input: FA
     output: f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.test.vcf"

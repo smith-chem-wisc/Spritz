@@ -1,5 +1,7 @@
 import os
 
+# Variables used by many of the rules
+MIN_SPRITZ_VERSION = "0.2.3" # should be the same here, common.smk, and MainWindow.xml.cs
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
@@ -19,8 +21,11 @@ UNIPROTXML=f"data/uniprot/{config['species']}.protein.xml.gz" #"data/Homo_sapien
 UNIPROTFASTA=f"data/uniprot/{config['species']}.protein.fasta" #"data/Homo_sapiens_202022.xml.gz"
 
 def all_output(wildcards):
+    '''Gets the final output files depending on the configuration'''
     outputs = []
-    if not "spritzversion" in config:
+    min_version = MIN_SPRITZ_VERSION.split('.')
+    this_version = config['spritzversion'].split('.')
+    if not "spritzversion" in config or any([min_version[i] > this_version[i] for i in range(len(min_version))]):
         outputs = ["please_update_spritz.txt"]
     elif len(config["analyses"]) == 0:
         outputs = ["prose.txt",
@@ -44,4 +49,5 @@ def all_output(wildcards):
     return expanded_outputs
 
 def check(field):
+    '''Checks whether or not a field is contained in the configuration'''
     return field in config and config[field] is not None and len(config[field]) > 0

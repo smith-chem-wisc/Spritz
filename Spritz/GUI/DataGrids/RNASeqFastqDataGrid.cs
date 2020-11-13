@@ -4,11 +4,12 @@ namespace Spritz
 {
     internal class RNASeqFastqDataGrid
     {
-        public RNASeqFastqDataGrid(string filePath)
+        public RNASeqFastqDataGrid(string filePath, bool isPairedEnd)
         {
             Use = true;
             FilePath = filePath;
             FileName = Path.GetFileNameWithoutExtension(filePath);
+            IsPairedEnd = isPairedEnd;
             if (filePath.EndsWith("gz"))
                 FileName = Path.GetFileNameWithoutExtension(FileName);
             if (FileName.EndsWith("_1"))
@@ -19,8 +20,9 @@ namespace Spritz
 
         public bool Use { get; set; }
         public string FileName { get; set; }
-        public string Experiment { get; set; }
+        public bool IsPairedEnd { get; set; }
         public string MatePair { get; set; }
+        public string Experiment { get; set; }
         public string FilePath { get; set; }
     }
 }

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Spritz"
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="True"        
-        Title="Spritz" Height="500" Width="700"
+        Title="Spritz" Height="500" Width="1000"
         Loaded="Window_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
@@ -40,25 +40,32 @@
                         </Grid.RowDefinitions>
                         <TextBox x:Name="TbxSRA" Grid.Row="0"/>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="BtnAddSRA" Content="Add SRA" Grid.Row="0" Width="100" Click="BtnAddSRA_Click"/>
-                            <Button x:Name="BtnClearSRA" Content="Clear SRA" Grid.Row="1" Width="100" Click="BtnClearSRA_Click"/>
+                            <Button x:Name="BtnAddSRA" Content="Add Paired-End SRA" Grid.Row="0" Width="150" Click="BtnAddSRA_Click"/>
+                            <Button x:Name="BtnAddSRASingleEnd" Content="Add Single-End SRA" Grid.Row="1" Width="150" Click="BtnAddSRASingleEnd_Click"/>
+                            <Button x:Name="BtnClearSRA" Content="Clear SRA" Grid.Row="2" Width="100" Click="BtnClearSRA_Click"/>
                         </StackPanel>
-                        <ListBox x:Name="LbxSRAs" Grid.Row="2" HorizontalContentAlignment="Stretch">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1*" />
-                                            <ColumnDefinition Width="1*" />
-                                            <ColumnDefinition Width="100" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Name}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding State}" />
-                                        <ProgressBar Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Completion}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <DataGrid x:Name="LbxSRAs" Grid.Row="2" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top">
+                            <DataGrid.Resources>
+                                <ResourceDictionary>
+                                    <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Coral" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ResourceDictionary>
+                            </DataGrid.Resources>
+                        </DataGrid>
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5"/>

@@ -119,7 +119,7 @@ if check('sra_se'):
             compression="9",
             tempprefix="{dir}/align/{sra_se}.sra_se.sorted",
             ref=REF
-        log: "{dir}/logs/align/{sra_se}.sra_se.hisat2.log"
+        log: "{dir}/align/{sra_se}.sra_se.hisat2.log"
         shell:
             "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic "
             "-U {input.fq} "
@@ -129,24 +129,39 @@ if check('sra_se'):
             "samtools index {output}"
 
 if check('fq'):
-    rule compress_fq_se:
-        input: "{dir}/{fq}_1.fastq", "{dir}/{fq}_2.fastq"
-        output: "{dir}/{fq}_1.fastq.gz", "{dir}/{fq}_2.fastq.gz"
-        log: "{dir}/{fq}.compress.log"
-        shell: "gzip -k {input} 2> {log}"
+    rule fastp_fq_uncompressed:
+        '''Trim adapters, read quality filtering, make QC outputs'''
+        input:
+            fq1="{dir}/{fq}_1.fastq",
+            fq2="{dir}/{fq}_2.fastq"
+        output:
+            fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
+            fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
+            html="{dir}/{fq}.fq.trim.html",
+            json="{dir}/{fq}.fq.trim.json",
+        threads: 6
+        log: "{dir}/{fq}.fq.trim.log"
+        params:
+            quality=20,
+            title="{fq}"
+        shell:
+            "fastp -q {params.quality} "
+            "-i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} "
+            "-h {output.html} -j {output.json} "
+            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
-    rule fastp_sra_fq:
+    rule fastp_fq:
         '''Trim adapters, read quality filtering, make QC outputs'''
         input:
             fq1="{dir}/{fq}_1.fastq.gz",
             fq2="{dir}/{fq}_2.fastq.gz"
         output:
-            fq1="{dir}/{fq}.trim_1.fastq.gz",
-            fq2="{dir}/{fq}.trim_2.fastq.gz",
-            html="{dir}/{fq}.trim.html",
-            json="{dir}/{fq}.trim.json",
+            fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
+            fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
+            html="{dir}/{fq}.fq.trim.html",
+            json="{dir}/{fq}.fq.trim.json",
         threads: 6
-        log: "{dir}/{sra}.trim.log"
+        log: "{dir}/{fq}.fq.trim.log"
         params:
             quality=20,
             title="{fq}"
@@ -160,8 +175,8 @@ if check('fq'):
         '''Align trimmed reads'''
         input:
             f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
-            fq1="{dir}/{fq}.trim_1.fastq.gz",
-            fq2="{dir}/{fq}.trim_2.fastq.gz",
+            fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
+            fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
             ss=f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
         output:
             "{dir}/align/{fq}.fq.sorted.bam"
@@ -180,22 +195,35 @@ if check('fq'):
             "samtools index {output}"
 
 if check('fq_se'):
-    rule compress_fq_se:
-        input: "{dir}/{fq_se}_1.fastq"
-        output: "{dir}/{fq_se}_1.fastq.gz"
-        log: "{dir}/{fq_se}.compress.log"
-        shell: "gzip -k {input} 2> {log}"
+    rule fastp_fq_se_uncompressed:
+        '''Trim adapters, read quality filtering, make QC outputs'''
+        input:
+            fq1="{dir}/{fq_se}_1.fastq",
+        output:
+            fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
+            html="{dir}/{fq_se}.fq_se.trim.html",
+            json="{dir}/{fq_se}.fq_se.trim.json",
+        threads: 6
+        log: "{dir}/{fq_se}.fq_se.trim.log"
+        params:
+            quality=20,
+            title="{fq_se}"
+        shell:
+            "fastp -q {params.quality} "
+            "-i {input.fq1} -o {output.fq1} "
+            "-h {output.html} -j {output.json} "
+            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule fastp_fq_se:
         '''Trim adapters, read quality filtering, make QC outputs'''
         input:
             fq1="{dir}/{fq_se}_1.fastq.gz",
         output:
-            fq1="{dir}/{fq_se}.trim_1.fastq.gz",
-            html="{dir}/{fq_se}.trim.html",
-            json="{dir}/{fq_se}.trim.json",
+            fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
+            html="{dir}/{fq_se}.fq_se.trim.html",
+            json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
-        log: "{dir}/{fq_se}.trim.log"
+        log: "{dir}/{fq_se}.fq_se.trim.log"
         params:
             quality=20,
             title="{fq_se}"
@@ -209,7 +237,7 @@ if check('fq_se'):
         '''Align trimmed reads'''
         input:
             f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
-            fq1="{dir}/{fq_se}.trim_1.fastq.gz",
+            fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
             ss=f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
         output:
             "{dir}/align/{fq_se}.fq_se.sorted.bam"
@@ -231,10 +259,10 @@ rule hisat2_merge_bams:
     '''Merge the BAM files for each sample'''
     input:
         lambda w:
-            [] if not check('sra') else expand("{{dir}}/align/{sra}.sra.sorted.bam", sra=config["sra"]) + \
-            [] if not check('sra_se') else expand("{{dir}}/align/{sra_se}.sra_se.sorted.bam", sra_se=config["sra_se"]) + \
-            [] if not check('fq') else expand("{{dir}}/align/{fq}.fq.sorted.bam", fq=config["fq"]) + \
-            [] if not check('fq_se') else expand("{{dir}}/align/{fq_se}.fq_se.sorted.bam", fq_se=config["fq_se"]),
+            ([] if not check('sra') else expand("{{dir}}/align/{sra}.sra.sorted.bam", sra=config["sra"])) + \
+            ([] if not check('sra_se') else expand("{{dir}}/align/{sra_se}.sra_se.sorted.bam", sra_se=config["sra_se"])) + \
+            ([] if not check('fq') else expand("{{dir}}/align/{fq}.fq.sorted.bam", fq=config["fq"])) + \
+            ([] if not check('fq_se') else expand("{{dir}}/align/{fq_se}.fq_se.sorted.bam", fq_se=config["fq_se"])),
     output:
         sorted="{dir}/align/combined.sorted.bam",
         stats="{dir}/align/combined.sorted.stats"

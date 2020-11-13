@@ -17,7 +17,7 @@ namespace Spritz
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly string CurrentVersion = "0.2.2";
+        public static readonly string CurrentVersion = "0.2.3"; // should be the same here, in config.yaml, and in common.smk
 
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
@@ -139,22 +139,6 @@ namespace Spritz
             }
         }
 
-        private void UpdateSRABox()
-        {
-            if (RnaSeqFastqCollection.Count > 0)
-            {
-                TbxSRA.IsEnabled = false;
-                BtnAddSRA.IsEnabled = false;
-                BtnClearSRA.IsEnabled = false;
-            }
-            else
-            {
-                TbxSRA.IsEnabled = true;
-                BtnAddSRA.IsEnabled = true;
-                BtnClearSRA.IsEnabled = true;
-            }
-        }
-
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -177,7 +161,6 @@ namespace Spritz
                 }
             }
             UpdateOutputFolderTextbox();
-            UpdateSRABox();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -316,14 +299,12 @@ namespace Spritz
                 }
             }
             DataGridRnaSeqFastq.Items.Refresh();
-            UpdateSRABox();
         }
 
         private void BtnClearRnaSeqFastq_Click(object sender, RoutedEventArgs e)
         {
             RnaSeqFastqCollection.Clear();
             UpdateOutputFolderTextbox();
-            UpdateSRABox();
         }
 
         private void ClearTasksButton_Click(object sender, RoutedEventArgs e)
@@ -347,15 +328,25 @@ namespace Spritz
 
         private void BtnAddSRA_Click(object sender, RoutedEventArgs e)
         {
-            if (TbxSRA.Text.Contains("SR") || TbxSRA.Text.Contains("ER"))
+            AddSRA(TbxSRA.Text, true);
+        }
+
+        private void BtnAddSRASingleEnd_Click(object sender, RoutedEventArgs e)
+        {
+            AddSRA(TbxSRA.Text, false);
+        }
+
+        private void AddSRA(string name, bool isPairedEnd)
+        {
+            if (name.Contains("SR") || name.Contains("ER"))
             {
-                if (SraCollection.Any(s => s.Name == TbxSRA.Text.Trim()))
+                if (SraCollection.Any(s => s.Name == name.Trim()))
                 {
                     MessageBox.Show("That SRA has already been added. Please choose a new SRA accession.", "Workflow", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    SRADataGrid sraDataGrid = new SRADataGrid(TbxSRA.Text.Trim());
+                    SRADataGrid sraDataGrid = new SRADataGrid(name.Trim(), isPairedEnd);
                     SraCollection.Add(sraDataGrid);
                 }
             }
@@ -451,31 +442,42 @@ namespace Spritz
 
         private void AddAFile(string filepath)
         {
-            if (SraCollection.Count == 0)
+            var theExtension = Path.GetExtension(filepath).ToLowerInvariant();
+            string basepath = theExtension == ".gz" ? Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(filepath)) : Path.GetFileNameWithoutExtension(filepath);
+            theExtension = theExtension == ".gz" ? Path.GetExtension(Path.GetFileNameWithoutExtension(filepath)).ToLowerInvariant() : theExtension;
+            switch (theExtension)
             {
-                var theExtension = Path.GetExtension(filepath).ToLowerInvariant();
-                theExtension = theExtension == ".gz" ? Path.GetExtension(Path.GetFileNameWithoutExtension(filepath)).ToLowerInvariant() : theExtension;
-                switch (theExtension)
-                {
-                    case ".fastq":
-                        if (Path.GetFileName(filepath).Contains("_1") || Path.GetFileName(filepath).Contains("_2"))
+                case ".fastq":
+                    if (Path.GetFileName(basepath).EndsWith("_1") || Path.GetFileName(basepath).EndsWith("_2"))
+                    {
+                        bool isPairedEnd = Path.GetFileName(basepath).EndsWith("_2");
+                        bool isUnpairedSecondMate = false;
+                        bool isDifferentFolder = false;
+                        foreach (var fq in RnaSeqFastqCollection)
                         {
-                            RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath);
-                            RnaSeqFastqCollection.Add(rnaSeqFastq);
-                            UpdateOutputFolderTextbox();
-                            break;
+                            bool hasMatePair = Path.GetFileName(fq.FileName.Substring(0, fq.FileName.Length - 2)) ==
+                                Path.GetFileName(basepath.Substring(0, basepath.Length - 2));
+                            if (hasMatePair)
+                                fq.IsPairedEnd = true;
+                            isPairedEnd = isPairedEnd || hasMatePair;
+                            isUnpairedSecondMate = isUnpairedSecondMate || hasMatePair;
+                            isDifferentFolder = isDifferentFolder ||
+                                Path.GetDirectoryName(fq.FileName) !=
+                                Path.GetDirectoryName(basepath);
                         }
-                        else
-                        {
-                            MessageBox.Show("FASTQ files must have *_1.fastq and *_2.fastq extensions.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
-                            return;
-                        }
-                }
-            }
-            else
-            {
-                MessageBox.Show("User already added SRA number. Please only choose one input: 1) SRA accession 2) FASTQ files.", "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
+                        RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath, isPairedEnd);
+                        RnaSeqFastqCollection.Add(rnaSeqFastq);
+                        UpdateOutputFolderTextbox();
+                        break;
+                    }
+                    else
+                    {
+                        MessageBox.Show("FASTQ files must have *_1.fastq and/or *_2.fastq extensions.\n\n" +
+                            "Single-end experiments must have unique filenames preceeding the *_1.fastq ending.\n\n" +
+                            "Paired-end experiments must have the same unique filename preceeding the *_1.fastq and *_2.fastq suffixes.",
+                            "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
             }
         }
 

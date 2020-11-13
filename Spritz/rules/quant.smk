@@ -1,3 +1,10 @@
+rule fix_gff3_for_rsem:
+    '''This script changes descriptive notes in column 4 to "gene" if a gene row, and it also adds ERCCs to the gene model'''
+    input: f"data/ensembl/{REF}.{config['release']}.gff3"
+    output: f"data/ensembl/{REF}.{config['release']}.gff3.fix.gff3"
+    log: f"data/ensembl/{REF}.{config['release']}.gff3.fix.log"
+    shell: "python scripts/fix_gff3_for_rsem.py {input} {output} 2> {log}"
+
 rule rsem_star_genome:
     '''Create an RSEM reference with STAR indices'''
     input:
@@ -61,8 +68,8 @@ if check('fq'):
         input:
             gtf=f"{REFSTAR_PREFIX}.gtf",
             suffix=f"{REFSTAR_FOLDER}SA",
-            fq1="{dir}/{fq}.trim_1.fastq.gz",
-            fq2="{dir}/{fq}.trim_2.fastq.gz",
+            fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
+            fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
         output:
             "{dir}/quant/{fq}.fq.isoforms.results",
             "{dir}/quant/{fq}.fq.genes.results",
@@ -83,7 +90,7 @@ if check('fq_se'):
         input:
             gtf=f"{REFSTAR_PREFIX}.gtf",
             suffix=f"{REFSTAR_FOLDER}SA",
-            fq1="{dir}/{fq_se}.trim_1.fastq.gz",
+            fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
         output:
             "{dir}/quant/{fq_se}.fq_se.isoforms.results",
             "{dir}/quant/{fq_se}.fq_se.genes.results",
@@ -102,10 +109,10 @@ rule make_rsem_dataframe:
     '''Take the results from RSEM and put them in a usable dataframe'''
     input:
         lambda w:
-            [] if not check('sra') else expand("{{dir}}/quant/{sra}.sra.gene.results", sra=config["sra"]) + \
-            [] if not check('sra_se') else expand("{{dir}}/quant/{sra_se}.sra_se.gene.results", sra_se=config["sra_se"]) + \
-            [] if not check('fq') else expand("{{dir}}/quant/{fq}.fq.gene.results", fq=config["fq"]) + \
-            [] if not check('fq_se') else expand("{{dir}}/quant/{fq_se}.fq_se.gene.results", fq_se=config["fq_se"]),
+            ([] if not check('sra') else expand("{{dir}}/quant/{sra}.sra.genes.results", sra=config["sra"])) + \
+            ([] if not check('sra_se') else expand("{{dir}}/quant/{sra_se}.sra_se.genes.results", sra_se=config["sra_se"])) + \
+            ([] if not check('fq') else expand("{{dir}}/quant/{fq}.fq.genes.results", fq=config["fq"])) + \
+            ([] if not check('fq_se') else expand("{{dir}}/quant/{fq_se}.fq_se.genes.results", fq_se=config["fq_se"])),
         gff=f"data/ensembl/{REF}.{config['release']}.gff3.fix.gff3"
     output:
         counts="{dir}/Counts.csv",

@@ -1,11 +1,11 @@
 sra: [SRR629563] #  paired-end SRAs, can leave empty
-fq: [] # paired-end fastqs, can leave empty
-sra_se: [SRR12567861] # single-end SRAs, can leave empty
-fq_se: [] # single-end fastqs, can leave empty
+fq: [Aas-gDNA1-O1-PaE_S6_L001] # paired-end fastqs, can leave empty
+sra_se: [SRR8070095] # single-end SRAs, can leave empty
+fq_se: [Aas-gDNA1-O1-PaE_S5_L001] # single-end fastqs, can leave empty
 analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
 species: "Homo_sapiens"
 genome: "GRCh38"
 release: "100"
 organism: "human" # based on uniprot
 analyses: [isoform,variant]
-spritzversion: "0.2.2"
+spritzversion: "0.2.3" # should be the same here, common.smk, and MainWindow.xml.cs
