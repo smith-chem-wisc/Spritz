@@ -109,7 +109,6 @@ namespace Spritz
             var fq2s = Options.Fastq2.Split(',') ?? new string[0];
             var fq1s_se = Options.Fastq1SingleEnd.Split(',') ?? new string[0];
 
-            HashSet<string> directories = new HashSet<string>(fq1s.Concat(fq2s).Concat(fq1s_se).Select(fq => Path.GetDirectoryName(fq)));
             HashSet<string> unpairedFqPrefixes = new HashSet<string>(
                 fq1s.Where(fq1 => !fq2s.Any(fq2 => fq2.CompareTo(fq1) == 0)).Concat(
                     fq2s.Where(fq2 => !fq1s.Any(fq1s => fq1s.CompareTo(fq2) == 0))));
@@ -119,18 +118,20 @@ namespace Spritz
                     "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Warning);
                 throw new InvalidOperationException();
             }
-            if (directories.Count > 1)
-            {
-                MessageBox.Show($"All user-specified FASTQs must reside in one directory. Currently, they reside in {string.Join(",", directories)}.",
-                    "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Warning);
-                throw new InvalidOperationException();
-            }
+            //HashSet<string> directories = new HashSet<string>(fq1s.Concat(fq2s).Concat(fq1s_se).Select(fq => Path.GetDirectoryName(fq)));
+            //if (directories.Count > 1)
+            //{
+            //    MessageBox.Show($"All user-specified FASTQs must reside in one directory. Currently, they reside in {string.Join(",", directories)}.",
+            //        "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Warning);
+            //    throw new InvalidOperationException();
+            //}
 
             //Options.ExperimentType = CmbxExperimentType.SelectedItem.ToString();
             var sraCollection = (ObservableCollection<SRADataGrid>)MainWindow.LbxSRAs.ItemsSource;
             Options.SraAccession = string.Join(",", sraCollection.Where(p => p.IsPairedEnd).Select(p => p.Name).ToArray());
             Options.SraAccessionSingleEnd = string.Join(",", sraCollection.Where(p => !p.IsPairedEnd).Select(p => p.Name).ToArray());
-            if (Options.SraAccession.Count() == 0 && options.Fastq1.Count() == 0)
+            if (Options.SraAccession.Length == 0 && options.Fastq1.Length == 0 && 
+                Options.SraAccessionSingleEnd.Length == 0 && options.Fastq1SingleEnd.Length == 0)
             {
                 Cb_AnalyzeIsoforms.IsChecked = false;
                 Cb_AnalyzeIsoforms.IsEnabled = false;

@@ -462,12 +462,18 @@ namespace Spritz
                             isPairedEnd = isPairedEnd || hasMatePair;
                             isUnpairedSecondMate = isUnpairedSecondMate || hasMatePair;
                             isDifferentFolder = isDifferentFolder ||
-                                Path.GetDirectoryName(fq.FileName) !=
-                                Path.GetDirectoryName(basepath);
+                                Path.GetDirectoryName(fq.FilePath) != Path.GetDirectoryName(filepath);
                         }
-                        RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath, isPairedEnd);
-                        RnaSeqFastqCollection.Add(rnaSeqFastq);
-                        UpdateOutputFolderTextbox();
+                        if (isDifferentFolder)
+                        {
+                            MessageBox.Show("All FASTQs must be located in the same analysis directory.", "Add FASTQ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                        else
+                        {
+                            RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath, isPairedEnd);
+                            RnaSeqFastqCollection.Add(rnaSeqFastq);
+                            UpdateOutputFolderTextbox();
+                        }
                         break;
                     }
                     else

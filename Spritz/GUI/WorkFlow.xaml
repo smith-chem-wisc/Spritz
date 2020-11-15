@@ -13,8 +13,8 @@
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="0"  Margin="5">
-            <Label Content="Select Work Flow Type"/>
-            <ComboBox x:Name="CbxWorkFlowType" IsEnabled="False"/>
+            <!--Label Content="Select Work Flow Type"/>
+            <ComboBox x:Name="CbxWorkFlowType" IsEnabled="False"/ -->
         </StackPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="1">
             <DockPanel>
@@ -41,10 +41,10 @@
                             <Label Content="AnalysisDirectory" Width="200"/>
                             <TextBox x:Name="txtAnalysisDirectory" Width="180" />
                         </StackPanel>
-                        <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
+                        <!--StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
                             <Label Content="Experiment Type" Width="200"/>
                             <ComboBox x:Name="CmbxExperimentType" IsEnabled="False" Width="180"/>
-                        </StackPanel>
+                        </-->
                         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
                             <Label Content="Threads" Width="200"/>
                             <TextBox x:Name="txtThreads" LostFocus="txtThreads_LostFocus" Width="180"/>
@@ -71,7 +71,7 @@
                             <Label Name="Lb_ThreadInfo" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
                         </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="1">
-                            <Label Content="Recommended: release-82 for human genome" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
+                            <Label Content="Recommended: release-97 for human genome" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>

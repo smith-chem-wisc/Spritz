@@ -111,7 +111,7 @@ rule call_gvcf_varaints:
         " --min-base-quality-score 20 --dont-use-soft-clipped-bases true"
         " --dbsnp {input.knownsites} -O {output} --tmp-dir {input.tmp}"
         " -ERC GVCF --max-mnp-distance 3 && "
-        "gatk IndexFeatureFile -F {output}) &> {log}"
+        "gatk IndexFeatureFile -I {output}) &> {log}"
 
 rule call_vcf_variants:
     input:
@@ -127,7 +127,7 @@ rule call_vcf_variants:
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.benchmark"
     shell:
         "(gatk {params.gatk_java} GenotypeGVCFs -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
-        "gatk IndexFeatureFile -F {output}) &> {log}"
+        "gatk IndexFeatureFile -I {output}) &> {log}"
 
 rule final_vcf_naming:
     input: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
@@ -144,7 +144,7 @@ rule filter_indels:
     benchmark: "{dir}/variants/combined.spritz.noindels.benchmark"
     shell:
         "(gatk SelectVariants --select-type-to-exclude INDEL -R {input.fa} -V {input.vcf} -O {output} && "
-        "gatk IndexFeatureFile -F {output}) &> {log}"
+        "gatk IndexFeatureFile -I {output}) &> {log}"
 
 rule variant_annotation_ref:
     input:

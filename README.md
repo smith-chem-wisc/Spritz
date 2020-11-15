@@ -22,25 +22,35 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
     2. The [alternate method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-Vmmem-(alternate-method)) is available on all Windows versions but is less robust. Here, we allocate computer resources to Docker using a virtual machine that's packaged with Docker.
 
 3. Launch Spritz.
-
-    ![howto](https://user-images.githubusercontent.com/42819128/70091146-2624eb00-15e1-11ea-9230-bfd118aa03d9.png)
-
-    Step 1: Input SRA accessions OR FASTQ files.
+       
+    Step 1: Input SRA accessions and/or add FASTQ files. 
+    * SRAs are added with the button indicating single-end or paired-end.
+    * FASTQ files must end with *_1.fastq if single-end, and paired-end sequences must have the same filename other than ending with *_1.fastq and *_2.fastq.
 
     Step 2: Create and customize your Spritz workflow.
 
-   ![workflow](https://user-images.githubusercontent.com/42819128/70091992-e65f0300-15e2-11ea-9e0f-7bb4262afefa.png)
-
     Step 3: Run Spritz!
+    
+    ![Intro-01](https://user-images.githubusercontent.com/16342951/99159330-088d4c00-26a1-11eb-99b9-0b7cd79467d2.png)
 
-## System Requirements
+## GUI System Requirements
 
 * Environment:
-  * .NET Core 3.1:
-     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer
+  * Windows 10 recommended
+  * [.NET Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer)
 * 16 GB RAM recommended
-* Note that the installer (Spritz.msi) only works on Windows. 
-* Spritz will also work on the commandline within a Unix system (Linux, Mac, WSL on Windows). First, install [miniconda3](https://docs.conda.io/en/latest/miniconda.html), and then create a `conda` environment for spritz by running `conda env create --name spritz --file environment.yaml; conda activate spritz`. After adapting the `config.yaml` file manually, Spritz may be run using `snakemake -j {threads} --resources mem_mb={memory_megabytes}`, where `{threads}` and `{memory_megabytes}` are replaced with your specifications.
+* The installer ([Spritz.msi](https://github.com/smith-chem-wisc/Spritz/releases)) only works on Windows. 
+
+## Running Spritz with commandline
+
+Spritz will also work on the commandline within a Unix system (Linux, Mac, WSL on Windows).
+
+1. Install or activate [miniconda3](https://docs.conda.io/en/latest/miniconda.html).
+2. Install `git` with `conda install git`
+3. Clone Spritz with `git clone https://github.com/smith-chem-wisc/Spritz.git; cd Spritz/Spritz`
+4. Create a `conda` environment for spritz by running `conda env create --name spritz --file environment.yaml; conda activate spritz`. 
+5. [Adapt `config.yaml` file manually.](https://github.com/smith-chem-wisc/Spritz/wiki/Adapting-the-config.yaml-file-for-running-Spritz-on-the-commandline)
+6. Run Spritz with `snakemake -j {threads} --resources mem_mb={memory_megabytes}`, where `{threads}` and `{memory_megabytes}` are replaced with your specifications.
 
 ## Test it out! Try constructing the database for U2OS from the paper.
 
@@ -57,3 +67,16 @@ Monitor progress in the Information textbox. The final database named `final/com
 The final database named `final/combined.spritz.snpeff.protein.fasta` is generated to contain variant protein sequences, and it may be used in other search software, such as Proteome Discoverer, ProSight, and MASH Explorer.
 
 The final database named `final/combined.spritz.snpeff.protein.withdecoys.fasta` is ready for use in MSFragger. It is generated to contain variant protein sequences with decoy protein sequences appended.
+
+## Citations
+
+If you use this Spritz, please cite:
+* Cesnik, A. J.; Miller, R. M.; Ibrahim, K.; Lu, L.; Millikin, R. J.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. “Spritz: A Proteogenomic Database Engine.” J. Proteome Res. 2020, in press. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407
+
+This pipeline uses the following tools:
+  * `sra-toolkit`: Leinonen, R.; et al. International Nucleotide Sequence Database Collaboration. The Sequence Read Archive. Nucleic Acids Res. 2011, 39 (Database issue), D19-21. https://doi.org/10.1093/nar/gkq1019.
+  * `fastp`: Chen, S.; et al. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 2018, 34 (17), i884-i890. https://academic.oup.com/bioinformatics/article/34/17/i884/5093234
+  * `hisat2`: Kim, D.; et al. Graph-Based Genome Alignment and Genotyping with HISAT2 and HISAT-Genotype. Nat. Biotechnol. 2019, 37 (8), 907-915. https://doi.org/10.1038/s41587-019-0201-4."
+  * `samtools`: Li, H.; et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics 2009, 25 (16), 2078-2079. https://academic.oup.com/bioinformatics/article/25/16/2078/204688.
+  * `GATK`: McKenna, A.; et al. The Genome Analysis Toolkit: A MapReduce Framework for Analyzing next-Generation DNA Sequencing Data. Genome Res. 2010, 20 (9), 1297-1303. https://doi.org/10.1101/gr.107524.110.
+  * `SnpEff`: Cingolani, P.; et al. A Program for Annotating and Predicting the Effects of Single Nucleotide Polymorphisms, SnpEff: SNPs in the Genome of Drosophila Melanogaster Strain W1118; Iso-2; Iso-3. Fly (Austin) 2012, 6 (2), 80-92. https://doi.org/10.4161/fly.19695.

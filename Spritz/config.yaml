@@ -1,7 +1,7 @@
-sra: [SRR629563] #  paired-end SRAs, can leave empty
-fq: [Aas-gDNA1-O1-PaE_S6_L001] # paired-end fastqs, can leave empty
-sra_se: [SRR8070095] # single-end SRAs, can leave empty
-fq_se: [Aas-gDNA1-O1-PaE_S5_L001] # single-end fastqs, can leave empty
+sra: [SRR629563] #  paired-end SRAs, comma separated, can leave empty
+fq: [TestPairedEnd] # paired-end fastq prefixes, comma separated, can leave empty
+sra_se: [SRR8070095] # single-end SRAs, comma separated, can leave empty
+fq_se: [TestSingleEnd] # single-end fastq prefixes, comma separated, can leave empty
 analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
 species: "Homo_sapiens"
 genome: "GRCh38"
