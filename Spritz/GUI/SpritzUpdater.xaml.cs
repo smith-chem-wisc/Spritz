@@ -50,7 +50,7 @@ namespace Spritz
                 try
                 {
                     // download and start the installer
-                    var tempDownloadLocation = Path.Combine(System.IO.Path.GetTempPath(), "Spritz.msi");
+                    var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "Spritz.msi");
                     client.DownloadFile(uri, tempDownloadLocation);
                     var p = new Process();
                     p.StartInfo = new ProcessStartInfo()

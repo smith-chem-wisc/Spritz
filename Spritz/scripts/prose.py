@@ -9,7 +9,7 @@ outf = sys.argv[1]
 # SPRITZ
 lines = [
     "Spritz is a program that generates protein databases annotated with sequence variations and PTMs: ",
-    "- Cesnik, A. J.; et al. Spritz: A Proteogenomic Database Engine. 2020, in review.",
+    "- Cesnik, A. J.; et al. Spritz: A Proteogenomic Database Engine. J. Proteome Res. 2020, in press. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407.",
     "",
 ]
 

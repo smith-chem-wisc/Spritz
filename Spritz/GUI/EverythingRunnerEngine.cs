@@ -69,24 +69,34 @@ namespace Spritz
             var rootMappingNode = (YamlMappingNode)stream.Documents[0].RootNode;
 
             var sras = options.SraAccession.Split(',');
+            var sras_se = options.SraAccessionSingleEnd.Split(',');
             var fqs = options.Fastq1.Split(',') ?? new string[0];
+            var fqs_se = options.Fastq1SingleEnd.Split(',') ?? new string[0];
             var analysisStrings = new List<string>();
             if (options.AnalyzeVariants) analysisStrings.Add("variant");
             if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
 
-            // write user input sras
+            // write user input paired-end sras
             var accession = new YamlSequenceNode();
             rootMappingNode.Add("sra", AddParam(sras, accession));
+
+            // write user input paired-end sras
+            var accession_se = new YamlSequenceNode();
+            rootMappingNode.Add("sra_se", AddParam(sras_se, accession_se));
+
+            // write user input paired-end fastqs
+            var fq = new YamlSequenceNode();
+            rootMappingNode.Add("fq", AddParam(fqs, fq));
+
+            // write user input paired-end fastqs
+            var fq_se = new YamlSequenceNode();
+            rootMappingNode.Add("fq_se", AddParam(fqs_se, fq_se));
 
             // write user defined analysis directory (input and output folder)
             var analysisDirectory = new YamlSequenceNode();
             analysisDirectory.Style = SequenceStyle.Flow;
             analysisDirectory.Add("analysis");
             rootMappingNode.Add("analysisDirectory", analysisDirectory);
-
-            // write user input fastqs
-            var fq = new YamlSequenceNode();
-            rootMappingNode.Add("fq", AddParam(fqs, fq));
 
             // write ensembl release
             var release = new YamlScalarNode(options.Release.Substring(8));

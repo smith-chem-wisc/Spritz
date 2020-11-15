@@ -1,19 +1,16 @@
-## SpritzSnake
-data
+## Spritz
+.snakemake
 AnalysisFolder
+ChromosomeMappings
+data
 tmp
 STAR*
-SnpEff
-ensembl
-ChromosomeMappings
-.snakemake
-snpEffDatabases.txt
-human.proteome.xml
+SnpEff*
+pipeliner*
 ptmlist.txt
 PSI-MOD.obo.xml
 fast.tmp
 *.svg
-.snakemake
 ag\
 
 ## Visual Studio

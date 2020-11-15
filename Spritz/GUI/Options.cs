@@ -10,9 +10,12 @@ namespace Spritz
         public string AnalysisDirectory { get; set; } = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "output");
         public string Fastq1 { get; set; }
         public string Fastq2 { get; set; }
+        public string Fastq1SingleEnd { get; set; }
 
         //public string ExperimentType { get; set; }
         public string SraAccession { get; set; }
+
+        public string SraAccessionSingleEnd { get; set; }
 
         public int Threads { get; set; } = Environment.ProcessorCount;
         public string Reference { get; set; }

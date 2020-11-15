@@ -2,13 +2,13 @@
 {
     internal class SRADataGrid
     {
-        public SRADataGrid(string name)
+        public SRADataGrid(string name, bool isPairedEnd)
         {
             Name = name;
+            IsPairedEnd = isPairedEnd;
         }
 
         public string Name { get; set; }
-        public string State { get; set; }
-        public int Completion { get; set; }
+        public bool IsPairedEnd { get; set; }
     }
 }
