@@ -17,20 +17,20 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
 
 1. Install [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows).
 
-2. Allocate resources to Docker. There are two ways to do this, described in the Spritz wiki: 
-    1. The [recommended method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-WSL2-(recommended-method)) requires Windows 10 version 2004 and is more robust. Here, we allocate computer resources to Docker like any other program. 
+2. Allocate resources to Docker. There are two ways to do this, described in the Spritz wiki:
+    1. The [recommended method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-WSL2-(recommended-method)) requires Windows 10 version 2004 and is more robust. Here, we allocate computer resources to Docker like any other program.
     2. The [alternate method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-Vmmem-(alternate-method)) is available on all Windows versions but is less robust. Here, we allocate computer resources to Docker using a virtual machine that's packaged with Docker.
 
 3. Launch Spritz.
-       
-    Step 1: Input SRA accessions and/or add FASTQ files. 
+
+    Step 1: Input SRA accessions and/or add FASTQ files.
     * SRAs are added with the button indicating single-end or paired-end.
     * FASTQ files must end with *_1.fastq if single-end, and paired-end sequences must have the same filename other than ending with *_1.fastq and *_2.fastq.
 
     Step 2: Create and customize your Spritz workflow.
 
     Step 3: Run Spritz!
-    
+
     ![Intro-01](https://user-images.githubusercontent.com/16342951/99159330-088d4c00-26a1-11eb-99b9-0b7cd79467d2.png)
 
 ## GUI System Requirements
@@ -39,18 +39,11 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
   * Windows 10 recommended
   * [.NET Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer)
 * 16 GB RAM recommended
-* The installer ([Spritz.msi](https://github.com/smith-chem-wisc/Spritz/releases)) only works on Windows. 
+* The installer ([Spritz.msi](https://github.com/smith-chem-wisc/Spritz/releases)) only works on Windows.
 
 ## Running Spritz with commandline
 
-Spritz will also work on the commandline within a Unix system (Linux, Mac, WSL on Windows).
-
-1. Install or activate [miniconda3](https://docs.conda.io/en/latest/miniconda.html).
-2. Install `git` with `conda install git`
-3. Clone Spritz with `git clone https://github.com/smith-chem-wisc/Spritz.git; cd Spritz/Spritz`
-4. Create a `conda` environment for spritz by running `conda env create --name spritz --file environment.yaml; conda activate spritz`. 
-5. [Adapt `config.yaml` file manually.](https://github.com/smith-chem-wisc/Spritz/wiki/Adapting-the-config.yaml-file-for-running-Spritz-on-the-commandline)
-6. Run Spritz with `snakemake -j {threads} --resources mem_mb={memory_megabytes}`, where `{threads}` and `{memory_megabytes}` are replaced with your specifications.
+Spritz will also [work on the commandline](https://github.com/smith-chem-wisc/Spritz/wiki/Spritz-commandline-usage) within a Unix system (Linux, Mac, WSL on Windows).
 
 ## Test it out! Try constructing the database for U2OS from the paper.
 
@@ -71,7 +64,7 @@ The final database named `final/combined.spritz.snpeff.protein.withdecoys.fasta`
 ## Citations
 
 If you use this Spritz, please cite:
-* Cesnik, A. J.; Miller, R. M.; Ibrahim, K.; Lu, L.; Millikin, R. J.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. “Spritz: A Proteogenomic Database Engine.” J. Proteome Res. 2020, in press. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407
+* `Spritz`: Cesnik, A. J.; Miller, R. M.; Ibrahim, K.; Lu, L.; Millikin, R. J.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. “Spritz: A Proteogenomic Database Engine.” J. Proteome Res. 2020, in press. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407
 
 This pipeline uses the following tools:
   * `sra-toolkit`: Leinonen, R.; et al. International Nucleotide Sequence Database Collaboration. The Sequence Read Archive. Nucleic Acids Res. 2011, 39 (Database issue), D19-21. https://doi.org/10.1093/nar/gkq1019.

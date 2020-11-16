@@ -25,13 +25,13 @@ if used_sras:
 # TRIMMING AND ALIGNMENT
 lines.extend([
     "Reads are trimmed and analyzed for quality scores using fastp: ",
-    "- https://academic.oup.com/bioinformatics/article/34/17/i884/5093234",
+    "- Chen, S.; et al. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 2018, 34 (17), i884-i890. https://academic.oup.com/bioinformatics/article/34/17/i884/5093234.",
     "",
     "Reads are aligned using hisat2: ",
     "- Kim, D.; et al. Graph-Based Genome Alignment and Genotyping with HISAT2 and HISAT-Genotype. Nat. Biotechnol. 2019, 37 (8), 907-915. https://doi.org/10.1038/s41587-019-0201-4.",
     "",
     "Alignments are analyzed and combined using samtools: ",
-    "- https://academic.oup.com/bioinformatics/article/25/16/2078/204688",
+    "- Li, H.; et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics 2009, 25 (16), 2078-2079. https://academic.oup.com/bioinformatics/article/25/16/2078/204688.",
     ""
 ])
 
