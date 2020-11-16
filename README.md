@@ -43,14 +43,7 @@ Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releas
 
 ## Running Spritz with commandline
 
-Spritz will also work on the commandline within a Unix system (Linux, Mac, WSL on Windows).
-
-1. Install or activate [miniconda3](https://docs.conda.io/en/latest/miniconda.html).
-2. Install `git` with `conda install git`
-3. Clone Spritz with `git clone https://github.com/smith-chem-wisc/Spritz.git; cd Spritz/Spritz`
-4. Create a `conda` environment for spritz by running `conda env create --name spritz --file environment.yaml; conda activate spritz`. 
-5. [Adapt `config.yaml` file manually.](https://github.com/smith-chem-wisc/Spritz/wiki/Adapting-the-config.yaml-file-for-running-Spritz-on-the-commandline)
-6. Run Spritz with `snakemake -j {threads} --resources mem_mb={memory_megabytes}`, where `{threads}` and `{memory_megabytes}` are replaced with your specifications.
+Spritz will also [work on the commandline](https://github.com/smith-chem-wisc/Spritz/wiki/Spritz-commandline-usage) within a Unix system (Linux, Mac, WSL on Windows).
 
 ## Test it out! Try constructing the database for U2OS from the paper.
 
