@@ -1,7 +1,7 @@
-sra: [SRR629563] #  paired-end SRAs, comma separated, can leave empty
-fq: [TestPairedEnd] # paired-end fastq prefixes, comma separated, can leave empty
-sra_se: [SRR8070095] # single-end SRAs, comma separated, can leave empty
-fq_se: [TestSingleEnd] # single-end fastq prefixes, comma separated, can leave empty
+sra: [] #  paired-end SRAs, comma separated, can leave empty, e.g. SRR629563
+fq: [] # paired-end fastq prefixes, comma separated, can leave empty, e.g. TestPairedEnd
+sra_se: [] # single-end SRAs, comma separated, can leave empty, e.g. SRR8070095
+fq_se: [] # single-end fastq prefixes, comma separated, can leave empty, e.g. TestSingleEnd
 analysisDirectory: [AnalysisFolder] # for paths to drive e.g. /mnt/c/AnalysisFolder
 species: "Homo_sapiens"
 genome: "GRCh38"

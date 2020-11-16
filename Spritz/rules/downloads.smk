@@ -52,7 +52,7 @@ rule index_ensembl_vcf:
 rule download_chromosome_mappings:
     output: f"ChromosomeMappings/{config['genome']}_UCSC2ensembl.txt"
     params: url="https://github.com/dpryan79/ChromosomeMappings.git"
-    log: "ChromosomeMappings/download_chromosome_mappings.log"
+    log: "data/download_chromosome_mappings.log"
     shell:
         "(if [ -d ChromosomeMappings ]; then rm -rf ChromosomeMappings; fi && "
         "git clone {params.url}) 2> {log}"
