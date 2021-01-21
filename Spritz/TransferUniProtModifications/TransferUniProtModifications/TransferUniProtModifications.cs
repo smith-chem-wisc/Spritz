@@ -58,7 +58,7 @@ namespace TransferUniProtModifications
             string outxml = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withmods.xml");
             var nonVariantProts = destinationXmlPath.EndsWith(".xml") | destinationXmlPath.EndsWith(".xml.gz") ? 
                 ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, null, out un).Select(p => p.NonVariantProtein).Distinct() :
-                ProteinDbLoader.LoadProteinFasta(destinationXmlPath, true, DecoyType.None, false, ProteinDbLoader.UniprotAccessionRegex, PgmNameRegex, PgmNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out var un2).Select(p => p.NonVariantProtein).Distinct();
+                ProteinDbLoader.LoadProteinFasta(destinationXmlPath, true, DecoyType.None, false, out List<string> errors, ProteinDbLoader.UniprotAccessionRegex, PgmNameRegex, PgmNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex).Select(p => p.NonVariantProtein).Distinct();
             var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.ToList());
             ProteinDbWriter.WriteXmlDatabase(null, newProts, outxml);
             string outfasta = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".fasta");
