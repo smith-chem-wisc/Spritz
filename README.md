@@ -7,9 +7,9 @@ Software for RNA-Seq analysis on Windows, including creating sample-specific pro
 [![Docker Pulls](https://img.shields.io/docker/pulls/smithlab/spritz)](https://hub.docker.com/r/smithlab/spritz/tags?page=1&ordering=last_updated)
 [![Follow us on Twitter](https://img.shields.io/twitter/follow/smith_chem_wisc?label=Twitter&style=social)](https://twitter.com/smith_chem_wisc)
 
-Spritz uses snakemake and Docker to install and run commandline tools for Next-Generation Sequencing (NGS) analysis.
-
 Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releases).
+
+Spritz uses snakemake and Docker to install and run commandline tools for Next-Generation Sequencing (NGS) analysis. These tools include an [adapted version of SnpEff](https://github.com/smith-chem-wisc/SnpEff) to annotate sequence variations and create an annotated protein database in XML format. The combinatorics of producing full-length proteoforms from these annotations is written in [mzLib's VariantApplication class](https://github.com/smith-chem-wisc/mzLib/blob/master/Proteomics/Protein/VariantApplication.cs).
 
 ![image](https://user-images.githubusercontent.com/16342951/93618988-a3b5be00-f99d-11ea-8be4-063395e24ce1.png)
 

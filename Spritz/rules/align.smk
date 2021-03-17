@@ -113,7 +113,7 @@ if check('sra_se'):
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
         shell:
-            "fastq-dump -I --outdir {wildcards.dir} --split-files {input} &&
+            "fastq-dump -I --outdir {wildcards.dir} --split-files {input} && "
             "mv {wildcards.dir}/{wildcards.sra_se}_1.fastq {output} 2> {log}"
 
     rule fastp_sra_se:
