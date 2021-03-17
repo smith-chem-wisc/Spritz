@@ -19,6 +19,7 @@ dependencies:
   - bcbio-gff
   - pandas
   - unzip
+  - gzip
   - wget
   - curl
   - dotnet-sdk =3.1.403
