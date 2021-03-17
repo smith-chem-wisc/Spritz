@@ -16,6 +16,11 @@ rule build_transfer_mods:
         "dotnet restore && "
         "dotnet build -c Release TransferUniProtModifications.sln) &> {log}"
 
+rule setup_transfer_mods:
+    input: TRANSFER_MOD_DLL
+    output: "ptmlist.txt", "PSI-MOD.obo.xml"
+    shell: "dotnet {input} --setup"
+
 rule transfer_modifications_variant:
     input:
         transfermods=TRANSFER_MOD_DLL,

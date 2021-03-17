@@ -29,6 +29,8 @@ rule setup:
         UNIPROTFASTA,
         UNIPROTFASTA,
         FA,
+        "ptmlist.txt",
+        "PSI-MOD.obo.xml",
         "SnpEff/snpEff.jar",
         [] if not check('sra') else expand(["{dir}/{sra}_1.fastq", "{dir}/{sra}_2.fastq"], dir=config['analysisDirectory'], sra=config['sra']),
         [] if not check('sra_se') else expand(["{dir}/{sra_se}.fastq"], dir=config['analysisDirectory'], sra_se=config['sra_se'])

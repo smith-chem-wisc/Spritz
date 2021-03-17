@@ -34,10 +34,21 @@ namespace TransferUniProtModifications
                 .As('z', "spritz_mod_xml")
                 .WithDescription("Custom protein XML withmods file, e.g. from Spritz.");
 
+            p.Setup(arg => arg.Setup)
+                .As('s', "setup")
+                .WithDescription("Perform setup for machines without internet connection.");
+
             p.SetupHelp("h", "help")
                 .Callback(text => Console.WriteLine(text));
 
             var result = p.Parse(args);
+
+            if (p.Object.Setup)
+            {
+                Console.WriteLine("Downloading files for TransferUniProtModifications.");
+                var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
+                return;
+            }
 
             Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml ?? p.Object.SpritzModXml ?? p.Object.FusionCodingEffects}");
 
@@ -199,6 +210,7 @@ namespace TransferUniProtModifications
             public string ReferenceGeneModel { get; set; }
             public string UniProtXml { get; set; }
             public string FusionCodingEffects { get; set; }
+            public bool Setup { get; set; }
         }
     }
 }
