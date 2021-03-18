@@ -3,6 +3,7 @@ rule download_protein_xml:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA,
     log: f"{UNIPROTXML}.log"
+    benchmark: f"{UNIPROTXML}.benchmark"
     shell:
         "(python scripts/get_proteome.py && "
         "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
@@ -11,10 +12,20 @@ rule download_protein_xml:
 rule build_transfer_mods:
     output: TRANSFER_MOD_DLL
     log: "data/TransferUniProtModifications.build.log"
+    benchmark: "data/TransferUniProtModifications.build.benchmark"
     shell:
         "(cd TransferUniProtModifications && "
         "dotnet restore && "
         "dotnet build -c Release TransferUniProtModifications.sln) &> {log}"
+
+rule setup_transfer_mods:
+    input: TRANSFER_MOD_DLL
+    output:
+        "ptmlist.txt",
+        "PSI-MOD.obo.xml"
+    log: "data/setup_transfer_mods.log"
+    benchmark: "data/setup_transfer_mods.benchmark"
+    shell: "dotnet {input} --setup &> {log}"
 
 rule transfer_modifications_variant:
     input:
@@ -27,6 +38,7 @@ rule transfer_modifications_variant:
         protxmlwithmods=temp("{dir}/variants/combined.spritz.snpeff.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/variants/combined.spritz.snpeff.protein.withmods.xml.gz",
     log: "{dir}/variants/combined.spritz.snpeff.protein.withmods.log"
+    benchmark: "{dir}/variants/combined.spritz.snpeff.protein.withmods.benchmark"
     shell:
         "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
         "gzip -k {input.protxml} {output.protxmlwithmods}) &> {log}"

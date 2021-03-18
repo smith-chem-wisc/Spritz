@@ -21,18 +21,35 @@ rule hisat2_splice_sites:
     log: f"data/ensembl/{REF}.{config['release']}.splicesites.log"
     shell: "hisat2_extract_splice_sites.py {input} > {output} 2> {log}"
 
+rule ssh_keygen:
+    '''Create ssh key'''
+    output: "{dir}/spritz.openssh"
+    benchmark: "{dir}/spritz.openssh.benchmark"
+    log: "{dir}/spritz.openssh.log"
+    shell: "ssh-keygen -f {output} -q -N \"\" 2> {log}"
+
 if check('sra'):
-    rule download_sras: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
-        '''Download fastqs from GEO SRA for quality control and alignment'''
+    rule prefetch_sras:
+        '''Prefetch SRA from GEO SRA'''
+        input: "{dir}/spritz.openssh"
+        output: "{dir}/sra_paired/{sra,[A-Z0-9]+}/{sra}.sra"
+        benchmark: "{dir}/{sra}.prefetch.benchmark"
+        log: "{dir}/{sra}.log"
+        shell:
+            "prefetch {wildcards.sra} "
+            "--ascp-path \"$CONDA_PREFIX/bin/ascp|{input}\" "
+            "--output-directory {wildcards.dir}/sra_paired 2> {log}"
+
+    rule split_sra: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
+        '''Split fastqs from GEO SRA for quality control and alignment'''
+        input: "{dir}/sra_paired/{sra,[A-Z0-9]+}/{sra}.sra"
         output:
             fq1="{dir}/{sra,[A-Z0-9]+}_1.fastq",
             fq2="{dir}/{sra,[A-Z0-9]+}_2.fastq"
-        benchmark: "{dir}/{sra}.benchmark"
+        benchmark: "{dir}/{sra}.split.benchmark"
         log: "{dir}/{sra}.log"
-        threads: 4
         shell:
-            "fasterq-dump -b 10MB -c 100MB -m 1000MB -p --threads {threads}" # use 10x the default memory allocation for larger SRAs
-            " --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra} 2> {log}"
+            "fastq-dump -I --outdir {wildcards.dir} --split-files {input} 2> {log}"
 
     rule fastp_sra:
         '''Trim adapters, read quality filtering, make QC outputs'''
@@ -79,14 +96,25 @@ if check('sra'):
             "samtools index {output}"
 
 if check('sra_se'):
-    rule download_sras_se:
+    rule prefetch_sras_se:
+        '''Prefetch SRA from GEO SRA'''
+        input: "{dir}/spritz.openssh"
+        output: "{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra"
+        benchmark: "{dir}/{sra_se}.benchmark"
+        log: "{dir}/{sra_se}.log"
+        shell:
+            "prefetch {wildcards.sra_se} "
+            "--ascp-path \"$CONDA_PREFIX/bin/ascp|{input}\" "
+            "--output-directory {wildcards.dir}/sra_single 2> {log}"
+
+    rule split_sras_se:
+        input: "{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra"
         output: "{dir}/{sra_se,[A-Z0-9]+}.fastq" # independent of pe/se
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
-        threads: 4
         shell:
-            "fasterq-dump -b 10MB -c 100MB -m 1000MB -p --threads {threads}" # use 10x the default memory allocation for larger SRAs
-            " --split-files --temp {wildcards.dir} --outdir {wildcards.dir} {wildcards.sra_se} 2> {log}"
+            "fastq-dump -I --outdir {wildcards.dir} --split-files {input} && "
+            "mv {wildcards.dir}/{wildcards.sra_se}_1.fastq {output} 2> {log}"
 
     rule fastp_sra_se:
         '''Trim adapters, read quality filtering, make QC outputs'''
