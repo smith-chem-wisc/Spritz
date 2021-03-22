@@ -10,15 +10,19 @@ rule hisat_genome:
     benchmark: f"data/ensembl/{REF}.hisatbuild.benchmark"
     params: ref=REF
     log: f"data/ensembl/{REF}.hisatbuild.log"
+    conda: "environments/align.yaml"
     shell:
-        "(hisat2-build -p {threads} data/ensembl/{params.ref}.dna.primary_assembly.karyotypic.fa"
-        " data/ensembl/{params.ref}.dna.primary_assembly.karyotypic && touch {output.finished}) &> {log}"
+        "(hisat2-build -p {threads}"
+        " data/ensembl/{params.ref}.dna.primary_assembly.karyotypic.fa"
+        " data/ensembl/{params.ref}.dna.primary_assembly.karyotypic && "
+        "touch {output.finished}) &> {log}"
 
 rule hisat2_splice_sites:
     '''Fetch the splice sites from the gene model for hisat2'''
     input: f"data/ensembl/{REF}.{config['release']}.gff3"
     output: f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
     log: f"data/ensembl/{REF}.{config['release']}.splicesites.log"
+    conda: "environments/align.yaml"
     shell: "hisat2_extract_splice_sites.py {input} > {output} 2> {log}"
 
 if check('sra'):
@@ -27,9 +31,10 @@ if check('sra'):
         output: temp("{dir}/sra_paired/{sra,[A-Z0-9]+}/{sra}.sra")
         benchmark: "{dir}/{sra}.prefetch.benchmark"
         log: "{dir}/{sra}.log"
+        conda: "environments/sra.yaml"
         shell:
-            "prefetch {wildcards.sra} "
-            "--output-directory {wildcards.dir}/sra_paired 2> {log}"
+            "prefetch {wildcards.sra}"
+            " --output-directory {wildcards.dir}/sra_paired 2> {log}"
 
     rule split_sra: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
         '''Split fastqs from GEO SRA for quality control and alignment'''
@@ -39,6 +44,7 @@ if check('sra'):
             fq2="{dir}/{sra,[A-Z0-9]+}_2.fastq"
         benchmark: "{dir}/{sra}.split.benchmark"
         log: "{dir}/{sra}.log"
+        conda: "environments/sra.yaml"
         shell:
             "fastq-dump -I --outdir {wildcards.dir} --split-files {input} 2> {log}"
 
@@ -54,14 +60,15 @@ if check('sra'):
             json="{dir}/{sra,[A-Z0-9]+}.trim.json",
         threads: 6
         log: "{dir}/{sra}.trim.log"
+        conda: "environments/trim.yaml"
         params:
             quality=20,
             title="{sra}"
         shell:
-            "fastp -q {params.quality} "
-            "-i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} "
-            "-h {output.html} -j {output.json} "
-            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+            "fastp -q {params.quality}"
+            " -i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2}"
+            " -h {output.html} -j {output.json}"
+            " -w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule hisat2_align_bam_sra:
         '''Align trimmed reads'''
@@ -78,10 +85,11 @@ if check('sra'):
             tempprefix="{dir}/align/{sra}.sra.sorted",
             ref=REF
         log: "{dir}/align/{sra}.sra.hisat2.log"
+        conda: "environments/align.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic "
-            "-1 {input.fq1} -2 {input.fq2} "
-            "--known-splicesite-infile {input.ss} | " # align the suckers
+            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            " -1 {input.fq1} -2 {input.fq2}"
+            " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
             "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
             "samtools index {output}"
@@ -92,15 +100,17 @@ if check('sra_se'):
         output: temp("{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra")
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
+        conda: "environments/sra.yaml"
         shell:
-            "prefetch {wildcards.sra_se} "
-            "--output-directory {wildcards.dir}/sra_single 2> {log}"
+            "prefetch {wildcards.sra_se}"
+            " --output-directory {wildcards.dir}/sra_single 2> {log}"
 
     rule split_sras_se:
         input: "{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra"
         output: "{dir}/{sra_se,[A-Z0-9]+}.fastq" # independent of pe/se
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
+        conda: "environments/sra.yaml"
         shell:
             "fastq-dump -I --outdir {wildcards.dir} --split-files {input} && "
             "mv {wildcards.dir}/{wildcards.sra_se}_1.fastq {output} 2> {log}"
@@ -114,14 +124,15 @@ if check('sra_se'):
             json="{dir}/{sra_se,[A-Z0-9]+}.trim.json",
         threads: 6
         log: "{dir}/{sra_se}.trim.log"
+        conda: "environments/trim.yaml"
         params:
             quality=20,
             title="{sra_se}"
         shell:
-            "fastp -q {params.quality} "
-            "-i {input} -o {output.fq} "
-            "-h {output.html} -j {output.json} "
-            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+            "fastp -q {params.quality}"
+            " -i {input} -o {output.fq}"
+            " -h {output.html} -j {output.json}"
+            " -w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule hisat2_align_bam_sra_se:
         '''Align trimmed reads'''
@@ -137,10 +148,11 @@ if check('sra_se'):
             tempprefix="{dir}/align/{sra_se}.sra_se.sorted",
             ref=REF
         log: "{dir}/align/{sra_se}.sra_se.hisat2.log"
+        conda: "environments/align.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic "
-            "-U {input.fq} "
-            "--known-splicesite-infile {input.ss} | " # align the suckers
+            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            " -U {input.fq}"
+            " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
             "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
             "samtools index {output}"
@@ -158,14 +170,15 @@ if check('fq'):
             json="{dir}/{fq}.fq.trim.json",
         threads: 6
         log: "{dir}/{fq}.fq.trim.log"
+        conda: "environments/trim.yaml"
         params:
             quality=20,
             title="{fq}"
         shell:
-            "fastp -q {params.quality} "
-            "-i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} "
-            "-h {output.html} -j {output.json} "
-            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+            "fastp -q {params.quality}"
+            " -i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2}"
+            " -h {output.html} -j {output.json}"
+            " -w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule fastp_fq:
         '''Trim adapters, read quality filtering, make QC outputs'''
@@ -179,14 +192,15 @@ if check('fq'):
             json="{dir}/{fq}.fq.trim.json",
         threads: 6
         log: "{dir}/{fq}.fq.trim.log"
+        conda: "environments/trim.yaml"
         params:
             quality=20,
             title="{fq}"
         shell:
-            "fastp -q {params.quality} "
-            "-i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} "
-            "-h {output.html} -j {output.json} "
-            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+            "fastp -q {params.quality}"
+            " -i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2}"
+            " -h {output.html} -j {output.json}"
+            " -w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule hisat2_align_bam_fq:
         '''Align trimmed reads'''
@@ -203,10 +217,11 @@ if check('fq'):
             tempprefix="{dir}/align/{fq}.fq.sorted",
             ref=REF
         log: "{dir}/align/{fq}.fq.hisat2.log"
+        conda: "environments/align.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic "
-            "-1 {input.fq1} -2 {input.fq2} "
-            "--known-splicesite-infile {input.ss} | " # align the suckers
+            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            " -1 {input.fq1} -2 {input.fq2}"
+            " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
             "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
             "samtools index {output}"
@@ -222,14 +237,15 @@ if check('fq_se'):
             json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
         log: "{dir}/{fq_se}.fq_se.trim.log"
+        conda: "environments/trim.yaml"
         params:
             quality=20,
             title="{fq_se}"
         shell:
-            "fastp -q {params.quality} "
-            "-i {input.fq1} -o {output.fq1} "
-            "-h {output.html} -j {output.json} "
-            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+            "fastp -q {params.quality}"
+            " -i {input.fq1} -o {output.fq1}"
+            " -h {output.html} -j {output.json}"
+            " -w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule fastp_fq_se:
         '''Trim adapters, read quality filtering, make QC outputs'''
@@ -241,14 +257,15 @@ if check('fq_se'):
             json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
         log: "{dir}/{fq_se}.fq_se.trim.log"
+        conda: "environments/trim.yaml"
         params:
             quality=20,
             title="{fq_se}"
         shell:
-            "fastp -q {params.quality} "
-            "-i {input.fq1} -o {output.fq1} "
-            "-h {output.html} -j {output.json} "
-            "-w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
+            "fastp -q {params.quality}"
+            " -i {input.fq1} -o {output.fq1}"
+            " -h {output.html} -j {output.json}"
+            " -w {threads} -R {params.title} --detect_adapter_for_pe &> {log}"
 
     rule hisat2_align_bam_fq_se:
         '''Align trimmed reads'''
@@ -264,10 +281,11 @@ if check('fq_se'):
             tempprefix="{dir}/align/{fq_se}.fq_se.sorted",
             ref=REF
         log: "{dir}/align/{fq_se}.fq_se.hisat2.log"
+        conda: "environments/align.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic "
-            "-U {input.fq1} "
-            "--known-splicesite-infile {input.ss} | " # align the suckers
+            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            " -U {input.fq1}"
+            " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
             "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
             "samtools index {output}"
@@ -287,6 +305,7 @@ rule hisat2_merge_bams:
         compression="9",
         tempprefix=lambda w, input: os.path.splitext(input[0])[0]
     log: "{dir}/align/combined.sorted.log"
+    conda: "environments/align.yaml"
     threads: 12
     resources: mem_mb=16000
     shell:

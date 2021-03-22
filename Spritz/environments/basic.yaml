@@ -1,0 +1,8 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - snakemake-minimal =5.27.4
+  - python =3.8
+  - gzip # use conda's gzip, not the system's

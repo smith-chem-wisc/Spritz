@@ -6,6 +6,7 @@ rule all:
 
 rule clean:
     log: "{dir}/clean.log"
+    conda: "environments/basic.yaml"
     shell:
         "rm -rf data/ ChromosomeMappings/ SnpEff/ tmp/ fast.tmp/ && "
         "cd GtfSharp && dotnet clean && cd .. && "
@@ -14,11 +15,13 @@ rule clean:
 rule update_message:
     output: "{dir}/please_update_spritz.txt"
     log: "{dir}/please_update_spritz.log"
+    conda: "environments/basic.yaml"
     shell: "echo \"Please update Spritz at https://github.com/smith-chem-wisc/Spritz/releases\" > {output} 2> {log}"
 
 rule prose:
     output: "{dir}/prose.txt"
     log: "{dir}/prose.log"
+    conda: "environments/basic.yaml"
     shell: "python scripts/prose.py {output} 2> {log}"
 
 rule setup:
@@ -44,6 +47,6 @@ include: "rules/align.smk"
 include: "rules/variants.smk"
 include: "rules/isoforms.smk"
 include: "rules/proteogenomics.smk"
-include: "rules/quant.smk"
+# include: "rules/quant.smk"
 #include: "rules/fusion.smk"
-include: "rules/testing.smk"
+# include: "rules/testing.smk"
