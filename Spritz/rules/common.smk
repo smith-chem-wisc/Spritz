@@ -23,27 +23,23 @@ TRANSFER_MOD_DLL="TransferUniProtModifications/TransferUniProtModifications/bin/
 
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
-    outputs = []
+    outputs = ["prose.txt"]
     min_version = MIN_SPRITZ_VERSION.split('.')
     this_version = config['spritzversion'].split('.')
     if not "spritzversion" in config or any([min_version[i] > this_version[i] for i in range(len(min_version))]):
         outputs = ["please_update_spritz.txt"]
-    elif len(config["analyses"]) == 0:
-        outputs = ["prose.txt",
-            os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")] # reference
-    elif "variant" in config["analyses"] and len(config["analyses"]) == 1:
-        outputs = ["prose.txt",
-            "final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
-            os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")] # reference
-    elif "isoform" in config["analyses"] and len(config["analyses"]) == 1:
-        outputs = ["prose.txt",
-            "final/combined.spritz.isoform.protein.withmods.xml.gz"] # isoforms
-    elif "variant" in config["analyses"] and "isoform" in config["analyses"]:
-        outputs = ["prose.txt",
-            "final/combined.spritz.snpeff.protein.withmods.xml.gz", # variants
-            "final/combined.spritz.isoformvariants.protein.withmods.xml.gz", # isoform variants
-            "final/combined.spritz.isoform.protein.withmods.xml.gz", # isoforms
-            os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")] # reference
+    else:
+        outputs.append(os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
+        if "variant" in config["analyses"]:
+            outputs.append("final/combined.spritz.snpeff.protein.withmods.xml.gz") # variants
+        if "isoform" in config["analyses"]:
+            outputs.extend("final/combined.spritz.isoform.protein.withmods.xml.gz") # isoforms
+        if "quant" in config["analyses"]:
+            outputs.append("final/reference_quant.tpms.csv") # reference quant with stringtie
+        if "variant" in config["analyses"] and "isoform" in config["analyses"]:
+            outputs.append("final/combined.spritz.isoformvariants.protein.withmods.xml.gz") # isoform variants
+        if "isoform" in config["analyses"] and "quant" in config["analyses"]:
+            outputs.append("final/isoform_quant.tpms.csv") # isoform quant with stringtie
     expanded_outputs = expand(
         [os.path.join("{dir}", file) for file in outputs],
         dir=config["analysisDirectory"])

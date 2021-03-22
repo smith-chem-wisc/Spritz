@@ -4,12 +4,16 @@ if check('sra'):
         input:
             bam="{dir}/align/{sra}.sra.sorted.bam",
             gff=GFF3,
-        output: "{dir}/isoforms/{sra}.sra.sorted.gtf"
-        threads: 6
+        output:
+            gtf=temp("{dir}/isoforms/{sra}.sra.sorted.gtf"),
+            gtfgz="{dir}/isoforms/{sra}.sra.sorted.gtf.gz",
+        threads: 4
+        benchmark: "{dir}/isoforms/{sra}.sra.sorted.gtf.benchmark"
         log: "{dir}/isoforms/{sra}.sra.sorted.gtf.log"
         conda: "environments/isoforms_stringtie.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 2> {log}" # strandedness: --fr for forwared or --rf for reverse
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 " # strandedness: --fr for forwared or --rf for reverse
+            "gzip -k {output.gtf} 2> {log}"
 
 if check('sra_se'):
     rule assemble_transcripts_sra_se:
@@ -17,12 +21,16 @@ if check('sra_se'):
         input:
             bam="{dir}/align/{sra_se}.sra_se.sorted.bam",
             gff=GFF3,
-        output: "{dir}/isoforms/{sra_se}.sra_se.sorted.gtf"
-        threads: 6
+        output:
+            gtf=temp("{dir}/isoforms/{sra_se}.sra_se.sorted.gtf"),
+            gtfgz="{dir}/isoforms/{sra_se}.sra_se.sorted.gtf.gz"
+        threads: 4
         log: "{dir}/isoforms/{sra_se}.sra_se.sorted.gtf.log"
+        benchmark: "{dir}/isoforms/{sra_se}.sra_se.sorted.gtf.benchmark"
         conda: "environments/isoforms_stringtie.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 2> {log}" # strandedness: --fr for forwared or --rf for reverse
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
+            "gzip -k {output.gtf} 2> {log}"
 
 if check('fq'):
     rule assemble_transcripts_fq:
@@ -30,12 +38,16 @@ if check('fq'):
         input:
             bam="{dir}/align/{fq}.fq.sorted.bam",
             gff=GFF3,
-        output: "{dir}/isoforms/{fq}.fq.sorted.gtf"
-        threads: 6
+        output:
+            gtf=temp("{dir}/isoforms/{fq}.fq.sorted.gtf"),
+            gtfgz="{dir}/isoforms/{fq}.fq.sorted.gtf.gz"
+        threads: 4
         log: "{dir}/isoforms/{fq}.fq.sorted.gtf.log"
+        benchmark: "{dir}/isoforms/{fq}.fq.sorted.gtf.benchmark"
         conda: "environments/isoforms_stringtie.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 2> {log}" # strandedness: --fr for forwared or --rf for reverse
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
+            "gzip -k {output.gtf} 2> {log}"
 
 if check('fq_se'):
     rule assemble_transcripts_fq_se:
@@ -43,12 +55,16 @@ if check('fq_se'):
         input:
             bam="{dir}/align/{fq_se}.fq_se.sorted.bam",
             gff=GFF3,
-        output: "{dir}/isoforms/{fq_se}.fq_se.sorted.gtf"
-        threads: 6
+        output:
+            gtf=temp("{dir}/isoforms/{fq_se}.fq_se.sorted.gtf"),
+            gtfgz="{dir}/isoforms/{fq_se}.fq_se.sorted.gtf.gz"
+        threads: 4
         log: "{dir}/isoforms/{fq_se}.fq_se.sorted.gtf.log"
+        benchmark: "{dir}/isoforms/{fq_se}.fq_se.sorted.gtf.benchmark"
         conda: "environments/isoforms_stringtie.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 2> {log}" # strandedness: --fr for forwared or --rf for reverse
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -c 2.5 -m 300 -f .01 && "
+            "gzip -k {output.gtf} 2> {log}" # strandedness: --fr for forwared or --rf for reverse
 
 rule merge_transcripts:
     '''Rule adapted from ProteomeGenerator'''
@@ -59,13 +75,16 @@ rule merge_transcripts:
             ([] if not check('fq') else expand("{{dir}}/isoforms/{fq}.fq.sorted.gtf", fq=config["fq"])) + \
             ([] if not check('fq_se') else expand("{{dir}}/isoforms/{fq_se}.fq_se.sorted.gtf", fq_se=config["fq_se"])),
         gff=GFF3,
-    output: "{dir}/isoforms/combined.gtf"
+    output:
+        gtf=temp("{dir}/isoforms/combined.gtf"),
+        gtfgz="{dir}/isoforms/combined.gtf.gz"
     threads: 12
     benchmark: "{dir}/isoforms/combined.gtf.benchmark"
     log: "{dir}/isoforms/combined.gtf.log"
     conda: "environments/isoforms_stringtie.yaml"
     shell:
-        "stringtie --merge -o {output} -c 2.5 -m 300 -T 1 -f .01 -p {threads} -i {input.custom_gtfs} 2> {log}"
+        "stringtie --merge -o {output} -c 2.5 -m 300 -T 1 -f .01 -p {threads} -i {input.custom_gtfs} && "
+        "gzip -k {output.gtf} 2> {log}"
 
 rule convert2ucsc:
     '''Rule adapted from ProteomeGenerator'''
