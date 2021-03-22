@@ -5,21 +5,23 @@ GATK_JAVA2=f"--java-options \"-Xmx{2*GATK_MEM}M -Dsamjdk.compression_level=9\""
 rule download_snpeff:
     '''Download and unpack custom SnpEff for annotating variants'''
     output:
-        "SnpEff/snpEff.config",
-        "SnpEff/snpEff.jar",
-        filename=temp("SnpEff_4.3_SmithChemWisc_v2.zip")
+        "../resources/SnpEff/snpEff.config",
+        "../resources/SnpEff/snpEff.jar",
+        filename=temp("../resources/SnpEff_4.3_SmithChemWisc_v2.zip")
     params:
         url="https://github.com/smith-chem-wisc/SnpEff/releases/download/4.3_SCW1/SnpEff_4.3_SmithChemWisc_v2.zip"
-    log: "data/SnpEffInstall.log"
+    log: "../resources/SnpEffInstall.log"
     conda: "environments/downloads.yaml"
     shell:
-        "(wget {params.url} && unzip {output.filename} -d SnpEff) &> {log}"
+        "(cd ../resources/ && "
+        "wget {params.url} && "
+        "unzip {output.filename} -d SnpEff) &> {log}"
 
 rule index_fa:
     '''Index genome FASTA file'''
-    input: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
-    output: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai"
-    log: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.log"
+    input: f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
+    output: f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai"
+    log: f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.log"
     conda: "environments/variants.yaml"
     shell: "samtools faidx {input}"
 
@@ -71,9 +73,9 @@ rule split_n_cigar_reads:
     '''Check quality scores and split Ns in the cigar reads'''
     input:
         bam="{dir}/variants/combined.sorted.grouped.marked.bam",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
-        fai=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai",
-        fadict=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.dict",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        fai=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai",
+        fadict=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.dict",
         tmp="tmp"
     output:
         fixed=temp("{dir}/variants/combined.fixedQuals.bam"),
@@ -95,9 +97,9 @@ rule split_n_cigar_reads:
 rule base_recalibration:
     '''Generate recalibration table and recalibrate BAM file'''
     input:
-        knownsites=f"data/ensembl/{config['species']}.ensembl.vcf",
-        knownsitesidx=f"data/ensembl/{config['species']}.ensembl.vcf.idx",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        knownsites=f"../resources/ensembl/{config['species']}.ensembl.vcf",
+        knownsitesidx=f"../resources/ensembl/{config['species']}.ensembl.vcf.idx",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         bam="{dir}/variants/combined.sorted.grouped.marked.split.bam",
         tmp="tmp"
     output:
@@ -120,9 +122,9 @@ rule base_recalibration:
 rule call_gvcf_varaints:
     '''Create genome VCF file'''
     input:
-        knownsites=f"data/ensembl/{config['species']}.ensembl.vcf",
-        knownsitesidx=f"data/ensembl/{config['species']}.ensembl.vcf.idx",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        knownsites=f"../resources/ensembl/{config['species']}.ensembl.vcf",
+        knownsitesidx=f"../resources/ensembl/{config['species']}.ensembl.vcf.idx",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         bam="{dir}/variants/combined.sorted.grouped.marked.split.recal.bam",
         tmp="tmp"
     output: temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz"),
@@ -150,7 +152,7 @@ rule call_gvcf_varaints:
 rule call_vcf_variants:
     '''Genotype the gVCF for the combined dataset to make VCF'''
     input:
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         gvcf="{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
         tmp="tmp"
     output: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
@@ -177,9 +179,9 @@ rule final_vcf_naming:
 rule variant_annotation_ref:
     '''Generate proteome FASTA and XML for reference database'''
     input:
-        f"SnpEff/data/{REF}/done{REF}.txt",
-        snpeff="SnpEff/snpEff.jar",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        f"../resources/SnpEff/data/{REF}/done{REF}.txt",
+        snpeff="../resources/SnpEff/snpEff.jar",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/variants/combined.spritz.vcf",
     output:
         ann="{dir}/variants/combined.spritz.snpeff.vcf",
@@ -200,14 +202,14 @@ rule variant_annotation_ref:
 
 rule variant_annotation_custom:
     input:
-        snpeff="SnpEff/snpEff.jar",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        snpeff="../resources/SnpEff/snpEff.jar",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         vcf="{dir}/variants/combined.spritz.vcf",
         isoform_reconstruction=[
-            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
-            "SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
-            "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
-            "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
+            "../resources/SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
+            "../resources/SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
+            "../resources/SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
+            "../resources/SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
     output:
         ann="{dir}/variants/combined.spritz.isoformvariants.vcf",
         html="{dir}/variants/combined.spritz.isoformvariants.html",

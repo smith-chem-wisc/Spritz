@@ -32,10 +32,10 @@ if check('sra'):
 if check('sra_se'):
     rule quantify_transcripts_sra_se:
         input:
-            bam="data/align/{sra_se}.sorted.bam",
-            gff="data/isoforms/combined.gtf",
+            bam="{dir}/align/{sra_se}.sorted.bam",
+            gff="{dir}/isoforms/combined.gtf",
         output:
-            gtf=temp("data/isoforms/{sra_se}.sra_se.sorted.quant.gtf"),
+            gtf=temp("{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf"),
             gtfgz="{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf.gz"
         threads: 4
         log: "data/isoforms/{sra_se}.sra_se.sorted.quant.gtf.log"

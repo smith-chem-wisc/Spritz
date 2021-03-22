@@ -3,7 +3,7 @@ import sys, os
 file, newfile = sys.argv[1:]
 
 ensembl2ucsc={}
-for line in open("ChromosomeMappings/GRCh38_ensembl2UCSC.txt"):
+for line in open("../resources/ChromosomeMappings/GRCh38_ensembl2UCSC.txt"):
     linesplit=line.strip().split("\t")
     if len(linesplit) <= 1: continue
     ensembl2ucsc[linesplit[0]] = linesplit[1]

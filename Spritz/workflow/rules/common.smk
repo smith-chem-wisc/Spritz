@@ -1,25 +1,25 @@
 import os
 
 # Variables used by many of the rules
-MIN_SPRITZ_VERSION = "0.2.3" # should be the same here, common.smk, and MainWindow.xml.cs
+MIN_SPRITZ_VERSION = "0.3.0" # should be the same here, common.smk, and MainWindow.xml.cs
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
 REF = f"{SPECIES}.{GENOME_VERSION}"
-GENOME_FA = f"data/ensembl/{REF}.dna.primary_assembly.fa"
-ENSEMBL_GFF = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}.gff3"
-TEST_GENOME_FA = f"data/ensembl/202122.fa"
-TEST_ENSEMBL_GFF = f"data/ensembl/202122.gff3"
+GENOME_FA = f"../resources/ensembl/{REF}.dna.primary_assembly.fa"
+ENSEMBL_GFF = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.gff3"
+TEST_GENOME_FA = f"../resources/ensembl/202122.fa"
+TEST_ENSEMBL_GFF = f"../resources/ensembl/202122.gff3"
 FA=GENOME_FA # for analysis; can also be TEST_GENOME_FA
 GFF3=ENSEMBL_GFF # for analysis; can also be TEST_ENSEMBL_GFF
-REFSTAR_PREFIX = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/RsemStarReference"
-REFSTAR_FOLDER = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/"
-REF_PREFIX = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/RsemReference"
-REF_FOLDER = f"data/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
-UNIPROTXML=f"data/uniprot/{config['species']}.protein.xml.gz" #"data/Homo_sapiens_202022.xml.gz"
-UNIPROTFASTA=f"data/uniprot/{config['species']}.protein.fasta" #"data/Homo_sapiens_202022.xml.gz"
-TRANSFER_MOD_DLL="TransferUniProtModifications/TransferUniProtModifications/bin/Release/netcoreapp3.1/TransferUniProtModifications.dll"
+REFSTAR_PREFIX = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/RsemStarReference"
+REFSTAR_FOLDER = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}RsemStar/"
+REF_PREFIX = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/RsemReference"
+REF_FOLDER = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
+UNIPROTXML=f"../resources/uniprot/{config['species']}.protein.xml.gz" #"../resources/Homo_sapiens_202022.xml.gz"
+UNIPROTFASTA=f"../resources/uniprot/{config['species']}.protein.fasta" #"../resources/Homo_sapiens_202022.xml.gz"
+TRANSFER_MOD_DLL="../TransferUniProtModifications/TransferUniProtModifications/bin/Release/netcoreapp3.1/TransferUniProtModifications.dll"
 
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''

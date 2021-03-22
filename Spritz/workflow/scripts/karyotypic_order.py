@@ -9,7 +9,7 @@ with open("config.yaml", 'r') as stream:
 species = data["species"]
 version = data["genome"]
 
-fa = "./data/ensembl/" + species + "." + version + ".dna.primary_assembly.fa"
+fa = f"../resources/ensembl/{species}.{version}.dna.primary_assembly.fa"
 
 ordered = []
 chrn = [str(x) for x in range(1, 23)]
@@ -20,7 +20,7 @@ m = ""
 gl = []
 ki = []
 other = []
-for seq in SeqIO.parse(open(fa),'fasta'):
+for seq in SeqIO.parse(open(fa), 'fasta'):
     if seq.id.split(" ")[0] in chrn: chrs.append(seq)
     elif seq.id.split(" ")[0].startswith("X"): x = seq
     elif seq.id.split(" ")[0].startswith("Y"): y = seq

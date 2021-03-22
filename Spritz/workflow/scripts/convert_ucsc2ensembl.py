@@ -7,12 +7,12 @@ species = data["species"]
 version = data["genome"]
 
 ucsc2ensembl={}
-for line in open("ChromosomeMappings/" + version + "_UCSC2ensembl.txt"):
+for line in open("../resources/ChromosomeMappings/" + version + "_UCSC2ensembl.txt"):
     linesplit=line.strip().split("\t")
     if len(linesplit) <= 1: continue
     ucsc2ensembl[linesplit[0]] = linesplit[1]
 
-with open("./data/ensembl/" + species + ".ensembl.vcf","w") as ensembl:
+with open("../resources/ensembl/" + species + ".ensembl.vcf","w") as ensembl:
     chrs={}
     max_chr=0
     for line in sys.stdin:

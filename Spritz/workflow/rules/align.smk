@@ -1,28 +1,26 @@
 rule hisat_genome:
     '''Build genome index for hisat2'''
     input:
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
-        gtf=f"data/ensembl/{REF}.{config['release']}.gff3",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        gtf=f"../resources/ensembl/{REF}.{config['release']}.gff3",
     threads: 12
     output:
-        idx=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
-        finished=f"data/ensembl/done_building_hisat_genome{REF}.txt",
-    benchmark: f"data/ensembl/{REF}.hisatbuild.benchmark"
-    params: ref=REF
-    log: f"data/ensembl/{REF}.hisatbuild.log"
-    conda: "environments/align.yaml"
+        idx=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+        finished=f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
+    benchmark: f"../resources/ensembl/{REF}.hisatbuild.benchmark"
+    params: prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+    log: f"../resources/ensembl/{REF}.hisatbuild.log"
+    conda: "environments/align_hisat2.yaml"
     shell:
-        "(hisat2-build -p {threads}"
-        " data/ensembl/{params.ref}.dna.primary_assembly.karyotypic.fa"
-        " data/ensembl/{params.ref}.dna.primary_assembly.karyotypic && "
+        "(hisat2-build -p {threads} {input.fa} {params.prefix} && "
         "touch {output.finished}) &> {log}"
 
 rule hisat2_splice_sites:
     '''Fetch the splice sites from the gene model for hisat2'''
-    input: f"data/ensembl/{REF}.{config['release']}.gff3"
-    output: f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
-    log: f"data/ensembl/{REF}.{config['release']}.splicesites.log"
-    conda: "environments/align.yaml"
+    input: f"../resources/ensembl/{REF}.{config['release']}.gff3"
+    output: f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
+    log: f"../resources/ensembl/{REF}.{config['release']}.splicesites.log"
+    conda: "environments/align_hisat2.yaml"
     shell: "hisat2_extract_splice_sites.py {input} > {output} 2> {log}"
 
 if check('sra'):
@@ -60,7 +58,7 @@ if check('sra'):
             json="{dir}/{sra,[A-Z0-9]+}.trim.json",
         threads: 6
         log: "{dir}/{sra}.trim.log"
-        conda: "environments/trim.yaml"
+        conda: "environments/align_fastp.yaml"
         params:
             quality=20,
             title="{sra}"
@@ -73,21 +71,21 @@ if check('sra'):
     rule hisat2_align_bam_sra:
         '''Align trimmed reads'''
         input:
-            f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
             fq1="{dir}/{sra}.trim_1.fastq.gz",
             fq2="{dir}/{sra}.trim_2.fastq.gz",
-            ss=f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
         output:
             "{dir}/align/{sra,[A-Z0-9]+}.sra.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{sra}.sra.sorted",
-            ref=REF
+            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
         log: "{dir}/align/{sra}.sra.hisat2.log"
-        conda: "environments/align.yaml"
+        conda: "environments/align_hisat2.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            "(hisat2 -p {threads} -x {params.prefix}"
             " -1 {input.fq1} -2 {input.fq2}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
@@ -124,7 +122,7 @@ if check('sra_se'):
             json="{dir}/{sra_se,[A-Z0-9]+}.trim.json",
         threads: 6
         log: "{dir}/{sra_se}.trim.log"
-        conda: "environments/trim.yaml"
+        conda: "environments/align_fastp.yaml"
         params:
             quality=20,
             title="{sra_se}"
@@ -137,20 +135,20 @@ if check('sra_se'):
     rule hisat2_align_bam_sra_se:
         '''Align trimmed reads'''
         input:
-            f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
             fq="{dir}/{sra_se}.trim.fastq.gz",
-            ss=f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
         output:
             "{dir}/align/{sra_se,[A-Z0-9]+}.sra_se.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{sra_se}.sra_se.sorted",
-            ref=REF
+            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
         log: "{dir}/align/{sra_se}.sra_se.hisat2.log"
-        conda: "environments/align.yaml"
+        conda: "environments/align_hisat2.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            "(hisat2 -p {threads} -x {params.prefix}"
             " -U {input.fq}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
@@ -170,7 +168,7 @@ if check('fq'):
             json="{dir}/{fq}.fq.trim.json",
         threads: 6
         log: "{dir}/{fq}.fq.trim.log"
-        conda: "environments/trim.yaml"
+        conda: "environments/align_fastp.yaml"
         params:
             quality=20,
             title="{fq}"
@@ -192,7 +190,7 @@ if check('fq'):
             json="{dir}/{fq}.fq.trim.json",
         threads: 6
         log: "{dir}/{fq}.fq.trim.log"
-        conda: "environments/trim.yaml"
+        conda: "environments/align_fastp.yaml"
         params:
             quality=20,
             title="{fq}"
@@ -205,21 +203,21 @@ if check('fq'):
     rule hisat2_align_bam_fq:
         '''Align trimmed reads'''
         input:
-            f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
             fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
             fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
-            ss=f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
         output:
             "{dir}/align/{fq}.fq.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{fq}.fq.sorted",
-            ref=REF
+            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
         log: "{dir}/align/{fq}.fq.hisat2.log"
-        conda: "environments/align.yaml"
+        conda: "environments/align_hisat2.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            "(hisat2 -p {threads} -x {params.prefix}"
             " -1 {input.fq1} -2 {input.fq2}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
@@ -237,7 +235,7 @@ if check('fq_se'):
             json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
         log: "{dir}/{fq_se}.fq_se.trim.log"
-        conda: "environments/trim.yaml"
+        conda: "environments/align_fastp.yaml"
         params:
             quality=20,
             title="{fq_se}"
@@ -257,7 +255,7 @@ if check('fq_se'):
             json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
         log: "{dir}/{fq_se}.fq_se.trim.log"
-        conda: "environments/trim.yaml"
+        conda: "environments/align_fastp.yaml"
         params:
             quality=20,
             title="{fq_se}"
@@ -270,20 +268,20 @@ if check('fq_se'):
     rule hisat2_align_bam_fq_se:
         '''Align trimmed reads'''
         input:
-            f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
             fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
-            ss=f"data/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
         output:
             "{dir}/align/{fq_se}.fq_se.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{fq_se}.fq_se.sorted",
-            ref=REF
+            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
         log: "{dir}/align/{fq_se}.fq_se.hisat2.log"
-        conda: "environments/align.yaml"
+        conda: "environments/align_hisat2.yaml"
         shell:
-            "(hisat2 -p {threads} -x data/ensembl/{params.ref}.dna.primary_assembly.karyotypic"
+            "(hisat2 -p {threads} -x {params.prefix}"
             " -U {input.fq1}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
@@ -305,7 +303,7 @@ rule hisat2_merge_bams:
         compression="9",
         tempprefix=lambda w, input: os.path.splitext(input[0])[0]
     log: "{dir}/align/combined.sorted.log"
-    conda: "environments/align.yaml"
+    conda: "environments/align_hisat2.yaml"
     threads: 12
     resources: mem_mb=16000
     shell:

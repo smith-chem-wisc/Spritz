@@ -1,4 +1,5 @@
 rule download_protein_xml:
+    '''Download the uniprot xml database and uniprot isoform fasta'''
     output:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA,
@@ -11,24 +12,39 @@ rule download_protein_xml:
         "python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
 
 rule build_transfer_mods:
+    '''Build the transfer mods C# project'''
     output: TRANSFER_MOD_DLL
-    log: "data/TransferUniProtModifications.build.log"
-    benchmark: "data/TransferUniProtModifications.build.benchmark"
+    log: "../resources/TransferUniProtModifications.build.log"
+    benchmark: "../resources/TransferUniProtModifications.build.benchmark"
     conda: "environments/proteogenomics.yaml"
     shell:
-        "(cd TransferUniProtModifications && "
+        "(cd ../TransferUniProtModifications && "
         "dotnet restore && "
         "dotnet build -c Release TransferUniProtModifications.sln) &> {log}"
 
 rule setup_transfer_mods:
+    '''Download the ptmlists to the resources directory'''
     input: TRANSFER_MOD_DLL
     output:
-        "ptmlist.txt",
-        "PSI-MOD.obo.xml"
-    log: "data/setup_transfer_mods.log"
-    benchmark: "data/setup_transfer_mods.benchmark"
+        "../resources/ptmlist.txt",
+        "../resources/PSI-MOD.obo.xml"
+    log: "../resources/setup_transfer_mods.log"
+    benchmark: "../resources/setup_transfer_mods.benchmark"
     conda: "environments/proteogenomics.yaml"
-    shell: "dotnet {input} --setup &> {log}"
+    shell: "cd ../resources/ && dotnet {input} --setup &> {log}"
+
+rule setup_ptmlist_links:
+    '''Link the resources to the workflow directory temporarily'''
+    input:
+        "../resources/ptmlist.txt",
+        "../resources/PSI-MOD.obo.xml"
+    output:
+        temp("ptmlist.txt"),
+        temp("PSI-MOD.obo.xml")
+    log: "../resources/setup_transfer_mod_linking.log"
+    benchmark: "../resources/setup_transfer_mod_linking.benchmark"
+    conda: "environments/basic.yaml"
+    shell: "cd ../resources/ && ln -s {input} ../workflow &> {log}"
 
 rule transfer_modifications_variant:
     input:

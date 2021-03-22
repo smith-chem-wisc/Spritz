@@ -267,8 +267,8 @@ rule generate_snpeff_database:
     input:
         jar="SnpEff/snpEff.jar",
         gff3="SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
-        pfa=f"data/ensembl/{REF}.pep.all.fa",
-        gfa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        pfa=f"../resources/ensembl/{REF}.pep.all.fa",
+        gfa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
     output:
         pfa="SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
         gfa="SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",

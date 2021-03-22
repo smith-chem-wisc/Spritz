@@ -54,5 +54,12 @@ if "isoform" in workflows:
         "- Cifani, P.; et al. ProteomeGenerator: A Framework for Comprehensive Proteomics Based on de Novo Transcriptome Assembly and High-Accuracy Peptide Mass Spectral Matching. J. Proteome Res. 2018, 17 (11), 3681-3692. https://doi.org/10.1021/acs.jproteome.8b00295.",
         ""])
 
+transcripts = "reference" if not "isoform" in workflows else "reference and assembled"
+if "quant" in workflows:
+    lines.extend([
+        f"Transcript quantification was performed for {transcripts} transcripts using StringTie2: ",
+        "- Kovaka, S.; et al. Transcriptome assembly from long-read RNA-seq alignments with StringTie2. Genome Biol 2019, 20 (278), 1-13. https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1910-1",
+        ""])
+
 with open(outf, 'w') as file:
     file.writelines([f"{x}\n" for x in lines]) # note: all text above needs to be UTF-8 characters
