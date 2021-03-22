@@ -21,23 +21,14 @@ rule hisat2_splice_sites:
     log: f"data/ensembl/{REF}.{config['release']}.splicesites.log"
     shell: "hisat2_extract_splice_sites.py {input} > {output} 2> {log}"
 
-rule ssh_keygen:
-    '''Create ssh key'''
-    output: "{dir}/spritz.openssh"
-    benchmark: "{dir}/spritz.openssh.benchmark"
-    log: "{dir}/spritz.openssh.log"
-    shell: "ssh-keygen -f {output} -q -N \"\" 2> {log}"
-
 if check('sra'):
     rule prefetch_sras:
         '''Prefetch SRA from GEO SRA'''
-        input: "{dir}/spritz.openssh"
-        output: "{dir}/sra_paired/{sra,[A-Z0-9]+}/{sra}.sra"
+        output: temp("{dir}/sra_paired/{sra,[A-Z0-9]+}/{sra}.sra")
         benchmark: "{dir}/{sra}.prefetch.benchmark"
         log: "{dir}/{sra}.log"
         shell:
             "prefetch {wildcards.sra} "
-            "--ascp-path \"$CONDA_PREFIX/bin/ascp|{input}\" "
             "--output-directory {wildcards.dir}/sra_paired 2> {log}"
 
     rule split_sra: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
@@ -98,13 +89,11 @@ if check('sra'):
 if check('sra_se'):
     rule prefetch_sras_se:
         '''Prefetch SRA from GEO SRA'''
-        input: "{dir}/spritz.openssh"
-        output: "{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra"
+        output: temp("{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra")
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
         shell:
             "prefetch {wildcards.sra_se} "
-            "--ascp-path \"$CONDA_PREFIX/bin/ascp|{input}\" "
             "--output-directory {wildcards.dir}/sra_single 2> {log}"
 
     rule split_sras_se:

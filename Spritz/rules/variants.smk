@@ -1,7 +1,9 @@
 GATK_MEM=16000 # MB
 GATK_JAVA=f"--java-options \"-Xmx{GATK_MEM}M -Dsamjdk.compression_level=9\""
+GATK_JAVA2=f"--java-options \"-Xmx{2*GATK_MEM}M -Dsamjdk.compression_level=9\""
 
 rule download_snpeff:
+    '''Download and unpack custom SnpEff for annotating variants'''
     output:
         "SnpEff/snpEff.config",
         "SnpEff/snpEff.jar",
@@ -13,35 +15,56 @@ rule download_snpeff:
         "(wget {params.url} && unzip {output.filename} -d SnpEff) &> {log}"
 
 rule index_fa:
+    '''Index genome FASTA file'''
     input: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
     output: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai"
     log: f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.log"
     shell: "samtools faidx {input}"
 
-rule hisat2_groupmark_bam:
+rule hisat2_group:
+    '''Add read groups to sorted BAM file'''
     input:
         sorted="{dir}/align/combined.sorted.bam",
         tmp="tmp"
     output:
         grouped=temp("{dir}/variants/combined.sorted.grouped.bam"),
-        groupedidx=temp("{dir}/variants/combined.sorted.grouped.bam.bai"),
-        marked="{dir}/variants/combined.sorted.grouped.marked.bam",
-        markedidx="{dir}/variants/combined.sorted.grouped.marked.bam.bai",
-        metrics="{dir}/variants/combined.sorted.grouped.marked.metrics"
+        groupedidx=temp("{dir}/variants/combined.sorted.grouped.bam.bai")
     params:
         gatk_java=GATK_JAVA
     resources:
         mem_mb=GATK_MEM
+    log: "{dir}/variants/combined.sorted.grouped.log"
+    benchmark: "{dir}/variants/combined.sorted.grouped.benchmark"
+    shell:
+        "(gatk {params.gatk_java} AddOrReplaceReadGroups"
+        " -PU platform -PL illumina -SM sample -LB library"
+        " -I {input.sorted} -O {output.grouped} --TMP_DIR {input.tmp} && "
+        "samtools index {output.grouped}) &> {log}"
+
+rule hisat2_mark:
+    '''Mark duplicates in sorted BAM file'''
+    input:
+        grouped="{dir}/variants/combined.sorted.grouped.bam",
+        tmp="tmp"
+    output:
+        marked="{dir}/variants/combined.sorted.grouped.marked.bam",
+        markedidx="{dir}/variants/combined.sorted.grouped.marked.bam.bai",
+        metrics="{dir}/variants/combined.sorted.grouped.marked.metrics"
+    params:
+        gatk_java=GATK_JAVA2
+    resources:
+        mem_mb=GATK_MEM*2
     log: "{dir}/variants/combined.sorted.grouped.marked.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.benchmark"
     shell:
-        "(gatk {params.gatk_java} AddOrReplaceReadGroups -PU platform  -PL illumina -SM sample -LB library -I {input.sorted} -O {output.grouped} -SO coordinate --TMP_DIR {input.tmp} && "
-        "samtools index {output.grouped} && "
-        "gatk {params.gatk_java} MarkDuplicates -I {output.grouped} -O {output.marked} -M {output.metrics} --TMP_DIR {input.tmp} -AS true && "
+        "(gatk {params.gatk_java} MarkDuplicates"
+        " -I {input.grouped} -O {output.marked} -M {output.metrics}"
+        " --ASSUME_SORT_ORDER coordinate --TMP_DIR {input.tmp} && "
         "samtools index {output.marked}) &> {log}"
 
 # Checks if quality encoding is correct, and then splits n cigar reads
 rule split_n_cigar_reads:
+    '''Check quality scores and split Ns in the cigar reads'''
     input:
         bam="{dir}/variants/combined.sorted.grouped.marked.bam",
         fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
@@ -65,6 +88,7 @@ rule split_n_cigar_reads:
         "samtools index {output.split}) &> {log}" # always index
 
 rule base_recalibration:
+    '''Generate recalibration table and recalibrate BAM file'''
     input:
         knownsites=f"data/ensembl/{config['species']}.ensembl.vcf",
         knownsitesidx=f"data/ensembl/{config['species']}.ensembl.vcf.idx",
@@ -81,11 +105,14 @@ rule base_recalibration:
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.benchmark"
     shell:
-        "(gatk {params.gatk_java} BaseRecalibrator -R {input.fa} -I {input.bam} --known-sites {input.knownsites} -O {output.recaltable} --tmp-dir {input.tmp} && "
-        "gatk {params.gatk_java} ApplyBQSR -R {input.fa} -I {input.bam} --bqsr-recal-file {output.recaltable} -O {output.recalbam} --tmp-dir {input.tmp} && "
+        "(gatk {params.gatk_java} BaseRecalibrator -R {input.fa} -I {input.bam}"
+        " --known-sites {input.knownsites} -O {output.recaltable} --tmp-dir {input.tmp} && "
+        "gatk {params.gatk_java} ApplyBQSR -R {input.fa} -I {input.bam}"
+        " --bqsr-recal-file {output.recaltable} -O {output.recalbam} --tmp-dir {input.tmp} && "
         "samtools index {output.recalbam}) &> {log}"
 
 rule call_gvcf_varaints:
+    '''Create genome VCF file'''
     input:
         knownsites=f"data/ensembl/{config['species']}.ensembl.vcf",
         knownsitesidx=f"data/ensembl/{config['species']}.ensembl.vcf.idx",
@@ -114,6 +141,7 @@ rule call_gvcf_varaints:
         "gatk IndexFeatureFile -I {output}) &> {log}"
 
 rule call_vcf_variants:
+    '''Genotype the gVCF for the combined dataset to make VCF'''
     input:
         fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         gvcf="{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
@@ -126,27 +154,19 @@ rule call_vcf_variants:
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.benchmark"
     shell:
-        "(gatk {params.gatk_java} GenotypeGVCFs -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
+        "(gatk {params.gatk_java} GenotypeGVCFs"
+        " -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
         "gatk IndexFeatureFile -I {output}) &> {log}"
 
 rule final_vcf_naming:
+    '''Rename VCF to shorter filename'''
     input: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
     output: "{dir}/variants/combined.spritz.vcf"
     log: "{dir}/variants/final_vcf_naming.log"
     shell: "mv {input} {output} 2> {log}"
 
-rule filter_indels:
-    input:
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
-        vcf="{dir}/variants/combined.spritz.vcf"
-    output: "{dir}/variants/combined.spritz.noindels.vcf"
-    log: "{dir}/variants/combined.spritz.noindels.log"
-    benchmark: "{dir}/variants/combined.spritz.noindels.benchmark"
-    shell:
-        "(gatk SelectVariants --select-type-to-exclude INDEL -R {input.fa} -V {input.vcf} -O {output} && "
-        "gatk IndexFeatureFile -I {output}) &> {log}"
-
 rule variant_annotation_ref:
+    '''Generate proteome FASTA and XML for reference database'''
     input:
         f"SnpEff/data/{REF}/done{REF}.txt",
         snpeff="SnpEff/snpEff.jar",
