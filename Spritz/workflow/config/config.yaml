@@ -1,4 +1,4 @@
-sra: [SRR629563] #  paired-end SRAs, comma separated, can leave empty, e.g. SRR629563
+sra: [] #  paired-end SRAs, comma separated, can leave empty, e.g. SRR629563
 fq: [] # paired-end fastq prefixes, comma separated, can leave empty, e.g. TestPairedEnd
 sra_se: [] # single-end SRAs, comma separated, can leave empty, e.g. SRR8070095
 fq_se: [] # single-end fastq prefixes, comma separated, can leave empty, e.g. TestSingleEnd

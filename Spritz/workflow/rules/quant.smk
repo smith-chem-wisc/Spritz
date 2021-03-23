@@ -38,8 +38,8 @@ if check('sra_se'):
             gtf=temp("{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf"),
             gtfgz="{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf.gz"
         threads: 4
-        log: "data/isoforms/{sra_se}.sra_se.sorted.quant.gtf.log"
-        benchmark: "data/isoforms/{sra_se}.sra_se.sorted.quant.gtf.benchmark"
+        log: "{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf.log"
+        benchmark: "{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf.benchmark"
         conda: "environments/isoforms_stringtie.yaml"
         shell:
             "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
