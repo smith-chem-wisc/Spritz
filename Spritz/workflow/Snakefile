@@ -9,9 +9,8 @@ rule clean:
     log: "{dir}/clean.log"
     conda: "environments/basic.yaml"
     shell:
-        "rm -rf data/ ChromosomeMappings/ SnpEff/ tmp/ fast.tmp/ && "
-        "cd GtfSharp && dotnet clean && cd .. && "
-        "cd TransferUniProtModifications && dotnet clean && cd .. 2> {log}"
+        "cd ../resources/ && rm -rf data/ resources/ChromosomeMappings/ SnpEff/ tmp/ temporary/ && "
+        "cd ../TransferUniProtModifications && dotnet clean && cd .. 2> {log}"
 
 rule update_message:
     output: "{dir}/please_update_spritz.txt"
@@ -27,19 +26,22 @@ rule prose:
 
 rule setup:
     input:
-        f"../resourcesChromosomeMappings/{config['genome']}_UCSC2ensembl.txt",
-        f"../resources/ensembl/{config['species']}.ensembl.vcf",
+        f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
+        f"../resources/ensembl/{SPECIES}.ensembl.vcf",
         TRANSFER_MOD_DLL,
         UNIPROTFASTA,
         UNIPROTFASTA,
         FA,
-        "../resourcesptmlist.txt",
-        "../resourcesPSI-MOD.obo.xml",
-        "../resourcesSnpEff/snpEff.jar",
-        [] if not check('sra') else expand(["{dir}/{sra}_1.fastq", "{dir}/{sra}_2.fastq"], dir=config['analysisDirectory'], sra=config['sra']),
-        [] if not check('sra_se') else expand(["{dir}/{sra_se}.fastq"], dir=config['analysisDirectory'], sra_se=config['sra_se'])
-    output: "data/setup.txt"
-    log: "data/setup.log"
+        "../resources/ptmlist.txt",
+        "../resources/PSI-MOD.obo.xml",
+        "../resources/SnpEff/snpEff.jar",
+        [] if not check('sra') else expand([
+            "{dir}/{sra}_1.fastq",
+            "{dir}/{sra}_2.fastq"], dir=config['analysisDirectory'], sra=config['sra']),
+        [] if not check('sra_se') else expand([
+            "{dir}/{sra_se}.fastq"], dir=config['analysisDirectory'], sra_se=config['sra_se'])
+    output: "../resources/setup.txt"
+    log: "../resources/setup.log"
     conda: "environments/setup.yaml"
     shell: "touch {output}"
 

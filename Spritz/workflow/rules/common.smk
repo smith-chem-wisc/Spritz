@@ -8,6 +8,8 @@ ENSEMBL_VERSION = config["release"]
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
 REF = f"{SPECIES}.{GENOME_VERSION}"
 GENOME_FA = f"../resources/ensembl/{REF}.dna.primary_assembly.fa"
+KARYOTYPIC_GENOME_PREFIX = f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+KARYOTYPIC_GENOME_FA = f"{KARYOTYPIC_GENOME_PREFIX}.fa"
 ENSEMBL_GFF = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.gff3"
 TEST_GENOME_FA = f"../resources/ensembl/202122.fa"
 TEST_ENSEMBL_GFF = f"../resources/ensembl/202122.gff3"
@@ -33,7 +35,7 @@ def all_output(wildcards):
         if "variant" in config["analyses"]:
             outputs.append("final/combined.spritz.snpeff.protein.withmods.xml.gz") # variants
         if "isoform" in config["analyses"]:
-            outputs.extend("final/combined.spritz.isoform.protein.withmods.xml.gz") # isoforms
+            outputs.append("final/combined.spritz.isoform.protein.withmods.xml.gz") # isoforms
         if "quant" in config["analyses"]:
             outputs.append("final/reference_quant.tpms.csv") # reference quant with stringtie
         if "variant" in config["analyses"] and "isoform" in config["analyses"]:

@@ -258,36 +258,37 @@ rule remove_exon_and_utr_information:
 
 rule copy_gff3_to_snpeff:
     input: expand("{dir}/isoforms/combined.transcripts.genome.cds.gff3", dir=config["analysisDirectory"])
-    output: "SnpEff/data/combined.transcripts.genome.gff3/genes.gff"
-    log: "SnpEff/data/combined.transcripts.genome.gff3/copy_gff3_to_snpeff.log"
+    output: "../resources/SnpEff/data/combined.transcripts.genome.gff3/genes.gff"
+    log: "../resources/SnpEff/data/combined.transcripts.genome.gff3/copy_gff3_to_snpeff.log"
     conda: "environments/basic.yaml"
     shell: "cp {input} {output} 2> {log}"
 
 rule generate_snpeff_database:
     input:
-        jar="SnpEff/snpEff.jar",
-        gff3="SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
+        jar="../resources/SnpEff/snpEff.jar",
+        gff3="../resources/SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
         pfa=f"../resources/ensembl/{REF}.pep.all.fa",
-        gfa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        gfa=KARYOTYPIC_GENOME_FA,
     output:
-        pfa="SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
-        gfa="SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
-        done="SnpEff/data/combined.transcripts.genome.gff3/done.txt",
+        pfa="../resources/SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
+        gfa="../resources/SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
+        done="../resources/SnpEff/data/combined.transcripts.genome.gff3/done.txt",
     params:
+        snpeff_folder="../resources/SnpEff/",
         ref="combined.transcripts.genome.gff3",
         genome_version=GENOME_VERSION
     resources: mem_mb=16000
-    benchmark: "SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.benchmark"
-    log: "SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.log"
+    benchmark: "../resources/SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.benchmark"
+    log: "../resources/SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.log"
     conda: "environments/proteogenomics.yaml"
     shell:
         "cp {input.pfa} {output.pfa} && "
         "cp {input.gfa} {output.gfa} && "
-        "echo \"\n# {params.ref}\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> SnpEff/snpEff.config && "
-        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
-        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
+        "echo \"\n# {params.ref}\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
         "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) &> {log} && touch {output.done}"
 
 rule finish_isoform:

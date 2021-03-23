@@ -81,31 +81,32 @@ rule transfer_modifications_isoformvariant:
 
 rule generate_reference_snpeff_database:
     input:
-        jar="SnpEff/snpEff.jar",
+        jar="../resources/SnpEff/snpEff.jar",
         gff3=GFF3,
-        pfa=f"data/ensembl/{REF}.pep.all.fa",
-        gfa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        pfa=f"../resources/ensembl/{REF}.pep.all.fa",
+        gfa=KARYOTYPIC_GENOME_FA,
     output:
-        pfa=f"SnpEff/data/{REF}/protein.fa",
-        gff3=f"SnpEff/data/{REF}/genes.gff",
-        gfa=f"SnpEff/data/genomes/{REF}.fa",
-        done=f"SnpEff/data/{REF}/done{REF}.txt",
+        pfa=f"../resources/SnpEff/data/{REF}/protein.fa",
+        gff3=f"../resources/SnpEff/data/{REF}/genes.gff",
+        gfa=f"../resources/SnpEff/data/genomes/{REF}.fa",
+        done=f"../resources/SnpEff/data/{REF}/done{REF}.txt",
     resources: mem_mb=16000
     params:
+        snpeff_folder="../resources/SnpEff/",
         ref=REF,
         genome_version=GENOME_VERSION
-    benchmark: f"SnpEff/data/{REF}/snpeffdatabase.benchmark"
-    log: f"SnpEff/data/{REF}/snpeffdatabase.log"
+    benchmark: f"../resources/SnpEff/data/{REF}/snpeffdatabase.benchmark"
+    log: f"../resources/SnpEff/data/{REF}/snpeffdatabase.log"
     conda: "environments/proteogenomics.yaml"
     shell:
         "cp {input.gff3} {output.gff3} && "
         "cp {input.pfa} {output.pfa} && "
         "cp {input.gfa} {output.gfa} && "
-        "echo \"\n# {params.ref}\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> SnpEff/snpEff.config && "
-        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> SnpEff/snpEff.config && "
-        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
-        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> SnpEff/snpEff.config && "
+        "echo \"\n# {params.ref}\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
+        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
         "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) &> {log} && touch {output.done}"
 
 rule reference_protein_xml:
@@ -113,9 +114,9 @@ rule reference_protein_xml:
     Create protein XML with sequences from the reference gene model.
     """
     input:
-        f"SnpEff/data/{REF}/done{REF}.txt",
-        snpeff="SnpEff/snpEff.jar",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        f"../resources/SnpEff/data/{REF}/done{REF}.txt",
+        snpeff="../resources/SnpEff/snpEff.jar",
+        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
@@ -142,13 +143,13 @@ rule custom_protein_xml:
     Create protein XML with sequences from the isoform discovery gene model.
     """
     input:
-        snpeff="SnpEff/snpEff.jar",
-        fa=f"data/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        snpeff="../resources/SnpEff/snpEff.jar",
+        fa=KARYOTYPIC_GENOME_FA,
         isoform_reconstruction=[
-            "SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
-            "SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
-            "SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
-            "SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
+            "../resources/SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
+            "../resources/SnpEff/data/combined.transcripts.genome.gff3/protein.fa",
+            "../resources/SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
+            "../resources/SnpEff/data/combined.transcripts.genome.gff3/done.txt"],
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:

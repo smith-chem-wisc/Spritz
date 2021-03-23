@@ -1,14 +1,14 @@
 rule hisat_genome:
     '''Build genome index for hisat2'''
     input:
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
-        gtf=f"../resources/ensembl/{REF}.{config['release']}.gff3",
+        fa=KARYOTYPIC_GENOME_FA,
+        gtf=ENSEMBL_GFF,
     threads: 12
     output:
-        idx=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+        idx=f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
         finished=f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
     benchmark: f"../resources/ensembl/{REF}.hisatbuild.benchmark"
-    params: prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+    params: prefix=KARYOTYPIC_GENOME_PREFIX
     log: f"../resources/ensembl/{REF}.hisatbuild.log"
     conda: "environments/align_hisat2.yaml"
     shell:
@@ -17,9 +17,9 @@ rule hisat_genome:
 
 rule hisat2_splice_sites:
     '''Fetch the splice sites from the gene model for hisat2'''
-    input: f"../resources/ensembl/{REF}.{config['release']}.gff3"
-    output: f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
-    log: f"../resources/ensembl/{REF}.{config['release']}.splicesites.log"
+    input: ENSEMBL_GFF
+    output: f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
+    log: f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.log"
     conda: "environments/align_hisat2.yaml"
     shell: "hisat2_extract_splice_sites.py {input} > {output} 2> {log}"
 
@@ -71,17 +71,17 @@ if check('sra'):
     rule hisat2_align_bam_sra:
         '''Align trimmed reads'''
         input:
-            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
             fq1="{dir}/{sra}.trim_1.fastq.gz",
             fq2="{dir}/{sra}.trim_2.fastq.gz",
-            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
         output:
             "{dir}/align/{sra,[A-Z0-9]+}.sra.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{sra}.sra.sorted",
-            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+            prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{sra}.sra.hisat2.log"
         conda: "environments/align_hisat2.yaml"
         shell:
@@ -137,14 +137,14 @@ if check('sra_se'):
         input:
             f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
             fq="{dir}/{sra_se}.trim.fastq.gz",
-            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
         output:
             "{dir}/align/{sra_se,[A-Z0-9]+}.sra_se.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{sra_se}.sra_se.sorted",
-            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+            prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{sra_se}.sra_se.hisat2.log"
         conda: "environments/align_hisat2.yaml"
         shell:
@@ -203,17 +203,17 @@ if check('fq'):
     rule hisat2_align_bam_fq:
         '''Align trimmed reads'''
         input:
-            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
             fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
             fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
-            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
         output:
             "{dir}/align/{fq}.fq.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{fq}.fq.sorted",
-            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+            prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{fq}.fq.hisat2.log"
         conda: "environments/align_hisat2.yaml"
         shell:
@@ -268,16 +268,16 @@ if check('fq_se'):
     rule hisat2_align_bam_fq_se:
         '''Align trimmed reads'''
         input:
-            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
             fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
-            ss=f"../resources/ensembl/{REF}.{config['release']}.splicesites.txt"
+            ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
         output:
             "{dir}/align/{fq_se}.fq_se.sorted.bam"
         threads: 12
         params:
             compression="9",
             tempprefix="{dir}/align/{fq_se}.fq_se.sorted",
-            prefix=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic"
+            prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{fq_se}.fq_se.hisat2.log"
         conda: "environments/align_hisat2.yaml"
         shell:

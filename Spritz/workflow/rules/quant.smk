@@ -1,7 +1,7 @@
 if check('sra'):
     rule quantify_transcripts_sra:
         input:
-            bam="{dir}/align/{sra}.sorted.bam",
+            bam="{dir}/align/{sra}.sra.sorted.bam",
             gff="{dir}/isoforms/combined.gtf",
         output:
             gtf=temp("{dir}/isoforms/{sra}.sra.sorted.quant.gtf"),
@@ -16,7 +16,7 @@ if check('sra'):
 
     rule quantify_ref_transcripts_sra:
         input:
-            bam="{dir}/align/{sra}.sorted.bam",
+            bam="{dir}/align/{sra}.sra.sorted.bam",
             gff=GFF3,
         output:
             gtf=temp("{dir}/isoforms/{sra}.sra.sorted.quant_ref.gtf"),
@@ -32,7 +32,7 @@ if check('sra'):
 if check('sra_se'):
     rule quantify_transcripts_sra_se:
         input:
-            bam="{dir}/align/{sra_se}.sorted.bam",
+            bam="{dir}/align/{sra_se}.sra_se.sorted.bam",
             gff="{dir}/isoforms/combined.gtf",
         output:
             gtf=temp("{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf"),
@@ -47,7 +47,7 @@ if check('sra_se'):
 
     rule quantify_ref_transcripts_sra_se:
         input:
-            bam="{dir}/align/{sra_se}.sorted.bam",
+            bam="{dir}/align/{sra_se}.sra_se.sorted.bam",
             gff=GFF3,
         output:
             gtf=temp("{dir}/isoforms/{sra_se}.sra_se.sorted.quant_ref.gtf"),
@@ -63,7 +63,7 @@ if check('sra_se'):
 if check('fq'):
     rule quantify_transcripts_fq:
         input:
-            bam="{dir}/align/{fq}.sorted.bam",
+            bam="{dir}/align/{fq}.fq.sorted.bam",
             gff="{dir}/isoforms/combined.gtf",
         output:
             gtf=temp("{dir}/isoforms/{fq}.fq.sorted.quant.gtf"),
@@ -78,7 +78,7 @@ if check('fq'):
 
     rule quantify_ref_transcripts_fq:
         input:
-            bam="{dir}/align/{fq}.sorted.bam",
+            bam="{dir}/align/{fq}.fq.sorted.bam",
             gff=GFF3,
         output:
             gtf=temp("{dir}/isoforms/{fq}.fq.sorted.quant_ref.gtf"),
@@ -94,7 +94,7 @@ if check('fq'):
 if check('fq_se'):
     rule quantify_transcripts_fq_se:
         input:
-            bam="{dir}/align/{fq_se}.sorted.bam",
+            bam="{dir}/align/{fq_se}.fq_se.sorted.bam",
             gff="{dir}/isoforms/combined.gtf",
         output:
             gtf=temp("{dir}/isoforms/{fq_se}.fq_se.sorted.quant.gtf"),
@@ -109,7 +109,7 @@ if check('fq_se'):
 
     rule quantify_ref_transcripts_fq_se:
         input:
-            bam="{dir}/align/{fq_se}.sorted.bam",
+            bam="{dir}/align/{fq_se}.fq_se.sorted.bam",
             gff=GFF3,
         output:
             gtf=temp("{dir}/isoforms/{fq_se}.fq_se.sorted.quant_ref.gtf"),

@@ -1,6 +1,5 @@
-GATK_MEM=16000 # MB
+GATK_MEM=24000 # MB
 GATK_JAVA=f"--java-options \"-Xmx{GATK_MEM}M -Dsamjdk.compression_level=9\""
-GATK_JAVA2=f"--java-options \"-Xmx{2*GATK_MEM}M -Dsamjdk.compression_level=9\""
 
 rule download_snpeff:
     '''Download and unpack custom SnpEff for annotating variants'''
@@ -19,9 +18,9 @@ rule download_snpeff:
 
 rule index_fa:
     '''Index genome FASTA file'''
-    input: f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa"
-    output: f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai"
-    log: f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.log"
+    input: KARYOTYPIC_GENOME_FA
+    output: f"{KARYOTYPIC_GENOME_PREFIX}.fa.fai"
+    log: f"{KARYOTYPIC_GENOME_PREFIX}.fa.faindex.log"
     conda: "environments/variants.yaml"
     shell: "samtools faidx {input}"
 
@@ -29,7 +28,7 @@ rule hisat2_group:
     '''Add read groups to sorted BAM file'''
     input:
         sorted="{dir}/align/combined.sorted.bam",
-        tmp="tmp"
+        tmp="../resources/tmp"
     output:
         grouped=temp("{dir}/variants/combined.sorted.grouped.bam"),
         groupedidx=temp("{dir}/variants/combined.sorted.grouped.bam.bai")
@@ -50,15 +49,15 @@ rule hisat2_mark:
     '''Mark duplicates in sorted BAM file'''
     input:
         grouped="{dir}/variants/combined.sorted.grouped.bam",
-        tmp="tmp"
+        tmp="../resources/tmp"
     output:
         marked="{dir}/variants/combined.sorted.grouped.marked.bam",
         markedidx="{dir}/variants/combined.sorted.grouped.marked.bam.bai",
         metrics="{dir}/variants/combined.sorted.grouped.marked.metrics"
     params:
-        gatk_java=GATK_JAVA2
+        gatk_java=GATK_JAVA
     resources:
-        mem_mb=GATK_MEM*2
+        mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.benchmark"
     conda: "environments/variants.yaml"
@@ -73,10 +72,10 @@ rule split_n_cigar_reads:
     '''Check quality scores and split Ns in the cigar reads'''
     input:
         bam="{dir}/variants/combined.sorted.grouped.marked.bam",
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
-        fai=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa.fai",
-        fadict=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.dict",
-        tmp="tmp"
+        fa=KARYOTYPIC_GENOME_FA,
+        fai=f"{KARYOTYPIC_GENOME_PREFIX}.fa.fai",
+        fadict=f"{KARYOTYPIC_GENOME_PREFIX}.dict",
+        tmp="../resources/tmp"
     output:
         fixed=temp("{dir}/variants/combined.fixedQuals.bam"),
         split=temp("{dir}/variants/combined.sorted.grouped.marked.split.bam"),
@@ -97,11 +96,11 @@ rule split_n_cigar_reads:
 rule base_recalibration:
     '''Generate recalibration table and recalibrate BAM file'''
     input:
-        knownsites=f"../resources/ensembl/{config['species']}.ensembl.vcf",
-        knownsitesidx=f"../resources/ensembl/{config['species']}.ensembl.vcf.idx",
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        knownsites=f"../resources/ensembl/{SPECIES}.ensembl.vcf",
+        knownsitesidx=f"../resources/ensembl/{SPECIES}.ensembl.vcf.idx",
+        fa=KARYOTYPIC_GENOME_FA,
         bam="{dir}/variants/combined.sorted.grouped.marked.split.bam",
-        tmp="tmp"
+        tmp="../resources/tmp"
     output:
         recaltable=temp("{dir}/variants/combined.sorted.grouped.marked.split.recaltable"),
         recalbam=temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.bam")
@@ -122,11 +121,11 @@ rule base_recalibration:
 rule call_gvcf_varaints:
     '''Create genome VCF file'''
     input:
-        knownsites=f"../resources/ensembl/{config['species']}.ensembl.vcf",
-        knownsitesidx=f"../resources/ensembl/{config['species']}.ensembl.vcf.idx",
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        knownsites=f"../resources/ensembl/{SPECIES}.ensembl.vcf",
+        knownsitesidx=f"../resources/ensembl/{SPECIES}.ensembl.vcf.idx",
+        fa=KARYOTYPIC_GENOME_FA,
         bam="{dir}/variants/combined.sorted.grouped.marked.split.recal.bam",
-        tmp="tmp"
+        tmp="../resources/tmp"
     output: temp("{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz"),
     threads: 8
         # HaplotypeCaller is only fairly efficient with threading;
@@ -152,9 +151,9 @@ rule call_gvcf_varaints:
 rule call_vcf_variants:
     '''Genotype the gVCF for the combined dataset to make VCF'''
     input:
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        fa=KARYOTYPIC_GENOME_FA,
         gvcf="{dir}/variants/combined.sorted.grouped.marked.split.recal.g.vcf.gz",
-        tmp="tmp"
+        tmp="../resources/tmp"
     output: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf" # renamed in next rule
     params:
         gatk_java=GATK_JAVA
@@ -181,7 +180,7 @@ rule variant_annotation_ref:
     input:
         f"../resources/SnpEff/data/{REF}/done{REF}.txt",
         snpeff="../resources/SnpEff/snpEff.jar",
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        fa=KARYOTYPIC_GENOME_FA,
         vcf="{dir}/variants/combined.spritz.vcf",
     output:
         ann="{dir}/variants/combined.spritz.snpeff.vcf",
@@ -203,7 +202,7 @@ rule variant_annotation_ref:
 rule variant_annotation_custom:
     input:
         snpeff="../resources/SnpEff/snpEff.jar",
-        fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
+        fa=KARYOTYPIC_GENOME_FA,
         vcf="{dir}/variants/combined.spritz.vcf",
         isoform_reconstruction=[
             "../resources/SnpEff/data/combined.transcripts.genome.gff3/genes.gff",
