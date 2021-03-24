@@ -1,3 +1,4 @@
+# variants.yaml: partial environment for variant calling
 channels:
   - bioconda
   - conda-forge

@@ -1,3 +1,4 @@
+# align.yaml: partial environment for alignment
 channels:
   - bioconda
   - conda-forge
@@ -6,3 +7,4 @@ dependencies:
   - python =3.8
   - hisat2 =2.2.1
   - samtools =1.11
+  - fastp

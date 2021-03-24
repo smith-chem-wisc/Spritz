@@ -33,7 +33,7 @@ with open(newfile,"w") as ucsc:
     # order and output
     ordered = []
     chrn = [f"chr{x}" for x in range(1, max_chr + 1)]
-    chrn.extend(["chrX","chrY","chrM"])
+    chrn.extend(["chrX", "chrY", "chrM"])
     # chrn.extend([ccc for ccc in chrs.keys() if ccc.startswith("GL")])
     # chrn.extend([ccc for ccc in chrs.keys() if ccc.startswith("KI")])
     otherchr = [ccc for ccc in chrs.keys() if ccc not in chrn]

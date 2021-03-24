@@ -1,3 +1,4 @@
+# proteogenomics.yaml: partial environment for proteogenomic database construction
 channels:
   - conda-forge
   - defaults

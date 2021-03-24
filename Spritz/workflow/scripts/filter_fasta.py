@@ -3,7 +3,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import yaml
 
-with open("config.yaml", 'r') as stream:
+with open("config/config.yaml", 'r') as stream:
    data = yaml.safe_load(stream)
 
 species = data["species"]

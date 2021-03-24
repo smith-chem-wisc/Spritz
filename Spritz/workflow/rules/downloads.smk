@@ -13,7 +13,7 @@ rule download_ensembl_references:
         pep=f"{PROTOCOL}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/pep/{REF}.pep.all.fa.gz",
     benchmark: "../resources/ensembl/downloads.benchmark"
     log: "../resources/ensembl/downloads.log"
-    conda: "environments/downloads.yaml"
+    conda: "../envs/downloads.yaml"
     shell:
         "((wget -O - {params.primary} || wget -O - {params.toplevel}) | gunzip -c - > {output.gfa} && "
         "wget -O - {params.gff} | gunzip -c - > {output.gff3} && "
@@ -28,7 +28,7 @@ if SPECIES_LOWER == "homo_sapiens":
             vcf="https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz"
         benchmark: "../resources/ensembl/downloads_dbsnp_vcf.benchmark"
         log: "../resources/ensembl/downloads_dbsnp_vcf.log"
-        conda: "environments/downloads.yaml"
+        conda: "../envs/downloads.yaml"
         shell:
             "(wget -O - {params.vcf} | zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
 else:
@@ -43,7 +43,7 @@ else:
             vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz",
         benchmark: "../resources/ensembl/downloads_ensembl_vcf.benchmark"
         log: "../resources/ensembl/downloads_ensembl_vcf.log"
-        conda: "environments/downloads.yaml"
+        conda: "../envs/downloads.yaml"
         shell: "((wget -O - {params.vcf1} || wget -O - {params.vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
 
 rule index_ensembl_vcf:
@@ -51,7 +51,7 @@ rule index_ensembl_vcf:
     output: f"../resources/ensembl/{SPECIES}.ensembl.vcf.idx"
     log: f"../resources/ensembl/{SPECIES}.ensembl.vcf.idx.log"
     benchmark: f"../resources/ensembl/{SPECIES}.ensembl.vcf.idx.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell: "gatk IndexFeatureFile -I {input} 2> {log}"
 
 rule download_chromosome_mappings:
@@ -59,17 +59,15 @@ rule download_chromosome_mappings:
     params: url="https://github.com/dpryan79/ChromosomeMappings.git"
     log: "../resources/download_chromosome_mappings.log"
     benchmark: "../resources/download_chromosome_mappings.benchmark"
-    conda: "environments/downloads.yaml"
-    shell:
-        "(if [ -d ChromosomeMappings ]; then rm -rf ChromosomeMappings; fi && "
-        "git clone {params.url}) 2> {log}"
+    conda: "../envs/downloads.yaml"
+    shell: "(cd ../resources && git clone {params.url}) 2> {log}"
 
 rule reorder_genome_fasta:
     input: GENOME_FA
     output: KARYOTYPIC_GENOME_FA
     benchmark: "../resources/ensembl/karyotypic_order.benchmark"
     log: "../resources/ensembl/karyotypic_order.log"
-    conda: "environments/downloads.yaml"
+    conda: "../envs/downloads.yaml"
     shell: "python scripts/karyotypic_order.py 2> {log}"
 
 rule dict_fa:
@@ -77,14 +75,5 @@ rule dict_fa:
     output: f"{KARYOTYPIC_GENOME_PREFIX}.dict"
     log: f"{KARYOTYPIC_GENOME_PREFIX}.dict.log"
     benchmark: f"{KARYOTYPIC_GENOME_PREFIX}.dict.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell: "gatk CreateSequenceDictionary -R {input} -O {output} 2> {log}"
-
-rule tmpdir:
-    output:
-        temp(directory("../resources/tmp")),
-        temp(directory("../resources/temporary")),
-    log: "../resources/tmpdir.log"
-    conda: "environments/basic.yaml"
-    shell:
-        "mkdir {output} 2> {log}"

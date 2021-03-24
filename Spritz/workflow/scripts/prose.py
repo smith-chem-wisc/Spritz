@@ -1,6 +1,6 @@
 import yaml, sys
 
-with open("config.yaml", 'r') as stream:
+with open("config/config.yaml", 'r') as stream:
    config = yaml.safe_load(stream)
 
 workflows = config["analyses"]

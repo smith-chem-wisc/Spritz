@@ -10,7 +10,7 @@ rule hisat_genome:
     benchmark: f"../resources/ensembl/{REF}.hisatbuild.benchmark"
     params: prefix=KARYOTYPIC_GENOME_PREFIX
     log: f"../resources/ensembl/{REF}.hisatbuild.log"
-    conda: "environments/align_hisat2.yaml"
+    conda: "../envs/align.yaml"
     shell:
         "(hisat2-build -p {threads} {input.fa} {params.prefix} && "
         "touch {output.finished}) &> {log}"
@@ -20,7 +20,7 @@ rule hisat2_splice_sites:
     input: ENSEMBL_GFF
     output: f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
     log: f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.log"
-    conda: "environments/align_hisat2.yaml"
+    conda: "../envs/align.yaml"
     shell: "hisat2_extract_splice_sites.py {input} > {output} 2> {log}"
 
 if check('sra'):
@@ -29,10 +29,10 @@ if check('sra'):
         output: temp("{dir}/sra_paired/{sra,[A-Z0-9]+}/{sra}.sra")
         benchmark: "{dir}/{sra}.prefetch.benchmark"
         log: "{dir}/{sra}.log"
-        conda: "environments/sra.yaml"
+        conda: "../envs/sra.yaml"
         shell:
             "prefetch {wildcards.sra}"
-            " --output-directory {wildcards.dir}/sra_paired 2> {log}"
+            " --output-directory {wildcards.dir}/sra_paired &> {log}"
 
     rule split_sra: # in the future, could use this to check SE vs PE: https://www.biostars.org/p/139422/
         '''Split fastqs from GEO SRA for quality control and alignment'''
@@ -42,9 +42,9 @@ if check('sra'):
             fq2="{dir}/{sra,[A-Z0-9]+}_2.fastq"
         benchmark: "{dir}/{sra}.split.benchmark"
         log: "{dir}/{sra}.log"
-        conda: "environments/sra.yaml"
+        conda: "../envs/sra.yaml"
         shell:
-            "fastq-dump -I --outdir {wildcards.dir} --split-files {input} 2> {log}"
+            "fastq-dump -I --outdir {wildcards.dir} --split-files {input} &> {log}"
 
     rule fastp_sra:
         '''Trim adapters, read quality filtering, make QC outputs'''
@@ -58,7 +58,7 @@ if check('sra'):
             json="{dir}/{sra,[A-Z0-9]+}.trim.json",
         threads: 6
         log: "{dir}/{sra}.trim.log"
-        conda: "environments/align_fastp.yaml"
+        conda: "../envs/align.yaml"
         params:
             quality=20,
             title="{sra}"
@@ -83,14 +83,14 @@ if check('sra'):
             tempprefix="{dir}/align/{sra}.sra.sorted",
             prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{sra}.sra.hisat2.log"
-        conda: "environments/align_hisat2.yaml"
+        conda: "../envs/align.yaml"
         shell:
             "(hisat2 -p {threads} -x {params.prefix}"
             " -1 {input.fq1} -2 {input.fq2}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
-            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
-            "samtools index {output}"
+            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} - && " # sort them
+            "samtools index {output}) 2> {log}"
 
 if check('sra_se'):
     rule prefetch_sras_se:
@@ -98,20 +98,20 @@ if check('sra_se'):
         output: temp("{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra")
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
-        conda: "environments/sra.yaml"
+        conda: "../envs/sra.yaml"
         shell:
             "prefetch {wildcards.sra_se}"
-            " --output-directory {wildcards.dir}/sra_single 2> {log}"
+            " --output-directory {wildcards.dir}/sra_single &> {log}"
 
     rule split_sras_se:
         input: "{dir}/sra_single/{sra_se,[A-Z0-9]+}/{sra_se}.sra"
         output: "{dir}/{sra_se,[A-Z0-9]+}.fastq" # independent of pe/se
         benchmark: "{dir}/{sra_se}.benchmark"
         log: "{dir}/{sra_se}.log"
-        conda: "environments/sra.yaml"
+        conda: "../envs/sra.yaml"
         shell:
             "fastq-dump -I --outdir {wildcards.dir} --split-files {input} && "
-            "mv {wildcards.dir}/{wildcards.sra_se}_1.fastq {output} 2> {log}"
+            "mv {wildcards.dir}/{wildcards.sra_se}_1.fastq {output} &> {log}"
 
     rule fastp_sra_se:
         '''Trim adapters, read quality filtering, make QC outputs'''
@@ -122,7 +122,7 @@ if check('sra_se'):
             json="{dir}/{sra_se,[A-Z0-9]+}.trim.json",
         threads: 6
         log: "{dir}/{sra_se}.trim.log"
-        conda: "environments/align_fastp.yaml"
+        conda: "../envs/align.yaml"
         params:
             quality=20,
             title="{sra_se}"
@@ -146,14 +146,14 @@ if check('sra_se'):
             tempprefix="{dir}/align/{sra_se}.sra_se.sorted",
             prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{sra_se}.sra_se.hisat2.log"
-        conda: "environments/align_hisat2.yaml"
+        conda: "../envs/align.yaml"
         shell:
             "(hisat2 -p {threads} -x {params.prefix}"
             " -U {input.fq}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
-            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
-            "samtools index {output}"
+            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} - && " # sort them
+            "samtools index {output}) 2> {log}"
 
 if check('fq'):
     rule fastp_fq_uncompressed:
@@ -168,7 +168,7 @@ if check('fq'):
             json="{dir}/{fq}.fq.trim.json",
         threads: 6
         log: "{dir}/{fq}.fq.trim.log"
-        conda: "environments/align_fastp.yaml"
+        conda: "../envs/align.yaml"
         params:
             quality=20,
             title="{fq}"
@@ -190,7 +190,7 @@ if check('fq'):
             json="{dir}/{fq}.fq.trim.json",
         threads: 6
         log: "{dir}/{fq}.fq.trim.log"
-        conda: "environments/align_fastp.yaml"
+        conda: "../envs/align.yaml"
         params:
             quality=20,
             title="{fq}"
@@ -215,14 +215,14 @@ if check('fq'):
             tempprefix="{dir}/align/{fq}.fq.sorted",
             prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{fq}.fq.hisat2.log"
-        conda: "environments/align_hisat2.yaml"
+        conda: "../envs/align.yaml"
         shell:
             "(hisat2 -p {threads} -x {params.prefix}"
             " -1 {input.fq1} -2 {input.fq2}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
-            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
-            "samtools index {output}"
+            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} - && " # sort them
+            "samtools index {output}) 2> {log}"
 
 if check('fq_se'):
     rule fastp_fq_se_uncompressed:
@@ -235,7 +235,7 @@ if check('fq_se'):
             json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
         log: "{dir}/{fq_se}.fq_se.trim.log"
-        conda: "environments/align_fastp.yaml"
+        conda: "../envs/align.yaml"
         params:
             quality=20,
             title="{fq_se}"
@@ -255,7 +255,7 @@ if check('fq_se'):
             json="{dir}/{fq_se}.fq_se.trim.json",
         threads: 6
         log: "{dir}/{fq_se}.fq_se.trim.log"
-        conda: "environments/align_fastp.yaml"
+        conda: "../envs/align.yaml"
         params:
             quality=20,
             title="{fq_se}"
@@ -279,14 +279,14 @@ if check('fq_se'):
             tempprefix="{dir}/align/{fq_se}.fq_se.sorted",
             prefix=KARYOTYPIC_GENOME_PREFIX
         log: "{dir}/align/{fq_se}.fq_se.hisat2.log"
-        conda: "environments/align_hisat2.yaml"
+        conda: "../envs/align.yaml"
         shell:
             "(hisat2 -p {threads} -x {params.prefix}"
             " -U {input.fq1}"
             " --known-splicesite-infile {input.ss} | " # align the suckers
             "samtools view -h -F4 - | " # get mapped reads only
-            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} -) 2> {log} && " # sort them
-            "samtools index {output}"
+            "samtools sort -l {params.compression} -T {params.tempprefix} -o {output} - && " # sort them
+            "samtools index {output}) 2> {log}"
 
 rule hisat2_merge_bams:
     '''Merge the BAM files for each sample'''
@@ -303,7 +303,7 @@ rule hisat2_merge_bams:
         compression="9",
         tempprefix=lambda w, input: os.path.splitext(input[0])[0]
     log: "{dir}/align/combined.sorted.log"
-    conda: "environments/align_hisat2.yaml"
+    conda: "../envs/align.yaml"
     threads: 12
     resources: mem_mb=16000
     shell:

@@ -9,9 +9,9 @@ if check('sra'):
         threads: 4
         log: "{dir}/isoforms/{sra}.sra.sorted.quant.gtf.log"
         benchmark: "{dir}/isoforms/{sra}.sra.sorted.quant.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
     rule quantify_ref_transcripts_sra:
@@ -24,9 +24,9 @@ if check('sra'):
         threads: 4
         log: "{dir}/isoforms/{sra}.sra.sorted.quant_ref.gtf.log"
         benchmark: "{dir}/isoforms/{sra}.sra.sorted.quant_ref.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
 if check('sra_se'):
@@ -40,9 +40,9 @@ if check('sra_se'):
         threads: 4
         log: "{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf.log"
         benchmark: "{dir}/isoforms/{sra_se}.sra_se.sorted.quant.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
     rule quantify_ref_transcripts_sra_se:
@@ -55,9 +55,9 @@ if check('sra_se'):
         threads: 4
         log: "{dir}/isoforms/{sra_se}.sra_se.sorted.quant_ref.gtf.log"
         benchmark: "{dir}/isoforms/{sra_se}.sra_se.sorted.quant_ref.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
 if check('fq'):
@@ -71,9 +71,9 @@ if check('fq'):
         threads: 4
         log: "{dir}/isoforms/{fq}.fq.sorted.quant.gtf.log"
         benchmark: "{dir}/isoforms/{fq}.fq.sorted.quant.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
     rule quantify_ref_transcripts_fq:
@@ -86,9 +86,9 @@ if check('fq'):
         threads: 4
         log: "{dir}/isoforms/{fq}.fq.sorted.quant_ref.gtf.log"
         benchmark: "{dir}/isoforms/{fq}.fq.sorted.quant_ref.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
 if check('fq_se'):
@@ -102,9 +102,9 @@ if check('fq_se'):
         threads: 4
         log: "{dir}/isoforms/{fq_se}.fq_se.sorted.quant.gtf.log"
         benchmark: "{dir}/isoforms/{fq_se}.fq_se.sorted.quant.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
     rule quantify_ref_transcripts_fq_se:
@@ -117,9 +117,9 @@ if check('fq_se'):
         threads: 4
         log: "{dir}/isoforms/{fq_se}.fq_se.sorted.quant_ref.gtf.log"
         benchmark: "{dir}/isoforms/{fq_se}.fq_se.sorted.quant_ref.gtf.benchmark"
-        conda: "environments/isoforms_stringtie.yaml"
+        conda: "../envs/quant.yaml"
         shell:
-            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output} -eB && "
+            "stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -eB && "
             "gzip -k {output.gtf} 2> {log}"
 
 rule make_isoform_quant_dataframe_custom:
@@ -133,9 +133,9 @@ rule make_isoform_quant_dataframe_custom:
     output: "{dir}/final/isoform_quant.tpms.csv"
     log: "{dir}/final/isoform_quant.tpms.log"
     benchmark: "{dir}/final/isoform_quant.tpms.benchmark"
-    conda: "environments/basic.yaml"
+    conda: "../envs/quant.yaml"
     shell:
-        "python scripts/SummarizeQuant.py {output} {input}"
+        "python scripts/SummarizeQuant.py {output} {input} &> {log}"
 
 rule make_isoform_quant_dataframe_ref:
     '''Take the stringtie quant results and put them into a combined dataframe'''
@@ -148,6 +148,6 @@ rule make_isoform_quant_dataframe_ref:
     output: "{dir}/final/reference_quant.tpms.csv"
     log: "{dir}/final/reference_quant.tpms.log"
     benchmark: "{dir}/final/reference_quant.tpms.benchmark"
-    conda: "environments/basic.yaml"
+    conda: "../envs/quant.yaml"
     shell:
-        "python scripts/SummarizeQuant.py {output} {input}"
+        "python scripts/SummarizeQuant.py {output} {input} &> {log}"

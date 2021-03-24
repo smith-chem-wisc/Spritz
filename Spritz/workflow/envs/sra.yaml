@@ -1,3 +1,4 @@
+# sra.yaml: partial environment for SRA downloads
 channels:
   - bioconda
   - conda-forge

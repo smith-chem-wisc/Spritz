@@ -27,8 +27,8 @@ def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
     outputs = ["prose.txt"]
     min_version = MIN_SPRITZ_VERSION.split('.')
-    this_version = config['spritzversion'].split('.')
-    if not "spritzversion" in config or any([min_version[i] > this_version[i] for i in range(len(min_version))]):
+    this_version = config['spritz_version'].split('.')
+    if not "spritz_version" in config or any([min_version[i] > this_version[i] for i in range(len(min_version))]):
         outputs = ["please_update_spritz.txt"]
     else:
         outputs.append(os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
@@ -44,7 +44,7 @@ def all_output(wildcards):
             outputs.append("final/isoform_quant.tpms.csv") # isoform quant with stringtie
     expanded_outputs = expand(
         [os.path.join("{dir}", file) for file in outputs],
-        dir=config["analysisDirectory"])
+        dir=config["analysis_directory"])
     return expanded_outputs
 
 def check(field):

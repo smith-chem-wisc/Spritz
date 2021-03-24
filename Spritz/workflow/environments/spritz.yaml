@@ -1,4 +1,4 @@
-# This is the cumulative environment
+# spritz.yaml: full environment for spritz
 channels:
   - bioconda
   - conda-forge
@@ -15,7 +15,6 @@ dependencies:
   - fastp
   - numpy =1.19.4
   - biopython
-  - bcbio-gff
   - pandas
   - unzip
   - gzip
@@ -23,8 +22,6 @@ dependencies:
   - curl
   - dotnet-sdk =3.1.403
   - java-jdk =8.0.92
-  - r =4.0 # for ProteomeGenerator
-  - bioconductor-biostrings # for ProteomeGenerator
   - picard # for ProteomeGenerator
   - transdecoder # for ProteomeGenerator
   - gffread # for ProteomeGenerator

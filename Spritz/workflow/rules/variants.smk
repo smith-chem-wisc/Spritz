@@ -10,7 +10,7 @@ rule download_snpeff:
     params:
         url="https://github.com/smith-chem-wisc/SnpEff/releases/download/4.3_SCW1/SnpEff_4.3_SmithChemWisc_v2.zip"
     log: "../resources/SnpEffInstall.log"
-    conda: "environments/downloads.yaml"
+    conda: "../envs/downloads.yaml"
     shell:
         "(cd ../resources/ && "
         "wget {params.url} && "
@@ -21,8 +21,14 @@ rule index_fa:
     input: KARYOTYPIC_GENOME_FA
     output: f"{KARYOTYPIC_GENOME_PREFIX}.fa.fai"
     log: f"{KARYOTYPIC_GENOME_PREFIX}.fa.faindex.log"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell: "samtools faidx {input}"
+
+rule variant_tmpdir:
+    output: temp(directory("../resources/tmp")),
+    log: "../resources/tmpdir.log"
+    conda: "../envs/variants.yaml"
+    shell: "mkdir {output} 2> {log}"
 
 rule hisat2_group:
     '''Add read groups to sorted BAM file'''
@@ -38,7 +44,7 @@ rule hisat2_group:
         mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell:
         "(gatk {params.gatk_java} AddOrReplaceReadGroups"
         " -PU platform -PL illumina -SM sample -LB library"
@@ -60,7 +66,7 @@ rule hisat2_mark:
         mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell:
         "(gatk {params.gatk_java} MarkDuplicates"
         " -I {input.grouped} -O {output.marked} -M {output.metrics}"
@@ -86,7 +92,7 @@ rule split_n_cigar_reads:
         mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell:
         "(gatk {params.gatk_java} FixMisencodedBaseQualityReads -I {input.bam} -O {output.fixed} && "
         "gatk {params.gatk_java} SplitNCigarReads -R {input.fa} -I {output.fixed} -O {output.split} --tmp-dir {input.tmp} || " # fix and split
@@ -110,7 +116,7 @@ rule base_recalibration:
         mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell:
         "(gatk {params.gatk_java} BaseRecalibrator -R {input.fa} -I {input.bam}"
         " --known-sites {input.knownsites} -O {output.recaltable} --tmp-dir {input.tmp} && "
@@ -138,7 +144,7 @@ rule call_gvcf_varaints:
         mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell:
         "(gatk {params.gatk_java} HaplotypeCaller"
         " --native-pair-hmm-threads {threads}"
@@ -161,7 +167,7 @@ rule call_vcf_variants:
         mem_mb=GATK_MEM
     log: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.log"
     benchmark: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.benchmark"
-    conda: "environments/variants.yaml"
+    conda: "../envs/variants.yaml"
     shell:
         "(gatk {params.gatk_java} GenotypeGVCFs"
         " -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
@@ -172,7 +178,7 @@ rule final_vcf_naming:
     input: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
     output: "{dir}/variants/combined.spritz.vcf"
     log: "{dir}/variants/final_vcf_naming.log"
-    conda: "environments/basic.yaml"
+    conda: "../envs/variants.yaml"
     shell: "mv {input} {output} 2> {log}"
 
 rule variant_annotation_ref:
@@ -192,7 +198,7 @@ rule variant_annotation_ref:
     resources: mem_mb=16000
     log: "{dir}/variants/combined.spritz.snpeff.log"
     benchmark: "{dir}/variants/combined.spritz.snpeff.benchmark"
-    conda: "environments/proteogenomics.yaml"
+    conda: "../envs/proteogenomics.yaml"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml} "
@@ -219,7 +225,7 @@ rule variant_annotation_custom:
     resources: mem_mb=GATK_MEM
     log: "{dir}/variants/combined.spritz.isoformvariants.log"
     benchmark: "{dir}/variants/combined.spritz.isoformvariants.benchmark"
-    conda: "environments/proteogenomics.yaml"
+    conda: "../envs/proteogenomics.yaml"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -stats {output.html}"
         " -fastaProt {output.protfa} -xmlProt {output.protxml}"
@@ -245,7 +251,7 @@ rule finish_variants:
         refprotwithdecoysfa=os.path.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
         refprotwithmodsxml=os.path.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
     log: "{dir}/variants/finish_isoform_variants.log"
-    conda: "environments/basic.yaml"
+    conda: "../envs/proteogenomics.yaml"
     shell:
         "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz}"
         " {input.refprotfa} {input.refprotwithdecoysfa} {input.refprotwithmodsxml} {wildcards.dir}/final 2> {log}"
@@ -263,6 +269,6 @@ rule finish_isoform_variants:
         protwithdecoysfa="{dir}/final/combined.spritz.isoformvariants.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/final/combined.spritz.isoformvariants.protein.withmods.xml.gz",
     log: "{dir}/variants/finish_isoform_variants.log"
-    conda: "environments/basic.yaml"
+    conda: "../envs/proteogenomics.yaml"
     shell:
         "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {wildcards.dir}/final 2> {log}"
