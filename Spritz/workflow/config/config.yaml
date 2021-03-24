@@ -7,5 +7,6 @@ species: "Homo_sapiens" # ensembl species name
 genome: "GRCh38" # ensembl genome version
 release: "100" # ensembl release version
 organism: "human" # based on uniprot
-analyses: [isoform,variant,quant] # isoform construction, variant calling, transcript quantification
+# analyses: [isoform,variant,quant] # isoform construction, variant calling, transcript quantification
+analyses: [quant]
 spritz_version: "0.3.0" # should be the same here, common.smk, and MainWindow.xml.cs

@@ -245,7 +245,7 @@ rule generate_snpeff_database:
         gfa="../resources/SnpEff/data/genomes/combined.transcripts.genome.gff3.fa",
         done="../resources/SnpEff/data/combined.transcripts.genome.gff3/done.txt",
     params:
-        snpeff_folder="../resources/SnpEff/",
+        snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref="combined.transcripts.genome.gff3",
         genome_version=GENOME_VERSION
     resources: mem_mb=16000

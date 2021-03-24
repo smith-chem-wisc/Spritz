@@ -37,11 +37,15 @@ def all_output(wildcards):
         if "isoform" in config["analyses"]:
             outputs.append("final/combined.spritz.isoform.protein.withmods.xml.gz") # isoforms
         if "quant" in config["analyses"]:
-            outputs.append("final/reference_quant.tpms.csv") # reference quant with stringtie
+            outputs.extend([
+                "final/transcript_reference_quant.tpms.csv",
+                "final/gene_reference_quant.tpms.csv"]) # reference quant with stringtie
         if "variant" in config["analyses"] and "isoform" in config["analyses"]:
             outputs.append("final/combined.spritz.isoformvariants.protein.withmods.xml.gz") # isoform variants
         if "isoform" in config["analyses"] and "quant" in config["analyses"]:
-            outputs.append("final/isoform_quant.tpms.csv") # isoform quant with stringtie
+            outputs.extend([
+                "final/transcript_custom_quant.tpms.csv",
+                "final/gene_custom_quant.tpms.csv"]) # isoform quant with stringtie
     expanded_outputs = expand(
         [os.path.join("{dir}", file) for file in outputs],
         dir=config["analysis_directory"])

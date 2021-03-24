@@ -94,7 +94,7 @@ rule generate_reference_snpeff_database:
         done=f"../resources/SnpEff/data/{REF}/done{REF}.txt",
     resources: mem_mb=16000
     params:
-        snpeff_folder="../resources/SnpEff/",
+        snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref=REF,
         genome_version=GENOME_VERSION
     benchmark: f"../resources/SnpEff/data/{REF}/snpeffdatabase.benchmark"

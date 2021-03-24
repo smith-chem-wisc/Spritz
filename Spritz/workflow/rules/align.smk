@@ -8,7 +8,7 @@ rule hisat_genome:
         idx=f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
         finished=f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
     benchmark: f"../resources/ensembl/{REF}.hisatbuild.benchmark"
-    params: prefix=KARYOTYPIC_GENOME_PREFIX
+    params: prefix=lambda w, input: input.fa[:-3]
     log: f"../resources/ensembl/{REF}.hisatbuild.log"
     conda: "../envs/align.yaml"
     shell:
@@ -71,7 +71,7 @@ if check('sra'):
     rule hisat2_align_bam_sra:
         '''Align trimmed reads'''
         input:
-            f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
+            f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
             fq1="{dir}/{sra}.trim_1.fastq.gz",
             fq2="{dir}/{sra}.trim_2.fastq.gz",
             ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
@@ -135,7 +135,7 @@ if check('sra_se'):
     rule hisat2_align_bam_sra_se:
         '''Align trimmed reads'''
         input:
-            f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.1.ht2",
+            f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
             fq="{dir}/{sra_se}.trim.fastq.gz",
             ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
         output:
@@ -203,7 +203,7 @@ if check('fq'):
     rule hisat2_align_bam_fq:
         '''Align trimmed reads'''
         input:
-            f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
+            f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
             fq1="{dir}/{fq}.fq.trim_1.fastq.gz",
             fq2="{dir}/{fq}.fq.trim_2.fastq.gz",
             ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
@@ -268,7 +268,7 @@ if check('fq_se'):
     rule hisat2_align_bam_fq_se:
         '''Align trimmed reads'''
         input:
-            f"{KARYOTYPIC_GENOME_PREFIX}.1.ht2",
+            f"../resources/ensembl/done_building_hisat_genome{REF}.txt",
             fq1="{dir}/{fq_se}.fq_se.trim_1.fastq.gz",
             ss=f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}.splicesites.txt"
         output:
