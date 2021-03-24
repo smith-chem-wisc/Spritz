@@ -6,7 +6,7 @@ rule all:
     input: all_output # see common.smk
 
 rule clean:
-    log: "{dir}/clean.log"
+    log: "../resources/clean.log"
     conda: "envs/proteogenomics.yaml"
     shell:
         "cd ../resources/ && rm -rf ChromosomeMappings/ SnpEff/ tmp/ && "
