@@ -8,4 +8,4 @@ genome: "GRCh38"
 release: "100"
 organism: "human" # based on uniprot
 analyses: [isoform,variant]
-spritzversion: "0.2.3" # should be the same here, common.smk, and MainWindow.xml.cs
+spritzversion: "0.2.5" # should be the same here, common.smk, and MainWindow.xml.cs

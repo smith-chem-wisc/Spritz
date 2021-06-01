@@ -1,7 +1,7 @@
 import os
 
 # Variables used by many of the rules
-MIN_SPRITZ_VERSION = "0.2.3" # should be the same here, common.smk, and MainWindow.xml.cs
+MIN_SPRITZ_VERSION = "0.2.5" # should be the same here, common.smk, and MainWindow.xml.cs
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
