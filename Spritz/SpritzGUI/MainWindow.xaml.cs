@@ -18,7 +18,7 @@ namespace Spritz
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly string CurrentVersion = "0.2.3"; // should be the same here, in config.yaml, and in common.smk
+        public static readonly string CurrentVersion = "0.2.5"; // should be the same here, in config.yaml, and in common.smk
 
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new();

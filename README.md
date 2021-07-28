@@ -64,7 +64,7 @@ The final database named `final/combined.spritz.snpeff.protein.withdecoys.fasta`
 ## Citations
 
 If you use this Spritz, please cite:
-* `Spritz`: Cesnik, A. J.; Miller, R. M.; Ibrahim, K.; Lu, L.; Millikin, R. J.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. “Spritz: A Proteogenomic Database Engine.” J. Proteome Res. 2020, in press. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407
+* `Spritz`: Cesnik, A. J.; Miller, R. M.; Ibrahim, K.; Lu, L.; Millikin, R. J.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. “Spritz: A Proteogenomic Database Engine.” J. Proteome Res. 2021, 20, 4, 1826–1834. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407
 
 This pipeline uses the following tools:
   * `sra-toolkit`: Leinonen, R.; et al. International Nucleotide Sequence Database Collaboration. The Sequence Read Archive. Nucleic Acids Res. 2011, 39 (Database issue), D19-21. https://doi.org/10.1093/nar/gkq1019.
