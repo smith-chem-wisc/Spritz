@@ -1,0 +1,12 @@
+# base_spritz.yaml: base environment for spritz
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - snakemake-minimal =5.27.4
+  - mamba
+  - python=3.8
+  - conda
+  - tar
+  - gzip

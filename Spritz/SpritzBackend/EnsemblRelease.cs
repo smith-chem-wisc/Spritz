@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 
-namespace Spritz
+namespace SpritzBackend
 {
     public class EnsemblRelease
     {
@@ -23,8 +23,8 @@ namespace Spritz
             {
                 // read txt file into obsv collection
                 var species = genomeDB.Select(g => g.Split(',')[1]).Distinct().ToList();
-                Dictionary<string, string> genomes = new Dictionary<string, string>();
-                Dictionary<string, string> organisms = new Dictionary<string, string>();
+                Dictionary<string, string> genomes = new();
+                Dictionary<string, string> organisms = new();
 
                 foreach (string genome in genomeDB.Where(g => g.Contains(release)))
                 {
@@ -35,7 +35,13 @@ namespace Spritz
 
                 if (genomes.Count > 0)
                 {
-                    ensemblReleases.Add(new EnsemblRelease() { Release = release, Species = new ObservableCollection<string>(species), Genomes = genomes, Organisms = organisms });
+                    ensemblReleases.Add(new()
+                    {
+                        Release = release,
+                        Species = new(species),
+                        Genomes = genomes,
+                        Organisms = organisms
+                    });
                 }
             }
             return ensemblReleases;

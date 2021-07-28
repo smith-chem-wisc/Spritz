@@ -42,7 +42,7 @@ rule setup:
             "{dir}/{sra_se}.fastq"], dir=config['analysis_directory'], sra_se=config['sra_se'])
     output: "../resources/setup.txt"
     log: "../resources/setup.log"
-    conda: "envs/default.yaml"
+    conda: "envs/setup.yaml"
     shell: "touch {output}"
 
 include: "rules/downloads.smk"

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SpritzCMD": {
+      "commandName": "Project",
+      "commandLineArgs": "-b -r release-96,homo_sapiens,human,GRCh38 -p 8"
+    }
+  }
+}

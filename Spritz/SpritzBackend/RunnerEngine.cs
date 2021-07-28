@@ -6,9 +6,9 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 
-namespace Spritz
+namespace SpritzBackend
 {
-    public class EverythingRunnerEngine
+    public class RunnerEngine
     {
         public string Arguments { get; set; }
         public string AnalysisDirectory { get; }
@@ -16,8 +16,9 @@ namespace Spritz
         public string DataDirectory { get; }
         public string PathToWorkflow { get; }
         public string SpritzContainerName { get; set; }
+        public string SnakemakeCommand { get; private set; }
 
-        public EverythingRunnerEngine(Tuple<string, Options> task, string outputFolder)
+        public RunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
             // set up directories to mount to docker container as volumes
             AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
@@ -41,16 +42,31 @@ namespace Spritz
             SpritzContainerName = $"spritz{PathToWorkflow.GetHashCode()}";
         }
 
-        public string GenerateCommandsDry(string dockerImageName)
+        public string GenerateCommandsDry(string dockerImageName, string snakemakeCommand)
         {
             string command = "";
-            if (dockerImageName.Contains("smithlab")) { command += $"docker pull {dockerImageName} ;"; }
-            command += $"docker run --rm -i -t --name {SpritzContainerName} " +
+            if (dockerImageName.Contains("smithlab"))
+            { 
+                command += $"docker pull {dockerImageName} ;";
+            }
+            command += $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
-                $"-v \"\"\"{DataDirectory}:/app/data" + "\"\"\" " +
+                $"-v \"\"\"{DataDirectory}:/app/resources" + "\"\"\" " +
                 $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +
-                $"{dockerImageName}; docker stop spritz{PathToWorkflow.GetHashCode()}";
+                $"{dockerImageName} {snakemakeCommand}; docker stop spritz{PathToWorkflow.GetHashCode()}";
             return command;
+        }
+
+        public string GenerateSnakemakeCommand(Options options, bool setup)
+        {
+            string cmd = "";
+            cmd += $"snakemake -j {options.Threads} --use-conda --conda-frontend mamba";
+            if (setup)
+            {
+                cmd += " setup.txt";
+            }
+            SnakemakeCommand = cmd;
+            return cmd;
         }
 
         public string GenerateTopComand()
@@ -70,51 +86,51 @@ namespace Spritz
 
             var sras = options.SraAccession.Split(',');
             var sras_se = options.SraAccessionSingleEnd.Split(',');
-            var fqs = options.Fastq1.Split(',') ?? new string[0];
-            var fqs_se = options.Fastq1SingleEnd.Split(',') ?? new string[0];
+            var fqs = options.Fastq1.Split(',') ?? Array.Empty<string>();
+            var fqs_se = options.Fastq1SingleEnd.Split(',') ?? Array.Empty<string>();
             var analysisStrings = new List<string>();
             if (options.AnalyzeVariants) analysisStrings.Add("variant");
             if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
 
             // write user input paired-end sras
-            var accession = new YamlSequenceNode();
+            YamlSequenceNode accession = new();
             rootMappingNode.Add("sra", AddParam(sras, accession));
 
             // write user input paired-end sras
-            var accession_se = new YamlSequenceNode();
+            YamlSequenceNode accession_se = new();
             rootMappingNode.Add("sra_se", AddParam(sras_se, accession_se));
 
             // write user input paired-end fastqs
-            var fq = new YamlSequenceNode();
+            YamlSequenceNode fq = new();
             rootMappingNode.Add("fq", AddParam(fqs, fq));
 
             // write user input paired-end fastqs
-            var fq_se = new YamlSequenceNode();
+            YamlSequenceNode fq_se = new();
             rootMappingNode.Add("fq_se", AddParam(fqs_se, fq_se));
 
             // write user defined analysis directory (input and output folder)
-            var analysisDirectory = new YamlSequenceNode();
+            YamlSequenceNode analysisDirectory = new();
             analysisDirectory.Style = SequenceStyle.Flow;
             analysisDirectory.Add("analysis");
             rootMappingNode.Add("analysisDirectory", analysisDirectory);
 
             // write ensembl release
-            var release = new YamlScalarNode(options.Release.Substring(8));
+            YamlScalarNode release = new(options.Release[8..]);
             release.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("release", release);
 
             // write species
-            var species = new YamlScalarNode(options.Species.First().ToString().ToUpper() + options.Species.Substring(1));
+            YamlScalarNode species = new(options.Species.First().ToString().ToUpper() + options.Species[1..]);
             species.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("species", species);
 
             // write species
-            var organism = new YamlScalarNode(options.Organism);
+            YamlScalarNode organism = new(options.Organism);
             organism.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("organism", organism);
 
             // write genome [e.g. GRCm38]
-            var genome = new YamlScalarNode(options.Reference);
+            YamlScalarNode genome = new(options.Reference);
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
 
@@ -123,18 +139,15 @@ namespace Spritz
             rootMappingNode.Add("analyses", AddParam(analysisStrings.ToArray(), analyses));
 
             // record the version of spritz
-            var version = new YamlScalarNode(options.SpritzVersion);
+            YamlScalarNode version = new(options.SpritzVersion);
             version.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("spritzversion", version);
 
-            using (TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml")))
-            {
-                stream.Save(writer, false);
-            }
-            File.WriteAllLines(Path.Combine(ConfigDirectory, "threads.txt"), new[] { options.Threads.ToString() });
+            using TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml"));
+            stream.Save(writer, false);
         }
 
-        private YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
+        private static YamlSequenceNode AddParam(string[] items, YamlSequenceNode node)
         {
             node.Style = SequenceStyle.Flow;
             foreach (string item in items.Where(x => x.Length > 0))
@@ -142,6 +155,26 @@ namespace Spritz
                 node.Add(item);
             }
             return node;
+        }
+
+        public static bool IsDirectoryWritable(string path)
+        {
+            try
+            {
+                string testDirectory = Path.Combine(path, $"TestSpritzPermissions{path.GetHashCode()}");
+                Directory.CreateDirectory(testDirectory);
+                Directory.Delete(testDirectory);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public static string TrimQuotesOrNull(string a)
+        {
+            return a == null ? a : a.Trim('"');
         }
     }
 }

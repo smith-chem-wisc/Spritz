@@ -7,15 +7,15 @@ using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
 
-namespace TransferUniProtModifications
+namespace SpritzModifications
 {
-    internal class TransferUniProtModifications
+    internal class SpritzModifications
     {
-        private static readonly FastaHeaderFieldRegex PgmNameRegex = new FastaHeaderFieldRegex("fullName", @"\|(.+)\|", 0, 1);
+        private static readonly FastaHeaderFieldRegex PgmNameRegex = new("fullName", @"\|(.+)\|", 0, 1);
 
         private static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to TransferModifications!");
+            Console.WriteLine("Welcome to SpritzModifications!");
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
             p.Setup(arg => arg.UniProtXml)
@@ -25,10 +25,6 @@ namespace TransferUniProtModifications
             p.Setup(arg => arg.SpritzXml)
                 .As('y', "spritz_xml")
                 .WithDescription("Custom protein XML file, e.g. from Spritz.");
-
-            p.Setup(arg => arg.FusionCodingEffects)
-                .As('f', "fusion_coding_effect")
-                .WithDescription("Coding effects from STAR-Fusion, comma separated");
 
             p.Setup(arg => arg.SpritzModXml)
                 .As('z', "spritz_mod_xml")
@@ -43,23 +39,27 @@ namespace TransferUniProtModifications
 
             var result = p.Parse(args);
 
-            if (p.Object.Setup)
+            if (result.HelpCalled)
             {
-                Console.WriteLine("Downloading files for TransferUniProtModifications.");
+                return;
+            }
+            else if (p.Object.Setup)
+            {
+                Console.WriteLine("Downloading files for SpritzModifications.");
                 var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
                 return;
             }
+            else
+            {
+                Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml}");
 
-            Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml ?? p.Object.SpritzModXml ?? p.Object.FusionCodingEffects}");
-
-            if (p.Object.SpritzModXml == null) 
-                TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml ?? ProteinAnnotation.ParseCodingEffectsToXml(p.Object.FusionCodingEffects));
-            DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"), 
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"), true);
-            DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.decoy.tsv"),
-                Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"), false);
+                DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"), true);
+                DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.decoy.tsv"),
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"), false);
+            }
         }
 
         public static string TransferModifications(string sourceXmlPath, string destinationXmlPath)
@@ -67,7 +67,7 @@ namespace TransferUniProtModifications
             var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
             var uniprot = ProteinDbLoader.LoadProteinXML(sourceXmlPath, true, DecoyType.None, uniprotPtms, false, null, out var un);
             string outxml = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withmods.xml");
-            var nonVariantProts = destinationXmlPath.EndsWith(".xml") | destinationXmlPath.EndsWith(".xml.gz") ? 
+            var nonVariantProts = destinationXmlPath.EndsWith(".xml") | destinationXmlPath.EndsWith(".xml.gz") ?
                 ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.None, uniprotPtms, false, null, out un).Select(p => p.NonVariantProtein).Distinct() :
                 ProteinDbLoader.LoadProteinFasta(destinationXmlPath, true, DecoyType.None, false, out List<string> errors, ProteinDbLoader.UniprotAccessionRegex, PgmNameRegex, PgmNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex).Select(p => p.NonVariantProtein).Distinct();
             var newProts = ProteinAnnotation.CombineAndAnnotateProteins(uniprot, nonVariantProts.ToList());
@@ -101,10 +101,10 @@ namespace TransferUniProtModifications
             int frameshiftCount = 0;
             int stopGainCount = 0;
             int stopLossCount = 0;
-            List<string> accessionNameList = new List<string>();
-            List<string> variantDescList = new List<string>();
-            List<string> accessionSequenceList = new List<string>();
-            Dictionary<string, List<SequenceVariation>> allVariants = new Dictionary<string, List<SequenceVariation>>();
+            List<string> accessionNameList = new();
+            List<string> variantDescList = new();
+            List<string> accessionSequenceList = new();
+            Dictionary<string, List<SequenceVariation>> allVariants = new();
             foreach (var spritzEntry in spritz)
             {
                 if (spritzEntry.AppliedSequenceVariations.Count != 0)
@@ -201,16 +201,6 @@ namespace TransferUniProtModifications
             Console.WriteLine($"{deletionCount}\tNumber of unique deletion variants");
             Console.WriteLine($"{stopGainCount}\tNumber of unique stop gain variants");
             Console.WriteLine($"{stopLossCount}\tNumber of unique stop loss variants");
-        }
-
-        public class ApplicationArguments
-        {
-            public string SpritzXml { get; set; }
-            public string SpritzModXml { get; set; }
-            public string ReferenceGeneModel { get; set; }
-            public string UniProtXml { get; set; }
-            public string FusionCodingEffects { get; set; }
-            public bool Setup { get; set; }
         }
     }
 }

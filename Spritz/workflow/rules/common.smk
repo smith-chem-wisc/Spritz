@@ -21,7 +21,7 @@ REF_PREFIX = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/RsemRefere
 REF_FOLDER = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
 UNIPROTXML=f"../resources/uniprot/{config['species']}.protein.xml.gz" #"../resources/Homo_sapiens_202022.xml.gz"
 UNIPROTFASTA=f"../resources/uniprot/{config['species']}.protein.fasta" #"../resources/Homo_sapiens_202022.xml.gz"
-TRANSFER_MOD_DLL="../TransferUniProtModifications/TransferUniProtModifications/bin/Release/netcoreapp3.1/TransferUniProtModifications.dll"
+TRANSFER_MOD_DLL="../SpritzModifications/bin/x64/Release/net5.0/SpritzModifications.dll"
 
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''

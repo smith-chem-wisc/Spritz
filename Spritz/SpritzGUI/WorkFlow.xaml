@@ -47,7 +47,7 @@
                         </-->
                         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
                             <Label Content="Threads" Width="200"/>
-                            <TextBox x:Name="txtThreads" LostFocus="txtThreads_LostFocus" Width="180"/>
+                            <TextBox x:Name="txtThreads" LostFocus="TxtThreads_LostFocus" Width="180"/>
                         </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="4" Grid.Column="0">
                             <Label Content="Ensembl Release" Width="200"/>

@@ -12,15 +12,15 @@ rule download_protein_xml:
         "python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
 
 rule build_transfer_mods:
-    '''Build the transfer mods C# project'''
+    '''Build the spritz modification C# project'''
     output: TRANSFER_MOD_DLL
-    log: "../resources/TransferUniProtModifications.build.log"
-    benchmark: "../resources/TransferUniProtModifications.build.benchmark"
+    log: "../resources/SpritzModifications.build.log"
+    benchmark: "../resources/SpritzModifications.build.benchmark"
     conda: "../envs/proteogenomics.yaml"
     shell:
-        "(cd ../TransferUniProtModifications && "
+        "(cd ../SpritzModifications && "
         "dotnet restore && "
-        "dotnet build -c Release TransferUniProtModifications.sln) &> {log}"
+        "dotnet build /p:Platform=x64 -c Release SpritzModifications.csproj) &> {log}"
 
 rule setup_transfer_mods:
     '''Download the ptmlists to the resources directory'''

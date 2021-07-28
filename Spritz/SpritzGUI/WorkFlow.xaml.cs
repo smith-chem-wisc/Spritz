@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using SpritzBackend;
 
 namespace Spritz
 {
@@ -66,24 +67,14 @@ namespace Spritz
             //    return;
             //}
 
-            Options.AnalysisDirectory = TrimQuotesOrNull(txtAnalysisDirectory.Text);
-            try
-            {
-                string testDirectory = Path.Combine(Options.AnalysisDirectory, $"TestSpritzPermissions{Options.AnalysisDirectory.GetHashCode()}");
-                Directory.CreateDirectory(testDirectory);
-                Directory.Delete(testDirectory);
-            }
-            catch (Exception)
+            Options.AnalysisDirectory = RunnerEngine.TrimQuotesOrNull(txtAnalysisDirectory.Text);
+            if (!RunnerEngine.IsDirectoryWritable(Options.AnalysisDirectory))
             {
                 MessageBox.Show($"Error: Cannot write to specified analysis directory: {Options.AnalysisDirectory}. Please choose another directory.",
                     "Write Permissions", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-
-            if (!Directory.Exists(Options.AnalysisDirectory))
-            {
-                Directory.CreateDirectory(Options.AnalysisDirectory);
-            }
+            Directory.CreateDirectory(Options.AnalysisDirectory);
 
             Options.Threads = Threads;
             EnsemblRelease ensembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
@@ -105,11 +96,11 @@ namespace Spritz
             Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsPairedEnd && p.MatePair == 2.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
             Options.Fastq1SingleEnd = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
 
-            var fq1s = Options.Fastq1.Split(',') ?? new string[0];
-            var fq2s = Options.Fastq2.Split(',') ?? new string[0];
-            var fq1s_se = Options.Fastq1SingleEnd.Split(',') ?? new string[0];
+            var fq1s = Options.Fastq1.Split(',') ?? Array.Empty<string>();
+            var fq2s = Options.Fastq2.Split(',') ?? Array.Empty<string>();
+            var fq1s_se = Options.Fastq1SingleEnd.Split(',') ?? Array.Empty<string>();
 
-            HashSet<string> unpairedFqPrefixes = new HashSet<string>(
+            HashSet<string> unpairedFqPrefixes = new(
                 fq1s.Where(fq1 => !fq2s.Any(fq2 => fq2.CompareTo(fq1) == 0)).Concat(
                     fq2s.Where(fq2 => !fq1s.Any(fq1s => fq1s.CompareTo(fq2) == 0))));
             if (unpairedFqPrefixes.Count > 0)
@@ -146,11 +137,6 @@ namespace Spritz
             saveButton.IsEnabled = false;
         }
 
-        private string TrimQuotesOrNull(string a)
-        {
-            return a == null ? a : a.Trim('"');
-        }
-
         private void PopulateChoices()
         {
             //CmbxExperimentType.Items.Add(ExperimentType.RNASequencing.ToString());
@@ -171,7 +157,7 @@ namespace Spritz
             Reference = selectedEnsembl.Genomes[selectedSpecies];
         }
 
-        private void txtThreads_LostFocus(object sender, RoutedEventArgs e)
+        private void TxtThreads_LostFocus(object sender, RoutedEventArgs e)
         {
             if (int.TryParse(txtThreads.Text, out int threads) && threads <= MainWindow.DockerCPUs && threads > 0)
             {

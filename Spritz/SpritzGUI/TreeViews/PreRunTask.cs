@@ -1,4 +1,6 @@
-﻿namespace Spritz
+﻿using SpritzBackend;
+
+namespace Spritz
 {
     internal class PreRunTask
     {

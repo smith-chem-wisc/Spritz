@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Spritz
+namespace SpritzBackend
 {
     [Serializable]
     public class SpritzException : Exception

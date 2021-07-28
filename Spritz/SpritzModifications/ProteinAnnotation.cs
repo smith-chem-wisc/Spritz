@@ -2,11 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Web;
 using System.Linq;
+using System.Web;
 using UsefulProteomicsDatabases;
 
-namespace TransferUniProtModifications
+namespace SpritzModifications
 {
     public static class ProteinAnnotation
     {
@@ -23,55 +23,6 @@ namespace TransferUniProtModifications
         }
 
         /// <summary>
-        /// Takes coding effect files from star-fusion to produce proteins
-        /// </summary>
-        /// <param name="codingEffectFilePath"></param>
-        /// <returns></returns>
-        public static string ParseCodingEffectsToXml(string codingEffectFilePaths, int minPeptideLength = 7, string organism = "Homo sapiens")
-        {
-            List<Protein> fusionProteins = new List<Protein>();
-            HashSet<string> usedAccessions = new HashSet<string>();
-            var paths = codingEffectFilePaths.Split(",");
-            foreach (string path in paths)
-            {
-                using (StreamReader reader = new StreamReader(path))
-                {
-                    while (true)
-                    {
-                        string line = reader.ReadLine();
-                        if (line == null) { break; }
-                        if (line.StartsWith("#")) { break; } // skip header
-                        string[] s = line.Split('\t');
-                        var fusionName = s[0];
-                        var junctionSpanningReadCount = s[1];
-                        var spliceType = s[3];
-                        var leftGene = s[4];
-                        var leftBreakpoint = s[5];
-                        var rightGene = s[6];
-                        var rightBreakpoint = s[7];
-                        var ffpm = s[9];
-                        var annots = s[14];
-                        var proteinFusionType = s[19];
-                        var proteinFusionTranslation = s[22];
-                        var proteinSequence = proteinFusionTranslation.Split('*')[0];
-                        if (proteinSequence.Length < minPeptideLength) { continue; }
-                        string accession = fusionName;
-                        int i = 1;
-                        while (usedAccessions.Contains(accession))
-                        {
-                            accession = fusionName + "_" + i++.ToString();
-                        }
-                        usedAccessions.Add(accession);
-                        fusionProteins.Add(new Protein(proteinSequence, accession, organism, new List<Tuple<string, string>> { new Tuple<string, string>("fusion", leftGene + "--" + rightGene) }));
-                    }
-                }
-            }
-            string fusionProteinXmlPath = Path.Combine(Path.GetDirectoryName(paths[0]), "FusionProteins.xml");
-            ProteinDbWriter.WriteXmlDatabase(null, fusionProteins, fusionProteinXmlPath);
-            return fusionProteinXmlPath;
-        }
-
-        /// <summary>
         /// Transfers likely modifications from a list of proteins to another based on sequence similarity. Returns a list of new objects.
         /// </summary>
         /// <param name="proteogenomicProteins"></param>
@@ -80,7 +31,7 @@ namespace TransferUniProtModifications
         public static List<Protein> CombineAndAnnotateProteins(List<Protein> uniprotProteins, List<Protein> proteogenomicProteins)
         {
             var uniprotOrganism = uniprotProteins.Select(p => p.Organism).Distinct().ToList();
-            List<Protein> newProteins = new List<Protein>();
+            List<Protein> newProteins = new();
             Dictionary<string, List<Protein>> dictUniprot = ProteinDictionary(uniprotProteins);
             Dictionary<string, List<Protein>> dictProteogenomic = ProteinDictionary(proteogenomicProteins);
 
@@ -194,14 +145,17 @@ namespace TransferUniProtModifications
         /// <returns></returns>
         private static Dictionary<int, List<Modification>> CollapseMods(IEnumerable<Protein> proteins)
         {
-            Dictionary<int, HashSet<Modification>> result = new Dictionary<int, HashSet<Modification>>();
+            Dictionary<int, HashSet<Modification>> result = new();
             if (proteins != null)
             {
-                foreach (var kv in proteins.SelectMany(p => p.OneBasedPossibleLocalizedModifications).ToList())
+                foreach (KeyValuePair<int, List<Modification>> kv in proteins.SelectMany(p => p.OneBasedPossibleLocalizedModifications).ToList())
                 {
-                    if (result.TryGetValue(kv.Key, out var modifications))
+                    if (result.TryGetValue(kv.Key, out HashSet<Modification> modifications))
                     {
-                        foreach (var mod in kv.Value) { modifications.Add(mod); }
+                        foreach (Modification mod in kv.Value)
+                        {
+                            modifications.Add(mod);
+                        }
                     }
                     else
                     {
@@ -219,7 +173,7 @@ namespace TransferUniProtModifications
         /// <returns></returns>
         private static Dictionary<string, List<Protein>> ProteinDictionary(IEnumerable<Protein> proteins)
         {
-            Dictionary<string, List<Protein>> dict = new Dictionary<string, List<Protein>>();
+            Dictionary<string, List<Protein>> dict = new();
             foreach (Protein p in proteins)
             {
                 if (dict.TryGetValue(p.BaseSequence, out var prots)) { prots.Add(p); }

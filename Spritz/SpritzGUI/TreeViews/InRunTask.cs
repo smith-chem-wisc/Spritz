@@ -1,4 +1,6 @@
-﻿namespace Spritz
+﻿using SpritzBackend;
+
+namespace Spritz
 {
     public class InRunTask : ForTreeView
     {

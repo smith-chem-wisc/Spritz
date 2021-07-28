@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using SpritzBackend;
 
 namespace Spritz
 {
@@ -19,12 +20,12 @@ namespace Spritz
     {
         public static readonly string CurrentVersion = "0.2.3"; // should be the same here, in config.yaml, and in common.smk
 
-        private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new ObservableCollection<RNASeqFastqDataGrid>();
-        private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
-        private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
-        private readonly ObservableCollection<SRADataGrid> SraCollection = new ObservableCollection<SRADataGrid>();
-        private EverythingRunnerEngine Everything;
-        private Regex outputScrub = new Regex(@"(\[\d+m)");
+        private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new();
+        private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new();
+        private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new();
+        private readonly ObservableCollection<SRADataGrid> SraCollection = new();
+        private RunnerEngine Runner;
+        private readonly Regex outputScrub = new(@"(\[\d+m)");
 
         public int DockerCPUs { get; set; }
         public double DockerMemory { get; set; }
@@ -56,7 +57,7 @@ namespace Spritz
                 // Check Docker setup
                 Dispatcher.Invoke(() =>
                 {
-                    Process proc = new Process();
+                    Process proc = new();
                     proc.StartInfo.FileName = "Powershell.exe";
                     proc.StartInfo.Arguments = "docker system info";
                     proc.StartInfo.UseShellExecute = false;
@@ -123,11 +124,11 @@ namespace Spritz
         private void StopDocker(string command)
         {
             // new process that kills docker container (if any)
-            if (Everything != null && !string.IsNullOrEmpty(Everything.PathToWorkflow))
+            if (Runner != null && !string.IsNullOrEmpty(Runner.PathToWorkflow))
             {
-                Process proc = new Process();
+                Process proc = new();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = $"docker {command} {Everything.SpritzContainerName}";
+                proc.StartInfo.Arguments = $"docker {command} {Runner.SpritzContainerName}";
                 proc.StartInfo.CreateNoWindow = true;
                 proc.StartInfo.UseShellExecute = false;
                 proc.Start();
@@ -169,7 +170,7 @@ namespace Spritz
             {
                 try
                 {
-                    SpritzUpdater newwind = new SpritzUpdater();
+                    SpritzUpdater newwind = new();
                     newwind.ShowDialog();
                 }
                 catch (Exception ex)
@@ -204,18 +205,20 @@ namespace Spritz
                     return;
                 }
 
-                DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+                DynamicTasksObservableCollection = new();
                 DynamicTasksObservableCollection.Add(new InRunTask("Workflow 1", StaticTasksObservableCollection.First().options));
                 WorkflowTreeView.DataContext = DynamicTasksObservableCollection;
 
-                Everything = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
+                Runner = new RunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
                 InformationTextBox.Document.Blocks.Clear();
-                InformationTextBox.AppendText($"Command executing: Powershell.exe {Everything.GenerateCommandsDry(DockerImage)}\n\n"); // keep for debugging
-                InformationTextBox.AppendText($"Saving output to {Everything.PathToWorkflow}. Please monitor it there...\n\n");
+                Runner.GenerateSnakemakeCommand(StaticTasksObservableCollection.First().options, false);
+                InformationTextBox.AppendText($"Command executing: Powershell.exe {Runner.GenerateCommandsDry(DockerImage, Runner.SnakemakeCommand)}\n\n"); // keep for debugging
+                InformationTextBox.AppendText($"Saving output to {Runner.PathToWorkflow}. Please monitor it there...\n\n");
 
                 IsRunning = true;
-                Everything.WriteConfig(StaticTasksObservableCollection.First().options);
+                Runner.WriteConfig(StaticTasksObservableCollection.First().options);
+                Runner.GenerateSnakemakeCommand(StaticTasksObservableCollection.First().options, false);
                 var t = new Task(RunEverythingRunner);
                 t.Start();
                 t.ContinueWith(DisplayAnyErrors);
@@ -234,9 +237,9 @@ namespace Spritz
 
         private void RunEverythingRunner()
         {
-            Process proc = new Process();
+            Process proc = new();
             proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = Everything.GenerateCommandsDry(DockerImage);
+            proc.StartInfo.Arguments = Runner.GenerateCommandsDry(DockerImage, Runner.SnakemakeCommand);
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;
@@ -260,12 +263,12 @@ namespace Spritz
                     if (ShowStdOut)
                     {
                         lock (InformationTextBox)
+                        {
                             InformationTextBox.AppendText(output + Environment.NewLine);
+                        }
                     }
-                    using (StreamWriter sw = File.Exists(Everything.PathToWorkflow) ? File.AppendText(Everything.PathToWorkflow) : File.CreateText(Everything.PathToWorkflow))
-                    {
-                        sw.WriteLine(output);
-                    }
+                    using StreamWriter sw = File.Exists(Runner.PathToWorkflow) ? File.AppendText(Runner.PathToWorkflow) : File.CreateText(Runner.PathToWorkflow);
+                    sw.WriteLine(output);
                 }
             });
         }
@@ -284,7 +287,7 @@ namespace Spritz
 
         private void BtnAddRnaSeqFastq_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
+            Microsoft.Win32.OpenFileDialog openPicker = new()
             {
                 Filter = "FASTQ Files|*.fastq",
                 FilterIndex = 1,
@@ -346,7 +349,7 @@ namespace Spritz
                 }
                 else
                 {
-                    SRADataGrid sraDataGrid = new SRADataGrid(name.Trim(), isPairedEnd);
+                    SRADataGrid sraDataGrid = new(name.Trim(), isPairedEnd);
                     SraCollection.Add(sraDataGrid);
                 }
             }
@@ -408,7 +411,7 @@ namespace Spritz
 
         private void AddTaskToCollection(Options ye)
         {
-            PreRunTask te = new PreRunTask(ye);
+            PreRunTask te = new(ye);
             StaticTasksObservableCollection.Add(te);
             StaticTasksObservableCollection.Last().DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(te) + 1);
         }
@@ -470,7 +473,7 @@ namespace Spritz
                         }
                         else
                         {
-                            RNASeqFastqDataGrid rnaSeqFastq = new RNASeqFastqDataGrid(filepath, isPairedEnd);
+                            RNASeqFastqDataGrid rnaSeqFastq = new(filepath, isPairedEnd);
                             RnaSeqFastqCollection.Add(rnaSeqFastq);
                             UpdateOutputFolderTextbox();
                         }
@@ -515,9 +518,9 @@ namespace Spritz
             {
                 InformationTextBox.Document.Blocks.Clear();
 
-                Process proc = new Process();
+                Process proc = new();
                 proc.StartInfo.FileName = "Powershell.exe";
-                proc.StartInfo.Arguments = Everything.GenerateTopComand();
+                proc.StartInfo.Arguments = Runner.GenerateTopComand();
                 proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.RedirectStandardOutput = true;
                 proc.StartInfo.CreateNoWindow = true;

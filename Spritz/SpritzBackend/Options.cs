@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
-namespace Spritz
+namespace SpritzBackend
 {
     public class Options
     {
-        public string AnalysisDirectory { get; set; } = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "output");
+        public string AnalysisDirectory { get; set; } = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "results");
         public string Fastq1 { get; set; }
         public string Fastq2 { get; set; }
         public string Fastq1SingleEnd { get; set; }

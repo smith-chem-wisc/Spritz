@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Spritz.ico</ApplicationIcon>
     <SignAssembly>false</SignAssembly>
@@ -26,8 +26,11 @@
   <ItemGroup>
     <PackageReference Include="MarkdownSharp" Version="2.0.5" />
     <PackageReference Include="Nett" Version="0.15.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="YamlDotNet" Version="8.1.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SpritzBackend\SpritzBackend.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,12 +49,6 @@
     <Compile Update="WorkFlow.xaml.cs">
       <DependentUpon>WorkFlow.xaml</DependentUpon>
     </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="genomes.csv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
