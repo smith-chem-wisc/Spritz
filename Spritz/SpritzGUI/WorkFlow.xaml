@@ -66,6 +66,10 @@
                             <Label Content="Analyze Isoforms (beta)" Width="200"/>
                             <CheckBox x:Name="Cb_AnalyzeIsoforms" IsEnabled="True" IsChecked="False"/>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="0">
+                            <Label Content="Quantify Genes and Isoforms (beta)" Width="200"/>
+                            <CheckBox x:Name="Cb_Quantify" IsEnabled="True" IsChecked="False"/>
+                        </StackPanel>
                         <StackPanel  Orientation="Horizontal" Grid.Row="2" Grid.Column="1"/>
                         <StackPanel  Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
                             <Label Name="Lb_ThreadInfo" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"/>

@@ -1,6 +1,6 @@
 ﻿namespace SpritzModifications
 {
-    public class ApplicationArguments
+    public class SpritzModsAppArguments
     {
         public string SpritzXml { get; set; }
         public string SpritzModXml { get; set; }

@@ -46,5 +46,10 @@ namespace SpritzBackend
             }
             return ensemblReleases;
         }
+
+        public static string GetReferenceString(string release, string species, string organism, string genome)
+        {
+            return string.Join(',', new string[] { release, species, organism, genome });
+        }
     }
 }

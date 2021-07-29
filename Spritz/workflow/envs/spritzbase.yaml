@@ -8,5 +8,4 @@ dependencies:
   - mamba
   - python=3.8
   - conda
-  - tar
-  - gzip
+  - dotnet-runtime=5.0

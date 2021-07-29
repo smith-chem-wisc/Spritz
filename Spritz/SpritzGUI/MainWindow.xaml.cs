@@ -18,8 +18,6 @@ namespace Spritz
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly string CurrentVersion = "0.2.5"; // should be the same here, in config.yaml, and in common.smk
-
         private readonly ObservableCollection<RNASeqFastqDataGrid> RnaSeqFastqCollection = new();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection = new();
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new();
@@ -377,7 +375,10 @@ namespace Spritz
 
             try
             {
-                var dialog = new WorkFlowWindow(string.IsNullOrEmpty(OutputFolderTextBox.Text) ? new Options(DockerCPUs).AnalysisDirectory : OutputFolderTextBox.Text);
+                var dialog = new WorkFlowWindow(string.IsNullOrEmpty(OutputFolderTextBox.Text) ? 
+                    new Options(DockerCPUs).AnalysisDirectory : 
+                    OutputFolderTextBox.Text);
+
                 if (dialog.ShowDialog() == true)
                 {
                     AddTaskToCollection(dialog.Options);

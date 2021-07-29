@@ -3,7 +3,98 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\workflow\config\config.yaml" Link="workflow\config\config.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\align.yaml" Link="workflow\envs\align.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\default.yaml" Link="workflow\envs\default.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\downloads.yaml" Link="workflow\envs\downloads.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\isoforms.yaml" Link="workflow\envs\isoforms.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\proteogenomics.yaml" Link="workflow\envs\proteogenomics.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\quant.yaml" Link="workflow\envs\quant.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\spritzbase.yaml" Link="workflow\envs\spritzbase.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\sra.yaml" Link="workflow\envs\sra.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\envs\variants.yaml" Link="workflow\envs\variants.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\align.smk" Link="workflow\rules\align.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\common.smk" Link="workflow\rules\common.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\downloads.smk" Link="workflow\rules\downloads.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\isoforms.smk" Link="workflow\rules\isoforms.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\proteogenomics.smk" Link="workflow\rules\proteogenomics.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\quant.smk" Link="workflow\rules\quant.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\rules\variants.smk" Link="workflow\rules\variants.smk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\clean_vcf.py" Link="workflow\scripts\clean_vcf.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\convert_ensembl2ucsc.py" Link="workflow\scripts\convert_ensembl2ucsc.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\convert_ucsc2ensembl.py" Link="workflow\scripts\convert_ucsc2ensembl.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\download_uniprot.py" Link="workflow\scripts\download_uniprot.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\filter_fasta.py" Link="workflow\scripts\filter_fasta.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\get_proteome.py" Link="workflow\scripts\get_proteome.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\karyotypic_order.py" Link="workflow\scripts\karyotypic_order.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\prose.py" Link="workflow\scripts\prose.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\simplify_gff3.py" Link="workflow\scripts\simplify_gff3.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\SummarizeQuantGtf.py" Link="workflow\scripts\SummarizeQuantGtf.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\SummarizeQuantTab.py" Link="workflow\scripts\SummarizeQuantTab.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\Snakefile" Link="workflow\Snakefile">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3">
@@ -13,6 +104,20 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SpritzBackend\SpritzBackend.csproj" />
+    <ProjectReference Include="..\SpritzModifications\SpritzModifications.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="workflow\config\" />
+    <Folder Include="workflow\envs\" />
+    <Folder Include="workflow\rules\" />
+    <Folder Include="workflow\scripts\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="dockerspritz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

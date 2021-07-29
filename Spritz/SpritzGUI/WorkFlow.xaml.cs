@@ -78,13 +78,11 @@ namespace Spritz
 
             Options.Threads = Threads;
             EnsemblRelease ensembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
-            Options.Release = ensembl.Release;
-            Options.Species = EnsemblSpecies.SelectedItem.ToString();
-            Options.Reference = ensembl.Genomes[Options.Species];
-            Options.Organism = ensembl.Organisms[Options.Species];
+            string species = EnsemblSpecies.SelectedItem.ToString();
+            Options.Reference = EnsemblRelease.GetReferenceString(ensembl.Release, species, ensembl.Organisms[species], ensembl.Genomes[species]);
             Options.AnalyzeVariants = (bool)Cb_AnalyzeVariants.IsChecked;
             Options.AnalyzeIsoforms = (bool)Cb_AnalyzeIsoforms.IsChecked;
-            Options.SpritzVersion = MainWindow.CurrentVersion;
+            Options.Quantify = (bool)Cb_Quantify.IsChecked;
             DialogResult = true;
         }
 

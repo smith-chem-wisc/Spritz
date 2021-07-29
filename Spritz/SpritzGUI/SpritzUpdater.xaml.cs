@@ -7,6 +7,7 @@ using System.Text;
 using System.Windows;
 using System.Linq;
 using System.IO;
+using SpritzBackend;
 
 namespace Spritz
 {
@@ -52,7 +53,7 @@ namespace Spritz
                     // download and start the installer
                     var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "Spritz.msi");
                     client.DownloadFile(uri, tempDownloadLocation);
-                    var p = new Process();
+                    Process p = new();
                     p.StartInfo = new ProcessStartInfo()
                     {
                         UseShellExecute = true,
@@ -84,8 +85,8 @@ namespace Spritz
                 {
                     string json = response.Content.ReadAsStringAsync().Result;
                     JArray GitArray = JArray.Parse(json);
-                    var currV = GetVersionNumber(MainWindow.CurrentVersion);
-                    StringBuilder allVersionsText = new StringBuilder();
+                    var currV = GetVersionNumber(RunnerEngine.CurrentVersion);
+                    StringBuilder allVersionsText = new();
                     foreach (JObject obj in GitArray.Children<JObject>())
                     {
                         if (IsVersionLower(obj.SelectToken("tag_name").ToString()))
@@ -142,7 +143,7 @@ namespace Spritz
 
         public static bool IsVersionLower(string checkVersionString)
         {
-            var currV = GetVersionNumber(MainWindow.CurrentVersion);
+            var currV = GetVersionNumber(RunnerEngine.CurrentVersion);
             var checkVersion = GetVersionNumber(checkVersionString);
             return checkVersion.Item1 < currV.Item1 ||
                     (checkVersion.Item1 == currV.Item1 && checkVersion.Item2 < currV.Item2) ||

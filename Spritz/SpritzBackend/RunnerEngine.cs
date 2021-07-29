@@ -13,29 +13,34 @@ namespace SpritzBackend
         public string Arguments { get; set; }
         public string AnalysisDirectory { get; }
         public string ConfigDirectory { get; }
-        public string DataDirectory { get; }
+        public string ConfigFile { get; }
+        public string ResourcesDirectory { get; }
         public string PathToWorkflow { get; }
         public string SpritzContainerName { get; set; }
         public string SnakemakeCommand { get; private set; }
+        public string SpritzCMDCommand { get; set; }
+
+        public static readonly string CurrentVersion = "0.3.0"; // should be the same here, in config.yaml, and in common.smk
 
         public RunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
             // set up directories to mount to docker container as volumes
             AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
 
-            var pathToConfig = Path.Combine(AnalysisDirectory, "configs");
+            var pathToConfig = Path.Combine(AnalysisDirectory, "config");
             if (!Directory.Exists(pathToConfig))
             {
                 Directory.CreateDirectory(pathToConfig);
             }
             ConfigDirectory = pathToConfig;
+            ConfigFile = Path.Combine(ConfigDirectory, "config.yaml");
 
-            var pathToDataFiles = Path.Combine(AnalysisDirectory, "data");
-            if (!Directory.Exists(pathToDataFiles))
+            var resourcesPath = Path.Combine(Path.GetDirectoryName(AnalysisDirectory), "resources");
+            if (!Directory.Exists(resourcesPath))
             {
-                Directory.CreateDirectory(pathToDataFiles);
+                Directory.CreateDirectory(resourcesPath);
             }
-            DataDirectory = pathToDataFiles;
+            ResourcesDirectory = resourcesPath;
 
             // path to workflow.txt
             PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
@@ -51,16 +56,23 @@ namespace SpritzBackend
             }
             command += $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
-                $"-v \"\"\"{DataDirectory}:/app/resources" + "\"\"\" " +
+                $"-v \"\"\"{ResourcesDirectory}:/app/resources" + "\"\"\" " +
                 $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +
                 $"{dockerImageName} {snakemakeCommand}; docker stop spritz{PathToWorkflow.GetHashCode()}";
             return command;
         }
 
+        public string GenerateSpritzCMDCommand(Options options)
+        {
+            return "./dockerspritz -h";
+            // need to do this with the SpritzCmdAppArgInfo
+            // used for GUI only
+        }
+
         public string GenerateSnakemakeCommand(Options options, bool setup)
         {
             string cmd = "";
-            cmd += $"snakemake -j {options.Threads} --use-conda --conda-frontend mamba";
+            cmd += $"snakemake -j {options.Threads} --use-conda --conda-frontend mamba --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
             if (setup)
             {
                 cmd += " setup.txt";
@@ -74,7 +86,7 @@ namespace SpritzBackend
             return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
         }
 
-        public void WriteConfig(Options options)
+        public void WriteConfig(Options options, bool prebuiltSpritzMods = false)
         {
             const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
 
@@ -114,23 +126,34 @@ namespace SpritzBackend
             analysisDirectory.Add("analysis");
             rootMappingNode.Add("analysisDirectory", analysisDirectory);
 
+            // process reference string
+            var reference = options.Reference.Split(',');
+            if (reference.Length != 4)
+            {
+                throw new SpritzException($"Error: the reference string \"{reference}\" does not have four comma-separated elements corresponding to a line from genomes.csv.");
+            }
+            string releaseStr = reference[0];
+            string speciesStr = reference[1];
+            string organismStr = reference[2];
+            string referenceStr = reference[3];
+
             // write ensembl release
-            YamlScalarNode release = new(options.Release[8..]);
+            YamlScalarNode release = new(releaseStr[8..]);
             release.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("release", release);
 
             // write species
-            YamlScalarNode species = new(options.Species.First().ToString().ToUpper() + options.Species[1..]);
+            YamlScalarNode species = new(speciesStr.First().ToString().ToUpper() + speciesStr[1..]);
             species.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("species", species);
 
-            // write species
-            YamlScalarNode organism = new(options.Organism);
+            // write organism
+            YamlScalarNode organism = new(organismStr);
             organism.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("organism", organism);
 
             // write genome [e.g. GRCm38]
-            YamlScalarNode genome = new(options.Reference);
+            YamlScalarNode genome = new(referenceStr);
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
 
@@ -139,11 +162,14 @@ namespace SpritzBackend
             rootMappingNode.Add("analyses", AddParam(analysisStrings.ToArray(), analyses));
 
             // record the version of spritz
-            YamlScalarNode version = new(options.SpritzVersion);
+            YamlScalarNode version = new(RunnerEngine.CurrentVersion);
             version.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("spritzversion", version);
 
-            using TextWriter writer = File.CreateText(Path.Combine(ConfigDirectory, "config.yaml"));
+            // record that the spritzmods dll will be prebuilt via SpritzCMD
+            rootMappingNode.Add("prebuilt_spritz_mods", new YamlScalarNode(prebuiltSpritzMods ? "True" : "False"));
+
+            using TextWriter writer = File.CreateText(ConfigFile);
             stream.Save(writer, false);
         }
 

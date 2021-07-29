@@ -10,3 +10,4 @@ organism: "human" # based on uniprot
 # analyses: [isoform,variant,quant] # isoform construction, variant calling, transcript quantification
 analyses: [quant]
 spritz_version: "0.3.0" # should be the same here, common.smk, and MainWindow.xml.cs
+prebuilt_spritz_mods: False

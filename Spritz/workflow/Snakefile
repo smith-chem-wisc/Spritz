@@ -5,6 +5,13 @@ include: "rules/common.smk"
 rule all:
     input: all_output # see common.smk
 
+rule setup:
+    input: setup_output # see common.smk
+    output: "../resources/setup.txt"
+    log: "../resources/setup.log"
+    conda: "envs/default.yaml"
+    shell: "touch {output}"
+
 rule clean:
     log: expand("{dir}/clean.log", dir=config['analysis_directory'])
     conda: "envs/proteogenomics.yaml"
@@ -23,27 +30,6 @@ rule prose:
     log: "{dir}/prose.log"
     conda: "envs/default.yaml"
     shell: "python scripts/prose.py {output} 2> {log}"
-
-rule setup:
-    input:
-        f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
-        f"../resources/ensembl/{SPECIES}.ensembl.vcf",
-        TRANSFER_MOD_DLL,
-        UNIPROTFASTA,
-        UNIPROTFASTA,
-        FA,
-        "../resources/ptmlist.txt",
-        "../resources/PSI-MOD.obo.xml",
-        "../resources/SnpEff/snpEff.jar",
-        [] if not check('sra') else expand([
-            "{dir}/{sra}_1.fastq",
-            "{dir}/{sra}_2.fastq"], dir=config['analysis_directory'], sra=config['sra']),
-        [] if not check('sra_se') else expand([
-            "{dir}/{sra_se}.fastq"], dir=config['analysis_directory'], sra_se=config['sra_se'])
-    output: "../resources/setup.txt"
-    log: "../resources/setup.log"
-    conda: "envs/setup.yaml"
-    shell: "touch {output}"
 
 include: "rules/downloads.smk"
 include: "rules/align.smk"

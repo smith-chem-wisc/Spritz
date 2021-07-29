@@ -5,4 +5,4 @@ channels:
   - defaults
 dependencies:
   - java-jdk =8.0 # snpeff
-  - dotnet-sdk =5.0 # transfermods
+  - dotnet-runtime =5.0 # transfermods

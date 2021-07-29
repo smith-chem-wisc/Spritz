@@ -3,6 +3,7 @@ using SpritzBackend;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 namespace SpritzCMD
 {
@@ -11,62 +12,80 @@ namespace SpritzCMD
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to Spritz!");
-            FluentCommandLineParser<ApplicationArguments> p = new();
+            FluentCommandLineParser<SpritzCmdAppArguments> p = new();
 
             Options defaults = new(Environment.ProcessorCount);
             p.Setup(arg => arg.AnalysisDirectory)
-                .As('a', "analysisDirectory")
+                .As(SpritzCmdAppArgInfoStrings.AnalysisDirectoryShort,
+                    SpritzCmdAppArgInfoStrings.AnalysisDirectoryLong)
                 .SetDefault(defaults.AnalysisDirectory)
-                .WithDescription("Directory in which the results will be stored.");
+                .WithDescription(SpritzCmdAppArgInfoStrings.AnalysisDirectoryDesc);
 
             p.Setup(arg => arg.AnalyzeVariants)
-                .As('b', "analyzeVariants")
+                .As(SpritzCmdAppArgInfoStrings.AnalyzeVariantsShort,
+                    SpritzCmdAppArgInfoStrings.AnalyzeVariantsLong)
                 .SetDefault(defaults.AnalyzeVariants)
-                .WithDescription("Analyze protein coding variations and include them in the proteogenomic database. Note: Specifying false for both AnalyzeVariants and AnalyzeIsoforms will generate a reference proteogenomic database from the Ensembl references without any variants.");
+                .WithDescription(SpritzCmdAppArgInfoStrings.AnalyzeVariantsDesc);
 
             p.Setup(arg => arg.AnalyzeIsoforms)
-                .As('c', "analyzeIsoforms")
+                .As(SpritzCmdAppArgInfoStrings.AnalyzeIsoformsShort,
+                    SpritzCmdAppArgInfoStrings.AnalyzeIsoformsLong)
                 .SetDefault(defaults.AnalyzeIsoforms)
-                .WithDescription("Analyze alternative splicing events and include them in the proteogenomic database.");
+                .WithDescription(SpritzCmdAppArgInfoStrings.AnalyzeIsoformsDesc);
+
+            p.Setup(arg => arg.Quantify)
+                .As(SpritzCmdAppArgInfoStrings.QuantifyShort,
+                    SpritzCmdAppArgInfoStrings.QuantifyLong)
+                .SetDefault(defaults.Quantify)
+                .WithDescription(SpritzCmdAppArgInfoStrings.QuantifyDesc);
 
             p.Setup(arg => arg.AvailableReferences)
-                .As('x', "availableReferences")
+                .As(SpritzCmdAppArgInfoStrings.AvailableReferencesShort,
+                    SpritzCmdAppArgInfoStrings.AvailableReferencesLong)
                 .SetDefault(false)
-                .WithDescription("Save a comma-separated file with available references to analysis directory. Then, exit.");
+                .WithDescription(SpritzCmdAppArgInfoStrings.AvailableReferencesDesc);
 
             p.Setup(arg => arg.AnalysisSetup)
-                .As('y', "analysisSetup")
+                .As(SpritzCmdAppArgInfoStrings.AnalysisSetupShort,
+                    SpritzCmdAppArgInfoStrings.AnalysisSetupLong)
                 .SetDefault(false)
-                .WithDescription("Perform setup required for protected access servers, given reference, species, and organism specified.");
+                .WithDescription(SpritzCmdAppArgInfoStrings.AnalysisSetupDesc);
 
             p.Setup(arg => arg.Fastq1)
-                .As('i', "fastq1")
-                .WithDescription("Comma-separated list of paths to first mate pair fastq files.");
+                .As(SpritzCmdAppArgInfoStrings.Fastq1Short,
+                    SpritzCmdAppArgInfoStrings.Fastq1Long)
+                .WithDescription(SpritzCmdAppArgInfoStrings.Fastq1Desc);
 
             p.Setup(arg => arg.Fastq2)
-                .As('j', "fastq2")
-                .WithDescription("Comma-separated list of paths to second mate pair fastq files.");
+                .As(SpritzCmdAppArgInfoStrings.Fastq2Short,
+                    SpritzCmdAppArgInfoStrings.Fastq2Long)
+                .WithDescription(SpritzCmdAppArgInfoStrings.Fastq2Desc);
 
             p.Setup(arg => arg.Fastq1SingleEnd)
-                .As('f', "fastq1SingleEnd")
-                .WithDescription("Comma-separated list of paths to single-end fastq files.");
+                .As(SpritzCmdAppArgInfoStrings.Fastq1SingleEndShort,
+                    SpritzCmdAppArgInfoStrings.Fastq1SingleEndLong)
+                .WithDescription(SpritzCmdAppArgInfoStrings.Fastq1SingleEndDesc);
 
             p.Setup(arg => arg.SraAccession)
-                .As('s', "sraAccessionPairedEnd")
-                .WithDescription("Comma-separated list of SRA accessions for paired-end experiments to download.");
+                .As(SpritzCmdAppArgInfoStrings.SraAccessionShort,
+                    SpritzCmdAppArgInfoStrings.SraAccessionLong)
+                .WithDescription(SpritzCmdAppArgInfoStrings.SraAccessionDesc);
 
             p.Setup(arg => arg.SraAccessionSingleEnd)
-                .As('t', "sraAccessionSingleEnd")
-                .WithDescription("Comma-separated list of SRA accessions for single-end experiments to download.");
+                .As(SpritzCmdAppArgInfoStrings.SraAccessionSingleEndShort,
+                    SpritzCmdAppArgInfoStrings.SraAccessionSingleEndLong)
+                .WithDescription(SpritzCmdAppArgInfoStrings.SraAccessionSingleEndDesc);
 
             p.Setup(arg => arg.Threads)
-                .As('p', "threads")
+                .As(SpritzCmdAppArgInfoStrings.ThreadsShort,
+                    SpritzCmdAppArgInfoStrings.ThreadsLong)
                 .SetDefault(defaults.Threads)
-                .WithDescription("Number of processors to use for analysis.");
+                .WithDescription(SpritzCmdAppArgInfoStrings.ThreadsDesc);
 
             p.Setup(arg => arg.Reference)
-                .As('r', "reference")
-                .WithDescription("Reference to use, e.g. release-96,homo_sapiens,human,GRCh38. Copy-paste a line from the file you get with the -x option that retrieves available references.");
+                 .As(SpritzCmdAppArgInfoStrings.ReferenceShort,
+                    SpritzCmdAppArgInfoStrings.ReferenceLong)
+                .WithDescription(SpritzCmdAppArgInfoStrings.ReferenceDesc);
 
             string helpoutro = "";
             helpoutro += $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and mamba." + Environment.NewLine;
@@ -121,7 +140,7 @@ namespace SpritzCMD
                 Options options = ParseOptions(p.Object, analysisDirectory);
 
                 RunnerEngine runner = new(new("", options), analysisDirectory);
-                runner.WriteConfig(options);
+                runner.WriteConfig(options, true);
                 runner.GenerateSnakemakeCommand(options, p.Object.AnalysisSetup);
                 string snakemakeArguments = runner.SnakemakeCommand["snakemake ".Length..];
                 Console.WriteLine($"Running `{runner.SnakemakeCommand}`.");
@@ -131,12 +150,13 @@ namespace SpritzCMD
                 proc.StartInfo.Arguments = snakemakeArguments;
                 proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.CreateNoWindow = true;
+                proc.StartInfo.WorkingDirectory = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "workflow");
                 proc.Start();
                 proc.WaitForExit();
             }
         }
 
-        private static Options ParseOptions(ApplicationArguments aa, string analysisDirectory)
+        private static Options ParseOptions(SpritzCmdAppArguments aa, string analysisDirectory)
         {
             Options options = new(aa.Threads);
             options.AnalysisDirectory = analysisDirectory;
@@ -146,15 +166,7 @@ namespace SpritzCMD
             options.SraAccession = aa.SraAccession ?? "";
             options.SraAccessionSingleEnd = aa.SraAccessionSingleEnd ?? "";
             options.Threads = aa.Threads;
-            var reference = aa.Reference.Split(',');
-            if (reference.Length != 4)
-            {
-                throw new SpritzException($"Error: the reference string \"{reference}\" does not have four comma-separated elements corresponding to a line from genomes.csv.");
-            }
-            options.Release = reference[0];
-            options.Species = reference[1];
-            options.Organism = reference[2];
-            options.Reference = reference[3];
+            options.Reference = aa.Reference;
             options.AnalyzeVariants = aa.AnalyzeVariants;
             options.AnalyzeIsoforms = aa.AnalyzeIsoforms;
             return options;

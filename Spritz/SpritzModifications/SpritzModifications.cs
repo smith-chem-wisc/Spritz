@@ -16,7 +16,7 @@ namespace SpritzModifications
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to SpritzModifications!");
-            var p = new FluentCommandLineParser<ApplicationArguments>();
+            var p = new FluentCommandLineParser<SpritzModsAppArguments>();
 
             p.Setup(arg => arg.UniProtXml)
                 .As('x', "uniprot_xml")
