@@ -16,6 +16,5 @@ ag\
 ## Visual Studio
 bin\
 obj\
-**\obj\
 *.vspx
 .vs\
