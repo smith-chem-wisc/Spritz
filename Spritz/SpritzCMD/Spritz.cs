@@ -196,6 +196,7 @@ namespace SpritzCMD
             options.Reference = aa.Reference;
             options.AnalyzeVariants = aa.AnalyzeVariants;
             options.AnalyzeIsoforms = aa.AnalyzeIsoforms;
+            options.Quantify = aa.Quantify;
             return options;
         }
     }

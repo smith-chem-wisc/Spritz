@@ -102,6 +102,7 @@ namespace SpritzBackend
             var analysisStrings = new List<string>();
             if (options.AnalyzeVariants) analysisStrings.Add("variant");
             if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
+            if (options.Quantify) analysisStrings.Add("quant");
 
             // write user input paired-end sras
             YamlSequenceNode accession = new();

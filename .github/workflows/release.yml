@@ -51,7 +51,7 @@ jobs:
       - name: Build Installer
         run: |
           $version= &git describe --tags
-          msbuild build Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:UseSharedCompilation=false /p:Version=${version}
+          msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:UseSharedCompilation=false /p:Version=${version}
 
       - name: Create archive
         uses: thedoctor0/zip-release@master

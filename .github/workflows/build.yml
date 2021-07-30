@@ -32,7 +32,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1
 
     - name: Build Installer
-      run: msbuild build Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:UseSharedCompilation=false
+      run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release /p:UseSharedCompilation=false
 
     - name: Setup Docker
       uses: docker/build-push-action@v2
