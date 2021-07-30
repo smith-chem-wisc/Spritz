@@ -1,4 +1,4 @@
-name: .NET
+name: Release installer, SpritzCMD, and Docker image
 
 on:
   push:
