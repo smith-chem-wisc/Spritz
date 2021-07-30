@@ -6,7 +6,7 @@
     <MediaTemplate EmbedCab="yes"/>
 
     <!-- Add installer icon-->
-    <Icon Id="icon.ico" SourceFile="$(var.SpritzTargetDir)..\..\..\..\Spritz.ico"/>
+    <Icon Id="icon.ico" SourceFile="Spritz.ico"/>
     <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
 
     <!-- Check version information -->
