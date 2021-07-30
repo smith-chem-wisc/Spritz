@@ -22,14 +22,17 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Spritz/Spritz.sln
 
-    - name: Setup msbuild
-      uses: microsoft/setup-msbuild@v1
-      
     - name: Build
-      run: cd Spritz; msbuild /p:Configuration=Release
+      run: dotnet build --no-restore /p:Platform=x64 Spritz/Spritz.sln
 
     - name: Test
       run: dotnet test --no-build --verbosity normal Spritz/Spritz.sln
+
+    - name: Setup msbuild
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Build Installer
+      run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release
 
     - name: Setup Docker
       uses: docker/build-push-action@v2
