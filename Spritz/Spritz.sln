@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpritzCMD", "SpritzCMD\Spri
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpritzBackend", "SpritzBackend\SpritzBackend.csproj", "{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpritzTest", "SpritzTest\SpritzTest.csproj", "{342E218B-142A-47F7-B572-3EF46DFAB82E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpritzTest", "SpritzTest\SpritzTest.csproj", "{342E218B-142A-47F7-B572-3EF46DFAB82E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,20 +36,28 @@ Global
 		{5FE72284-B831-4E52-89E3-C7B929B9B6F9}.Release|x64.Build.0 = Release|x64
 		{5FE72284-B831-4E52-89E3-C7B929B9B6F9}.Release|x86.ActiveCfg = Release|x64
 		{35EB33BB-25A4-4F7E-9626-038C245870CE}.Debug|x64.ActiveCfg = Debug|x64
+		{35EB33BB-25A4-4F7E-9626-038C245870CE}.Debug|x64.Build.0 = Debug|x64
 		{35EB33BB-25A4-4F7E-9626-038C245870CE}.Debug|x86.ActiveCfg = Debug|x64
 		{35EB33BB-25A4-4F7E-9626-038C245870CE}.Release|x64.ActiveCfg = Release|x64
+		{35EB33BB-25A4-4F7E-9626-038C245870CE}.Release|x64.Build.0 = Release|x64
 		{35EB33BB-25A4-4F7E-9626-038C245870CE}.Release|x86.ActiveCfg = Release|x64
 		{61E54C59-2A3A-42C7-B730-0C0C9BD19590}.Debug|x64.ActiveCfg = Debug|x64
+		{61E54C59-2A3A-42C7-B730-0C0C9BD19590}.Debug|x64.Build.0 = Debug|x64
 		{61E54C59-2A3A-42C7-B730-0C0C9BD19590}.Debug|x86.ActiveCfg = Debug|x64
 		{61E54C59-2A3A-42C7-B730-0C0C9BD19590}.Release|x64.ActiveCfg = Release|x64
+		{61E54C59-2A3A-42C7-B730-0C0C9BD19590}.Release|x64.Build.0 = Release|x64
 		{61E54C59-2A3A-42C7-B730-0C0C9BD19590}.Release|x86.ActiveCfg = Release|x64
 		{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}.Debug|x64.ActiveCfg = Debug|x64
+		{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}.Debug|x64.Build.0 = Debug|x64
 		{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}.Debug|x86.ActiveCfg = Debug|x64
 		{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}.Release|x64.ActiveCfg = Release|x64
+		{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}.Release|x64.Build.0 = Release|x64
 		{BB7403C4-A39C-4F92-BDD8-4DDD57CE3786}.Release|x86.ActiveCfg = Release|x64
 		{342E218B-142A-47F7-B572-3EF46DFAB82E}.Debug|x64.ActiveCfg = Debug|x64
+		{342E218B-142A-47F7-B572-3EF46DFAB82E}.Debug|x64.Build.0 = Debug|x64
 		{342E218B-142A-47F7-B572-3EF46DFAB82E}.Debug|x86.ActiveCfg = Debug|x64
 		{342E218B-142A-47F7-B572-3EF46DFAB82E}.Release|x64.ActiveCfg = Release|x64
+		{342E218B-142A-47F7-B572-3EF46DFAB82E}.Release|x64.Build.0 = Release|x64
 		{342E218B-142A-47F7-B572-3EF46DFAB82E}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution

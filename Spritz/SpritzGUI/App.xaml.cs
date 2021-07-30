@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace GUI
+namespace SpritzGUI
 {
     /// <summary>
     /// Interaction logic for App.xaml

@@ -7,8 +7,8 @@ RUN micromamba install -y -n base -f /tmp/spritzbase.yaml \
         && micromamba clean --all --yes
 
 # install prebuilt SpritzCMD
-COPY . /app/spritz/
-WORKDIR /app/spritz/SpritzCMD/bin/x64/Release/net5.0/
+COPY ./SpritzCMD/bin/x64/Release/net5.0/ /app/spritz/
+WORKDIR /app/spritz/
 
 # activate environment
 RUN echo "source activate" > ~/.bashrc

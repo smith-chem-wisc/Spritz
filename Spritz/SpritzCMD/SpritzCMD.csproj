@@ -114,10 +114,4 @@
     <Folder Include="workflow\scripts\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="dockerspritz">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

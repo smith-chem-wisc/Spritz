@@ -13,4 +13,8 @@
     <PackageReference Include="mzLib" Version="1.0.500" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SpritzBackend\SpritzBackend.csproj" />
+  </ItemGroup>
+
 </Project>

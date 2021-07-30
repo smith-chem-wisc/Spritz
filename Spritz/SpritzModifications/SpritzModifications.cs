@@ -1,10 +1,12 @@
 ﻿using Fclp;
 using Proteomics;
+using SpritzBackend;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UsefulProteomicsDatabases;
 
 namespace SpritzModifications
@@ -39,6 +41,20 @@ namespace SpritzModifications
 
             var result = p.Parse(args);
 
+            // handle unrecognized and unmatched
+            bool anyUnrecognized = result.AdditionalOptionsFound.Any();
+            int countUnmatched = result.UnMatchedOptions.Count();
+            var possibleMatches = typeof(SpritzModsAppArguments).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.NonPublic);
+            if (anyUnrecognized)
+            {
+                throw new SpritzException($"Error: unrecognized commandline argument(s): {string.Join(',', result.AdditionalOptionsFound.Select(x => x.ToString()))}");
+            }
+            else if (countUnmatched == possibleMatches.Length)
+            {
+                result = p.Parse(new[] { "-h" });
+            }
+
+            // handle options
             if (result.HelpCalled)
             {
                 return;
@@ -55,10 +71,12 @@ namespace SpritzModifications
 
                 DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
                     Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
-                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"), true);
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"),
+                    true);
                 DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
                     Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.decoy.tsv"),
-                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"), false);
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"),
+                    false);
             }
         }
 

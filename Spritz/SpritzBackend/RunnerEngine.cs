@@ -21,7 +21,7 @@ namespace SpritzBackend
         public string SpritzCMDCommand { get; set; }
 
         public static readonly string CurrentVersion = "0.3.0"; // should be the same here, in config.yaml, and in common.smk
-
+        public static readonly bool PrebuiltSpritzMods = true; // always using prebuilt library now
         public RunnerEngine(Tuple<string, Options> task, string outputFolder)
         {
             // set up directories to mount to docker container as volumes
@@ -47,7 +47,7 @@ namespace SpritzBackend
             SpritzContainerName = $"spritz{PathToWorkflow.GetHashCode()}";
         }
 
-        public string GenerateCommandsDry(string dockerImageName, string snakemakeCommand)
+        public string GenerateCommandsDry(string dockerImageName, string spritzCmdCommand)
         {
             string command = "";
             if (dockerImageName.Contains("smithlab"))
@@ -57,16 +57,15 @@ namespace SpritzBackend
             command += $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
                 $"-v \"\"\"{ResourcesDirectory}:/app/resources" + "\"\"\" " +
-                $"-v \"\"\"{ConfigDirectory}:/app/configs\"\"\" " +
-                $"{dockerImageName} {snakemakeCommand}; docker stop spritz{PathToWorkflow.GetHashCode()}";
+                $"{dockerImageName} {spritzCmdCommand}; docker stop spritz{PathToWorkflow.GetHashCode()}";
             return command;
         }
 
         public string GenerateSpritzCMDCommand(Options options)
         {
-            return "./dockerspritz -h";
-            // need to do this with the SpritzCmdAppArgInfo
-            // used for GUI only
+            string command = $"/opt/conda/lib/dotnet/dotnet SpritzCMD.dll {SpritzCmdAppArgInfoStrings.GenerateSpritzCMDArgs(options)}";
+            SpritzCMDCommand = command;
+            return command;
         }
 
         public string GenerateSnakemakeCommand(Options options, bool setup)
@@ -86,7 +85,7 @@ namespace SpritzBackend
             return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
         }
 
-        public void WriteConfig(Options options, bool prebuiltSpritzMods = false)
+        public void WriteConfig(Options options, string analysisDirectoryStr)
         {
             const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
 
@@ -123,7 +122,7 @@ namespace SpritzBackend
             // write user defined analysis directory (input and output folder)
             YamlSequenceNode analysisDirectory = new();
             analysisDirectory.Style = SequenceStyle.Flow;
-            analysisDirectory.Add("analysis");
+            analysisDirectory.Add(analysisDirectoryStr);
             rootMappingNode.Add("analysisDirectory", analysisDirectory);
 
             // process reference string
@@ -167,7 +166,7 @@ namespace SpritzBackend
             rootMappingNode.Add("spritzversion", version);
 
             // record that the spritzmods dll will be prebuilt via SpritzCMD
-            rootMappingNode.Add("prebuilt_spritz_mods", new YamlScalarNode(prebuiltSpritzMods ? "True" : "False"));
+            rootMappingNode.Add("prebuilt_spritz_mods", new YamlScalarNode(PrebuiltSpritzMods ? "True" : "False"));
 
             using TextWriter writer = File.CreateText(ConfigFile);
             stream.Save(writer, false);

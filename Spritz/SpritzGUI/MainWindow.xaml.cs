@@ -210,13 +210,11 @@ namespace Spritz
                 Runner = new RunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
                 InformationTextBox.Document.Blocks.Clear();
-                Runner.GenerateSnakemakeCommand(StaticTasksObservableCollection.First().options, false);
-                InformationTextBox.AppendText($"Command executing: Powershell.exe {Runner.GenerateCommandsDry(DockerImage, Runner.SnakemakeCommand)}\n\n"); // keep for debugging
+                Runner.GenerateSpritzCMDCommand(StaticTasksObservableCollection.First().options);
+                InformationTextBox.AppendText($"Command executing: Powershell.exe {Runner.GenerateCommandsDry(DockerImage, Runner.SpritzCMDCommand)}\n\n"); // keep for debugging
                 InformationTextBox.AppendText($"Saving output to {Runner.PathToWorkflow}. Please monitor it there...\n\n");
 
                 IsRunning = true;
-                Runner.WriteConfig(StaticTasksObservableCollection.First().options);
-                Runner.GenerateSnakemakeCommand(StaticTasksObservableCollection.First().options, false);
                 var t = new Task(RunEverythingRunner);
                 t.Start();
                 t.ContinueWith(DisplayAnyErrors);
@@ -237,7 +235,7 @@ namespace Spritz
         {
             Process proc = new();
             proc.StartInfo.FileName = "Powershell.exe";
-            proc.StartInfo.Arguments = Runner.GenerateCommandsDry(DockerImage, Runner.SnakemakeCommand);
+            proc.StartInfo.Arguments = Runner.GenerateCommandsDry(DockerImage, Runner.SpritzCMDCommand);
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;

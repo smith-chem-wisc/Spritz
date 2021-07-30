@@ -1,0 +1,83 @@
+name: .NET
+
+on:
+  push:
+    tags:
+    - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Verify commit exists in origin/master
+        run: |
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          git branch --remote --contains | grep origin/${env:RELEASE_BRANCH}
+        env:
+          RELEASE_BRANCH: master
+
+      - name: Restore dependencies
+        run: dotnet restore Spritz/Spritz.sln
+      - name: Build
+        run: |
+          $version= &git describe --tags
+          dotnet build --no-restore --configuration Release /p:Version=${version} /p:Platform=x64 
+      - name: Test
+        run: |
+          $version= &git describe --tags
+          dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build
+
+      - name: Setup Docker and build test image
+        uses: docker/build-push-action@v2
+        with :
+          context: Spritz/
+          tags: test-image:latest
+          push: false
+      - name: Run test image
+        uses: addnab/docker-run-action@v3
+        with:
+          image: test-image:latest
+          run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -h
+
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1
+      - name: Build Installer
+        run: |
+          $version= &git describe --tags
+          msbuild build Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:UseSharedCompilation=false /p:Version=${version}
+
+      - name: Create archive
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'zip'
+          filename: 'SpritzCMD.zip'
+          directory: Spritz/SpritzCMD/bin/x64/Release/net5.0/
+      - name: Upload Release
+          uses: ncipollo/release-action@v1
+          with:
+            artifacts: "SpritzCMD.zip,Spritz/SpritzInstaller/bin/Release/Spritz.msi"
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: Spritz/
+          push: true
+          tags: smithlab/spritz:${version}
+          env: $version=&git describe --tags

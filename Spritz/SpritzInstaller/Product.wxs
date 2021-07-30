@@ -6,7 +6,7 @@
     <MediaTemplate EmbedCab="yes"/>
 
     <!-- Add installer icon-->
-    <Icon Id="icon.ico" SourceFile="$(var.SpritzTargetDir)..\..\..\Spritz.ico"/>
+    <Icon Id="icon.ico" SourceFile="$(var.SpritzTargetDir)..\..\..\..\Spritz.ico"/>
     <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
 
     <!-- Check version information -->
@@ -28,7 +28,9 @@
       </Directory>
           
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="APPLICATIONROOTDIRECTORY" Name="Spritz" />
+        <Directory Id="APPLICATIONROOTDIRECTORY" Name="Spritz">
+          <Directory Id="RefFolder" Name="ref"/>
+        </Directory>
 			</Directory>
 			<Directory Id="ProgramMenuFolder">
 				<Directory Id="ApplicationProgramsFolder" Name="Spritz"/>
@@ -72,7 +74,19 @@
       <Component Id="Newtonsoft.Json.dll" Guid="c1ccf400-1374-4ed4-8466-140dc5969d33">
         <File Id="Newtonsoft.Json.dll" Source="$(var.SpritzTargetDir)Newtonsoft.Json.dll"/>
       </Component>
+      <Component Id="SpritzBackend.dll" Guid="8dc67d48-dfbe-49f9-b7a5-1b30999e9978">
+        <File Id="SpritzBackend.dll" Source="$(var.SpritzTargetDir)SpritzBackend.dll"/>
+      </Component>
+      <Component Id="SpritzBackend.pdb" Guid="658463b6-96fc-4be5-ac57-8513eb551566">
+        <File Id="SpritzBackend.pdb" Source="$(var.SpritzTargetDir)SpritzBackend.pdb"/>
+      </Component>
     </DirectoryRef>
+
+    <ComponentGroup Id="RefComponents" Directory="RefFolder">
+        <Component Id="ref_Spritz.dll" Guid="1fa9180b-ec2e-46b4-8f87-8ff9bffb1cc5">
+        <File Id="ref_Spritz.dll" Source="$(var.SpritzTargetDir)Spritz.dll"/>
+      </Component>
+    </ComponentGroup>
     
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="">
@@ -95,8 +109,11 @@
       <ComponentRef Id="genomes.csv"/>
       <ComponentRef Id="MarkdownSharp.dll"/>
       <ComponentRef Id="Newtonsoft.Json.dll"/>
+      <ComponentRef Id="SpritzBackend.pdb"/>
+      <ComponentRef Id="SpritzBackend.dll"/>
       <ComponentRef Id="DesktopShortcut"/>
       <ComponentRef Id="ApplicationShortcut"/>
+      <ComponentGroupRef Id="RefComponents"/>
     </Feature>
 
     <UI>

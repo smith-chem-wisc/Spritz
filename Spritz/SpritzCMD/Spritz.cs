@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 
 namespace SpritzCMD
 {
@@ -101,13 +102,33 @@ namespace SpritzCMD
 
             var result = p.Parse(args);
 
+            // handle unrecognized and unmatched
+            bool anyUnrecognized = result.AdditionalOptionsFound.Any();
+            int countUnmatched = result.UnMatchedOptions.Count();
+            var possibleMatches = typeof(SpritzCmdAppArguments).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.NonPublic);
+            if (anyUnrecognized)
+            {
+                throw new SpritzException($"Error: unrecognized commandline argument(s): {string.Join(',', result.AdditionalOptionsFound.Select(x => x.ToString()))}");
+            }
+            else if (countUnmatched == possibleMatches.Length)
+            {
+                result = p.Parse(new[] { "-h" });
+            }
+
             string analysisDirectory = RunnerEngine.TrimQuotesOrNull(p.Object.AnalysisDirectory);
+            Console.WriteLine($"Testing analysis directory {analysisDirectory}");
             if (!RunnerEngine.IsDirectoryWritable(analysisDirectory))
             {
                 analysisDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "spritz", "results");
             }
             Console.WriteLine($"Using analysis directory {analysisDirectory}");
             Console.WriteLine();
+
+            bool noSequencesSpecified =
+                p.Object.SraAccession == null && p.Object.SraAccessionSingleEnd == null &&
+                p.Object.Fastq1 == null && p.Object.Fastq1SingleEnd == null && p.Object.Fastq2 == null;
+            bool analysisSpecified =
+                p.Object.AnalyzeVariants || p.Object.AnalyzeIsoforms || p.Object.Quantify;
 
             if (result.HelpCalled)
             {
@@ -130,17 +151,23 @@ namespace SpritzCMD
                 }
                 return;
             }
+            else if (p.Object.Reference == null)
+            {
+                throw new SpritzException("Error: No reference specified. Please specify one with the -r flag that has four elements corresponding to a line from genomes.csv.");
+            }
+            else if (analysisSpecified && noSequencesSpecified)
+            {
+                throw new SpritzException("Error: An analysis was specified, but no sequences were specified to analyze. Please try again after specifying fastqs or sras.");
+            }
             else
             {
-                if (p.Object.Reference == null)
-                {
-                    throw new SpritzException("Error: No reference specified. Please specify one with the -r flag that has four elements corresponding to a line from genomes.csv.");
-                }
+                if (!analysisSpecified && noSequencesSpecified)
+                    Console.WriteLine("NB: No sequences or analyses were specified, and so a reference database will be generated from Ensembl references only.");
 
                 Options options = ParseOptions(p.Object, analysisDirectory);
 
                 RunnerEngine runner = new(new("", options), analysisDirectory);
-                runner.WriteConfig(options, true);
+                runner.WriteConfig(options, analysisDirectory);
                 runner.GenerateSnakemakeCommand(options, p.Object.AnalysisSetup);
                 string snakemakeArguments = runner.SnakemakeCommand["snakemake ".Length..];
                 Console.WriteLine($"Running `{runner.SnakemakeCommand}`.");

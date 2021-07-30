@@ -18,6 +18,8 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>
+    </DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Maintenance.wxs" />
@@ -35,7 +37,7 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GUI\SpritzGUI.csproj">
+    <ProjectReference Include="..\SpritzGUI\SpritzGUI.csproj">
       <Name>SpritzGUI</Name>
       <Project>{5fe72284-b831-4e52-89e3-c7b929b9b6f9}</Project>
       <Private>True</Private>

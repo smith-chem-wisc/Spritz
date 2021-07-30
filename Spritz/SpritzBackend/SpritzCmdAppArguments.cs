@@ -10,7 +10,7 @@
         public string SraAccessionSingleEnd { get; set; }
         public int Threads { get; set; }
         public string Reference { get; set; }
-        public bool AnalyzeVariants { get; set; } = true;
+        public bool AnalyzeVariants { get; set; }
         public bool AnalyzeIsoforms { get; set; }
         public bool Quantify { get; set; }
         public bool AvailableReferences { get; set; }
