@@ -1,8 +1,7 @@
 {
   "profiles": {
     "TransferUniProtModifications": {
-      "commandName": "Project",
-      "commandLineArgs": "--setup"
+      "commandName": "Project"
     }
   }
 }

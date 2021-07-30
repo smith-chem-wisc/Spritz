@@ -65,15 +65,32 @@ namespace SpritzModifications
                 var uniprotPtms = ProteinAnnotation.GetUniProtMods(Environment.CurrentDirectory);
                 return;
             }
+            else if (File.Exists(p.Object.SpritzModXml))
+            {
+                Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzModXml}");
+
+                DatabaseSummary(p.Object.UniProtXml, p.Object.SpritzModXml,
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzModXml), Path.GetFileNameWithoutExtension(p.Object.SpritzModXml) + ".accname.tsv"),
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzModXml), Path.GetFileNameWithoutExtension(p.Object.SpritzModXml) + ".vardesc.tsv"),
+                    true);
+                DatabaseSummary(p.Object.UniProtXml, p.Object.SpritzModXml,
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzModXml), Path.GetFileNameWithoutExtension(p.Object.SpritzModXml) + ".accname.decoy.tsv"),
+                    Path.Combine(Path.GetDirectoryName(p.Object.SpritzModXml), Path.GetFileNameWithoutExtension(p.Object.SpritzModXml) + ".vardesc.decoy.tsv"),
+                    false);
+            }
             else
             {
-                Console.WriteLine($"Analyzing UniProt database {p.Object.UniProtXml} and {p.Object.SpritzXml}");
+                Console.WriteLine($"Transfering modifications from UniProt database {p.Object.UniProtXml} to {p.Object.SpritzXml}");
 
-                DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
+                string outxmlpath = TransferModifications(p.Object.UniProtXml, p.Object.SpritzXml);
+
+                Console.WriteLine($"Analyzing resulting database {outxmlpath}");
+
+                DatabaseSummary(p.Object.UniProtXml, outxmlpath,
                     Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.tsv"),
                     Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.tsv"),
                     true);
-                DatabaseSummary(p.Object.UniProtXml, Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".withmods.xml"),
+                DatabaseSummary(p.Object.UniProtXml, outxmlpath,
                     Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".accname.decoy.tsv"),
                     Path.Combine(Path.GetDirectoryName(p.Object.SpritzXml), Path.GetFileNameWithoutExtension(p.Object.SpritzXml) + ".vardesc.decoy.tsv"),
                     false);
@@ -211,7 +228,7 @@ namespace SpritzModifications
             Console.WriteLine($"{numberOfVariantProteinEntries}\tTotal number of variant containing protein entries");
             Console.WriteLine($"{totalVariants}\tTotal number of unique variants");
             Console.WriteLine($"{synonymousCount}\tTotal number of unique synonymous variants");
-            Console.WriteLine($"{(totalVariants - synonymousCount)}\tTotal number of unique nonsynonymous variants");
+            Console.WriteLine($"{totalVariants - synonymousCount}\tTotal number of unique nonsynonymous variants");
             Console.WriteLine($"{missenseSnvCount}\tNumber of unique SNV missense variants");
             Console.WriteLine($"{missenseMnvCount}\tNumber of unique MNV missense variants");
             Console.WriteLine($"{frameshiftCount}\tNumber of unique frameshift variants");

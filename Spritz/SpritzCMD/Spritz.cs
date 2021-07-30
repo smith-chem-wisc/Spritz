@@ -3,12 +3,12 @@ using SpritzBackend;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 
 namespace SpritzCMD
 {
-    internal class Program
+    internal class Spritz
     {
         private static void Main(string[] args)
         {
