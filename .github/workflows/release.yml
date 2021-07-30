@@ -34,6 +34,9 @@ jobs:
           $version= &git describe --tags
           dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build
 
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
       - name: Setup Docker and build test image
         uses: docker/build-push-action@v2
         with :
@@ -51,7 +54,7 @@ jobs:
       - name: Build Installer
         run: |
           $version= &git describe --tags
-          msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:UseSharedCompilation=false /p:Version=${version}
+          msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:Version=${version}
 
       - name: Create archive
         uses: thedoctor0/zip-release@master
