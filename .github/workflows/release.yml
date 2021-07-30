@@ -63,11 +63,12 @@ jobs:
           type: 'zip'
           filename: 'SpritzCMD.zip'
           directory: Spritz/SpritzCMD/bin/x64/Release/net5.0/
+
       - name: Upload Release
-          uses: ncipollo/release-action@v1
-          with:
-            artifacts: "SpritzCMD.zip,Spritz/SpritzInstaller/bin/Release/Spritz.msi"
-            token: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "SpritzCMD.zip,Spritz/SpritzInstaller/bin/Release/Spritz.msi"
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
