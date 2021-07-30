@@ -19,7 +19,7 @@ jobs:
     - name: Setup Docker
       uses: docker/build-push-action@v2
       with :
-        context: Spritz/
+        context: Spritz/Spritz/
         tags: test-image:latest
         push: false
 
@@ -27,4 +27,4 @@ jobs:
       uses: addnab/docker-run-action@v3
       with:
         image: test-image:latest
-        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -b -c -d -r="release-97,homo_sapiens,human,GRCh38" -p=8 -s=SRR629563
+        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=8 -s=SRR629563
