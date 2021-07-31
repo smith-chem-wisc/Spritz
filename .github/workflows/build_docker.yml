@@ -11,9 +11,20 @@ on:
 jobs:
   buildx:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 Spritz/SpritzCMD/SpritzCMD.csproj
+
       
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
