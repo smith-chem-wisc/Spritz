@@ -23,7 +23,7 @@ jobs:
       run: dotnet restore Spritz/Spritz.sln
 
     - name: Build
-      run: dotnet build --no-restore /p:Platform=x64 Spritz/Spritz.sln
+      run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
 
     - name: Test
       run: dotnet test --no-build --verbosity normal Spritz/Spritz.sln
