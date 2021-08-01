@@ -22,28 +22,14 @@ jobs:
     - name: Build
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
 
-      
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
 
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v1
+    - name: Build docker image
+      run: docker build -t spritz ./Spritz/
 
-    - name: Setup Docker
-      uses: docker/build-push-action@v2
-      with :
-        context: ./Spritz/
-        tags: spritz
-        push: false
-
-    - name: Run test image
-      uses: addnab/docker-run-action@v3
-      with:
-        image: spritz
-        pull: false
-        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -h
-        
+    - name: Run test
+      run: docker run spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=4
 
     - name: Login to DockerHub
       uses: docker/login-action@v1
@@ -51,10 +37,8 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push
-      uses: docker/build-push-action@v2
-      with:
-        context: Spritz/
-        push: true
-        tags: smithlab/spritz:${version}
-        env: $version=&git describe --tags
+    - name: Tag and push
+      run: |
+        $version=&git describe --tags
+        docker tag spritz smithlab/spritz:${version}
+        docker push smithlab/spritz:${version}

@@ -207,7 +207,7 @@ namespace Spritz
                 DynamicTasksObservableCollection.Add(new InRunTask("Workflow 1", StaticTasksObservableCollection.First().options));
                 WorkflowTreeView.DataContext = DynamicTasksObservableCollection;
 
-                Runner = new RunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, Options>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
+                Runner = new RunnerEngine(DynamicTasksObservableCollection.Select(b => new Tuple<string, SpritzOptions>(b.DisplayName, b.options)).First(), OutputFolderTextBox.Text);
 
                 InformationTextBox.Document.Blocks.Clear();
                 Runner.GenerateSpritzCMDCommand(StaticTasksObservableCollection.First().options);
@@ -374,7 +374,7 @@ namespace Spritz
             try
             {
                 var dialog = new WorkFlowWindow(string.IsNullOrEmpty(OutputFolderTextBox.Text) ? 
-                    new Options(DockerCPUs).AnalysisDirectory : 
+                    SpritzOptions.DefaultAnalysisDirectory() : 
                     OutputFolderTextBox.Text);
 
                 if (dialog.ShowDialog() == true)
@@ -408,7 +408,7 @@ namespace Spritz
             }
         }
 
-        private void AddTaskToCollection(Options ye)
+        private void AddTaskToCollection(SpritzOptions ye)
         {
             PreRunTask te = new(ye);
             StaticTasksObservableCollection.Add(te);

@@ -22,7 +22,7 @@ namespace SpritzBackend
 
         public static readonly string CurrentVersion = "0.3.0"; // should be the same here, in config.yaml, and in common.smk
         public static readonly bool PrebuiltSpritzMods = true; // always using prebuilt library now
-        public RunnerEngine(Tuple<string, Options> task, string outputFolder)
+        public RunnerEngine(Tuple<string, SpritzOptions> task, string outputFolder)
         {
             // set up directories to mount to docker container as volumes
             AnalysisDirectory = task != null ? task.Item2.AnalysisDirectory : outputFolder;
@@ -61,14 +61,14 @@ namespace SpritzBackend
             return command;
         }
 
-        public string GenerateSpritzCMDCommand(Options options)
+        public string GenerateSpritzCMDCommand(SpritzOptions options)
         {
-            string command = $"/opt/conda/lib/dotnet/dotnet SpritzCMD.dll {SpritzCmdAppArgInfoStrings.GenerateSpritzCMDArgs(options)}";
+            string command = $"/opt/conda/lib/dotnet/dotnet SpritzCMD.dll {SpritzOptionStrings.GenerateSpritzCMDArgs(options)}";
             SpritzCMDCommand = command;
             return command;
         }
 
-        public string GenerateSnakemakeCommand(Options options, bool setup)
+        public string GenerateSnakemakeCommand(SpritzOptions options, bool setup)
         {
             string cmd = "";
             cmd += $"snakemake -j {options.Threads} --use-conda --conda-frontend mamba --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
@@ -85,7 +85,7 @@ namespace SpritzBackend
             return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
         }
 
-        public void WriteConfig(Options options, string analysisDirectoryStr)
+        public void WriteConfig(SpritzOptions options, string analysisDirectoryStr)
         {
             const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
 

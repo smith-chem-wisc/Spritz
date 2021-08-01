@@ -13,80 +13,84 @@ namespace SpritzCMD
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to Spritz!");
-            FluentCommandLineParser<SpritzCmdAppArguments> p = new();
+            FluentCommandLineParser<SpritzOptions> p = new();
 
-            Options defaults = new(Environment.ProcessorCount);
+            // Get defaults
+            SpritzOptions defaults = new();
+            defaults.AnalysisDirectory = SpritzOptions.DefaultAnalysisDirectory();
+            defaults.Threads = Environment.ProcessorCount;
+
             p.Setup(arg => arg.AnalysisDirectory)
-                .As(SpritzCmdAppArgInfoStrings.AnalysisDirectoryShort,
-                    SpritzCmdAppArgInfoStrings.AnalysisDirectoryLong)
+                .As(SpritzOptionStrings.AnalysisDirectoryShort,
+                    SpritzOptionStrings.AnalysisDirectoryLong)
                 .SetDefault(defaults.AnalysisDirectory)
-                .WithDescription(SpritzCmdAppArgInfoStrings.AnalysisDirectoryDesc);
+                .WithDescription(SpritzOptionStrings.AnalysisDirectoryDesc);
 
             p.Setup(arg => arg.AnalyzeVariants)
-                .As(SpritzCmdAppArgInfoStrings.AnalyzeVariantsShort,
-                    SpritzCmdAppArgInfoStrings.AnalyzeVariantsLong)
+                .As(SpritzOptionStrings.AnalyzeVariantsShort,
+                    SpritzOptionStrings.AnalyzeVariantsLong)
                 .SetDefault(defaults.AnalyzeVariants)
-                .WithDescription(SpritzCmdAppArgInfoStrings.AnalyzeVariantsDesc);
+                .WithDescription(SpritzOptionStrings.AnalyzeVariantsDesc);
 
             p.Setup(arg => arg.AnalyzeIsoforms)
-                .As(SpritzCmdAppArgInfoStrings.AnalyzeIsoformsShort,
-                    SpritzCmdAppArgInfoStrings.AnalyzeIsoformsLong)
+                .As(SpritzOptionStrings.AnalyzeIsoformsShort,
+                    SpritzOptionStrings.AnalyzeIsoformsLong)
                 .SetDefault(defaults.AnalyzeIsoforms)
-                .WithDescription(SpritzCmdAppArgInfoStrings.AnalyzeIsoformsDesc);
+                .WithDescription(SpritzOptionStrings.AnalyzeIsoformsDesc);
 
             p.Setup(arg => arg.Quantify)
-                .As(SpritzCmdAppArgInfoStrings.QuantifyShort,
-                    SpritzCmdAppArgInfoStrings.QuantifyLong)
+                .As(SpritzOptionStrings.QuantifyShort,
+                    SpritzOptionStrings.QuantifyLong)
                 .SetDefault(defaults.Quantify)
-                .WithDescription(SpritzCmdAppArgInfoStrings.QuantifyDesc);
+                .WithDescription(SpritzOptionStrings.QuantifyDesc);
 
             p.Setup(arg => arg.AvailableReferences)
-                .As(SpritzCmdAppArgInfoStrings.AvailableReferencesShort,
-                    SpritzCmdAppArgInfoStrings.AvailableReferencesLong)
+                .As(SpritzOptionStrings.AvailableReferencesShort,
+                    SpritzOptionStrings.AvailableReferencesLong)
                 .SetDefault(false)
-                .WithDescription(SpritzCmdAppArgInfoStrings.AvailableReferencesDesc);
+                .WithDescription(SpritzOptionStrings.AvailableReferencesDesc);
 
             p.Setup(arg => arg.AnalysisSetup)
-                .As(SpritzCmdAppArgInfoStrings.AnalysisSetupShort,
-                    SpritzCmdAppArgInfoStrings.AnalysisSetupLong)
+                .As(SpritzOptionStrings.AnalysisSetupShort,
+                    SpritzOptionStrings.AnalysisSetupLong)
                 .SetDefault(false)
-                .WithDescription(SpritzCmdAppArgInfoStrings.AnalysisSetupDesc);
+                .WithDescription(SpritzOptionStrings.AnalysisSetupDesc);
 
             p.Setup(arg => arg.Fastq1)
-                .As(SpritzCmdAppArgInfoStrings.Fastq1Short,
-                    SpritzCmdAppArgInfoStrings.Fastq1Long)
-                .WithDescription(SpritzCmdAppArgInfoStrings.Fastq1Desc);
+                .As(SpritzOptionStrings.Fastq1Short,
+                    SpritzOptionStrings.Fastq1Long)
+                .WithDescription(SpritzOptionStrings.Fastq1Desc);
 
             p.Setup(arg => arg.Fastq2)
-                .As(SpritzCmdAppArgInfoStrings.Fastq2Short,
-                    SpritzCmdAppArgInfoStrings.Fastq2Long)
-                .WithDescription(SpritzCmdAppArgInfoStrings.Fastq2Desc);
+                .As(SpritzOptionStrings.Fastq2Short,
+                    SpritzOptionStrings.Fastq2Long)
+                .WithDescription(SpritzOptionStrings.Fastq2Desc);
 
             p.Setup(arg => arg.Fastq1SingleEnd)
-                .As(SpritzCmdAppArgInfoStrings.Fastq1SingleEndShort,
-                    SpritzCmdAppArgInfoStrings.Fastq1SingleEndLong)
-                .WithDescription(SpritzCmdAppArgInfoStrings.Fastq1SingleEndDesc);
+                .As(SpritzOptionStrings.Fastq1SingleEndShort,
+                    SpritzOptionStrings.Fastq1SingleEndLong)
+                .WithDescription(SpritzOptionStrings.Fastq1SingleEndDesc);
 
             p.Setup(arg => arg.SraAccession)
-                .As(SpritzCmdAppArgInfoStrings.SraAccessionShort,
-                    SpritzCmdAppArgInfoStrings.SraAccessionLong)
-                .WithDescription(SpritzCmdAppArgInfoStrings.SraAccessionDesc);
+                .As(SpritzOptionStrings.SraAccessionShort,
+                    SpritzOptionStrings.SraAccessionLong)
+                .WithDescription(SpritzOptionStrings.SraAccessionDesc);
 
             p.Setup(arg => arg.SraAccessionSingleEnd)
-                .As(SpritzCmdAppArgInfoStrings.SraAccessionSingleEndShort,
-                    SpritzCmdAppArgInfoStrings.SraAccessionSingleEndLong)
-                .WithDescription(SpritzCmdAppArgInfoStrings.SraAccessionSingleEndDesc);
+                .As(SpritzOptionStrings.SraAccessionSingleEndShort,
+                    SpritzOptionStrings.SraAccessionSingleEndLong)
+                .WithDescription(SpritzOptionStrings.SraAccessionSingleEndDesc);
 
             p.Setup(arg => arg.Threads)
-                .As(SpritzCmdAppArgInfoStrings.ThreadsShort,
-                    SpritzCmdAppArgInfoStrings.ThreadsLong)
+                .As(SpritzOptionStrings.ThreadsShort,
+                    SpritzOptionStrings.ThreadsLong)
                 .SetDefault(defaults.Threads)
-                .WithDescription(SpritzCmdAppArgInfoStrings.ThreadsDesc);
+                .WithDescription(SpritzOptionStrings.ThreadsDesc);
 
             p.Setup(arg => arg.Reference)
-                 .As(SpritzCmdAppArgInfoStrings.ReferenceShort,
-                    SpritzCmdAppArgInfoStrings.ReferenceLong)
-                .WithDescription(SpritzCmdAppArgInfoStrings.ReferenceDesc);
+                 .As(SpritzOptionStrings.ReferenceShort,
+                    SpritzOptionStrings.ReferenceLong)
+                .WithDescription(SpritzOptionStrings.ReferenceDesc);
 
             string helpoutro = "";
             helpoutro += $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and mamba." + Environment.NewLine;
@@ -105,7 +109,7 @@ namespace SpritzCMD
             // handle unrecognized and unmatched
             bool anyUnrecognized = result.AdditionalOptionsFound.Any();
             int countUnmatched = result.UnMatchedOptions.Count();
-            var possibleMatches = typeof(SpritzCmdAppArguments).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.NonPublic);
+            var possibleMatches = typeof(SpritzOptions).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.NonPublic);
             if (anyUnrecognized)
             {
                 throw new SpritzException($"Error: unrecognized commandline argument(s): {string.Join(',', result.AdditionalOptionsFound.Select(x => x.ToString()))}");
@@ -164,7 +168,7 @@ namespace SpritzCMD
                 if (!analysisSpecified && noSequencesSpecified)
                     Console.WriteLine("NB: No sequences or analyses were specified, and so a reference database will be generated from Ensembl references only.");
 
-                Options options = ParseOptions(p.Object, analysisDirectory);
+                SpritzOptions options = CleanOptions(p.Object, analysisDirectory);
 
                 RunnerEngine runner = new(new("", options), analysisDirectory);
                 runner.WriteConfig(options, analysisDirectory);
@@ -183,21 +187,15 @@ namespace SpritzCMD
             }
         }
 
-        private static Options ParseOptions(SpritzCmdAppArguments aa, string analysisDirectory)
+        private static SpritzOptions CleanOptions(SpritzOptions aa, string analysisDirectory)
         {
-            Options options = new(aa.Threads);
-            options.AnalysisDirectory = analysisDirectory;
-            options.Fastq1 = aa.Fastq1 ?? "";
-            options.Fastq2 = aa.Fastq2 ?? "";
-            options.Fastq1SingleEnd = aa.Fastq1SingleEnd ?? "";
-            options.SraAccession = aa.SraAccession ?? "";
-            options.SraAccessionSingleEnd = aa.SraAccessionSingleEnd ?? "";
-            options.Threads = aa.Threads;
-            options.Reference = aa.Reference;
-            options.AnalyzeVariants = aa.AnalyzeVariants;
-            options.AnalyzeIsoforms = aa.AnalyzeIsoforms;
-            options.Quantify = aa.Quantify;
-            return options;
+            aa.AnalysisDirectory = analysisDirectory;
+            aa.Fastq1 = aa.Fastq1 ?? "";
+            aa.Fastq2 = aa.Fastq2 ?? "";
+            aa.Fastq1SingleEnd = aa.Fastq1SingleEnd ?? "";
+            aa.SraAccession = aa.SraAccession ?? "";
+            aa.SraAccessionSingleEnd = aa.SraAccessionSingleEnd ?? "";
+            return aa;
         }
     }
 }

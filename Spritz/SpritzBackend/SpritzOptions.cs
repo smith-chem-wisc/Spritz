@@ -1,6 +1,10 @@
-﻿namespace SpritzBackend
+﻿using System;
+using System.IO;
+using System.Reflection;
+
+namespace SpritzBackend
 {
-    public class SpritzCmdAppArguments
+    public class SpritzOptions
     {
         public string AnalysisDirectory { get; set; }
         public string Fastq1 { get; set; }
@@ -15,5 +19,15 @@
         public bool Quantify { get; set; }
         public bool AvailableReferences { get; set; }
         public bool AnalysisSetup { get; set; }
+
+        public static string DefaultAnalysisDirectory()
+        {
+            string defaultDirectory = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "results");
+            if (!RunnerEngine.IsDirectoryWritable(defaultDirectory))
+            {
+                defaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Spritz", "output");
+            }
+            return defaultDirectory;
+        }
     }
 }

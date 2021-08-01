@@ -4,9 +4,9 @@ namespace Spritz
 {
     internal class PreRunTask
     {
-        public readonly Options options;
+        public readonly SpritzOptions options;
 
-        public PreRunTask(Options options)
+        public PreRunTask(SpritzOptions options)
         {
             this.options = options;
         }

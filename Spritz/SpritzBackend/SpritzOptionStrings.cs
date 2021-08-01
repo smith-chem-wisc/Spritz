@@ -2,7 +2,7 @@
 
 namespace SpritzBackend
 {
-    public static class SpritzCmdAppArgInfoStrings
+    public static class SpritzOptionStrings
     {
         public static readonly char AnalysisDirectoryShort = 'a';
         public static readonly string AnalysisDirectoryLong = "analysisDirectory";
@@ -81,7 +81,7 @@ namespace SpritzBackend
             $"2b) Alternatively, specify false for both -v and -w to generate a reference proteogenomic database from the Ensembl references.{Environment.NewLine}" +
             Environment.NewLine;
 
-        public static string GenerateSpritzCMDArgs(SpritzCmdAppArguments args)
+        public static string GenerateSpritzCMDArgs(SpritzOptions args)
         {
             // docker container working directory is /app/spritz/ and snakemake runs in /app/spritz/workflow/
             // the results directory is /app/spritz/results/

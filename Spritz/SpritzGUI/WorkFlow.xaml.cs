@@ -16,13 +16,15 @@ namespace Spritz
         private string AnalysisDirectory { get; set; }
         public string Reference { get; set; } // define notify property changed
         public ObservableCollection<EnsemblRelease> EnsemblReleases { get; set; }
-        public Options Options { get; set; } = new Options(Environment.ProcessorCount);
+        public SpritzOptions Options { get; set; } = new();
         private MainWindow MainWindow { get; set; }
         private int Threads { get; set; }
 
         public WorkFlowWindow(string analysisDirectory)
         {
             AnalysisDirectory = analysisDirectory;
+            Options.AnalysisDirectory = SpritzOptions.DefaultAnalysisDirectory();
+            Options.Threads = Environment.ProcessorCount;
             InitializeComponent();
             PopulateChoices();
             MainWindow = (MainWindow)Application.Current.MainWindow;
@@ -30,7 +32,7 @@ namespace Spritz
             DataContext = this;
         }
 
-        public WorkFlowWindow(Options options)
+        public WorkFlowWindow(SpritzOptions options)
         {
             InitializeComponent();
             PopulateChoices();
@@ -86,7 +88,7 @@ namespace Spritz
             DialogResult = true;
         }
 
-        private void UpdateFieldsFromTask(Options options)
+        private void UpdateFieldsFromTask(SpritzOptions options)
         {
             // Get information about the fastq and sra selections
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
@@ -126,6 +128,8 @@ namespace Spritz
                 Cb_AnalyzeIsoforms.IsEnabled = false;
                 Cb_AnalyzeVariants.IsChecked = false;
                 Cb_AnalyzeVariants.IsEnabled = false;
+                Cb_Quantify.IsChecked = false;
+                Cb_Quantify.IsEnabled = false;
             }
 
             txtAnalysisDirectory.Text = AnalysisDirectory;

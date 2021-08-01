@@ -4,9 +4,9 @@ namespace Spritz
 {
     public class InRunTask : ForTreeView
     {
-        public readonly Options options;
+        public readonly SpritzOptions options;
 
-        public InRunTask(string displayName, Options options) : base(displayName, displayName)
+        public InRunTask(string displayName, SpritzOptions options) : base(displayName, displayName)
         {
             this.options = options;
         }
