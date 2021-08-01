@@ -29,7 +29,7 @@ jobs:
       run: docker build -t spritz ./Spritz/
 
     - name: Run test
-      run: docker run spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=4
+      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=4
 
     - name: Login to DockerHub
       uses: docker/login-action@v1

@@ -184,6 +184,7 @@ namespace SpritzCMD
                 proc.StartInfo.WorkingDirectory = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "workflow");
                 proc.Start();
                 proc.WaitForExit();
+                Environment.ExitCode = proc.ExitCode;
             }
         }
 
