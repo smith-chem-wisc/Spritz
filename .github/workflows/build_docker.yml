@@ -37,11 +37,12 @@ jobs:
       uses: docker/build-push-action@v2
       with :
         context: ./Spritz/
-        tags: test-image:latest
+        tags: spritz
         push: false
 
     - name: Run test image
       uses: addnab/docker-run-action@v3
       with:
-        image: test-image:latest
-        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=8 -s=SRR629563
+        image: spritz
+        pull: false
+        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=8
