@@ -25,24 +25,8 @@ jobs:
     - name: Build
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
 
-      
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+    - name: Build docker image
+      run: docker build -t spritz ./Spritz/
 
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Setup Docker
-      uses: docker/build-push-action@v2
-      with :
-        context: ./Spritz/
-        tags: spritz
-        push: false
-
-    - name: Run test image
-      uses: addnab/docker-run-action@v3
-      with:
-        image: spritz
-        pull: false
-        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=8
+    - name: Run test
+      run: docker run --rm -it spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-97,homo_sapiens,human,GRCh38" -p=4
