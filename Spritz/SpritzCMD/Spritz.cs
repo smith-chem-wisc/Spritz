@@ -191,11 +191,11 @@ namespace SpritzCMD
         private static SpritzOptions CleanOptions(SpritzOptions aa, string analysisDirectory)
         {
             aa.AnalysisDirectory = analysisDirectory;
-            aa.Fastq1 = aa.Fastq1 ?? "";
-            aa.Fastq2 = aa.Fastq2 ?? "";
-            aa.Fastq1SingleEnd = aa.Fastq1SingleEnd ?? "";
-            aa.SraAccession = aa.SraAccession ?? "";
-            aa.SraAccessionSingleEnd = aa.SraAccessionSingleEnd ?? "";
+            aa.Fastq1 ??= "";
+            aa.Fastq2 ??= "";
+            aa.Fastq1SingleEnd ??= "";
+            aa.SraAccession ??= "";
+            aa.SraAccessionSingleEnd ??= "";
             return aa;
         }
     }

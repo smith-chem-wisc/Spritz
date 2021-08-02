@@ -164,7 +164,7 @@ namespace Spritz
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (SpritzUpdater.NewestKnownVersion != null && !SpritzUpdater.IsVersionLower(SpritzUpdater.NewestKnownVersion))
+            if (SpritzUpdater.Version.NewestKnownVersion != null && !SpritzUpdater.IsVersionLower(SpritzUpdater.Version.NewestKnownVersion))
             {
                 try
                 {

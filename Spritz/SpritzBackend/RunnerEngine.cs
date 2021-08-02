@@ -52,7 +52,7 @@ namespace SpritzBackend
             string command = "";
             if (dockerImageName.Contains("smithlab"))
             { 
-                command += $"docker pull {dockerImageName} ;";
+                command += $"docker pull {dockerImageName}:{CurrentVersion};";
             }
             command += $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
