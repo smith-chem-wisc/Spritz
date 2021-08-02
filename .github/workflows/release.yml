@@ -16,12 +16,12 @@ jobs:
         with:
           dotnet-version: 5.0.x
 
-      - name: Verify commit exists in origin/master
+      - name: Verify commit exists in release branch
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/${env:RELEASE_BRANCH}
         env:
-          RELEASE_BRANCH: master
+          RELEASE_BRANCH: PrefetchAndVariants
 
       - name: Restore dependencies
         run: dotnet restore Spritz/Spritz.sln
