@@ -29,4 +29,4 @@ jobs:
       run: docker build -t spritz ./Spritz/
 
     - name: Run test
-      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -bcd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
+      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -bd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
