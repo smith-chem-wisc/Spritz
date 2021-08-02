@@ -88,9 +88,9 @@ namespace SpritzBackend
             string argsString = 
                 $"--{ThreadsLong} {args.Threads} " +
                 $"--{AnalysisDirectoryLong}=/app/spritz/results/ ";
-            if (args.Reference != null)
+            if (args.Reference != null && args.Reference != string.Empty)
             {
-                argsString += $"--{ReferenceLong}=\"{args.Reference}\" ";
+                argsString += $"--{ReferenceLong}=\"\"\"{args.Reference}\"\"\" ";
             }
             if (args.AnalyzeVariants)
             {
@@ -108,11 +108,23 @@ namespace SpritzBackend
             {
                 argsString += $"--{AvailableReferencesLong} ";
             }
-            if (args.SraAccession != null)
+            if (args.Fastq1 != null && args.Fastq1 != string.Empty)
+            {
+                argsString += $"--{Fastq1Long}={args.Fastq1} ";
+            }
+            if (args.Fastq2 != null && args.Fastq2 != string.Empty)
+            {
+                argsString += $"--{Fastq2Long}={args.Fastq2} ";
+            }
+            if (args.Fastq1SingleEnd != null && args.Fastq1SingleEnd != string.Empty)
+            {
+                argsString += $"--{Fastq1SingleEndLong}={args.Fastq1SingleEnd} ";
+            }
+            if (args.SraAccession != null && args.SraAccession != string.Empty)
             {
                 argsString += $"--{SraAccessionLong}={args.SraAccession} ";
             }
-            if (args.SraAccessionSingleEnd != null)
+            if (args.SraAccessionSingleEnd != null && args.SraAccessionSingleEnd != string.Empty)
             {
                 argsString += $"--{SraAccessionSingleEndLong}={args.SraAccessionSingleEnd} ";
             }

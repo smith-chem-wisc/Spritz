@@ -49,15 +49,16 @@ namespace SpritzBackend
 
         public string GenerateCommandsDry(string dockerImageName, string spritzCmdCommand)
         {
-            string command = "";
-            if (dockerImageName.Contains("smithlab"))
-            { 
-                command += $"docker pull {dockerImageName}:{CurrentVersion};";
-            }
-            command += $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
-                $"-v \"\"\"{AnalysisDirectory}:/app/analysis" + "\"\"\" " +
-                $"-v \"\"\"{ResourcesDirectory}:/app/resources" + "\"\"\" " +
-                $"{dockerImageName} {spritzCmdCommand}; docker stop spritz{PathToWorkflow.GetHashCode()}";
+            string imageWithVersion = dockerImageName.Contains(":") ? dockerImageName : $"{dockerImageName}:{CurrentVersion}";
+            string command = dockerImageName.Contains("smithlab") ?
+                $"docker pull {imageWithVersion};" : 
+                "";
+            command += 
+                $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
+                $"-v \"\"\"{AnalysisDirectory}:/app/spritz/results/\"\"\" " +
+                $"-v \"\"\"{ResourcesDirectory}:/app/spritz/resources\"\"\" " +
+                $"{imageWithVersion} {spritzCmdCommand}; " + 
+                $"docker stop spritz{PathToWorkflow.GetHashCode()}";
             return command;
         }
 

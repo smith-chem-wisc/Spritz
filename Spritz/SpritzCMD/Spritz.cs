@@ -191,6 +191,7 @@ namespace SpritzCMD
         private static SpritzOptions CleanOptions(SpritzOptions aa, string analysisDirectory)
         {
             aa.AnalysisDirectory = analysisDirectory;
+            aa.Reference ??= "";
             aa.Fastq1 ??= "";
             aa.Fastq2 ??= "";
             aa.Fastq1SingleEnd ??= "";
