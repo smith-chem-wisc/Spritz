@@ -80,10 +80,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
 
-    - name: Build
-      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
-
-    - name: Build
+    - name: Build SpritzCMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
 
     - name: Build docker image

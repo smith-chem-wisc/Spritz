@@ -22,10 +22,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Spritz/Spritz.sln
 
-    - name: Build
+    - name: Build .NET
       run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
 
-    - name: Test
+    - name: Test .NET
       run: dotnet test --no-build --configuration Release --verbosity normal Spritz/Spritz.sln
 
     - name: Setup msbuild
@@ -47,11 +47,11 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
 
-    - name: Build
+    - name: Build SpritzCMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
 
     - name: Build docker image
       run: docker build -t spritz ./Spritz/
 
-    - name: Run test
+    - name: Run test in docker image
       run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -bd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
