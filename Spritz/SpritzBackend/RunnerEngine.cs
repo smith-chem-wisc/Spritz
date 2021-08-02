@@ -20,7 +20,7 @@ namespace SpritzBackend
         public string SnakemakeCommand { get; private set; }
         public string SpritzCMDCommand { get; set; }
 
-        public static readonly string CurrentVersion = "0.3.0"; // should be the same here, in config.yaml, and in common.smk
+        public static readonly string CurrentVersion = "0.3.2"; // should be the same here, in config.yaml, and in common.smk
         public static readonly bool PrebuiltSpritzMods = true; // always using prebuilt library now
         public RunnerEngine(Tuple<string, SpritzOptions> task, string outputFolder)
         {
