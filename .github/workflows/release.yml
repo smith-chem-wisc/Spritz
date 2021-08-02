@@ -1,4 +1,4 @@
-name: Release installer, SpritzCMD, Docker
+name: Releases
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
     - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  netrelease:
+  githubrelease:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -52,10 +52,12 @@ jobs:
           directory: Spritz/SpritzCMD/bin/x64/Release/net5.0/
 
       - name: Upload Release
-        uses: ncipollo/release-action@v1
+        uses: svenstaro/upload-release-action@v2
         with:
-          artifacts: "SpritzCMD.zip,Spritz/SpritzInstaller/bin/Release/Spritz.msi"
-          token: ${{ secrets.UPLOAD_TOKEN }}
+          repo_token: ${{ secrets.UPLOAD_TOKEN }}
+          file: "SpritzCMD.zip,Spritz/SpritzInstaller/bin/Release/Spritz.msi"
+          tag: ${{ github.ref }}
+
 
   dockerrelease:
     runs-on: ubuntu-latest
@@ -84,10 +86,7 @@ jobs:
 
     - name: Login, tag, and push
       run: |
-        docker login -u ${env:USERNAME} -p ${env:PASSWORD}
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
         $version=&git describe --tags
         docker tag spritz smithlab/spritz:${version}
         docker push smithlab/spritz:${version}
-      env:
-        USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-        PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -1,4 +1,4 @@
-name: Build and test .NET and Docker
+name: Builds and tests
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     - cron: '0 4 * * 1'
 
 jobs:
-  netbuild:
+  builds:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
