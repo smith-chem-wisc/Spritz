@@ -31,6 +31,15 @@ if SPECIES_LOWER == "homo_sapiens":
         conda: "../envs/downloads.yaml"
         shell:
             "(wget -O - {params.vcf} | zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
+
+        rule reorder_genome_fasta:
+            '''Reorder the ensembl genome to match the dbsnp VCF'''
+            input: GENOME_FA
+            output: KARYOTYPIC_GENOME_FA
+            benchmark: "../resources/ensembl/karyotypic_order.benchmark"
+            log: "../resources/ensembl/karyotypic_order.log"
+            conda: "../envs/downloads.yaml"
+            shell: "python scripts/karyotypic_order.py 2> {log}"
 else:
     rule download_ensembl_vcf:
         '''
@@ -45,6 +54,15 @@ else:
         log: "../resources/ensembl/downloads_ensembl_vcf.log"
         conda: "../envs/downloads.yaml"
         shell: "((wget -O - {params.vcf1} || wget -O - {params.vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
+
+    rule rename_genome_fasta:
+        '''Rename the genome fasta so the other rules work with non-human genomes'''
+        input: GENOME_FA
+        output: KARYOTYPIC_GENOME_FA
+        benchmark: "../resources/ensembl/karyotypic_order_rename.benchmark"
+        log: "../resources/ensembl/karyotypic_order_rename.log"
+        conda: "../envs/downloads.yaml"
+        shell: "cp {input} {output} 2> {log}"
 
 rule index_ensembl_vcf:
     input: f"../resources/ensembl/{SPECIES}.ensembl.vcf"
@@ -61,14 +79,6 @@ rule download_chromosome_mappings:
     benchmark: "../resources/download_chromosome_mappings.benchmark"
     conda: "../envs/downloads.yaml"
     shell: "(cd ../resources && git clone {params.url}) 2> {log}"
-
-rule reorder_genome_fasta:
-    input: GENOME_FA
-    output: KARYOTYPIC_GENOME_FA
-    benchmark: "../resources/ensembl/karyotypic_order.benchmark"
-    log: "../resources/ensembl/karyotypic_order.log"
-    conda: "../envs/downloads.yaml"
-    shell: "python scripts/karyotypic_order.py 2> {log}"
 
 rule dict_fa:
     input: KARYOTYPIC_GENOME_FA
