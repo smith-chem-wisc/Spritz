@@ -72,7 +72,7 @@ namespace Spritz
                     StringBuilder allVersionsText = new();
                     foreach (JObject obj in GitArray.Children<JObject>())
                     {
-                        if (SpritzVersion.IsVersionLower(RunnerEngine.CurrentVersion, obj.SelectToken("tag_name").ToString()))
+                        if (SpritzVersion.IsVersionLower(obj.SelectToken("tag_name").ToString()))
                             break;
                         string body = new MarkdownSharp.Markdown().Transform(obj.SelectToken("body").ToString());
                         allVersionsText.AppendLine("<font face=\"Arial\" size=2>");

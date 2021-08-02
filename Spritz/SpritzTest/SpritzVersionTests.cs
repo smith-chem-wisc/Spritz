@@ -30,7 +30,7 @@ namespace SpritzTest
         {
             SpritzVersion version = new();
             version.GetVersionNumbersFromWeb();
-            Assert.IsTrue(SpritzVersion.IsVersionLower(RunnerEngine.CurrentVersion, version.NewestKnownVersion));
+            Assert.IsTrue(SpritzVersion.IsVersionLower( version.NewestKnownVersionWithMsi));
         }
 
         [Test]

@@ -8,6 +8,7 @@ namespace SpritzBackend
     public class SpritzVersion
     {
         public string NewestKnownVersion { get; private set; }
+        public string NewestKnownVersionWithMsi { get; private set; }
         public bool IsMsiAvailableForUpdate { get; set; }
 
         public void GetVersionNumbersFromWeb()
@@ -22,18 +23,19 @@ namespace SpritzBackend
                     var json = response.Content.ReadAsStringAsync().Result;
                     JObject deserialized = JObject.Parse(json);
                     NewestKnownVersion = deserialized["tag_name"].ToString();
-                    if (!IsVersionLower(RunnerEngine.CurrentVersion, NewestKnownVersion))
-                    {
-                        var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    bool containsMsi = assets.Contains("Spritz.msi");
+                    if (!IsVersionLower(NewestKnownVersion))
                         IsMsiAvailableForUpdate = assets.Contains("Spritz.msi");
-                    }
+                    if (containsMsi)
+                        NewestKnownVersionWithMsi = NewestKnownVersion;
                 }
             }
         }
 
-        public static bool IsVersionLower(string currVersion, string checkVersionString)
+        public static bool IsVersionLower(string checkVersionString)
         {
-            var currV = GetVersionNumber(currVersion);
+            var currV = GetVersionNumber(RunnerEngine.CurrentVersion);
             var checkVersion = GetVersionNumber(checkVersionString);
             return checkVersion.Item1 < currV.Item1 ||
                     (checkVersion.Item1 == currV.Item1 && checkVersion.Item2 < currV.Item2) ||
