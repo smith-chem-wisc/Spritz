@@ -32,14 +32,15 @@ if SPECIES_LOWER == "homo_sapiens":
         shell:
             "(wget -O - {params.vcf} | zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
 
-        rule reorder_genome_fasta:
-            '''Reorder the ensembl genome to match the dbsnp VCF'''
-            input: GENOME_FA
-            output: KARYOTYPIC_GENOME_FA
-            benchmark: "../resources/ensembl/karyotypic_order.benchmark"
-            log: "../resources/ensembl/karyotypic_order.log"
-            conda: "../envs/downloads.yaml"
-            shell: "python scripts/karyotypic_order.py 2> {log}"
+    rule reorder_genome_fasta:
+        '''Reorder the ensembl genome to match the dbsnp VCF'''
+        input: GENOME_FA
+        output: KARYOTYPIC_GENOME_FA
+        benchmark: "../resources/ensembl/karyotypic_order.benchmark"
+        log: "../resources/ensembl/karyotypic_order.log"
+        conda: "../envs/downloads.yaml"
+        shell: "python scripts/karyotypic_order.py 2> {log}"
+        
 else:
     rule download_ensembl_vcf:
         '''
