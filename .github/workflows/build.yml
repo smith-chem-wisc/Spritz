@@ -2,9 +2,9 @@ name: Builds and tests
 
 on:
   push:
-    branches: [ PrefetchAndVariants ]
+    branches: [ master ]
   pull_request:
-    branches: [ PrefetchAndVariants ]
+    branches: [ master ]
   schedule:
     - cron: '0 4 * * 1,2,3,4,5'
 
