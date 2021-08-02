@@ -1,4 +1,4 @@
-name: Release installer, SpritzCMD
+name: Release installer, SpritzCMD, Docker
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
     - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  build:
+  netrelease:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -25,17 +25,20 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore Spritz/Spritz.sln
+
       - name: Build
         run: |
           $version= &git describe --tags
-          dotnet build --no-restore --configuration Release /p:Version=${version} /p:Platform=x64 
+          dotnet build --no-restore --configuration Release /p:Version=${version} /p:Platform=x64 Spritz/Spritz.sln
+
       - name: Test
         run: |
           $version= &git describe --tags
-          dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build
+          dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build Spritz/Spritz.sln
 
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1
+
       - name: Build Installer
         run: |
           $version= &git describe --tags
@@ -53,3 +56,38 @@ jobs:
         with:
           artifacts: "SpritzCMD.zip,Spritz/SpritzInstaller/bin/Release/Spritz.msi"
           token: ${{ secrets.UPLOAD_TOKEN }}
+
+  dockerrelease:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build docker image
+      run: docker build -t spritz ./Spritz/
+
+    - name: Run quick test, reference database
+      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
+
+    - name: Login, tag, and push
+      run: |
+        docker login -u ${env:USERNAME} -p ${env:PASSWORD}
+        $version=&git describe --tags
+        docker tag spritz smithlab/spritz:${version}
+        docker push smithlab/spritz:${version}
+      env:
+        USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -1,4 +1,4 @@
-name: Build and test .NET
+name: Build and test .NET and Docker
 
 on:
   push:
@@ -9,9 +9,9 @@ on:
     - cron: '0 4 * * 1'
 
 jobs:
-  build:
+  netbuild:
     runs-on: windows-latest
-    timeout-minutes: 120
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -33,3 +33,25 @@ jobs:
 
     - name: Build Installer
       run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release
+
+  dockerbuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build docker image
+      run: docker build -t spritz ./Spritz/
+
+    - name: Run test
+      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -bd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
