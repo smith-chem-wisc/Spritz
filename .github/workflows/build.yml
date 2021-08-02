@@ -1,15 +1,17 @@
-name: .NET
+name: Builds and tests
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron: '0 4 * * 1,2,3,4,5'
 
 jobs:
-  build:
+  builds:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -21,26 +23,35 @@ jobs:
       run: dotnet restore Spritz/Spritz.sln
 
     - name: Build
-      run: dotnet build --no-restore /p:Platform=x64 Spritz/Spritz.sln
+      run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
 
     - name: Test
-      run: dotnet test --no-build --verbosity normal Spritz/Spritz.sln
+      run: dotnet test --no-build --configuration Release --verbosity normal Spritz/Spritz.sln
 
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v1
 
     - name: Build Installer
-      run: msbuild build Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:UseSharedCompilation=false
+      run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release
 
-    - name: Setup Docker
-      uses: docker/build-push-action@v2
-      with :
-        context: Spritz/
-        tags: test-image:latest
-        push: false
-
-    - name: Run test image
-      uses: addnab/docker-run-action@v3
+  dockerbuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
       with:
-        image: test-image:latest
-        run: /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -b -c -d -r="release-97,homo_sapiens,human,GRCh38" -p=8 -s=SRR629563
+        dotnet-version: 5.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build docker image
+      run: docker build -t spritz ./Spritz/
+
+    - name: Run test
+      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -bd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862

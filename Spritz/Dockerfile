@@ -1,18 +1,14 @@
-FROM conda/miniconda3
+FROM mambaorg/micromamba:0.15.2
 LABEL maintainer="Anthony Cesnik <cesnik@wisc.edu>"
 
-# install Spritz
-WORKDIR /app
-COPY . ./
-RUN conda init \
-        && conda update -c defaults conda \
-        && conda env create --name spritz --file environment.yaml
+# Set up micromamba and base env
+COPY --chown=micromamba:micromamba workflow/envs/spritzbase.yaml /tmp/spritzbase.yaml
+RUN micromamba install -y -n base -f /tmp/spritzbase.yaml \
+        && micromamba clean --all --yes
 
-# Add script to execute snakemake upon activate
-# Note that running this script outside of activation has not worked
-ADD start.sh /usr/local/envs/spritz/etc/conda/activate.d/start.sh
-RUN chmod 777 /usr/local/envs/spritz/etc/conda/activate.d/start.sh
+# install prebuilt SpritzCMD
+COPY ./SpritzCMD/bin/x64/Release/net5.0/ /app/spritz/
+WORKDIR /app/spritz/
 
 # activate environment
-RUN echo "source activate spritz" > ~/.bashrc
-ENV PATH /opt/conda/envs/spritz/bin:$PATH
+RUN echo "source activate" > ~/.bashrc

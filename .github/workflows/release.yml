@@ -1,36 +1,100 @@
-# This is a basic workflow to help you get started with Actions
+name: Releases
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:
+    - "[0-9]+.[0-9]+.[0-9]+"
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  githubrelease:
+    runs-on: windows-latest
+    timeout-minutes: 15
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Verify commit exists in release branch
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          git branch --remote --contains | grep origin/${env:RELEASE_BRANCH}
+        env:
+          RELEASE_BRANCH: master
+
+      - name: Restore dependencies
+        run: dotnet restore Spritz/Spritz.sln
+
+      - name: Build
+        run: |
+          $version= &git describe --tags
+          dotnet build --no-restore --configuration Release /p:Version=${version} /p:Platform=x64 Spritz/Spritz.sln
+
+      - name: Test
+        run: |
+          $version= &git describe --tags
+          dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build Spritz/Spritz.sln
+
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Build Installer
+        run: |
+          $version= &git describe --tags
+          msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:Version=${version}
+
+      - name: Create archive
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'zip'
+          filename: 'SpritzCMD.zip'
+          path: Spritz/SpritzCMD/bin/x64/Release/net5.0/
+          directory: ./
+
+      - name: Upload SpritzCMD
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.UPLOAD_TOKEN }}
+          file: SpritzCMD.zip
+          tag: ${{ github.ref }}
+
+      - name: Upload Installer
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.UPLOAD_TOKEN }}
+          file: Spritz/SpritzInstaller/bin/Release/Spritz.msi
+          tag: ${{ github.ref }}
+
+
+  dockerrelease:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+
+    - name: Build docker image
+      run: docker build -t spritz ./Spritz/
+
+    - name: Run quick test, reference database
+      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1"
+
+    - name: Login, tag, and push
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        version=$(git describe --tags)
+        docker tag spritz ${{ secrets.DOCKERHUB_USERNAME }}/spritz:$version
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/spritz:$version

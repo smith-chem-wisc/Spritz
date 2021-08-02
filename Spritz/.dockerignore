@@ -11,10 +11,11 @@ ptmlist.txt
 PSI-MOD.obo.xml
 fast.tmp
 *.svg
-ag\
+ag/
 
 ## Visual Studio
-bin\
-obj\
+bin/
+obj/
+**/obj/
 *.vspx
-.vs\
+.vs/

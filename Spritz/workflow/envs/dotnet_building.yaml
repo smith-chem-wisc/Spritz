@@ -1,0 +1,5 @@
+# dotnet_building.yaml: base environment for building a dotnet package
+channels:
+  - conda-forge
+dependencies:
+  - dotnet-sdk=5.0

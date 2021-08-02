@@ -1,0 +1,3 @@
+[submodule "Spritz/SnpEff"]
+	path = Spritz/SnpEff
+	url = https://github.com/smith-chem-wisc/SnpEff.git
