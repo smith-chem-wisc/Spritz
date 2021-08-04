@@ -49,7 +49,8 @@ rule setup_ptmlist_links:
 
 rule transfer_modifications_variant:
     input:
-        "ptmlist.txt", "PSI-MOD.obo.xml",
+        "ptmlist.txt",
+        "PSI-MOD.obo.xml",
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
         protxml="{dir}/variants/combined.spritz.snpeff.protein.xml",
@@ -62,12 +63,13 @@ rule transfer_modifications_variant:
     benchmark: "{dir}/variants/combined.spritz.snpeff.protein.withmods.benchmark"
     conda: "../envs/proteogenomics.yaml"
     shell:
-        "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
+        "(dotnet {input.transfermods} -x=\"{input.unixml}\" -y=\"{input.protxml}\" && "
         "gzip -k {input.protxml} {output.protxmlwithmods}) &> {log}"
 
 rule transfer_modifications_isoformvariant:
     input:
-        "ptmlist.txt", "PSI-MOD.obo.xml",
+        "ptmlist.txt",
+        "PSI-MOD.obo.xml",
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
         protxml="{dir}/variants/combined.spritz.isoformvariants.protein.xml",
@@ -79,7 +81,7 @@ rule transfer_modifications_isoformvariant:
     log: "{dir}/variants/combined.spritz.isoformvariants.protein.withmods.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
-        "(dotnet {input.transfermods} -x {input.unixml} -y {input.protxml} && "
+        "(dotnet {input.transfermods} -x=\"{input.unixml}\" -y=\"{input.protxml}\" && "
         "gzip -k {output.protxmlwithmods} {input.protxml}) &> {log}"
 
 rule generate_reference_snpeff_database:
@@ -117,7 +119,8 @@ rule reference_protein_xml:
     Create protein XML with sequences from the reference gene model.
     """
     input:
-        "ptmlist.txt", "PSI-MOD.obo.xml",
+        "ptmlist.txt",
+        "PSI-MOD.obo.xml",
         f"../resources/SnpEff/data/{REF}/done{REF}.txt",
         snpeff="../resources/SnpEff/snpEff.jar",
         fa=f"../resources/ensembl/{REF}.dna.primary_assembly.karyotypic.fa",
@@ -131,7 +134,7 @@ rule reference_protein_xml:
         protwithdecoysfa=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
         protxmlwithmods=temp(os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml")),
         protxmlwithmodsgz=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
-    params: ref=REF,
+    params: ref=REF
     resources: mem_mb=16000
     benchmark: os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
     log: os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.log")
@@ -139,7 +142,7 @@ rule reference_protein_xml:
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {params.ref} && " # no isoforms, no variants
-        "dotnet {input.transfermods} -x {input.unixml} -y {output.protxml} && "
+        "dotnet {input.transfermods} -x=\"{input.unixml}\" -y=\"{output.protxml}\" && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log} && touch {output.done}"
 
 rule custom_protein_xml:
@@ -147,7 +150,8 @@ rule custom_protein_xml:
     Create protein XML with sequences from the isoform discovery gene model.
     """
     input:
-        "ptmlist.txt", "PSI-MOD.obo.xml",
+        "ptmlist.txt",
+        "PSI-MOD.obo.xml",
         snpeff="../resources/SnpEff/snpEff.jar",
         fa=KARYOTYPIC_GENOME_FA,
         isoform_reconstruction=[
@@ -173,5 +177,5 @@ rule custom_protein_xml:
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
         " -xmlProt {output.protxml} {params.ref} < /dev/null && " # isoforms, no variants
-        "dotnet {input.transfermods} -x {input.unixml} -y {output.protxml} && "
+        "dotnet {input.transfermods} -x=\"{input.unixml}\" -y=\"{output.protxml}\" && "
         "gzip -k {output.protxmlwithmods} {output.protxml}) &> {log}"
