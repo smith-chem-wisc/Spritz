@@ -1,7 +1,7 @@
 # Spritz
 Software for RNA-Seq analysis on Windows, including creating sample-specific proteoform databases from genomic data
 
-[![Build status](https://ci.appveyor.com/api/projects/status/p54yrm6iixqm8jsf?svg=true)](https://ci.appveyor.com/project/acesnik/spritz)
+[![GitHub Action Builds](https://github.com/smith-chem-wisc/Spritz/actions/workflows/build.yml/badge.svg)](https://github.com/smith-chem-wisc/Spritz/actions/workflows/build.yml)
 [![Release](https://img.shields.io/github/v/release/smith-chem-wisc/Spritz)](https://github.com/smith-chem-wisc/Spritz/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/Spritz/total.svg)](https://github.com/smith-chem-wisc/Spritz/releases/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/smithlab/spritz)](https://hub.docker.com/r/smithlab/spritz/tags?page=1&ordering=last_updated)
