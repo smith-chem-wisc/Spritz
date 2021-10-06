@@ -19,12 +19,6 @@ rule clean:
         "rm -rf ../resources/ ptmlist.txt PSI-MOD.obo.xml &&"
         "cd ../TransferUniProtModifications && dotnet clean && cd .. 2> {log}"
 
-rule update_message:
-    output: "{dir}/please_update_spritz.txt"
-    log: "{dir}/please_update_spritz.log"
-    conda: "envs/default.yaml"
-    shell: "echo \"Please update Spritz at https://github.com/smith-chem-wisc/Spritz/releases\" > {output} 2> {log}"
-
 rule prose:
     output: "{dir}/prose.txt"
     log: "{dir}/prose.log"

@@ -5,8 +5,7 @@ channels:
   - defaults
 dependencies:
   - snakemake-minimal =5.27.4
-  - mamba
+  - mamba=0.15.3
   - python=3.8
   - conda
-  - openssl=1.1.1l=h7f8727e_0
   - dotnet-runtime=5.0

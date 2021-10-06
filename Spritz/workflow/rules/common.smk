@@ -1,7 +1,6 @@
 import os
 
 # Variables used by many of the rules
-MIN_SPRITZ_VERSION = "0.3.4" # should be the same here, common.smk, and MainWindow.xml.cs
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
@@ -27,10 +26,6 @@ TRANSFER_MOD_DLL="../SpritzModifications.dll" if PREBUILT_SPRITZ_MODS else "../S
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
     outputs = ["prose.txt"]
-    min_version = MIN_SPRITZ_VERSION.split('.')
-    this_version = config['spritz_version'].split('.')
-    if not "spritz_version" in config or any([min_version[i] > this_version[i] for i in range(len(min_version))]):
-        outputs = ["please_update_spritz.txt"]
     else:
         outputs.append(os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
         if "variant" in config["analyses"]:
