@@ -64,7 +64,7 @@ namespace SpritzBackend
 
         public string GenerateSpritzCMDCommand(SpritzOptions options)
         {
-            string command = $"conda run dotnet SpritzCMD.dll {SpritzOptionStrings.GenerateSpritzCMDArgs(options)}";
+            string command = $"conda run --no-capture-output --live-stream dotnet SpritzCMD.dll {SpritzOptionStrings.GenerateSpritzCMDArgs(options)}";
             SpritzCMDCommand = command;
             return command;
         }
