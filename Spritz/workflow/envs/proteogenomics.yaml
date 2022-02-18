@@ -6,3 +6,4 @@ channels:
 dependencies:
   - java-jdk =8.0 # snpeff
   - dotnet-runtime =5.0 # transfermods
+  - ca-certificates

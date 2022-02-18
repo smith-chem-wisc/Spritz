@@ -1,4 +1,4 @@
-FROM mambaorg/micromamba:0.15.2
+FROM mambaorg/micromamba:0.19.1
 LABEL maintainer="Anthony Cesnik <cesnik@wisc.edu>"
 
 # Set up micromamba and base env

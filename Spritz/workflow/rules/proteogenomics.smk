@@ -31,7 +31,7 @@ rule setup_transfer_mods:
         "../resources/PSI-MOD.obo.xml"
     log: "../resources/setup_transfer_mods.log"
     benchmark: "../resources/setup_transfer_mods.benchmark"
-    conda: "../envs/proteogenomics.yaml"
+    conda: "../envs/spritzbase.yaml"  # using this for docker to be able to find ca-certificates
     shell: "cd ../resources/ && dotnet {input} --setup &> {log}"
 
 rule setup_ptmlist_links:
