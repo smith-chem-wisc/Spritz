@@ -1,8 +1,8 @@
-FROM mambaorg/micromamba:0.15.2
+FROM mambaorg/micromamba
 LABEL maintainer="Anthony Cesnik <cesnik@wisc.edu>"
 
 # Set up micromamba and base env
-COPY --chown=micromamba:micromamba workflow/envs/spritzbase.yaml /tmp/spritzbase.yaml
+COPY --chown=root workflow/envs/spritzbase.yaml /tmp/spritzbase.yaml
 RUN micromamba install -y -n base -f /tmp/spritzbase.yaml \
         && micromamba clean --all --yes
 
@@ -10,5 +10,3 @@ RUN micromamba install -y -n base -f /tmp/spritzbase.yaml \
 COPY ./SpritzCMD/bin/x64/Release/net5.0/ /app/spritz/
 WORKDIR /app/spritz/
 
-# activate environment
-RUN echo "source activate" > ~/.bashrc

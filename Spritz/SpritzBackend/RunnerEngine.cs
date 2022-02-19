@@ -20,7 +20,7 @@ namespace SpritzBackend
         public string SnakemakeCommand { get; private set; }
         public string SpritzCMDCommand { get; set; }
 
-        public static readonly string CurrentVersion = "0.3.4"; // should be the same here, in config.yaml, and in common.smk
+        public static readonly string CurrentVersion = "0.3.5"; // should be the same here, in config.yaml, and in common.smk
         public static readonly bool PrebuiltSpritzMods = true; // always using prebuilt library now
         public RunnerEngine(Tuple<string, SpritzOptions> task, string outputFolder)
         {
@@ -64,7 +64,7 @@ namespace SpritzBackend
 
         public string GenerateSpritzCMDCommand(SpritzOptions options)
         {
-            string command = $"/opt/conda/lib/dotnet/dotnet SpritzCMD.dll {SpritzOptionStrings.GenerateSpritzCMDArgs(options)}";
+            string command = $"conda run --no-capture-output --live-stream dotnet SpritzCMD.dll {SpritzOptionStrings.GenerateSpritzCMDArgs(options)}";
             SpritzCMDCommand = command;
             return command;
         }

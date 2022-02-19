@@ -87,7 +87,7 @@ jobs:
       run: docker build -t spritz ./Spritz/
 
     - name: Run quick test, reference database
-      run: docker run --user=root spritz /opt/conda/lib/dotnet/dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1"
+      run: docker run --user=root spritz conda run --no-capture-output --live-stream dotnet SpritzCMD.dll -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1"
 
     - name: Login, tag, and push
       run: |
