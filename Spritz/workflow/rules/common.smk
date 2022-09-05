@@ -21,7 +21,7 @@ REF_FOLDER = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
 UNIPROTXML=f"../resources/uniprot/{config['species']}.protein.xml.gz" #"../resources/Homo_sapiens_202022.xml.gz"
 UNIPROTFASTA=f"../resources/uniprot/{config['species']}.protein.fasta" #"../resources/Homo_sapiens_202022.xml.gz"
 PREBUILT_SPRITZ_MODS = "prebuilt_spritz_mods" in config and config["prebuilt_spritz_mods"]
-TRANSFER_MOD_DLL="../SpritzModifications.dll" if PREBUILT_SPRITZ_MODS else "../SpritzModifications/bin/x64/Release/net5.0/SpritzModifications.dll"
+TRANSFER_MOD_DLL="../SpritzModifications.dll" if PREBUILT_SPRITZ_MODS else "../SpritzModifications/bin/x64/Release/net6.0/SpritzModifications.dll"
 
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
