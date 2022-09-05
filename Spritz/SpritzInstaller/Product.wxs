@@ -28,9 +28,7 @@
       </Directory>
           
 			<Directory Id="ProgramFilesFolder">
-        <Directory Id="APPLICATIONROOTDIRECTORY" Name="Spritz">
-          <Directory Id="RefFolder" Name="ref"/>
-        </Directory>
+        <Directory Id="APPLICATIONROOTDIRECTORY" Name="Spritz"/>
 			</Directory>
 			<Directory Id="ProgramMenuFolder">
 				<Directory Id="ApplicationProgramsFolder" Name="Spritz"/>
@@ -52,9 +50,6 @@
       </Component>
       <Component Id="Spritz.pdb" Guid="f8db6112-f469-45d8-8b7c-42cff7bf8f08">
         <File Id="Spritz.pdb" Source="$(var.SpritzTargetDir)Spritz.pdb"/>
-      </Component>
-      <Component Id="Spritz.runtimeconfig.dev.json" Guid="198b6180-bcdd-485e-988a-e1f6e743e8b3">
-        <File Id="Spritz.runtimeconfig.dev.json" Source="$(var.SpritzTargetDir)Spritz.runtimeconfig.dev.json"/>
       </Component>
       <Component Id="Spritz.runtimeconfig.json" Guid="e8c02dcf-8a7e-4a47-a29a-8c106415699f">
         <File Id="Spritz.runtimeconfig.json" Source="$(var.SpritzTargetDir)Spritz.runtimeconfig.json"/>
@@ -81,12 +76,6 @@
         <File Id="SpritzBackend.pdb" Source="$(var.SpritzTargetDir)SpritzBackend.pdb"/>
       </Component>
     </DirectoryRef>
-
-    <ComponentGroup Id="RefComponents" Directory="RefFolder">
-        <Component Id="ref_Spritz.dll" Guid="1fa9180b-ec2e-46b4-8f87-8ff9bffb1cc5">
-        <File Id="ref_Spritz.dll" Source="$(var.SpritzTargetDir)Spritz.dll"/>
-      </Component>
-    </ComponentGroup>
     
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="">
@@ -103,7 +92,6 @@
       <ComponentRef Id="Spritz.dll.config"/>
       <ComponentRef Id="Spritz.pdb"/>
       <ComponentRef Id="Spritz.runtimeconfig.json"/>
-      <ComponentRef Id="Spritz.runtimeconfig.dev.json"/>
       <ComponentRef Id="Nett.dll"/>
       <ComponentRef Id="YamlDotNet.dll"/>
       <ComponentRef Id="genomes.csv"/>
@@ -113,7 +101,6 @@
       <ComponentRef Id="SpritzBackend.dll"/>
       <ComponentRef Id="DesktopShortcut"/>
       <ComponentRef Id="ApplicationShortcut"/>
-      <ComponentGroupRef Id="RefComponents"/>
     </Feature>
 
     <UI>
