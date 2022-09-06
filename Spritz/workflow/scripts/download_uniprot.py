@@ -7,7 +7,7 @@ import sys
 format = sys.argv[1]
 
 proteome = get_proteome.proteome
-BASE = 'http://www.uniprot.org'
+BASE = 'http://legacy.uniprot.org'
 KB_ENDPOINT = '/uniprot/'
 TOOL_ENDPOINT = '/uploadlists/'
 

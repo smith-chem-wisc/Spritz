@@ -5,7 +5,7 @@ import sys
 import yaml
 
 # find proteome
-BASE = 'http://www.uniprot.org'
+BASE = 'http://legacy.uniprot.org'
 KB_ENDPOINT = '/proteomes/'
 TOOL_ENDPOINT = '/uploadlists/'
 
