@@ -49,7 +49,7 @@ jobs:
         with:
           type: 'zip'
           filename: 'SpritzCMD.zip'
-          path: Spritz/SpritzCMD/bin/x64/Release/net5.0/
+          path: Spritz/SpritzCMD/bin/x64/Release/net6.0/
           directory: ./
 
       - name: Upload SpritzCMD
