@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <?define SpritzTargetDir=$(var.SpritzGUI.TargetDir)?>
-	<Product Id="*" Name="Spritz" Language="1033" Version="0.2.0" Manufacturer="Smith Group" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
+	<Product Id="*" Name="Spritz" Language="1033" Version="0.3.8" Manufacturer="Smith Group" UpgradeCode="5af693cd-1556-4ef4-9c24-e1242de081de">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <MediaTemplate EmbedCab="yes"/>
 
@@ -10,7 +10,7 @@
     <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
 
     <!-- Check version information -->
-		<MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of Spritz is already installed." />
+    <MajorUpgrade Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of Spritz is already installed." />
 		<Condition Message="This application is only supported on Windows 7 or higher.">
 			<![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition>
@@ -23,7 +23,7 @@
           <RegistryKey Root="HKCU" Key="Software\SmithGroup\Spritz">
             <RegistryValue Name="SpritzDesktop" Value="1" Type="integer" KeyPath="yes" />
           </RegistryKey>
-          <Shortcut Id="AppDesktopSC" Name="Spritz" Description="Shortcut to App" Target="[#Spritz.exe]" WorkingDirectory="APPLICATIONROOTDIRECTORY" />
+          <Shortcut Id="AppDesktopSC" Name="Spritz" Description="Shortcut to App" Target="[!Spritz.exe]" WorkingDirectory="APPLICATIONROOTDIRECTORY" />
         </Component>
       </Directory>
           
@@ -79,7 +79,7 @@
     
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="">
-        <Shortcut Id="ApplicationStartMenuShortcut" Name="Spritz" Description="Proteogenomic Database Engine" Target="[#Spritz.exe]" WorkingDirectory="APPLICATIONROOTDIRECTORY"/>
+        <Shortcut Id="ApplicationStartMenuShortcut" Name="Spritz" Description="Proteogenomic Database Engine" Target="[!Spritz.exe]" WorkingDirectory="APPLICATIONROOTDIRECTORY"/>
         <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
         <RegistryValue Root="HKCU" Key="Software\Spritz" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
