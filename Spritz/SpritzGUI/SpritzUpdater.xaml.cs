@@ -3,9 +3,9 @@ using SpritzBackend;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace Spritz
@@ -27,35 +27,40 @@ namespace Spritz
         private void InstallerClicked(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
-            using (var client = new WebClient())
+            HttpClient client = new();
+
+            var uri = new Uri(@"https://github.com/smith-chem-wisc/Spritz/releases/download/" + Version.NewestKnownVersion + @"/Spritz.msi");
+
+            Exception exception = null;
+            try
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/Spritz/releases/download/" + Version.NewestKnownVersion + @"/Spritz.msi");
-
-                Exception exception = null;
-                try
+                // download and start the installer
+                var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "Spritz.msi");
+                var urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
+                using (FileStream stream = new(tempDownloadLocation, FileMode.CreateNew))
                 {
-                    // download and start the installer
-                    var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "Spritz.msi");
-                    client.DownloadFile(uri, tempDownloadLocation);
-                    Process p = new();
-                    p.StartInfo = new ProcessStartInfo()
-                    {
-                        UseShellExecute = true,
-                        FileName = tempDownloadLocation
-                    };
-                    p.Start();
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-                    MessageBox.Show(ex.Message);
+                    Task.Run(() => urlResponse.Content.CopyToAsync(stream)).Wait();
                 }
 
-                if (exception == null)
+                // start the installer
+                Process p = new();
+                p.StartInfo = new ProcessStartInfo()
                 {
-                    // close Spritz if the installer was started successfully
-                    Application.Current.Shutdown();
-                }
+                    UseShellExecute = true,
+                    FileName = tempDownloadLocation
+                };
+                p.Start();
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                MessageBox.Show(ex.Message);
+            }
+
+            if (exception == null)
+            {
+                // close Spritz if the installer was started successfully
+                Application.Current.Shutdown();
             }
         }
 
