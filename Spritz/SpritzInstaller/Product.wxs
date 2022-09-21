@@ -10,7 +10,7 @@
     <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
 
     <!-- Check version information -->
-    <MajorUpgrade Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of Spritz is already installed." />
+		<MajorUpgrade Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of Spritz is already installed." />
 		<Condition Message="This application is only supported on Windows 7 or higher.">
 			<![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition>

@@ -1,9 +1,8 @@
 ﻿using NUnit.Framework;
 using SpritzBackend;
-using System.IO;
 using System;
+using System.IO;
 using System.Linq;
-using YamlDotNet.Core;
 
 namespace SpritzTest
 {
@@ -15,7 +14,7 @@ namespace SpritzTest
             SpritzVersion version = new();
             version.GetVersionNumbersFromWeb();
             bool inReleaseOrlowerVersion =
-                version.NewestKnownVersion == RunnerEngine.CurrentVersion && version.NewestKnownVersionWithMsi == null 
+                version.NewestKnownVersion == RunnerEngine.CurrentVersion && version.NewestKnownVersionWithMsi == null
                 || SpritzVersion.IsVersionLower(version.NewestKnownVersionWithMsi);
             Assert.IsTrue(inReleaseOrlowerVersion);
         }
