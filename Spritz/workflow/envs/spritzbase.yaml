@@ -8,5 +8,5 @@ dependencies:
   - mamba
   - python=3.8
   - conda
-  - dotnet-runtime=5.0
+  - dotnet-runtime=6.0
   - ca-certificates

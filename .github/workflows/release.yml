@@ -14,7 +14,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
 
       - name: Verify commit exists in release branch
         run: |
@@ -49,7 +49,7 @@ jobs:
         with:
           type: 'zip'
           filename: 'SpritzCMD.zip'
-          path: Spritz/SpritzCMD/bin/x64/Release/net5.0/
+          path: Spritz/SpritzCMD/bin/x64/Release/net6.0/
           directory: ./
 
       - name: Upload SpritzCMD
@@ -75,7 +75,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
 
     - name: Restore dependencies
       run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
