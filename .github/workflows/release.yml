@@ -10,9 +10,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
 
@@ -37,7 +37,7 @@ jobs:
           dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build Spritz/Spritz.sln
 
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Build Installer
         run: |
@@ -45,7 +45,7 @@ jobs:
           msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj  /p:Configuration=Release /p:Version=${version}
 
       - name: Create archive
-        uses: thedoctor0/zip-release@master
+        uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
           filename: 'SpritzCMD.zip'
@@ -71,9 +71,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
 
