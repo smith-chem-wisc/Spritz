@@ -15,20 +15,13 @@ params = {
 
 with open("config/config.yaml", 'r') as stream:
    data = yaml.safe_load(stream)
-
-query = data["species"] # read config
 organism = data["organism"].lower()
-
-# special case
-if query == 'canis_familiaris':
-    query = 'canis_lupus_familiaris'
-
 
 proteome_res = requests.get(BASE_URL + ENDPOINT, params=params, stream=True)
 proteome_res.raise_for_status() # throw an error for bad status code
 
 results = proteome_res.text.split('\n')[1:]
-
+proteome = None
 for r in results:
     splt = r.split('\t')
     if organism.replace('_', ' ') in splt[1].lower():

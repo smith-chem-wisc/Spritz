@@ -11,8 +11,7 @@ ENDPOINT = '/uniprot/search'
 payload = {
     'query': proteome,
     'format': format,
-    'include': 'yes', # include isoforms in fasta
-    # 'columns': 'id,entry_name,reviewed,protein_names,organism,ec,keywords',
+    'includeIsoforms': 'yes', # include isoforms in fasta
     }
 
 result = requests.get(BASE_URL + ENDPOINT, params=payload, stream=True)
