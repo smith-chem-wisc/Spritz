@@ -10,7 +10,8 @@
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3">
       <NoWarn>$(NoWarn);NU1701</NoWarn>
     </PackageReference>
-    <PackageReference Include="mzLib" Version="1.0.532" />
+    <PackageReference Include="mzLib" Version="1.0.540" />
+    <PackageReference Include="TopDownProteomics" Version="0.0.295" />
   </ItemGroup>
 
   <ItemGroup>
