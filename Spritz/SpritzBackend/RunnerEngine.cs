@@ -20,7 +20,7 @@ namespace SpritzBackend
         public string SnakemakeCommand { get; private set; }
         public string SpritzCMDCommand { get; set; }
 
-        public static readonly string CurrentVersion = "0.3.8";
+        public static readonly string CurrentVersion = "0.3.9";
         public static readonly bool PrebuiltSpritzMods = true; // always using prebuilt library now
         public RunnerEngine(Tuple<string, SpritzOptions> task, string outputFolder)
         {
