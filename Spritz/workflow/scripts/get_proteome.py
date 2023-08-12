@@ -5,33 +5,29 @@ import sys
 import yaml
 
 # find proteome
-BASE = 'http://legacy.uniprot.org'
-KB_ENDPOINT = '/proteomes/'
-TOOL_ENDPOINT = '/uploadlists/'
+BASE_URL = 'https://rest.uniprot.org'
+ENDPOINT = '/proteomes/search'
+
+params = {
+    'query': '*',
+    'format': 'tsv',
+}
 
 with open("config/config.yaml", 'r') as stream:
    data = yaml.safe_load(stream)
-
-query = data["species"] # read config
 organism = data["organism"].lower()
 
-# special case
-if query == 'canis_familiaris':
-    query = 'canis_lupus_familiaris'
-
-payload = {
-    'query': query,
-    'sort': 'score',
-    'format': 'tab',
-    }
-
-proteome_res = requests.get(BASE + KB_ENDPOINT, params=payload, stream=True)
+proteome_res = requests.get(BASE_URL + ENDPOINT, params=params, stream=True)
 proteome_res.raise_for_status() # throw an error for bad status code
 
 results = proteome_res.text.split('\n')[1:]
-
+proteome = None
 for r in results:
     splt = r.split('\t')
-    if organism in splt[1].lower():
+    if organism.replace('_', ' ') in splt[1].lower():
         proteome = splt[0]
         break
+
+if proteome is None:
+    print(f"Proteome for organism {organism} not found.")
+    sys.exit(1)
