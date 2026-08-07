@@ -9,3 +9,5 @@ dependencies:
   - python =3.13
   - pytest
   - pyyaml
+  - numpy
+  - pandas

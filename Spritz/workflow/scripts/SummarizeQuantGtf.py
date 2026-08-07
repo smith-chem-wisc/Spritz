@@ -27,7 +27,8 @@ for file in files:
 tpms.insert(0, np.asarray(ids))
 
 print(f"Saving to {outtpms} ...")
-dataframe = np.row_stack(tpms)
+# NumPy 2.0 removed np.row_stack, which was an alias for np.vstack.
+dataframe = np.vstack(tpms)
 dataframe[1:,0] = [os.path.basename(file).split(".")[0] for file in files]
 pddf = pd.DataFrame(dataframe[1:,1:], index=dataframe[1:,0], columns=dataframe[0,1:]).sort_index()
 pddf.T.to_csv(outtpms)

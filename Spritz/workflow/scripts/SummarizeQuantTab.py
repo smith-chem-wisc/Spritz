@@ -31,7 +31,8 @@ def main():
         tpms_list.append(currTpms)
 
     tpms_list.insert(0, ids_list)
-    dataframe = np.row_stack(tpms_list)
+    # NumPy 2.0 removed np.row_stack, which was an alias for np.vstack.
+    dataframe = np.vstack(tpms_list)
     dataframe[1:, 0] = [os.path.basename(file).split(".")[0] for file in input_files]
     
     # Create a DataFrame and save to CSV
