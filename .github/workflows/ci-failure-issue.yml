@@ -1,0 +1,77 @@
+name: Open an issue when unattended CI fails
+
+# This repository had no CI runs at all between 2025-11-19 and 2026-08-04, because GitHub disables
+# schedule: workflows in repositories that have been inactive for 60 days. A break landed inside that
+# gap, and once the schedule resumed it failed every weekday without anyone noticing. A red tick on a
+# scheduled run is easy to miss; an open issue is not.
+#
+# This runs as a separate workflow keyed on workflow_run rather than as a job with `needs:` inside
+# "Builds and tests", so it does not have to be kept in step with that workflow's job list.
+on:
+  workflow_run:
+    workflows: ["Builds and tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  open-issue:
+    name: File an issue for the failure
+    # Only for unattended runs. A failure on a pull request is already in front of its author, whereas a
+    # scheduled or post-merge failure has nobody looking at it.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const marker = 'CI is failing on master';
+            const run = context.payload.workflow_run;
+
+            // Only ever one open issue at a time, so a daily schedule cannot produce a daily issue.
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find(i => !i.pull_request && i.title.startsWith(marker));
+            if (existing) {
+              core.info(`Already tracked in #${existing.number}; not opening another.`);
+              core.summary.addRaw(`CI failure already tracked in #${existing.number}.`);
+              await core.summary.write();
+              return;
+            }
+
+            const body = [
+              `🤖 Opened automatically because a **${run.event}** run of *${run.name}* failed.`,
+              '',
+              `- Run: ${run.html_url}`,
+              `- Triggered by: \`${run.event}\``,
+              `- Head commit: ${run.head_sha}`,
+              '',
+              'Only one of these is open at a time, so a daily schedule will not file a new issue each',
+              'day. Close it once CI is green again.',
+              '',
+              '<details><summary>Why this notification exists</summary>',
+              '',
+              'This repository had no CI runs between 2025-11-19 and 2026-08-04, because GitHub disables',
+              '`schedule:` workflows in repositories inactive for 60 days. A break landed inside that gap,',
+              'and once the schedule resumed it failed every weekday unnoticed. This exists so an',
+              'unattended failure cannot stay quiet for months again.',
+              '</details>',
+            ].join('\n');
+
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `${marker} (${run.event} run #${run.run_number})`,
+              body,
+            });
+            core.info(`Opened #${created.data.number}`);
+            core.summary.addRaw(`Opened #${created.data.number} for this failure.`);
+            await core.summary.write();
