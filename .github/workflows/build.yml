@@ -36,6 +36,57 @@ jobs:
     - name: Build Installer
       run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release
 
+  # Lints and plans the workflow without running it. This is deliberately cheap and independent of
+  # the container: no genomic data is downloaded and no conda envs beyond the base one are created,
+  # so it gives a fast signal on rule-graph breakage - the class of failure reported in issue #243,
+  # "MissingInputException in rule all" - long before the 90-minute dockerbuild job would surface it.
+  #
+  # It installs the pinned base environment rather than a snakemake of its own, so the snakemake
+  # version linting the workflow is the same one that runs it, and so this job also acts as a fast
+  # check that spritzbase.yaml still solves.
+  workflow:
+    name: Lint and dry-run the workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up the pinned Spritz base environment
+      uses: mamba-org/setup-micromamba@v3
+      with:
+        environment-file: Spritz/workflow/envs/spritzbase.yaml
+        environment-name: spritzbase
+        cache-environment: true
+
+    - name: Lint the workflow
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --lint
+
+    # Each analysis combination takes a different branch of all_output in common.smk, which is the
+    # function that raised the MissingInputException in #243, so all of them are planned rather than
+    # just the one the checked-in config happens to select.
+    #
+    # Written as one step per combination rather than a shell loop that aggregates exit codes. The loop
+    # form reported failure in CI while every dry-run inside it printed success and no error was echoed,
+    # and it could not be reproduced locally against the same snakemake version, the same environment
+    # built from spritzbase.yaml, or under bash -e. Separate steps let the runner report which command
+    # failed instead of relying on shell bookkeeping to do it.
+    - name: Dry-run - quant
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[quant]"
+
+    - name: Dry-run - variant
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant]"
+
+    - name: Dry-run - isoform
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[isoform]"
+
+    - name: Dry-run - variant, isoform and quant together
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"
+
   # Runs the tests that depend on third-party services: the GitHub releases API, and the UniProt ptmlist
   # and PSI-MOD downloads that mzLib performs when those files are absent. Intentionally NOT a required
   # check, so an upstream outage never blocks a PR, while a genuine break is still visible here.
@@ -60,6 +111,7 @@ jobs:
 
     - name: Test .NET (external services)
       run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category=ExternalService" Spritz/Spritz.sln
+
 
   dockerbuild:
     runs-on: ubuntu-latest
