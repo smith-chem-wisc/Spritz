@@ -24,7 +24,7 @@ PREBUILT_SPRITZ_MODS = "prebuilt_spritz_mods" in config and config["prebuilt_spr
 # Build output goes to a directory this workflow chooses, rather than to the SDK's default
 # bin/<Platform>/<Configuration>/<TargetFramework>/ layout. Naming that default here meant the
 # workflow silently depended on the platform, the configuration and the target framework all
-# staying put, and it broke when they did not (issue #240).
+# staying put, and would break as soon as any of them changed.
 #
 # Defined once, in two forms, because build_transfer_mods runs `dotnet build -o` from inside the
 # project directory while the rest of the workflow refers to the assembly from the workflow
@@ -34,6 +34,32 @@ SPRITZ_MODS_PROJECT_DIR = "../SpritzModifications"
 SPRITZ_MODS_OUT_SUBDIR = "bin/spritz"
 SPRITZ_MODS_OUT_DIR = f"{SPRITZ_MODS_PROJECT_DIR}/{SPRITZ_MODS_OUT_SUBDIR}"
 TRANSFER_MOD_DLL="../SpritzModifications.dll" if PREBUILT_SPRITZ_MODS else f"{SPRITZ_MODS_OUT_DIR}/SpritzModifications.dll"
+
+# .NET on Linux delegates TLS validation to OpenSSL, which resolves its CA store from its own
+# compiled-in OPENSSLDIR and from SSL_CERT_FILE / SSL_CERT_DIR rather than from the active conda
+# environment. Which store gets consulted therefore depends on which libssl happens to be loaded,
+# and that varies between environments. Naming the bundle explicitly removes the ambiguity.
+#
+# Motivated by the report in issue #240, where the HTTPS download in setup_transfer_mods failed with
+#
+#   System.Security.Authentication.AuthenticationException: The remote certificate is invalid
+#   because of errors in the certificate chain: UntrustedRoot
+#     at UsefulProteomicsDatabases.Loaders.DownloadPsiMod
+#
+# while, in the same run on the same machine, git cloned over HTTPS from github.com and `dotnet
+# restore` reached nuget.org over TLS - both successfully, in other conda environments. So the server
+# certificate and the machine's trust generally were fine; only .NET inside this environment failed.
+# The precise mechanism was never established and the report has not recurred, so treat this as
+# removing a known source of variability rather than as a proven fix.
+#
+# Guarded on the file existing so that an environment already resolving trust correctly - notably the
+# container, which works today - behaves exactly as before. Written as an `if` rather than
+# `[ -f x ] && export ...` purely for legibility; both are safe under the bash strict mode snakemake
+# uses, since a failing test that is not the final command of an && list does not trip errexit.
+CONDA_CA_BUNDLE_EXPORT = (
+    'if [ -f "$CONDA_PREFIX/ssl/cacert.pem" ]; '
+    'then export SSL_CERT_FILE="$CONDA_PREFIX/ssl/cacert.pem"; fi; '
+)
 
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
