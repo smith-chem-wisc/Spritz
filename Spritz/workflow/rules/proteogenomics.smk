@@ -24,7 +24,7 @@ if not PREBUILT_SPRITZ_MODS:
             # the SDK writes the assembly and where the workflow looks for it cannot fall out of step.
             "(cd ../SpritzModifications && "
             "dotnet restore && "
-            "dotnet build /p:Platform=x64 -c Release -o {params.outdir} SpritzModifications.csproj) &> {log}"
+            "dotnet build -c Release -o {params.outdir} SpritzModifications.csproj) &> {log}"
 
 rule setup_transfer_mods:
     '''Download the ptmlists to the resources directory'''
