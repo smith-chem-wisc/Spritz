@@ -1,8 +1,7 @@
 # variants.yaml: partial environment for variant calling
 channels:
-  - bioconda
   - conda-forge
-  - defaults
+  - bioconda
 dependencies:
   - java-jdk =8.0.92
   - gatk4 =4.2.0.0
