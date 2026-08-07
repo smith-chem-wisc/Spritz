@@ -85,6 +85,28 @@ jobs:
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"
 
+  # Unit tests for the Python scripts in workflow/scripts. These carry the pipeline's data
+  # transformations - chromosome renaming, karyotypic sorting, VCF and GFF3 filtering - and had no
+  # coverage at all, so a change in behaviour would only have surfaced as odd output much later.
+  # Fast and offline: no genomic data, no containers, no network.
+  script-tests:
+    name: Workflow script tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up the test environment
+      uses: mamba-org/setup-micromamba@v3
+      with:
+        environment-file: Spritz/workflow/envs/tests.yaml
+        environment-name: spritz-tests
+        cache-environment: true
+
+    - name: Run pytest
+      shell: bash -el {0}
+      run: cd Spritz/workflow/tests && python -m pytest -v
+
   dockerbuild:
     runs-on: ubuntu-latest
     timeout-minutes: 90
