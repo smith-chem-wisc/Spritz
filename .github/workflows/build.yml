@@ -63,20 +63,27 @@ jobs:
     # Each analysis combination takes a different branch of all_output in common.smk, which is the
     # function that raised the MissingInputException in #243, so all of them are planned rather than
     # just the one the checked-in config happens to select.
-    - name: Dry-run every analysis combination
+    #
+    # Written as one step per combination rather than a shell loop that aggregates exit codes. The loop
+    # form reported failure in CI while every dry-run inside it printed success and no error was echoed,
+    # and it could not be reproduced locally against the same snakemake version, the same environment
+    # built from spritzbase.yaml, or under bash -e. Separate steps let the runner report which command
+    # failed instead of relying on shell bookkeeping to do it.
+    - name: Dry-run - quant
       shell: bash -el {0}
-      run: |
-        cd Spritz/workflow
-        rc=0
-        for analyses in "quant" "variant" "isoform" "variant,isoform,quant"; do
-          echo "::group::analyses=[$analyses]"
-          if ! snakemake --dry-run --cores 1 --config "analyses=[$analyses]"; then
-            echo "::error::snakemake dry-run failed for analyses=[$analyses]"
-            rc=1
-          fi
-          echo "::endgroup::"
-        done
-        exit $rc
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[quant]"
+
+    - name: Dry-run - variant
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant]"
+
+    - name: Dry-run - isoform
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[isoform]"
+
+    - name: Dry-run - variant, isoform and quant together
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"
 
   dockerbuild:
     runs-on: ubuntu-latest
