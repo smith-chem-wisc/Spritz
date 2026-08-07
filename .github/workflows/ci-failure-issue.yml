@@ -1,12 +1,11 @@
-name: Open an issue when unattended CI fails
+name: Open an issue when the scheduled build fails
 
-# This repository had no CI runs at all between 2025-11-19 and 2026-08-04, because GitHub disables
-# schedule: workflows in repositories that have been inactive for 60 days. A break landed inside that
-# gap, and once the schedule resumed it failed every weekday without anyone noticing. A red tick on a
-# scheduled run is easy to miss; an open issue is not.
+# A red tick on a scheduled run is easy to miss - this repository once went eight months without CI
+# running at all - so a failure with nobody watching becomes an issue instead. At most one is open at
+# a time.
 #
-# This runs as a separate workflow keyed on workflow_run rather than as a job with `needs:` inside
-# "Builds and tests", so it does not have to be kept in step with that workflow's job list.
+# Keyed on workflow_run rather than a job with `needs:` inside "Builds and tests", so it does not have
+# to be kept in step with that workflow's job list.
 on:
   workflow_run:
     workflows: ["Builds and tests"]
@@ -19,11 +18,12 @@ permissions:
 jobs:
   open-issue:
     name: File an issue for the failure
-    # Only for unattended runs. A failure on a pull request is already in front of its author, whereas a
-    # scheduled or post-merge failure has nobody looking at it.
+    # Scheduled runs only. A pull request failure is in front of its author, and a post-merge failure is
+    # in front of whoever merged; the scheduled run is the one with nobody watching, which is the gap
+    # this exists to close. Keeping the trigger narrow keeps the notification quiet.
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
-      (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'push')
+      github.event.workflow_run.event == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
@@ -48,22 +48,9 @@ jobs:
             }
 
             const body = [
-              `🤖 Opened automatically because a **${run.event}** run of *${run.name}* failed.`,
+              `🤖 The scheduled *${run.name}* run failed: ${run.html_url}`,
               '',
-              `- Run: ${run.html_url}`,
-              `- Triggered by: \`${run.event}\``,
-              `- Head commit: ${run.head_sha}`,
-              '',
-              'Only one of these is open at a time, so a daily schedule will not file a new issue each',
-              'day. Close it once CI is green again.',
-              '',
-              '<details><summary>Why this notification exists</summary>',
-              '',
-              'This repository had no CI runs between 2025-11-19 and 2026-08-04, because GitHub disables',
-              '`schedule:` workflows in repositories inactive for 60 days. A break landed inside that gap,',
-              'and once the schedule resumed it failed every weekday unnoticed. This exists so an',
-              'unattended failure cannot stay quiet for months again.',
-              '</details>',
+              `Commit ${run.head_sha.slice(0, 7)}. Only one of these is open at a time. Close it when CI is green.`,
             ].join('\n');
 
             const created = await github.rest.issues.create({
