@@ -1,0 +1,11 @@
+# tests.yaml: environment for the workflow script tests
+#
+# Python is pinned to the same version the pipeline environments use, so the scripts are exercised
+# on the interpreter they actually run on. When that pin moves, move this one with it.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python =3.8
+  - pytest
+  - pyyaml
