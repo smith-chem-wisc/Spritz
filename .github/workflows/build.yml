@@ -6,7 +6,13 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    - cron: '0 4 * * 1,2,3,4,5'
+    # Deliberately not on the hour. GitHub warns that scheduled runs are delayed - and can be dropped -
+    # during the load spike at the top of every hour, which is exactly when this used to be queued.
+    - cron: '37 4 * * 1-5'
+  # Lets a maintainer re-run the whole thing from the Actions tab without pushing a commit. Useful for
+  # checking whether an external break has cleared, and for waking the schedule up after GitHub has
+  # disabled it for repository inactivity.
+  workflow_dispatch:
 
 jobs:
   builds:
