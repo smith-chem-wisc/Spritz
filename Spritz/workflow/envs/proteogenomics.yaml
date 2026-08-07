@@ -1,8 +1,7 @@
 # proteogenomics.yaml: partial environment for proteogenomic database construction
 channels:
-  - bioconda
   - conda-forge
-  - defaults
+  - bioconda
 dependencies:
   - java-jdk =8.0 # snpeff
   - dotnet-runtime =6.0 # transfermods

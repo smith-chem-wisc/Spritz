@@ -1,7 +1,13 @@
 # sra.yaml: partial environment for SRA downloads
+#
+# NOTE: this is the one env that deliberately keeps bioconda ahead of conda-forge. Every other env
+# was switched to the conda-forge-first convention, but sra-tools =2.10.1 is a 2020 bioconda build
+# that needs an older zlib than conda-forge supplies; with conda-forge at higher priority under
+# strict channel priority the solve fails on a zlib version conflict. Verified: bioconda-first
+# solves, conda-forge-first does not. Bumping sra-tools (bioconda now has 3.4.1) would let this
+# follow the convention too, but 3.x changed fasterq-dump behaviour, so that is a separate change.
 channels:
   - bioconda
   - conda-forge
-  - defaults
 dependencies:
   - sra-tools =2.10.1
