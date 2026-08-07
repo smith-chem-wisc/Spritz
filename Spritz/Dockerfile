@@ -10,6 +10,6 @@ RUN micromamba install -y -n base -f /tmp/spritzbase.yaml \
         && micromamba clean --all --yes
 
 # install prebuilt SpritzCMD
-COPY ./SpritzCMD/bin/x64/Release/net6.0/ /app/spritz/
+COPY ./SpritzCMD/bin/x64/Release/net10.0/ /app/spritz/
 WORKDIR /app/spritz/
 

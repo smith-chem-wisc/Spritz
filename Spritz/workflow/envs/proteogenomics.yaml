@@ -4,5 +4,5 @@ channels:
   - bioconda
 dependencies:
   - java-jdk =8.0 # snpeff
-  - dotnet-runtime =6.0 # transfermods
+  - dotnet-runtime =10.0 # transfermods
   - ca-certificates
