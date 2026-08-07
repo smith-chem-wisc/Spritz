@@ -1,8 +1,7 @@
 # isoforms.yaml: partial environment for isoform reconstruction
 channels:
-  - bioconda
   - conda-forge
-  - defaults
+  - bioconda
 dependencies:
   - python =3.8
   - samtools =1.11

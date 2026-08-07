@@ -15,13 +15,16 @@ if not PREBUILT_SPRITZ_MODS:
     rule build_transfer_mods:
         '''Build the spritz modification C# project'''
         output: TRANSFER_MOD_DLL
+        params: outdir=SPRITZ_MODS_OUT_SUBDIR
         log: "../resources/SpritzModifications.build.log"
         benchmark: "../resources/SpritzModifications.build.benchmark"
         conda: "../envs/dotnet_building.yaml"
         shell:
+            # -o comes from the same variable that builds the declared output path above, so where
+            # the SDK writes the assembly and where the workflow looks for it cannot fall out of step.
             "(cd ../SpritzModifications && "
             "dotnet restore && "
-            "dotnet build /p:Platform=x64 -c Release SpritzModifications.csproj) &> {log}"
+            "dotnet build /p:Platform=x64 -c Release -o {params.outdir} SpritzModifications.csproj) &> {log}"
 
 rule setup_transfer_mods:
     '''Download the ptmlists to the resources directory'''
