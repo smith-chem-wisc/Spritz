@@ -6,7 +6,13 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    - cron: '0 4 * * 1,2,3,4,5'
+    # Deliberately not on the hour. GitHub warns that scheduled runs are delayed - and can be dropped -
+    # during the load spike at the top of every hour, which is exactly when this used to be queued.
+    - cron: '37 4 * * 1-5'
+  # Lets a maintainer re-run the whole thing from the Actions tab without pushing a commit. Useful for
+  # checking whether an external break has cleared, and for waking the schedule up after GitHub has
+  # disabled it for repository inactivity.
+  workflow_dispatch:
 
 jobs:
   builds:
@@ -25,8 +31,10 @@ jobs:
     - name: Build .NET
       run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
 
+    # Excludes tests that reach third-party services, so a UniProt or GitHub API outage cannot redden a
+    # pull request that did not break anything. Those tests still run, in the non-blocking job below.
     - name: Test .NET
-      run: dotnet test --no-build --configuration Release --verbosity normal Spritz/Spritz.sln
+      run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category!=ExternalService" Spritz/Spritz.sln
 
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v3
@@ -85,6 +93,31 @@ jobs:
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"
 
+  # Runs the tests that depend on third-party services: the GitHub releases API, and the UniProt ptmlist
+  # and PSI-MOD downloads that mzLib performs when those files are absent. Intentionally NOT a required
+  # check, so an upstream outage never blocks a PR, while a genuine break is still visible here.
+  # Do NOT add this job to branch-protection required checks.
+  external-service-tests:
+    name: External-service tests (non-blocking)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v7
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/Spritz.sln
+
+    - name: Build .NET
+      run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
+
+    - name: Test .NET (external services)
+      run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category=ExternalService" Spritz/Spritz.sln
+
   # Unit tests for the Python scripts in workflow/scripts. These carry the pipeline's data
   # transformations - chromosome renaming, karyotypic sorting, VCF and GFF3 filtering - and had no
   # coverage at all, so a change in behaviour would only have surfaced as odd output much later.
@@ -106,6 +139,7 @@ jobs:
     - name: Run pytest
       shell: bash -el {0}
       run: cd Spritz/workflow/tests && python -m pytest -v
+
 
   dockerbuild:
     runs-on: ubuntu-latest
