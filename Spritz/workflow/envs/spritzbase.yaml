@@ -1,8 +1,7 @@
 # base_spritz.yaml: base environment for spritz
 channels:
-  - bioconda
   - conda-forge
-  - defaults
+  - bioconda
 dependencies:
   - snakemake-minimal =5.27.4
   - mamba
