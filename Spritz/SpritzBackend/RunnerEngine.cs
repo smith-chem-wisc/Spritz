@@ -72,7 +72,10 @@ namespace SpritzBackend
         public string GenerateSnakemakeCommand(SpritzOptions options, bool setup)
         {
             string cmd = "";
-            cmd += $"snakemake -j {options.Threads} --use-conda --conda-frontend mamba --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
+            // No --conda-frontend: snakemake 9 accepts the flag but prints "Ignoring the alternative
+            // conda frontend setting (mamba)" and uses conda, which now solves via libmamba anyway.
+            // Passing it only produced a warning on every run.
+            cmd += $"snakemake -j {options.Threads} --use-conda --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
             if (setup)
             {
                 cmd += " setup.txt";
