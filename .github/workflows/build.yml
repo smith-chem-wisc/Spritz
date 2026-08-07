@@ -34,6 +34,50 @@ jobs:
     - name: Build Installer
       run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release
 
+  # Lints and plans the workflow without running it. This is deliberately cheap and independent of
+  # the container: no genomic data is downloaded and no conda envs beyond the base one are created,
+  # so it gives a fast signal on rule-graph breakage - the class of failure reported in issue #243,
+  # "MissingInputException in rule all" - long before the 90-minute dockerbuild job would surface it.
+  #
+  # It installs the pinned base environment rather than a snakemake of its own, so the snakemake
+  # version linting the workflow is the same one that runs it, and so this job also acts as a fast
+  # check that spritzbase.yaml still solves.
+  workflow:
+    name: Lint and dry-run the workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up the pinned Spritz base environment
+      uses: mamba-org/setup-micromamba@v3
+      with:
+        environment-file: Spritz/workflow/envs/spritzbase.yaml
+        environment-name: spritzbase
+        cache-environment: true
+
+    - name: Lint the workflow
+      shell: bash -el {0}
+      run: cd Spritz/workflow && snakemake --lint
+
+    # Each analysis combination takes a different branch of all_output in common.smk, which is the
+    # function that raised the MissingInputException in #243, so all of them are planned rather than
+    # just the one the checked-in config happens to select.
+    - name: Dry-run every analysis combination
+      shell: bash -el {0}
+      run: |
+        cd Spritz/workflow
+        rc=0
+        for analyses in "quant" "variant" "isoform" "variant,isoform,quant"; do
+          echo "::group::analyses=[$analyses]"
+          if ! snakemake --dry-run --cores 1 --config "analyses=[$analyses]"; then
+            echo "::error::snakemake dry-run failed for analyses=[$analyses]"
+            rc=1
+          fi
+          echo "::endgroup::"
+        done
+        exit $rc
+
   dockerbuild:
     runs-on: ubuntu-latest
     timeout-minutes: 90
