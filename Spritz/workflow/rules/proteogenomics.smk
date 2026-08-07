@@ -34,8 +34,16 @@ rule setup_transfer_mods:
         "../resources/PSI-MOD.obo.xml"
     log: "../resources/setup_transfer_mods.log"
     benchmark: "../resources/setup_transfer_mods.benchmark"
-    conda: "../envs/spritzbase.yaml"  # using this for docker to be able to find ca-certificates
-    shell: "cd ../resources/ && dotnet {input} --setup &> {log}"
+    conda: "../envs/spritzbase.yaml"  # this env requires ca-certificates, which the download below needs
+    # This is the only rule that actually downloads through .NET: every other rule invoking the
+    # assembly declares ptmlist.txt and PSI-MOD.obo.xml as inputs, so snakemake has already produced
+    # them and mzLib's Loaders take the no-download path. See CONDA_CA_BUNDLE_EXPORT in common.smk for
+    # why OpenSSL is pointed at the environment's CA bundle here (see issue #240).
+    #
+    # Passed through params rather than concatenated into the shell string: snakemake --lint rejects
+    # '+' in a shell directive, reading it as path composition.
+    params: ca_bundle_export=CONDA_CA_BUNDLE_EXPORT
+    shell: "{params.ca_bundle_export} cd ../resources/ && dotnet {input} --setup &> {log}"
 
 rule setup_ptmlist_links:
     '''Link the resources to the workflow directory temporarily'''
