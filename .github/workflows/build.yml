@@ -25,14 +25,41 @@ jobs:
     - name: Build .NET
       run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
 
+    # Excludes tests that reach third-party services, so a UniProt or GitHub API outage cannot redden a
+    # pull request that did not break anything. Those tests still run, in the non-blocking job below.
     - name: Test .NET
-      run: dotnet test --no-build --configuration Release --verbosity normal Spritz/Spritz.sln
+      run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category!=ExternalService" Spritz/Spritz.sln
 
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v3
 
     - name: Build Installer
       run: msbuild Spritz/SpritzInstaller/SpritzInstaller.wixproj /p:Configuration=Release
+
+  # Runs the tests that depend on third-party services: the GitHub releases API, and the UniProt ptmlist
+  # and PSI-MOD downloads that mzLib performs when those files are absent. Intentionally NOT a required
+  # check, so an upstream outage never blocks a PR, while a genuine break is still visible here.
+  # Do NOT add this job to branch-protection required checks.
+  external-service-tests:
+    name: External-service tests (non-blocking)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v7
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Spritz/Spritz.sln
+
+    - name: Build .NET
+      run: dotnet build --no-restore --configuration Release /p:Platform=x64 Spritz/Spritz.sln
+
+    - name: Test .NET (external services)
+      run: dotnet test --no-build --configuration Release --verbosity normal --filter "Category=ExternalService" Spritz/Spritz.sln
 
   dockerbuild:
     runs-on: ubuntu-latest
