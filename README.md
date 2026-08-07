@@ -37,7 +37,7 @@ Spritz uses snakemake and Docker to install and run commandline tools for Next-G
 
 * Environment:
   * Windows 10 recommended
-  * [.NET Desktop Runtime 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) - the GUI is a WPF application, so the plain .NET Runtime is not sufficient
+  * .NET Desktop Runtime 10
 * 24 GB RAM recommended
 * The installer ([Spritz.msi](https://github.com/smith-chem-wisc/Spritz/releases)) only works on Windows.
 
