@@ -21,7 +21,19 @@ REF_FOLDER = f"../resources/ensembl/{SPECIES}.{GENEMODEL_VERSION}Rsem/"
 UNIPROTXML=f"../resources/uniprot/{config['species']}.protein.xml.gz" #"../resources/Homo_sapiens_202022.xml.gz"
 UNIPROTFASTA=f"../resources/uniprot/{config['species']}.protein.fasta" #"../resources/Homo_sapiens_202022.xml.gz"
 PREBUILT_SPRITZ_MODS = "prebuilt_spritz_mods" in config and config["prebuilt_spritz_mods"]
-TRANSFER_MOD_DLL="../SpritzModifications.dll" if PREBUILT_SPRITZ_MODS else "../SpritzModifications/bin/x64/Release/net6.0/SpritzModifications.dll"
+# Build output goes to a directory this workflow chooses, rather than to the SDK's default
+# bin/<Platform>/<Configuration>/<TargetFramework>/ layout. Naming that default here meant the
+# workflow silently depended on the platform, the configuration and the target framework all
+# staying put, and it broke when they did not (issue #240).
+#
+# Defined once, in two forms, because build_transfer_mods runs `dotnet build -o` from inside the
+# project directory while the rest of the workflow refers to the assembly from the workflow
+# directory. The rule passes SPRITZ_MODS_OUT_SUBDIR to -o via params, so the path the SDK writes to
+# and the path declared as the rule's output cannot fall out of step.
+SPRITZ_MODS_PROJECT_DIR = "../SpritzModifications"
+SPRITZ_MODS_OUT_SUBDIR = "bin/spritz"
+SPRITZ_MODS_OUT_DIR = f"{SPRITZ_MODS_PROJECT_DIR}/{SPRITZ_MODS_OUT_SUBDIR}"
+TRANSFER_MOD_DLL="../SpritzModifications.dll" if PREBUILT_SPRITZ_MODS else f"{SPRITZ_MODS_OUT_DIR}/SpritzModifications.dll"
 
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
