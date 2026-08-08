@@ -3,8 +3,9 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python =3.8
-  - numpy =1.19.4
+  - python =3.13
+  # See downloads.yaml for why the numpy pin is gone rather than raised.
+  - numpy
   - stringtie
   - gzip # use conda's gzip, not the system's
   - pandas

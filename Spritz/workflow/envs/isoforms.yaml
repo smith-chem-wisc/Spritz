@@ -3,8 +3,9 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python =3.8
-  - samtools =1.11
+  - python =3.13
+  # See align.yaml: samtools 1.11 cannot coexist with a supported python.
+  - samtools =1.24
   - stringtie
   - gzip # use conda's gzip, not the system's
   - picard # for ProteomeGenerator

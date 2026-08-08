@@ -3,8 +3,11 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python =3.8
-  - numpy =1.19.4
+  - python =3.13
+  # numpy was pinned to 1.19.4, which has no build for any python past 3.9, so the pin could not be
+  # carried forward. Left unpinned rather than re-pinned: nothing here depends on a numpy version,
+  # and biopython and pandas already constrain it to something they work with.
+  - numpy
   - requests
   - pyyaml
   - git
