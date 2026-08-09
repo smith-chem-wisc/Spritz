@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
@@ -20,7 +21,29 @@ namespace SpritzBackend
         public string SnakemakeCommand { get; private set; }
         public string SpritzCMDCommand { get; set; }
 
-        public static readonly string CurrentVersion = "0.3.13";
+        /// <summary>
+        /// The version this build reports, and the Docker Hub tag it pulls. Read from the assembly rather
+        /// than hardcoded, so the MSBuild Version property is the only place it is set: Directory.Build.props
+        /// holds the development default and release.yml overrides it with /p:Version from the git tag.
+        /// Previously this literal had to be edited in step with Product.wxs and the tag by hand.
+        /// </summary>
+        public static readonly string CurrentVersion = ReadCompiledVersion();
+
+        private static string ReadCompiledVersion()
+        {
+            // InformationalVersion carries the full Version string. Source-link style builds append "+<sha>",
+            // which is not part of the version and is not in the Docker tag, so it is trimmed.
+            string informational = typeof(RunnerEngine).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            if (!string.IsNullOrWhiteSpace(informational))
+            {
+                return informational.Split('+')[0];
+            }
+
+            // AssemblyVersion is always present, but is four-part, so take the first three to match the tag.
+            return typeof(RunnerEngine).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        }
+
         public static readonly bool PrebuiltSpritzMods = true; // always using prebuilt library now
         public RunnerEngine(Tuple<string, SpritzOptions> task, string outputFolder)
         {
