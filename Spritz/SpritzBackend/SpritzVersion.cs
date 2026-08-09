@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 
@@ -22,11 +23,28 @@ namespace SpritzBackend
                 {
                     var json = response.Content.ReadAsStringAsync().Result;
                     JObject deserialized = JObject.Parse(json);
-                    NewestKnownVersion = deserialized["tag_name"].ToString();
-                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+
+                    // The API does not always answer with a release. A rate-limit or error reply is
+                    // still valid JSON - {"message": "API rate limit exceeded for ...", ...} - and has
+                    // no tag_name, so dereferencing it threw NullReferenceException. That surfaced as
+                    // "Object reference not set to an instance of an object" both in CI and in the
+                    // GUI's update dialog, which says nothing about what actually went wrong.
+                    // Leaving the properties null lets the caller distinguish "no answer" from an
+                    // answer it dislikes.
+                    JToken tagName = deserialized["tag_name"];
+                    if (tagName == null)
+                    {
+                        return;
+                    }
+
+                    NewestKnownVersion = tagName.ToString();
+                    var assets = deserialized["assets"]?
+                        .Select(b => b["name"]?.ToString())
+                        .Where(name => name != null)
+                        .ToList() ?? new List<string>();
                     bool containsMsi = assets.Contains("Spritz.msi");
                     if (!IsVersionLower(NewestKnownVersion))
-                        IsMsiAvailableForUpdate = assets.Contains("Spritz.msi");
+                        IsMsiAvailableForUpdate = containsMsi;
                     if (containsMsi)
                         NewestKnownVersionWithMsi = NewestKnownVersion;
                 }
