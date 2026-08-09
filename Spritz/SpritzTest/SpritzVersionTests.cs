@@ -15,18 +15,32 @@ namespace SpritzTest
         /// offline, and the unauthenticated GitHub API is rate limited per IP - which CI runners share - so it
         /// is flaky by nature. It is excluded from the required CI run and executed in a separate
         /// non-blocking job instead.
+        ///
+        /// When the API cannot answer, this reports as SKIPPED rather than failed. The point of the test is to
+        /// nag about bumping RunnerEngine.CurrentVersion, and that nag only carries if a red result means the
+        /// versions really disagree. Rate-limit noise reddening the check trains everyone to ignore it.
         /// </summary>
         [Test]
         [Category("ExternalService")]
         public void PublishedReleaseIsNotNewerThanCompiledVersion()
         {
             SpritzVersion version = new();
-            version.GetVersionNumbersFromWeb();
+            try
+            {
+                version.GetVersionNumbersFromWeb();
+            }
+            catch (System.Exception exception)
+            {
+                Assert.Ignore($"could not reach the GitHub releases API: {exception.Message}");
+            }
 
-            // Distinguish "the API told us nothing" from "the versions disagree". Without this, an API
-            // failure is reported as a version mismatch, which sends the reader to the wrong place.
-            Assert.That(version.NewestKnownVersion, Is.Not.Null.And.Not.Empty,
-                "the GitHub releases API returned no tag_name, so this is an external-service failure rather than a version mismatch");
+            // Distinguish "the API told us nothing" from "the versions disagree", and skip rather than fail in
+            // the first case. A rate-limit reply is valid JSON with no tag_name, which leaves this null.
+            if (string.IsNullOrEmpty(version.NewestKnownVersion))
+            {
+                Assert.Ignore("the GitHub releases API returned no tag_name, most likely a rate limit or an "
+                    + "outage; skipped rather than failed because this is not a version mismatch");
+            }
 
             // SpritzVersion.IsVersionLower(null) throws NullReferenceException rather than returning a
             // value: GetVersionNumber catches FormatException but not a null input. The no-installer case is
