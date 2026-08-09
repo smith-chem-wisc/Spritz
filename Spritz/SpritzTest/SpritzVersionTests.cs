@@ -7,42 +7,12 @@ namespace SpritzTest
 {
     public class SpritzVersionTests
     {
-        /// <summary>
-        /// Guards against publishing a release newer than the version compiled into the code, i.e. against
-        /// forgetting to bump RunnerEngine.CurrentVersion.
-        ///
-        /// Queries the GitHub releases API, so it is categorised as an external-service test. It cannot pass
-        /// offline, and the unauthenticated GitHub API is rate limited per IP - which CI runners share - so it
-        /// is flaky by nature. It is excluded from the required CI run and executed in a separate
-        /// non-blocking job instead.
-        /// </summary>
-        [Test]
-        [Category("ExternalService")]
-        public void PublishedReleaseIsNotNewerThanCompiledVersion()
-        {
-            SpritzVersion version = new();
-            version.GetVersionNumbersFromWeb();
-
-            // Distinguish "the API told us nothing" from "the versions disagree". Without this, an API
-            // failure is reported as a version mismatch, which sends the reader to the wrong place.
-            Assert.That(version.NewestKnownVersion, Is.Not.Null.And.Not.Empty,
-                "the GitHub releases API returned no tag_name, so this is an external-service failure rather than a version mismatch");
-
-            // SpritzVersion.IsVersionLower(null) throws NullReferenceException rather than returning a
-            // value: GetVersionNumber catches FormatException but not a null input. The no-installer case is
-            // therefore handled here rather than being passed through it.
-            if (version.NewestKnownVersionWithMsi is null)
-            {
-                Assert.That(version.NewestKnownVersion, Is.EqualTo(RunnerEngine.CurrentVersion),
-                    $"newest published release is {version.NewestKnownVersion} and none carries an installer, "
-                    + $"but the code reports {RunnerEngine.CurrentVersion}");
-                return;
-            }
-
-            Assert.That(SpritzVersion.IsVersionLower(version.NewestKnownVersionWithMsi), Is.True,
-                $"newest published release with an installer is {version.NewestKnownVersionWithMsi}, which is newer "
-                + $"than the compiled version {RunnerEngine.CurrentVersion}; bump RunnerEngine.CurrentVersion");
-        }
+        // PublishedReleaseIsNotNewerThanCompiledVersion used to live here. It existed to nag about bumping
+        // RunnerEngine.CurrentVersion before a release, and it is removed because the version now comes from
+        // the git tag, so there is nothing left to forget. Keeping it would have been worse than useless:
+        // after releasing 0.3.14 the development default in Directory.Build.props is still 0.3.13, so every
+        // subsequent pull request would build at 0.3.13, find a newer published release, and fail until
+        // someone bumped the default - reintroducing exactly the manual version chore this change removes.
 
         /// <summary>
         /// RunnerEngine.CurrentVersion is read from the assembly rather than hardcoded, so this guards the
