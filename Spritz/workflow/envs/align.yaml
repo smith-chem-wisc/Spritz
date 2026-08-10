@@ -5,7 +5,5 @@ channels:
 dependencies:
   - python =3.13
   - hisat2 =2.2.1
-  # samtools 1.11 pins zlib <1.3 and an old ncurses, which cannot coexist with any python newer
-  # than 3.10, so this pin had to move with the interpreter rather than by choice.
-  - samtools =1.24
+  - samtools =1.24 # 1.11 pins zlib <1.3 and an old ncurses; will not solve past python 3.10
   - fastp

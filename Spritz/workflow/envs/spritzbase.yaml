@@ -3,9 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  # snakemake and python move together. snakemake 5.27.4 depends on ratelimiter, which caps python
-  # at 3.10, and every python that is still supported needs a snakemake that dropped that dependency.
-  - snakemake-minimal =9.25.1
+  - snakemake-minimal =9.25.1 # 5.27.4 needed ratelimiter, which caps python at 3.10
   - python =3.13
   - conda
   - dotnet-runtime=10.0

@@ -4,8 +4,7 @@ channels:
   - bioconda
 dependencies:
   - python =3.13
-  # See downloads.yaml for why the numpy pin is gone rather than raised.
-  - numpy
-  - stringtie
+  - numpy # see downloads.yaml
+  - stringtie =2.1.7 # the version that produced the U2OS results; unpinned now resolves 3.x
   - gzip # use conda's gzip, not the system's
   - pandas

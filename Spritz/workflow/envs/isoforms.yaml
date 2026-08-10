@@ -4,9 +4,8 @@ channels:
   - bioconda
 dependencies:
   - python =3.13
-  # See align.yaml: samtools 1.11 cannot coexist with a supported python.
-  - samtools =1.24
-  - stringtie
+  - samtools =1.24 # see align.yaml
+  - stringtie =2.1.7 # see quant.yaml
   - gzip # use conda's gzip, not the system's
   - picard # for ProteomeGenerator
   - transdecoder # for ProteomeGenerator
