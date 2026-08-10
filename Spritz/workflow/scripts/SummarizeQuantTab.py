@@ -21,7 +21,15 @@ def read_gene_tpms(path):
     StringTie can report the same gene ID on more than one line - it does so in the U2OS data, for
     gene:ENSG00000242759 - so the duplicates are summed rather than left to collide in the join.
     """
-    table = pd.read_csv(path, sep="\t", usecols=["Gene ID", "TPM"])
+    try:
+        table = pd.read_csv(path, sep="\t", usecols=["Gene ID", "TPM"])
+    except ValueError as error:
+        # pandas already refuses to read missing columns; this only makes the reason obvious.
+        # StringTie's version is not pinned, so its column names can move under us.
+        raise ValueError(
+            f"{os.path.basename(path)}: expected StringTie -A columns 'Gene ID' and 'TPM'. "
+            "If StringTie changed its header, this script needs updating."
+        ) from error
     return table.groupby("Gene ID")["TPM"].sum()
 
 

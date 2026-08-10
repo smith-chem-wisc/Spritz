@@ -30,17 +30,32 @@ def read_transcript_tpms(path):
     transcript_ids = []
     tpms = []
     with open(path) as handle:
-        for line in handle:
+        for line_number, line in enumerate(handle, start=1):
             if line.startswith("#"):
                 continue
             fields = line.rstrip("\n").split("\t")
             if len(fields) < 9 or fields[2] != "transcript":
                 continue
             attributes = dict(ATTRIBUTE.findall(fields[8]))
-            if "transcript_id" not in attributes or "TPM" not in attributes:
-                continue
+            # Raise rather than skip. A silent skip would turn a StringTie output change into an
+            # empty or partial matrix that no downstream step notices; the version is not pinned,
+            # so what produces these files can move under us.
+            missing = [name for name in ("transcript_id", "TPM") if name not in attributes]
+            if missing:
+                raise ValueError(
+                    f"{os.path.basename(path)} line {line_number}: transcript row has no "
+                    f"{' or '.join(missing)}. Attributes present: "
+                    f"{', '.join(sorted(attributes)) or 'none'}. "
+                    "If StringTie changed its attribute names, this script needs updating."
+                )
             transcript_ids.append(attributes["transcript_id"])
             tpms.append(float(attributes["TPM"]))
+
+    if not transcript_ids:
+        raise ValueError(
+            f"{os.path.basename(path)}: no 'transcript' features found. Either the file is empty "
+            "or StringTie no longer labels these rows 'transcript'."
+        )
 
     frame = pd.DataFrame({"transcript_id": transcript_ids, "TPM": tpms})
     return frame.groupby("transcript_id")["TPM"].sum()

@@ -128,6 +128,18 @@ class TestSummarizeQuantTab:
         assert result.returncode == 1
         assert "Usage" in result.stdout
 
+    def test_fails_loudly_if_the_expected_columns_are_missing(self, tmp_path):
+        """StringTie is unpinned, so its output can change; that must not pass silently."""
+        quant = tmp_path / "SRR13737862.fq.gene.quant_ref.tab"
+        quant.write_text("Gene ID\tGene Name\tTPMs\ngene:ENSG1\t-\t1.0\n")
+        out = tmp_path / "gene.tpms.csv"
+
+        result = run_script("SummarizeQuantTab.py", tmp_path, args=[str(out), str(quant)])
+
+        assert result.returncode != 0
+        assert "Gene ID" in result.stderr and "TPM" in result.stderr
+        assert not out.exists(), "no matrix should be written when the input is not understood"
+
 
 class TestSummarizeQuantGtf:
     def test_keeps_every_transcript_including_the_first(self, tmp_path):
@@ -203,3 +215,33 @@ class TestSummarizeQuantGtf:
         result = run_script("SummarizeQuantGtf.py", tmp_path, args=["only-the-output"])
         assert result.returncode == 1
         assert "Usage" in result.stdout
+
+    def test_fails_loudly_if_a_transcript_row_has_no_tpm(self, tmp_path):
+        """A renamed or dropped TPM attribute must stop the run, not yield an empty matrix."""
+        gtf = tmp_path / "SRR13737862.fq.transcript.quant_ref.gtf"
+        gtf.write_text(
+            '1\thavana\ttranscript\t1000\t1500\t.\t+\t.\t'
+            f'gene_id "g1"; transcript_id "{TRANSCRIPT_A}"; cov "1.0"; FPKM "10.0";\n'
+        )
+        out = tmp_path / "transcript.tpms.csv"
+
+        result = run_script("SummarizeQuantGtf.py", tmp_path, args=[str(out), str(gtf)])
+
+        assert result.returncode != 0
+        assert "TPM" in result.stderr
+        assert not out.exists()
+
+    def test_fails_loudly_if_no_transcript_features_are_present(self, tmp_path):
+        """If StringTie stopped labelling these rows 'transcript', say so rather than writing nothing."""
+        gtf = tmp_path / "SRR13737862.fq.transcript.quant_ref.gtf"
+        gtf.write_text(
+            "# stringtie\n"
+            '1\thavana\texon\t1000\t1500\t.\t+\t.\tgene_id "g1"; transcript_id "t1"; TPM "1.0";\n'
+        )
+        out = tmp_path / "transcript.tpms.csv"
+
+        result = run_script("SummarizeQuantGtf.py", tmp_path, args=[str(out), str(gtf)])
+
+        assert result.returncode != 0
+        assert "transcript" in result.stderr
+        assert not out.exists()
