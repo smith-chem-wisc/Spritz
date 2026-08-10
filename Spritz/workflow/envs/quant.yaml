@@ -5,6 +5,6 @@ channels:
 dependencies:
   - python =3.13
   - numpy # see downloads.yaml
-  - stringtie =2.1.7 # the version that produced the U2OS results; unpinned now resolves 3.x
+  - stringtie
   - gzip # use conda's gzip, not the system's
   - pandas
