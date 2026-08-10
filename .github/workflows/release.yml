@@ -80,8 +80,13 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
 
+    # /p:Version matters here, not just in the githubrelease job: RunnerEngine.CurrentVersion is read
+    # from the assembly, and it is written into the config the container consumes. Without this the
+    # published image would report the development default while being tagged with the release version.
     - name: Build SpritzCMD
-      run: dotnet build --no-restore --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+      run: |
+        version=$(git describe --tags)
+        dotnet build --no-restore --configuration Release /p:Version=${version} Spritz/SpritzCMD/SpritzCMD.csproj
 
     - name: Build docker image
       run: docker build -t spritz ./Spritz/

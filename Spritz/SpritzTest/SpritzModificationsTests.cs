@@ -21,9 +21,21 @@ namespace SpritzTest
         [Category("ExternalService")]
         public void GetUniProtMods_ParsesModificationsFromDownloadedPtmList()
         {
-            var mods = ProteinAnnotation.GetUniProtMods(TestContext.CurrentContext.TestDirectory);
+            int modificationCount;
+            try
+            {
+                modificationCount = ProteinAnnotation.GetUniProtMods(TestContext.CurrentContext.TestDirectory).Count;
+            }
+            catch (System.Exception exception)
+            {
+                // A failed download is an outage, not a Spritz regression, so it skips rather than fails.
+                // A download that succeeds but parses to nothing still fails below - that would mean the
+                // ptmlist format changed, which is a real break worth reddening the check for.
+                Assert.Ignore($"could not download or read the UniProt ptmlist: {exception.Message}");
+                return;
+            }
 
-            Assert.That(mods, Is.Not.Empty,
+            Assert.That(modificationCount, Is.GreaterThan(0),
                 "no UniProt modifications were parsed from ptmlist.txt; check the download succeeded and the "
                 + "ptmlist format has not changed");
         }

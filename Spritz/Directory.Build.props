@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- Single source of truth for the version. release.yml passes /p:Version from the git tag,
+         and a command-line property always wins over this default, so tagging is the only thing
+         that decides what a release reports. This value is what local and CI builds use, and so
+         also the Docker Hub tag a development build of the GUI pulls by default. -->
+    <Version Condition=" '$(Version)' == '' ">0.3.13</Version>
+  </PropertyGroup>
+</Project>
