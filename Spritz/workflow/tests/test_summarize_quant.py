@@ -97,6 +97,26 @@ class TestSummarizeQuantTab:
         assert matrix[GENE_B] == {"sample_one": pytest.approx(2.0), "sample_two": pytest.approx(20.0)}
         assert matrix[GENE_C] == {"sample_one": pytest.approx(3.0), "sample_two": pytest.approx(30.0)}
 
+    def test_takes_the_union_when_samples_report_different_genes(self, tmp_path):
+        """Reported in #237: two samples whose tables had 60,633 and 60,635 lines.
+
+        A gene absent from one sample is left empty rather than filled with 0, since StringTie not
+        reporting a gene is not the same as measuring it at zero.
+        """
+        first = write_tab(tmp_path, "sample_one", [(GENE_A, 1.0), (GENE_B, 2.0)])
+        second = write_tab(tmp_path, "sample_two", [(GENE_B, 20.0), (GENE_C, 30.0)])
+        out = tmp_path / "gene.tpms.csv"
+
+        result = run_script("SummarizeQuantTab.py", tmp_path, args=[str(out), str(first), str(second)])
+        assert result.returncode == 0, result.stderr
+
+        with open(out) as handle:
+            rows = {line.split(",")[0]: line.strip().split(",")[1:] for line in handle}
+        assert set(rows) - {"Gene ID"} == {GENE_A, GENE_B, GENE_C}
+        assert rows[GENE_A] == ["1.0", ""], "a gene missing from a sample is empty, not zero"
+        assert rows[GENE_C] == ["", "30.0"]
+        assert rows[GENE_B] == ["2.0", "20.0"]
+
     def test_sums_duplicated_gene_ids(self, tmp_path):
         """StringTie reports gene:ENSG00000242759 on two lines in the U2OS tables."""
         quant = write_tab(
