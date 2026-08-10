@@ -15,6 +15,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  # release.yml only ever runs on a tag, so nothing here exercises the actions it references. A bad
+  # version bump there stayed invisible until a release was cut, and then failed the job at "Set up
+  # job" before a single step ran. This resolves every `uses:` reference in every workflow against
+  # the API, so an unresolvable one fails a pull request instead of a release.
+  action-refs:
+    name: Verify workflow action references resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v7
+    - name: Resolve every `uses:` reference
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -uo pipefail
+        # Anchored to the start of a line so this step does not match the pattern in its own source.
+        grep -rhoE '^[[:space:]]*-?[[:space:]]*uses:[[:space:]]*[^[:space:]]+' .github/workflows/*.yml \
+          | sed -E 's/^.*uses:[[:space:]]*//' | sort -u > refs.txt
+        failed=0
+        while read -r ref; do
+          [ -z "$ref" ] && continue
+          case "$ref" in ./*|docker://*) echo "skip $ref"; continue;; esac
+          repo="${ref%@*}"
+          rev="${ref##*@}"
+          if gh api "repos/$repo/git/ref/tags/$rev" >/dev/null 2>&1 \
+            || gh api "repos/$repo/git/ref/heads/$rev" >/dev/null 2>&1 \
+            || gh api "repos/$repo/commits/$rev" >/dev/null 2>&1; then
+            echo "ok   $ref"
+          else
+            echo "::error::unresolvable action reference: $ref"
+            failed=1
+          fi
+        done < refs.txt
+        exit $failed
+
   builds:
     runs-on: windows-latest
     timeout-minutes: 15
