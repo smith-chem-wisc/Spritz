@@ -72,7 +72,7 @@ namespace SpritzBackend
             "Copy-paste a line from the file you get with the -x option that retrieves available references.";
 
         public static readonly string InfoSupp =
-            $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and mamba.{Environment.NewLine}" +
+            $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and conda.{Environment.NewLine}" +
             Environment.NewLine +
             $"Example workflow using this tool: {Environment.NewLine}" +
             $"1) Check out the available references with the -x command. Specify a target directory with -a.{Environment.NewLine}" +

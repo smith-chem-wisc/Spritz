@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python =3.8
-  - samtools =1.11
+  - python =3.13
+  - samtools =1.24 # see align.yaml
   - stringtie
   - gzip # use conda's gzip, not the system's
   - picard # for ProteomeGenerator

@@ -5,4 +5,4 @@ channels:
 dependencies:
   - java-jdk =8.0.92
   - gatk4 =4.2.0.0
-  - samtools =1.11
+  - samtools =1.24

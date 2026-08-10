@@ -1,12 +1,48 @@
-import sys
+"""Combine StringTie gene abundance tables (-A output) into one gene-by-sample TPM matrix.
+
+Joins on gene ID. The previous implementation stacked the values positionally with numpy and
+assumed every sample listed its genes in the same order, which is not true of StringTie output:
+the same gene set comes back in a different order per sample. See the notes on each helper.
+"""
 import os
-import numpy as np
+import sys
+
 import pandas as pd
 
-def read_tpm_file(file_path):
-    """Reads a TPM file and returns the Gene IDs and TPMs."""
-    table = pd.read_csv(file_path, sep="\t")
-    return table["Gene ID"].values, table["TPM"].values
+
+def sample_name(path):
+    """The sample label for a quant file, e.g. SRR13737862.sra.gene.quant_ref.tab -> SRR13737862."""
+    return os.path.basename(path).split(".")[0]
+
+
+def read_gene_tpms(path):
+    """Reads one StringTie -A table as a gene-indexed TPM series.
+
+    StringTie can report the same gene ID on more than one line - it does so in the U2OS data, for
+    gene:ENSG00000242759 - so the duplicates are summed rather than left to collide in the join.
+    """
+    try:
+        table = pd.read_csv(path, sep="\t", usecols=["Gene ID", "TPM"])
+    except ValueError as error:
+        # pandas already refuses to read missing columns; this only makes the reason obvious.
+        # StringTie's version is not pinned, so its column names can move under us.
+        raise ValueError(
+            f"{os.path.basename(path)}: expected StringTie -A columns 'Gene ID' and 'TPM'. "
+            "If StringTie changed its header, this script needs updating."
+        ) from error
+    return table.groupby("Gene ID")["TPM"].sum()
+
+
+def build_matrix(input_files):
+    """Genes down the rows, samples across the columns, aligned on gene ID.
+
+    pandas aligns on the index, so a sample that orders its genes differently still lands in the
+    right rows. Both axes are sorted so the output does not depend on the order StringTie happened
+    to emit, nor on the order snakemake happened to pass the files.
+    """
+    tpms_by_sample = {sample_name(path): read_gene_tpms(path) for path in input_files}
+    return pd.concat(tpms_by_sample, axis=1).sort_index().sort_index(axis=1)
+
 
 def main():
     if len(sys.argv) < 3:
@@ -16,29 +52,10 @@ def main():
     output_file = sys.argv[1]
     input_files = sys.argv[2:]
 
-    ids_list = []
-    tpms_list = []
-
-    for file in input_files:
-        currIds, currTpms = read_tpm_file(file)
-        
-        if not ids_list:
-            ids_list = currIds
-        elif not np.array_equal(currIds, ids_list):
-            print(f"Error with IDs in file: {os.path.basename(file)}")
-            sys.exit(1)
-
-        tpms_list.append(currTpms)
-
-    tpms_list.insert(0, ids_list)
-    dataframe = np.row_stack(tpms_list)
-    dataframe[1:, 0] = [os.path.basename(file).split(".")[0] for file in input_files]
-    
-    # Create a DataFrame and save to CSV
-    pddf = pd.DataFrame(dataframe[1:, 1:], index=dataframe[1:, 0], columns=dataframe[0, 1:]).sort_index()
-    pddf.T.to_csv(output_file)
+    build_matrix(input_files).to_csv(output_file)
 
     print(f"Saved summarized data to {output_file}")
+
 
 if __name__ == "__main__":
     main()

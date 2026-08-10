@@ -93,7 +93,7 @@ namespace SpritzCMD
                 .WithDescription(SpritzOptionStrings.ReferenceDesc);
 
             string helpoutro = "";
-            helpoutro += $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and mamba." + Environment.NewLine;
+            helpoutro += $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and conda." + Environment.NewLine;
             helpoutro += Environment.NewLine;
             helpoutro += $"Example workflow using this tool:" + Environment.NewLine;
             helpoutro += $"1) Check out the available references with the -x command. Specify a target directory with -a." + Environment.NewLine;

@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python =3.8
-  - numpy =1.19.4
+  - python =3.13
+  - numpy # was =1.19.4, which has no build past python 3.9; nothing here needs a version
   - requests
   - pyyaml
   - git
