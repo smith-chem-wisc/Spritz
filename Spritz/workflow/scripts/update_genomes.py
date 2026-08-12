@@ -12,11 +12,11 @@ species_EnsemblVertebrates.txt summary, because the summary disagrees with the f
 for some species - in release 116 it reports sorAra1 and UOA_Wagyu_1 where the files are
 named COMMON_SHREW1 and ASM4028618v1. Only the common name is taken from the summary.
 
-A species is left out when its gene set version differs from the Ensembl release, because
-Spritz builds the GFF3 URL as {ref}.{release}.gff3.gz and that file will not exist. In
-release 116 that is caenorhabditis_elegans, drosophila_melanogaster and
-saccharomyces_cerevisiae, all numbered 63 - Ensembl imports those from WormBase, FlyBase
-and SGD. Listing them would hand the user a reference that fails partway into a run.
+Species whose gene set version differs from the Ensembl release are included: the download
+rule reads the gff3 name off the directory listing rather than assuming it carries the
+release number, so caenorhabditis_elegans, drosophila_melanogaster and
+saccharomyces_cerevisiae - all numbered 63 in release 116, because Ensembl imports them
+from WormBase, FlyBase and SGD - resolve correctly.
 """
 
 import argparse
@@ -108,10 +108,8 @@ def assembly_from_listing(release, species):
 def rows_for_release(release, workers=12, skipped=None):
     """(release, species, common name, assembly) for every species Spritz can download.
 
-    Species whose gene set version differs from the Ensembl release are left out: Spritz
-    builds the GFF3 URL as {ref}.{release}.gff3.gz, so for caenorhabditis_elegans, whose
-    release-116 files are numbered 63, that URL does not exist. Listing them would only
-    offer the user a reference that fails partway into a run.
+    The gene set version is not required to match the release; the download rule discovers the
+    real gff3 name.
     """
     names = common_names(release)
     listing = fetch(f"{FTP_ROOT}/release-{release}/gff3/")
@@ -127,11 +125,7 @@ def rows_for_release(release, workers=12, skipped=None):
                 if skipped is not None:
                     skipped.append((release, species, "no gff3 found"))
                 continue
-            assembly, version = found
-            if version != str(release):
-                if skipped is not None:
-                    skipped.append((release, species, f"gene set version {version}"))
-                continue
+            assembly, _version = found
             rows.append((f"release-{release}", species, names[species], assembly))
     return sorted(rows, key=lambda r: r[1])
 

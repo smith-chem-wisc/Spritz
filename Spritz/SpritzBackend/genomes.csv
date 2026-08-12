@@ -355,6 +355,7 @@ release-116,bos_taurus_tuli,cattle - tuli,ASM4028542v1
 release-116,bos_taurus_wagyu,cattle - wagyu,ASM4028618v1
 release-116,bubo_bubo,eurasian eagle-owl,BubBub1.0
 release-116,buteo_japonicus,eastern buzzard,ButJap1.0
+release-116,caenorhabditis_elegans,caenorhabditis elegans (nematode; n2),WBcel235
 release-116,cairina_moschata_domestica,muscovy duck (domestic type),CaiMos1.0
 release-116,calidris_pugnax,ruff,ASM143184v1
 release-116,calidris_pygmaea,spoon-billed sandpiper,ASM369795v1
@@ -415,6 +416,7 @@ release-116,denticeps_clupeoides,denticle herring,fDenClu1.2
 release-116,dicentrarchus_labrax,european seabass,dlabrax2021
 release-116,dipodomys_ordii,kangaroo rat,Dord_2.0
 release-116,dromaius_novaehollandiae,emu,droNov1
+release-116,drosophila_melanogaster,drosophila melanogaster - (fruit fly),BDGP6.54
 release-116,echeneis_naucrates,live sharksucker,fEcheNa1.1
 release-116,echinops_telfairi,lesser hedgehog tenrec,TENREC
 release-116,electrophorus_electricus,electric eel,fEleEle1.pri
@@ -594,6 +596,7 @@ release-116,rattus_norvegicus_wkybbb,rat - wky/bbb rgd_1581635,UTH_Rnor_WKY_Bbb_
 release-116,rhinolophus_ferrumequinum,greater horseshoe bat,mRhiFer1_v1.p
 release-116,rhinopithecus_bieti,black snub-nosed monkey,ASM169854v1
 release-116,rhinopithecus_roxellana,golden snub-nosed monkey,Rrox_v1
+release-116,saccharomyces_cerevisiae,saccharomyces cerevisiae,R64-1-1
 release-116,saimiri_boliviensis_boliviensis,bolivian squirrel monkey,SaiBol1.0
 release-116,salarias_fasciatus,jewelled blenny,fSalaFa1.1
 release-116,salmo_salar,atlantic salmon,Ssal_v3.1

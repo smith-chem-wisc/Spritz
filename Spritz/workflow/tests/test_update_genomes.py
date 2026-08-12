@@ -80,6 +80,14 @@ class TestGeneratedFile:
         assert any(r.startswith("release-116,homo_sapiens,") and r.endswith(",GRCh38") for r in rows)
         assert any(r.startswith("release-116,mus_musculus,") and r.endswith(",GRCm39") for r in rows)
 
+    def test_species_with_their_own_gene_set_version_are_listed(self):
+        # These are numbered 63 in release 116 because Ensembl imports them from WormBase, FlyBase
+        # and SGD. They are usable because the download rule discovers the real gff3 name, so
+        # excluding them would drop three of the most commonly used model organisms.
+        rows = self.rows()
+        for species in ("caenorhabditis_elegans", "drosophila_melanogaster", "saccharomyces_cerevisiae"):
+            assert any(r.startswith(f"release-116,{species},") for r in rows), species
+
     def test_no_release_name_is_a_prefix_of_another(self):
         # Spritz groups rows by release with a substring match, so if one release name were
         # a prefix of another (release-11 and release-116) species would be attributed to
