@@ -19,7 +19,8 @@ namespace SpritzModifications
         /// <returns></returns>
         public static List<Modification> GetUniProtMods(string spritzDirectory)
         {
-            Loaders.LoadElements();
+            // No Loaders.LoadElements() call: mzLib marked it obsolete because the periodic table is
+            // now populated by its own static constructor on first use.
             var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(spritzDirectory, "PSI-MOD.obo.xml"));
             return Loaders.LoadUniprot(Path.Combine(spritzDirectory, "ptmlist.txt"), Loaders.GetFormalChargesDictionary(psiModDeserialized)).ToList();
         }
