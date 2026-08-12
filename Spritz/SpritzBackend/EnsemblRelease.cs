@@ -22,11 +22,12 @@ namespace SpritzBackend
             foreach (string release in releases)
             {
                 // read txt file into obsv collection
-                var species = genomeDB.Where(g => g.Contains(release)).Select(g => g.Split(',')[1]).Distinct().ToList();
+                var forThisRelease = genomeDB.Where(g => g.Split(',')[0] == release).ToList();
+                var species = forThisRelease.Select(g => g.Split(',')[1]).Distinct().ToList();
                 Dictionary<string, string> genomes = new();
                 Dictionary<string, string> organisms = new();
 
-                foreach (string genome in genomeDB.Where(g => g.Contains(release)))
+                foreach (string genome in forThisRelease)
                 {
                     var splt = genome.Split(',');
                     genomes.Add(splt[1], splt[3]); // <Species, GenomeVer>
