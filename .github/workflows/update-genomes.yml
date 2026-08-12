@@ -4,7 +4,7 @@ name: Refresh genomes.csv from Ensembl
 # request only when the generated file actually changes. Nobody has to notice a release.
 on:
   schedule:
-    - cron: "0 6 1 * *"
+    - cron: "23 6 1 * *"
   workflow_dispatch:
 
 permissions:
