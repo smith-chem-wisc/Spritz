@@ -1,4 +1,5 @@
 import os
+import posixpath  # snakemake paths are always forward-slash; see the note on all_output
 
 # Variables used by many of the rules
 SPECIES = config["species"]
@@ -64,7 +65,7 @@ CONDA_CA_BUNDLE_EXPORT = (
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
     outputs = ["prose.txt"]
-    outputs.append(os.path.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
+    outputs.append(posixpath.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
     if "variant" in config["analyses"]:
         outputs.append("final/combined.spritz.snpeff.protein.withmods.xml.gz") # variants
     if "isoform" in config["analyses"]:
@@ -80,7 +81,9 @@ def all_output(wildcards):
             "final/transcript_custom_quant.tpms.csv",
             "final/gene_custom_quant.tpms.csv"]) # isoform quant with stringtie
     expanded_outputs = expand(
-        [os.path.join("{dir}", file) for file in outputs],
+        # posixpath, not os.path: on native Windows os.path.join inserts a backslash, so this
+        # asked for a path no rule declares and the DAG failed before any job ran (issue #243).
+        [posixpath.join("{dir}", file) for file in outputs],
         dir=config["analysis_directory"])
     return expanded_outputs
 
