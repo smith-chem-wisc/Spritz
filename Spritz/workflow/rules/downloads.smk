@@ -10,13 +10,21 @@ rule download_ensembl_references:
         primary=f"{PROTOCOL}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.primary_assembly.fa.gz",
         toplevel=f"{PROTOCOL}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/dna/{REF}.dna.toplevel.fa.gz",
         gff=f"{PROTOCOL}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/gff3/{SPECIES_LOWER}/{REF}.{ENSEMBL_VERSION}.gff3.gz",
+        gffdir=f"{PROTOCOL}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/gff3/{SPECIES_LOWER}/",
+        gffpattern=f"{REF}\\.[0-9]+\\.gff3\\.gz",
         pep=f"{PROTOCOL}://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}//fasta/{SPECIES_LOWER}/pep/{REF}.pep.all.fa.gz",
     benchmark: "../resources/ensembl/downloads.benchmark"
     log: "../resources/ensembl/downloads.log"
     conda: "../envs/downloads.yaml"
     shell:
+        # The gff3 is not always numbered with the Ensembl release: species Ensembl imports from
+        # elsewhere carry their own gene set version, so release 116 ships
+        # Caenorhabditis_elegans.WBcel235.63.gff3.gz. Read the name off the directory listing and
+        # fall back to the assumed one if the listing cannot be read.
         "((wget -O - {params.primary} || wget -O - {params.toplevel}) | gunzip -c - > {output.gfa} && "
-        "wget -O - {params.gff} | gunzip -c - > {output.gff3} && "
+        "gff3name=$(wget -qO- {params.gffdir} | grep -oE '{params.gffpattern}' | sort -u | head -1) && "
+        "if [ -n \"$gff3name\" ]; then gff3url={params.gffdir}$gff3name; else gff3url={params.gff}; fi && "
+        "wget -O - \"$gff3url\" | gunzip -c - > {output.gff3} && "
         "wget -O - {params.pep} | gunzip -c - > {output.pfa}) 2> {log}"
 
 if SPECIES_LOWER == "homo_sapiens":
