@@ -138,17 +138,17 @@ rule reference_protein_xml:
         transfermods=TRANSFER_MOD_DLL,
         unixml=UNIPROTXML,
     output:
-        done=os.path.join("{dir}/variants/", f"done{REF}.{ENSEMBL_VERSION}.txt"),
-        protxml=temp(os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml")),
-        protxmlgz=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml.gz"),
-        protfa=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fasta"),
-        protwithdecoysfa=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
-        protxmlwithmods=temp(os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml")),
-        protxmlwithmodsgz=os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
+        done=posixpath.join("{dir}/variants/", f"done{REF}.{ENSEMBL_VERSION}.txt"),
+        protxml=temp(posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml")),
+        protxmlgz=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.xml.gz"),
+        protfa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fasta"),
+        protwithdecoysfa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
+        protxmlwithmods=temp(posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml")),
+        protxmlwithmodsgz=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
     params: ref=REF
     resources: mem_mb=16000
-    benchmark: os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
-    log: os.path.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.log")
+    benchmark: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
+    log: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.log")
     conda: "../envs/proteogenomics.yaml"
     shell:
         "(java -Xmx{resources.mem_mb}M -jar {input.snpeff} -v -nostats"
