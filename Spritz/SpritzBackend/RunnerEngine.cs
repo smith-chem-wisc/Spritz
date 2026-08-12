@@ -101,7 +101,9 @@ namespace SpritzBackend
             cmd += $"snakemake -j {options.Threads} --use-conda --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
             if (setup)
             {
-                cmd += " setup.txt";
+                // The rule is named "setup" and writes ../resources/setup.txt. "setup.txt" matches
+                // neither, so snakemake refused with MissingRuleException.
+                cmd += " setup";
             }
             SnakemakeCommand = cmd;
             return cmd;

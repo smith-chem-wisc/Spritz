@@ -124,6 +124,11 @@ jobs:
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[isoform]"
 
+    - name: Dry-run - setup
+      # The target the GUI and CLI use for "Analysis Setup". It is not the default target, so
+      # none of the dry-runs above reach it, which is how it stayed broken.
+      run: cd Spritz/workflow && snakemake --dry-run --cores 1 setup
+
     - name: Dry-run - variant, isoform and quant together
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"
