@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using Omics.BioPolymer;
+using Omics.Modifications;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,7 +78,7 @@ namespace SpritzModifications
 
                     // transfer these
                     oneBasedModifications: uniprot != null ? uniprot.OneBasedPossibleLocalizedModifications : new Dictionary<int, List<Modification>>(),
-                    proteolysisProducts: uniprot != null ? uniprot.ProteolysisProducts.ToList() : new List<ProteolysisProduct>(),
+                    proteolysisProducts: uniprot != null ? uniprot.TruncationProducts.ToList() : new List<TruncationProduct>(),
                     databaseReferences: uniprot != null ? uniprot.DatabaseReferences.ToList() : new List<DatabaseReference>(),
                     disulfideBonds: uniprot != null ? uniprot.DisulfideBonds.ToList() : new List<DisulfideBond>()
                 ));
@@ -132,7 +134,7 @@ namespace SpritzModifications
                 spliceSites: new HashSet<SpliceSite>(proteinsWithSameSequence.SelectMany(p => p.SpliceSites)).ToList(),
                 geneNames: geneNames,
                 oneBasedModifications: CollapseMods(proteinsWithSameSequence),
-                proteolysisProducts: new HashSet<ProteolysisProduct>(proteinsWithSameSequence.SelectMany(p => p.ProteolysisProducts)).ToList(),
+                proteolysisProducts: new HashSet<TruncationProduct>(proteinsWithSameSequence.SelectMany(p => p.TruncationProducts)).ToList(),
                 databaseReferences: new HashSet<DatabaseReference>(proteinsWithSameSequence.SelectMany(p => p.DatabaseReferences)).ToList(),
                 disulfideBonds: new HashSet<DisulfideBond>(proteinsWithSameSequence.SelectMany(p => p.DisulfideBonds)).ToList()
             );
