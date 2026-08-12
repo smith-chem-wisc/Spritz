@@ -194,10 +194,13 @@ public class FastqEntryTests
     [Test]
     public void TheOutputFolderDefaultsToWhereTheFastqsAre()
     {
+        // Derive both sides from the same path so this does not depend on the separator, which is what
+        // it did before and why it passed on Linux and macOS but not on Windows.
+        string fastq = Path.Combine(Path.GetTempPath(), "reads", "sample_1.fastq");
         var viewModel = new MainWindowViewModel();
-        viewModel.AddFastqFiles(new[] { Path.Combine("/data", "reads", "sample_1.fastq") });
+        viewModel.AddFastqFiles(new[] { fastq });
 
-        Assert.That(viewModel.OutputFolder, Is.EqualTo(Path.Combine("/data", "reads")));
+        Assert.That(viewModel.OutputFolder, Is.EqualTo(Path.GetDirectoryName(fastq)));
     }
 
     [Test]
