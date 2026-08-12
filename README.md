@@ -51,7 +51,12 @@ Spritz uses snakemake and a container runtime to install and run commandline too
 
 ## Running Spritz with commandline
 
-Spritz will also [work on the commandline](https://github.com/smith-chem-wisc/Spritz/wiki/Spritz-commandline-usage) within a Unix system (Linux, Mac, WSL on Windows).
+Spritz runs on the commandline on **macOS, Linux and Windows** by running the published container:
+see [Running Spritz from the command line](https://github.com/smith-chem-wisc/Spritz/wiki/Running-Spritz-from-the-command-line).
+It needs a container runtime and nothing else, and it is the route CI exercises on every push.
+
+Running snakemake directly on the host also works on Linux and macOS, and is covered on the same
+page as the advanced route.
 
 ### Container runtimes
 
