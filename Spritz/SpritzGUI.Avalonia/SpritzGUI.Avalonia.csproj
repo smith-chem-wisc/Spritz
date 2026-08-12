@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AssemblyName>Spritz</AssemblyName>
+    <RootNamespace>Spritz.Avalonia</RootNamespace>
+  </PropertyGroup>
+
+  <!-- The view model and the linked model classes are internal, so the tests need this to see them. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SpritzGUI.Avalonia.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SpritzBackend\SpritzBackend.csproj" />
+  </ItemGroup>
+
+  <!-- Linked, not copied. These model classes contain no WPF types, so the Windows GUI and this one
+       compile the same source. If they ever gain a UI dependency, this build breaks and says so. -->
+  <ItemGroup>
+    <Compile Include="..\SpritzGUI\DataGrids\*.cs" Link="Models\%(Filename).cs" />
+    <Compile Include="..\SpritzGUI\TreeViews\*.cs" Link="Models\%(Filename).cs" />
+  </ItemGroup>
+
+</Project>

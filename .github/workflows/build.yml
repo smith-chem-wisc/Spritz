@@ -176,6 +176,33 @@ jobs:
       run: cd Spritz/workflow/tests && python -m pytest -v
 
 
+  # The Avalonia GUI is the only part of Spritz meant to run on more than Windows, so it is built and
+  # tested on all three, and deliberately by project path rather than through Spritz.sln. The solution
+  # defines only x64 and x86 platforms and CI builds it with /p:Platform=x64, while this project sets no
+  # PlatformTarget on purpose - adding it to that solution would map it to a platform it does not want.
+  # Its tests use Avalonia's headless platform, so no display is needed on any runner.
+  gui-crossplatform:
+    name: Avalonia GUI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+    - uses: actions/checkout@v7
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build
+      run: dotnet build --configuration Release Spritz/SpritzGUI.Avalonia/SpritzGUI.Avalonia.csproj
+
+    - name: Test
+      run: dotnet test --configuration Release --verbosity normal Spritz/SpritzGUI.Avalonia.Tests/SpritzGUI.Avalonia.Tests.csproj
+
+
   dockerbuild:
     runs-on: ubuntu-latest
     timeout-minutes: 90
