@@ -91,24 +91,23 @@ def setup_output(wildcards):
         f"../resources/ensembl/{SPECIES}.ensembl.vcf",
         TRANSFER_MOD_DLL,
         UNIPROTFASTA,
-        UNIPROTFASTA,
         FA,
         "../resources/ptmlist.txt",
         "../resources/PSI-MOD.obo.xml",
         "../resources/SnpEff/snpEff.jar",
-        [] if not check('sra') else expand(
+        *([] if not check('sra') else expand(
             [
                 "{dir}/{sra}_1.fastq",
                 "{dir}/{sra}_2.fastq",
             ],
             dir=config['analysis_directory'],
-            sra=config['sra']),
-        [] if not check('sra_se') else expand(
+            sra=config['sra'])),
+        *([] if not check('sra_se') else expand(
             [
                 "{dir}/{sra_se}.fastq",
             ],
             dir=config['analysis_directory'],
-            sra_se=config['sra_se'])
+            sra_se=config['sra_se']))
     ]
     return setup_outputs
 
