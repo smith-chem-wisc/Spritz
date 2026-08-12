@@ -67,6 +67,89 @@ jobs:
           tag: ${{ github.ref }}
 
 
+  # Self-contained desktop builds of the Avalonia GUI, added alongside the Windows installer rather
+  # than replacing it. Published per runner so each platform's binaries are produced natively: the
+  # macOS .app bundle in particular needs the executable bit and bundle layout that a native runner
+  # gives, and ditto rather than zip to preserve them.
+  #
+  # These are a preview. The WPF installer above remains the supported Windows download.
+  desktop:
+    name: Desktop GUI (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64,   archive: zip }
+          - { os: ubuntu-latest,  rid: linux-x64, archive: targz }
+          - { os: macos-latest,   rid: osx-arm64, archive: app }
+          - { os: macos-latest,   rid: osx-x64,   archive: app }
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    # Same tag-driven version as everything else, so the GUI reports what the release says.
+    - name: Publish
+      shell: bash
+      run: |
+        version=$(git describe --tags)
+        dotnet publish Spritz/SpritzGUI.Avalonia/SpritzGUI.Avalonia.csproj \
+          --configuration Release --runtime ${{ matrix.rid }} --self-contained true \
+          /p:Version=${version} --output publish/${{ matrix.rid }}
+
+    - name: Assemble macOS .app bundle
+      if: matrix.archive == 'app'
+      shell: bash
+      run: |
+        version=$(git describe --tags)
+        app="Spritz.app"
+        mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+        cp -R publish/${{ matrix.rid }}/. "$app/Contents/MacOS/"
+        chmod +x "$app/Contents/MacOS/Spritz"
+        cat > "$app/Contents/Info.plist" <<PLIST
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>CFBundleName</key><string>Spritz</string>
+          <key>CFBundleDisplayName</key><string>Spritz</string>
+          <key>CFBundleIdentifier</key><string>edu.wisc.smithchem.spritz</string>
+          <key>CFBundleExecutable</key><string>Spritz</string>
+          <key>CFBundlePackageType</key><string>APPL</string>
+          <key>CFBundleShortVersionString</key><string>${version}</string>
+          <key>CFBundleVersion</key><string>${version}</string>
+          <key>LSMinimumSystemVersion</key><string>11.0</string>
+          <key>NSHighResolutionCapable</key><true/>
+        </dict>
+        </plist>
+        PLIST
+        # ditto, not zip: it preserves the bundle's structure and permissions.
+        ditto -c -k --keepParent "$app" "Spritz-${{ matrix.rid }}.app.zip"
+
+    - name: Archive (zip)
+      if: matrix.archive == 'zip'
+      shell: bash
+      run: cd publish/${{ matrix.rid }} && 7z a ../../Spritz-${{ matrix.rid }}.zip .
+
+    - name: Archive (tar.gz)
+      if: matrix.archive == 'targz'
+      shell: bash
+      run: tar -czf Spritz-${{ matrix.rid }}.tar.gz -C publish/${{ matrix.rid }} .
+
+    - name: Upload
+      uses: svenstaro/upload-release-action@2.11.5
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: Spritz-${{ matrix.rid }}.*
+        file_glob: true
+        tag: ${{ github.ref }}
+
   dockerrelease:
     runs-on: ubuntu-latest
     timeout-minutes: 90
