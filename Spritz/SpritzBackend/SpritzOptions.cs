@@ -13,6 +13,9 @@ namespace SpritzBackend
         public string SraAccession { get; set; }
         public string SraAccessionSingleEnd { get; set; }
         public int Threads { get; set; }
+
+        /// <summary>podman (default), docker, or apptainer. See ContainerRuntime.</summary>
+        public string ContainerRuntime { get; set; }
         public string Reference { get; set; }
         public bool AnalyzeVariants { get; set; }
         public bool AnalyzeIsoforms { get; set; }

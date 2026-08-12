@@ -87,6 +87,11 @@ namespace SpritzCMD
                 .SetDefault(defaults.Threads)
                 .WithDescription(SpritzOptionStrings.ThreadsDesc);
 
+            p.Setup(arg => arg.ContainerRuntime)
+                .As(SpritzOptionStrings.ContainerRuntimeLong)
+                .SetDefault("podman")
+                .WithDescription(SpritzOptionStrings.ContainerRuntimeDesc);
+
             p.Setup(arg => arg.Reference)
                  .As(SpritzOptionStrings.ReferenceShort,
                     SpritzOptionStrings.ReferenceLong)
