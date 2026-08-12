@@ -66,9 +66,32 @@ namespace SpritzBackend
             ResourcesDirectory = resourcesPath;
 
             // path to workflow.txt
-            PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".txt");
-            SpritzContainerName = $"spritz{PathToWorkflow.GetHashCode()}";
+            string runStamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
+            PathToWorkflow = Path.Combine(AnalysisDirectory, "workflow_" + runStamp + ".txt");
+
+            // Derived from the same timestamp as the workflow file, so the two correspond and the name
+            // is readable in `docker ps`. String.GetHashCode was used here, which is not stable across
+            // processes in .NET Core - a second process could not name the container this one started.
+            SpritzContainerName = $"spritz-{runStamp}";
         }
+
+        /// <summary>Registries Spritz publishes to. An image from one of these is pulled before running.</summary>
+        private static readonly string[] PublishedImagePrefixes =
+        {
+            "smithlab/", "docker.io/smithlab/", "ghcr.io/smith-chem-wisc/",
+        };
+
+        /// <summary>Set to pull an image that is not on a known published registry, e.g. on a fork.</summary>
+        public bool AlwaysPull { get; set; }
+
+        /// <summary>
+        /// Whether to pull before running. Matched on an exact prefix rather than a substring: a local
+        /// image called "smithlab-test" used to match and be overwritten by the published one, and a
+        /// fork publishing anywhere else was never pulled at all.
+        /// </summary>
+        public bool ShouldPull(string imageName) =>
+            AlwaysPull || PublishedImagePrefixes.Any(prefix =>
+                imageName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>The container runtime to drive. Podman by default; see ContainerRuntime.</summary>
         public ContainerRuntime Runtime { get; set; } = ContainerRuntime.Podman;
@@ -82,14 +105,45 @@ namespace SpritzBackend
         }
 
         /// <summary>
+        /// The run command as an executable plus a list of arguments, which is what
+        /// ProcessStartInfo.ArgumentList takes. Nothing is quoted or escaped here, so a path containing
+        /// a quote or a space cannot change what the command means.
+        ///
+        /// GenerateCommandsDry below produces the same thing as a single string for the WPF GUI, which
+        /// shells through Powershell.exe and therefore has to escape. Prefer this in new callers; the
+        /// string form can go when that GUI does.
+        /// </summary>
+        public (string Executable, IReadOnlyList<string> Arguments) GenerateRunArguments(string imageName, string spritzCmdCommand)
+        {
+            string imageWithVersion = imageName.Contains(":") ? imageName : $"{imageName}:{CurrentVersion}";
+            var arguments = new List<string>();
+
+            if (Runtime == ContainerRuntime.Apptainer)
+            {
+                arguments.AddRange(new[] { "run", "--cleanenv", "--writable-tmpfs", "--pwd", "/app/spritz/" });
+                arguments.AddRange(new[] { "--bind", $"{AnalysisDirectory}:/app/spritz/results/" });
+                arguments.AddRange(new[] { "--bind", $"{ResourcesDirectory}:/app/spritz/resources" });
+                arguments.Add(imageWithVersion.StartsWith("docker://") ? imageWithVersion : $"docker://{imageWithVersion}");
+            }
+            else
+            {
+                arguments.AddRange(new[] { "run", "--rm", "-i", "-t", "--user=root", "--name", SpritzContainerName });
+                arguments.AddRange(new[] { "-v", $"{AnalysisDirectory}:/app/spritz/results/" });
+                arguments.AddRange(new[] { "-v", $"{ResourcesDirectory}:/app/spritz/resources" });
+                arguments.Add(imageWithVersion);
+            }
+
+            arguments.AddRange(spritzCmdCommand.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            return (Runtime.Executable(), arguments);
+        }
+
+        /// <summary>
         /// Docker and Podman take the same flags for everything used here, so one builder serves both.
         /// </summary>
         private string DockerCompatibleCommand(string imageWithVersion, string spritzCmdCommand)
         {
             string exe = Runtime.Executable();
-            string command = imageWithVersion.Contains("smithlab") || imageWithVersion.Contains("ghcr.io") ?
-                $"{exe} pull {imageWithVersion};" :
-                "";
+            string command = ShouldPull(imageWithVersion) ? $"{exe} pull {imageWithVersion};" : "";
             command +=
                 $"{exe} run --rm -i -t --user=root --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/spritz/results/\"\"\" " +
@@ -251,7 +305,7 @@ namespace SpritzBackend
         {
             try
             {
-                string testDirectory = Path.Combine(path, $"TestSpritzPermissions{path.GetHashCode()}");
+                string testDirectory = Path.Combine(path, $"TestSpritzPermissions{Guid.NewGuid():N}");
                 Directory.CreateDirectory(testDirectory);
                 Directory.Delete(testDirectory);
             }
