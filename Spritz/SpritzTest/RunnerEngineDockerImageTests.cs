@@ -6,7 +6,7 @@ using System.IO;
 namespace SpritzTest
 {
     /// <summary>
-    /// Covers how RunnerEngine turns a docker image name into a command, which is where
+    /// Covers how RunnerEngine turns an image name into a command, which is where
     /// RunnerEngine.CurrentVersion is actually consumed: the GUI pulls smithlab/spritz:{CurrentVersion},
     /// so if the compiled version and the published image tag disagree, Spritz pulls an image that does not
     /// exist. That makes this the user-facing end of the version wiring, and it runs offline.
@@ -51,7 +51,7 @@ namespace SpritzTest
             Assert.That(command, Does.Contain($"smithlab/spritz:{RunnerEngine.CurrentVersion}"),
                 "the published image must be requested at the compiled version, otherwise Spritz pulls a tag "
                 + "that release.yml never pushed");
-            Assert.That(command, Does.StartWith("docker pull "),
+            Assert.That(command, Does.StartWith("podman pull "),
                 "the published image should be pulled before it is run, so users get the released container");
         }
 
@@ -67,7 +67,7 @@ namespace SpritzTest
             Assert.That(command, Does.Contain("spritz:dev"));
             Assert.That(command, Does.Not.Contain($"spritz:dev:{RunnerEngine.CurrentVersion}"),
                 "an image name that already carries a tag must not have the compiled version appended");
-            Assert.That(command, Does.Not.Contain("docker pull"),
+            Assert.That(command, Does.Not.Contain("podman pull"),
                 "a locally built image must not be pulled, or the local build would be replaced by whatever "
                 + "is in the registry under that name");
         }
@@ -84,7 +84,7 @@ namespace SpritzTest
             Assert.That(command, Does.Contain($"spritz:{RunnerEngine.CurrentVersion}"),
                 "an untagged name has the compiled version appended, so a local image built as plain "
                 + "'spritz' will not be found unless it is tagged with the compiled version");
-            Assert.That(command, Does.Not.Contain("docker pull"),
+            Assert.That(command, Does.Not.Contain("podman pull"),
                 "only image names containing 'smithlab' are pulled");
         }
     }

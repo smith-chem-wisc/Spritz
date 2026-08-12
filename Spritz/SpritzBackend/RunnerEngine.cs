@@ -70,19 +70,51 @@ namespace SpritzBackend
             SpritzContainerName = $"spritz{PathToWorkflow.GetHashCode()}";
         }
 
+        /// <summary>The container runtime to drive. Podman by default; see ContainerRuntime.</summary>
+        public ContainerRuntime Runtime { get; set; } = ContainerRuntime.Podman;
+
         public string GenerateCommandsDry(string dockerImageName, string spritzCmdCommand)
         {
             string imageWithVersion = dockerImageName.Contains(":") ? dockerImageName : $"{dockerImageName}:{CurrentVersion}";
-            string command = dockerImageName.Contains("smithlab") ?
-                $"docker pull {imageWithVersion};" : 
+            return Runtime == ContainerRuntime.Apptainer
+                ? ApptainerCommand(imageWithVersion, spritzCmdCommand)
+                : DockerCompatibleCommand(imageWithVersion, spritzCmdCommand);
+        }
+
+        /// <summary>
+        /// Docker and Podman take the same flags for everything used here, so one builder serves both.
+        /// </summary>
+        private string DockerCompatibleCommand(string imageWithVersion, string spritzCmdCommand)
+        {
+            string exe = Runtime.Executable();
+            string command = imageWithVersion.Contains("smithlab") || imageWithVersion.Contains("ghcr.io") ?
+                $"{exe} pull {imageWithVersion};" :
                 "";
-            command += 
-                $"docker run --rm -i -t --user=root --name {SpritzContainerName} " +
+            command +=
+                $"{exe} run --rm -i -t --user=root --name {SpritzContainerName} " +
                 $"-v \"\"\"{AnalysisDirectory}:/app/spritz/results/\"\"\" " +
                 $"-v \"\"\"{ResourcesDirectory}:/app/spritz/resources\"\"\" " +
-                $"{imageWithVersion} {spritzCmdCommand}; " + 
-                $"docker stop spritz{PathToWorkflow.GetHashCode()}";
+                $"{imageWithVersion} {spritzCmdCommand}; " +
+                $"{exe} stop {SpritzContainerName}";
             return command;
+        }
+
+        /// <summary>
+        /// Apptainer has no daemon, so there is no container to name or stop, and it binds rather than
+        /// mounts. It reads an OCI image through a docker:// URI, so the same published image is used.
+        ///
+        /// --writable-tmpfs is required because the image is read-only and the workflow writes inside
+        /// it. That tmpfs is memory-backed, so a long run wants a real directory bound over the
+        /// snakemake state instead - see the cluster guide.
+        /// </summary>
+        private string ApptainerCommand(string imageWithVersion, string spritzCmdCommand)
+        {
+            string uri = imageWithVersion.StartsWith("docker://") ? imageWithVersion : $"docker://{imageWithVersion}";
+            return
+                $"apptainer run --cleanenv --writable-tmpfs " +
+                $"--bind \"\"\"{AnalysisDirectory}:/app/spritz/results/\"\"\" " +
+                $"--bind \"\"\"{ResourcesDirectory}:/app/spritz/resources\"\"\" " +
+                $"{uri} {spritzCmdCommand}";
         }
 
         public string GenerateSpritzCMDCommand(SpritzOptions options)
@@ -109,7 +141,10 @@ namespace SpritzBackend
 
         public string GenerateTopComand()
         {
-            return $"docker container top spritz{PathToWorkflow.GetHashCode()}";
+            // Apptainer has no daemon, so there is nothing to inspect this way.
+            return Runtime.IsDockerCompatible()
+                ? $"{Runtime.Executable()} container top {SpritzContainerName}"
+                : string.Empty;
         }
 
         public void WriteConfig(SpritzOptions options, string analysisDirectoryStr)

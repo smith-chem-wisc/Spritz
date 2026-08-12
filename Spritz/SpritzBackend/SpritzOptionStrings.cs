@@ -62,6 +62,9 @@ namespace SpritzBackend
 
         public static readonly char ThreadsShort = 'p';
         public static readonly string ThreadsLong = "threads";
+        public static readonly string ContainerRuntimeLong = "container-runtime";
+        public static readonly string ContainerRuntimeDesc =
+            "Container runtime to use: podman (default), docker, or apptainer for HPC.";
         public static readonly string ThreadsDesc =
             "Number of processors to use for analysis.";
 

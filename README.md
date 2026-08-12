@@ -9,15 +9,23 @@ Software for RNA-Seq analysis on Windows, including creating sample-specific pro
 
 Spritz can be downloaded [here](https://github.com/smith-chem-wisc/Spritz/releases).
 
-Spritz uses snakemake and Docker to install and run commandline tools for Next-Generation Sequencing (NGS) analysis. These tools include an [adapted version of SnpEff](https://github.com/smith-chem-wisc/SnpEff) to annotate sequence variations and create an annotated protein database in XML format. The combinatorics of producing full-length proteoforms from these annotations is written in [mzLib's VariantApplication class](https://github.com/smith-chem-wisc/mzLib/blob/master/Proteomics/Protein/VariantApplication.cs).
+Spritz uses snakemake and a container runtime to install and run commandline tools for Next-Generation Sequencing (NGS) analysis. These tools include an [adapted version of SnpEff](https://github.com/smith-chem-wisc/SnpEff) to annotate sequence variations and create an annotated protein database in XML format. The combinatorics of producing full-length proteoforms from these annotations is written in [mzLib's VariantApplication class](https://github.com/smith-chem-wisc/mzLib/blob/master/Proteomics/Protein/VariantApplication.cs).
 
 ![image](https://user-images.githubusercontent.com/16342951/93618988-a3b5be00-f99d-11ea-8be4-063395e24ce1.png)
 
 ## Running Spritz with GUI
 
-1. Install [Docker Desktop for Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows).
+1. Install a container runtime. [Podman](https://podman.io/docs/installation) is recommended: it is
+   Apache-2.0, needs no paid subscription, and is what Spritz uses by default.
 
-2. Allocate resources to Docker. There are two ways to do this, described in the Spritz wiki:
+   * macOS: `brew install podman`, then `podman machine init && podman machine start`
+   * Windows: the Podman installer, or `winget install RedHat.Podman`
+   * Linux: your distribution's package manager
+
+   Docker still works if you already have it — pass `--container-runtime docker`. On a cluster, see
+   [Running Spritz on a cluster with Apptainer](https://github.com/smith-chem-wisc/Spritz/wiki/Running-Spritz-on-a-cluster-with-Apptainer).
+
+2. Allocate resources to the runtime. For Docker there are two ways, described in the Spritz wiki:
     1. The [recommended method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-WSL2-(recommended-method)) requires Windows 10 version 2004 and is more robust. Here, we allocate computer resources to Docker like any other program.
     2. The [alternate method](https://github.com/smith-chem-wisc/Spritz/wiki/Allocating-resources-to-Docker-using-Vmmem-(alternate-method)) is available on all Windows versions but is less robust. Here, we allocate computer resources to Docker using a virtual machine that's packaged with Docker.
 
@@ -44,6 +52,21 @@ Spritz uses snakemake and Docker to install and run commandline tools for Next-G
 ## Running Spritz with commandline
 
 Spritz will also [work on the commandline](https://github.com/smith-chem-wisc/Spritz/wiki/Spritz-commandline-usage) within a Unix system (Linux, Mac, WSL on Windows).
+
+### Container runtimes
+
+Spritz drives one of three runtimes, all running the same published image:
+
+| Runtime | Use it for | Flag |
+|---|---|---|
+| Podman | the default; macOS, Windows, Linux, no Docker Desktop | *(nothing — it is the default)* |
+| Docker | you already have it installed | `--container-runtime docker` |
+| Apptainer | HPC clusters, where a root daemon is not permitted | `--container-runtime apptainer` |
+
+The image is published to both [Docker Hub](https://hub.docker.com/r/smithlab/spritz/tags) and GitHub
+Container Registry (`ghcr.io/smith-chem-wisc/spritz`). Prefer GHCR on a cluster: Docker Hub rate-limits
+anonymous pulls per IP address, and everyone on a login node shares one. Each release also attaches a
+`.sif` for compute nodes with no outbound network.
 
 ## Test it out! Try constructing the database for U2OS from the paper.
 
