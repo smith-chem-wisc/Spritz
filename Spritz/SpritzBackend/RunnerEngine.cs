@@ -111,7 +111,9 @@ namespace SpritzBackend
         {
             string uri = imageWithVersion.StartsWith("docker://") ? imageWithVersion : $"docker://{imageWithVersion}";
             return
-                $"apptainer run --cleanenv --writable-tmpfs " +
+                // --pwd because Apptainer ignores the image WORKDIR and starts in the host directory,
+                // so SpritzCMD.dll would not be found.
+                $"apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ " +
                 $"--bind \"\"\"{AnalysisDirectory}:/app/spritz/results/\"\"\" " +
                 $"--bind \"\"\"{ResourcesDirectory}:/app/spritz/resources\"\"\" " +
                 $"{uri} {spritzCmdCommand}";

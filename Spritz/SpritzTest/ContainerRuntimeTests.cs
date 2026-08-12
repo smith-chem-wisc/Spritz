@@ -84,6 +84,16 @@ namespace SpritzTest
         /// The image is read-only under Apptainer and the workflow writes inside it, so without this
         /// the run fails partway through rather than at startup.
         /// </summary>
+        /// <summary>
+        /// Apptainer ignores the image WORKDIR, so without this the entrypoint is not found. CI caught
+        /// this; nothing local could, because Apptainer does not run on macOS.
+        /// </summary>
+        [Test]
+        public void ApptainerSetsTheWorkingDirectory()
+        {
+            Assert.That(Command(ContainerRuntime.Apptainer), Does.Contain("--pwd /app/spritz/"));
+        }
+
         [Test]
         public void ApptainerMakesTheImageWritable()
         {

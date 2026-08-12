@@ -215,7 +215,7 @@ jobs:
       run: |
         apptainer build spritz.sif docker://smithlab/spritz:0.3.14
         ls -lh spritz.sif
-        apptainer run --cleanenv --writable-tmpfs spritz.sif \
+        apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ spritz.sif \
           conda run --no-capture-output --live-stream dotnet SpritzCMD.dll --help
 
   dockerbuild:

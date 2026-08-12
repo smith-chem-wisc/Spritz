@@ -36,7 +36,7 @@ export APPTAINER_TMPDIR=/scratch/$USER/apptainer-tmp
 ## Run it
 
 ```bash
-apptainer run --cleanenv --writable-tmpfs \
+apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --bind /scratch/$USER/spritz-analysis:/app/spritz/results/ \
   --bind /scratch/$USER/spritz-resources:/app/spritz/resources \
   spritz.sif \
@@ -67,6 +67,12 @@ over the snakemake state instead:
 
 That also makes the environments persist between runs rather than being rebuilt each time.
 
+### Why `--pwd`
+
+Apptainer ignores the image's `WORKDIR` and starts in whatever directory you launched from, so
+`dotnet SpritzCMD.dll` is not found without it. Docker and Podman honour `WORKDIR`, which is why this
+flag has no equivalent in those commands.
+
 ### Why `--cleanenv`
 
 Apptainer forwards your shell environment into the container by default, so a stray `PYTHONPATH`,
@@ -87,7 +93,7 @@ Apptainer runs in the foreground, so wrap it the way you would any other command
 
 export APPTAINER_CACHEDIR=/scratch/$USER/apptainer-cache
 
-apptainer run --cleanenv --writable-tmpfs \
+apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --bind /scratch/$USER/spritz-analysis:/app/spritz/results/ \
   --bind /scratch/$USER/spritz-resources:/app/spritz/resources \
   --bind /scratch/$USER/spritz-snakemake:/app/spritz/.snakemake \
