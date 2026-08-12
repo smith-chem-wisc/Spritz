@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using Omics.BioPolymer;
+using Omics.Modifications;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +19,8 @@ namespace SpritzModifications
         /// <returns></returns>
         public static List<Modification> GetUniProtMods(string spritzDirectory)
         {
-            Loaders.LoadElements();
+            // No Loaders.LoadElements() call: mzLib marked it obsolete because the periodic table is
+            // now populated by its own static constructor on first use.
             var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(spritzDirectory, "PSI-MOD.obo.xml"));
             return Loaders.LoadUniprot(Path.Combine(spritzDirectory, "ptmlist.txt"), Loaders.GetFormalChargesDictionary(psiModDeserialized)).ToList();
         }
@@ -76,7 +79,7 @@ namespace SpritzModifications
 
                     // transfer these
                     oneBasedModifications: uniprot != null ? uniprot.OneBasedPossibleLocalizedModifications : new Dictionary<int, List<Modification>>(),
-                    proteolysisProducts: uniprot != null ? uniprot.ProteolysisProducts.ToList() : new List<ProteolysisProduct>(),
+                    proteolysisProducts: uniprot != null ? uniprot.TruncationProducts.ToList() : new List<TruncationProduct>(),
                     databaseReferences: uniprot != null ? uniprot.DatabaseReferences.ToList() : new List<DatabaseReference>(),
                     disulfideBonds: uniprot != null ? uniprot.DisulfideBonds.ToList() : new List<DisulfideBond>()
                 ));
@@ -132,7 +135,7 @@ namespace SpritzModifications
                 spliceSites: new HashSet<SpliceSite>(proteinsWithSameSequence.SelectMany(p => p.SpliceSites)).ToList(),
                 geneNames: geneNames,
                 oneBasedModifications: CollapseMods(proteinsWithSameSequence),
-                proteolysisProducts: new HashSet<ProteolysisProduct>(proteinsWithSameSequence.SelectMany(p => p.ProteolysisProducts)).ToList(),
+                proteolysisProducts: new HashSet<TruncationProduct>(proteinsWithSameSequence.SelectMany(p => p.TruncationProducts)).ToList(),
                 databaseReferences: new HashSet<DatabaseReference>(proteinsWithSameSequence.SelectMany(p => p.DatabaseReferences)).ToList(),
                 disulfideBonds: new HashSet<DisulfideBond>(proteinsWithSameSequence.SelectMany(p => p.DisulfideBonds)).ToList()
             );
