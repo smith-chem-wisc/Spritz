@@ -1,4 +1,6 @@
 ﻿using Fclp;
+using Omics.BioPolymer;
+using Omics.Modifications;
 using Proteomics;
 using SpritzBackend;
 using System;
@@ -110,7 +112,7 @@ namespace SpritzModifications
             string outfasta = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".fasta");
             string outfastaWithDecoys = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withdecoys.fasta");
             var prot = newProts.FirstOrDefault(p => p.Accession.Contains("_"));
-            var protsForFasta = newProts.SelectMany(p => p.GetVariantProteins()).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
+            var protsForFasta = newProts.SelectMany(p => p.GetVariantBioPolymers(maxAllowedVariantsForCombinatorics: 4, minAlleleDepth: 1)).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
             var decoyProtsForFasta = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.Reverse, uniprotPtms, false, null, out un).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
             ProteinDbWriter.WriteFastaDatabase(protsForFasta, outfasta, "|");
             ProteinDbWriter.WriteFastaDatabase(decoyProtsForFasta, outfastaWithDecoys, "|");
@@ -176,43 +178,43 @@ namespace SpritzModifications
                 {
                     variantDescList.Add($"{entry.Key}\t{variant.SimpleString()}\t{variant.Description}");
 
-                    if (culture.CompareInfo.IndexOf(variant.Description.Description, "synonymous_variant", CompareOptions.IgnoreCase) >= 0)
+                    if (culture.CompareInfo.IndexOf(variant.Description, "synonymous_variant", CompareOptions.IgnoreCase) >= 0)
                     {
                         synonymousCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0 &&
-                        variant.Description.ReferenceAlleleString.Length == 1 && variant.Description.AlternateAlleleString.Length == 1)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0 &&
+                        variant.VariantCallFormatDataString?.ReferenceAlleleString?.Length == 1 && variant.VariantCallFormatDataString?.AlternateAlleleString?.Length == 1)
                     {
                         missenseSnvCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                     {
                         missenseMnvCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
                     {
                         frameshiftCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
                     {
                         stopGainCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0 || culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0 || culture.CompareInfo.IndexOf(variant.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0)
                     {
                         insertionCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0 || culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0 || culture.CompareInfo.IndexOf(variant.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0)
                     {
                         deletionCount++;
                         totalVariants++;
                     }
-                    else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_lost", CompareOptions.IgnoreCase) >= 0)
+                    else if (culture.CompareInfo.IndexOf(variant.Description, "stop_lost", CompareOptions.IgnoreCase) >= 0)
                     {
                         stopLossCount++;
                         totalVariants++;
