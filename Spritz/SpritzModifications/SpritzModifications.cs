@@ -113,7 +113,8 @@ namespace SpritzModifications
             string outfastaWithDecoys = Path.Combine(Path.GetDirectoryName(destinationXmlPath), Path.GetFileNameWithoutExtension(destinationXmlPath) + ".withdecoys.fasta");
             var prot = newProts.FirstOrDefault(p => p.Accession.Contains("_"));
             var protsForFasta = newProts.SelectMany(p => p.GetVariantBioPolymers(maxAllowedVariantsForCombinatorics: 4, minAlleleDepth: 1)).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
-            var decoyProtsForFasta = ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.Reverse, uniprotPtms, false, null, out un).Where(p => !p.BaseSequence.EndsWith('?')).ToList();
+            var decoyProtsForFasta = ProteinAnnotation.DropEntriesWithUnknownCTerminus(
+                ProteinDbLoader.LoadProteinXML(destinationXmlPath, true, DecoyType.Reverse, uniprotPtms, false, null, out un));
             ProteinDbWriter.WriteFastaDatabase(protsForFasta, outfasta, "|");
             ProteinDbWriter.WriteFastaDatabase(decoyProtsForFasta, outfastaWithDecoys, "|");
             File.WriteAllLines(outfastaWithDecoys, File.ReadAllLines(outfastaWithDecoys).Select(line => line.Replace("mz|DECOY_", "rev_mz|")));
