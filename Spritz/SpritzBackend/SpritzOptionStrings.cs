@@ -31,6 +31,11 @@ namespace SpritzBackend
         public static readonly string AvailableReferencesDesc =
             "Save a comma-separated file with available references to analysis directory. Then, exit.";
 
+        public static readonly char FetchGenomesShort = 'g';
+        public static readonly string FetchGenomesLong = "fetchGenomes";
+        public static readonly string FetchGenomesDesc =
+            "Like -x, but refresh the list from Ensembl first. Needs network access and python. Then, exit.";
+
         public static readonly char AnalysisSetupShort = 'y';
         public static readonly string AnalysisSetupLong = "analysisSetup";
         public static readonly string AnalysisSetupDesc =
@@ -71,8 +76,9 @@ namespace SpritzBackend
         public static readonly char ReferenceShort = 'r';
         public static readonly string ReferenceLong = "reference";
         public static readonly string ReferenceDesc =
-            "Reference to use, e.g. \"release-96,homo_sapiens,human,GRCh38\". Must include quotes. " +
-            "Copy-paste a line from the file you get with the -x option that retrieves available references.";
+            "Reference to use, as a release and a species: \"release-116,homo_sapiens\". Must include " +
+            "quotes. The genome assembly is looked up in genomes.csv, which the -x option writes out. " +
+            "A whole line from that file, \"release-116,homo_sapiens,human,GRCh38\", is also accepted.";
 
         public static readonly string InfoSupp =
             $"The Spritz commandline interface intended to be run within a conda environment containing the programs snakemake and conda.{Environment.NewLine}" +
@@ -110,6 +116,10 @@ namespace SpritzBackend
             if (args.AvailableReferences)
             {
                 argsString += $"--{AvailableReferencesLong} ";
+            }
+            if (args.FetchGenomes)
+            {
+                argsString += $"--{FetchGenomesLong} ";
             }
             if (args.Fastq1 != null && args.Fastq1 != string.Empty)
             {

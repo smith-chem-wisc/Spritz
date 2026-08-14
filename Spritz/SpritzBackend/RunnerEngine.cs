@@ -205,6 +205,16 @@ namespace SpritzBackend
                 : string.Empty;
         }
 
+        /// <summary>
+        /// genomes.csv as installed beside the assembly, or nothing when it is absent - Resolve only reads
+        /// it for the two-field reference form, and reports the absence itself.
+        /// </summary>
+        private static IEnumerable<string> ReadInstalledGenomes()
+        {
+            string path = ReferenceString.InstalledGenomesPath();
+            return File.Exists(path) ? File.ReadLines(path) : Enumerable.Empty<string>();
+        }
+
         public void WriteConfig(SpritzOptions options, string analysisDirectoryStr)
         {
             const string initialContent = "---\nversion: 1\n"; // needed to start writing yaml file
@@ -247,33 +257,25 @@ namespace SpritzBackend
             rootMappingNode.Add("analysisDirectory", analysisDirectory);
 
             // process reference string
-            var reference = options.Reference.Split(',');
-            if (reference.Length != 4)
-            {
-                throw new SpritzException($"Error: the reference string \"{reference}\" does not have four comma-separated elements corresponding to a line from genomes.csv.");
-            }
-            string releaseStr = reference[0];
-            string speciesStr = reference[1];
-            string organismStr = reference[2];
-            string referenceStr = reference[3];
+            SpritzReference resolved = ReferenceString.Resolve(options.Reference, ReadInstalledGenomes);
 
             // write ensembl release
-            YamlScalarNode release = new(releaseStr[8..]);
+            YamlScalarNode release = new(resolved.Release);
             release.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("release", release);
 
-            // write species
-            YamlScalarNode species = new(speciesStr.First().ToString().ToUpper() + speciesStr[1..]);
+            // write species; invariant casing, and the field is guarded non-empty by Resolve
+            YamlScalarNode species = new(char.ToUpperInvariant(resolved.Species[0]) + resolved.Species[1..]);
             species.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("species", species);
 
             // write organism
-            YamlScalarNode organism = new(organismStr);
+            YamlScalarNode organism = new(resolved.Organism);
             organism.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("organism", organism);
 
             // write genome [e.g. GRCm38]
-            YamlScalarNode genome = new(referenceStr);
+            YamlScalarNode genome = new(resolved.Genome);
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
 
