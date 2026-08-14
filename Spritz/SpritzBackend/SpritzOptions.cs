@@ -21,6 +21,7 @@ namespace SpritzBackend
         public bool AnalyzeIsoforms { get; set; }
         public bool Quantify { get; set; }
         public bool AvailableReferences { get; set; }
+        public bool FetchGenomes { get; set; }
         public bool AnalysisSetup { get; set; }
 
         public static string DefaultAnalysisDirectory()

@@ -84,6 +84,9 @@
     <None Include="..\workflow\scripts\simplify_gff3.py" Link="workflow\scripts\simplify_gff3.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="..\workflow\scripts\update_genomes.py" Link="workflow\scripts\update_genomes.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="..\workflow\scripts\SummarizeQuantGtf.py" Link="workflow\scripts\SummarizeQuantGtf.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

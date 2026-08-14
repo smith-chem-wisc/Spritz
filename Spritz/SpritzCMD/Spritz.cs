@@ -31,6 +31,66 @@ namespace SpritzCMD
         /// unusable as option values. Replaced with a duplicate of an existing prefix, not a sentinel: a
         /// one-character prefix matches every argument and strips its first character.
         /// </summary>
+        /// <summary>
+        /// Rewrites the installed genomes.csv from the Ensembl FTP listings, by running the generator that
+        /// produces the checked-in copy. Existing rows are kept, so reference strings already in use keep
+        /// working. Needs network access and python, which the conda environment Spritz documents provides.
+        /// </summary>
+        private static void RefreshGenomesFromEnsembl(string destination)
+        {
+            string script = Path.Combine(AppContext.BaseDirectory, "workflow", "scripts", "update_genomes.py");
+            if (!File.Exists(script))
+            {
+                throw new SpritzException(
+                    $"Error: cannot refresh the reference list because '{script}' is missing from the " +
+                    $"Spritz installation. Use {SpritzOptionStrings.AvailableReferencesShort} for the list " +
+                    $"that shipped with this version.");
+            }
+
+            Console.WriteLine($"Refreshing {destination} from Ensembl. This reads the FTP listings for " +
+                $"every species and takes a few minutes; progress follows.");
+
+            // python3 first: a Linux box commonly has python3 and no python at all, while a conda
+            // environment has both. Output is not redirected, so the generator's progress reaches the
+            // console as it happens rather than arriving after several silent minutes.
+            foreach (string interpreter in new[] { "python3", "python" })
+            {
+                var start = new ProcessStartInfo(interpreter) { UseShellExecute = false };
+                start.ArgumentList.Add(script);
+                start.ArgumentList.Add("--output");
+                start.ArgumentList.Add(destination);
+
+                Process process;
+                try
+                {
+                    process = Process.Start(start);
+                }
+                catch (System.ComponentModel.Win32Exception)
+                {
+                    continue; // not on the PATH under this name
+                }
+
+                using (process)
+                {
+                    process.WaitForExit();
+                    if (process.ExitCode != 0)
+                    {
+                        throw new SpritzException(
+                            $"Error: refreshing the reference list from Ensembl failed (exit code " +
+                            $"{process.ExitCode}); see the output above. The list that shipped with this " +
+                            $"version is still available with -{SpritzOptionStrings.AvailableReferencesShort}.");
+                    }
+                }
+
+                return;
+            }
+
+            throw new SpritzException(
+                $"Error: neither python3 nor python is on the PATH, so the reference list cannot be " +
+                $"refreshed. Run Spritz from an environment that has python, or use " +
+                $"-{SpritzOptionStrings.AvailableReferencesShort} for the list that shipped with it.");
+        }
+
         private static void AllowAbsolutePosixPaths()
         {
             string[] prefixes = Fclp.Internals.SpecialCharacters.OptionPrefix;
@@ -83,6 +143,12 @@ namespace SpritzCMD
                     SpritzOptionStrings.AvailableReferencesLong)
                 .SetDefault(false)
                 .WithDescription(SpritzOptionStrings.AvailableReferencesDesc);
+
+            p.Setup(arg => arg.FetchGenomes)
+                .As(SpritzOptionStrings.FetchGenomesShort,
+                    SpritzOptionStrings.FetchGenomesLong)
+                .SetDefault(false)
+                .WithDescription(SpritzOptionStrings.FetchGenomesDesc);
 
             p.Setup(arg => arg.AnalysisSetup)
                 .As(SpritzOptionStrings.AnalysisSetupShort,
@@ -177,12 +243,12 @@ namespace SpritzCMD
             {
                 return;
             }
-            else if (p.Object.AvailableReferences)
+            else if (p.Object.AvailableReferences || p.Object.FetchGenomes)
             {
                 Console.WriteLine();
 
                 // beside the assembly, where SpritzBackend.csproj copies it, not in the working directory
-                string genomesPath = Path.Combine(AppContext.BaseDirectory, "genomes.csv");
+                string genomesPath = ReferenceString.InstalledGenomesPath();
                 if (!File.Exists(genomesPath))
                 {
                     throw new SpritzException(
@@ -196,6 +262,14 @@ namespace SpritzCMD
                 // overwrite: an older copy from a previous version is what the user asked to refresh
                 bool replaced = File.Exists(dest);
                 File.Copy(genomesPath, dest, overwrite: true);
+
+                // Written into the analysis directory, never over the installed copy: an installation can
+                // sit somewhere the user cannot write. The generator merges with what is already there, so
+                // copying first keeps the rows that shipped and any older releases with them.
+                if (p.Object.FetchGenomes)
+                {
+                    RefreshGenomesFromEnsembl(dest);
+                }
 
                 Console.WriteLine($"{(replaced ? "Replaced" : "Saved")} the list of available references at {dest}.");
                 Console.WriteLine($"It lists {CountReferences(dest)} references. Pass one line back with the " +
