@@ -10,9 +10,43 @@ namespace SpritzCMD
 {
     internal class Spritz
     {
+        /// <summary>
+        /// Data lines in genomes.csv, skipping the generator's comment header.
+        /// </summary>
+        private static int CountReferences(string path)
+        {
+            int count = 0;
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.Length > 0 && !line.StartsWith("#", StringComparison.Ordinal))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// Stops the parser reading "/" as a Windows-style option prefix, which makes absolute POSIX paths
+        /// unusable as option values. Replaced with a duplicate of an existing prefix, not a sentinel: a
+        /// one-character prefix matches every argument and strips its first character.
+        /// </summary>
+        private static void AllowAbsolutePosixPaths()
+        {
+            string[] prefixes = Fclp.Internals.SpecialCharacters.OptionPrefix;
+            for (int i = 0; i < prefixes.Length; i++)
+            {
+                if (prefixes[i] == "/")
+                {
+                    prefixes[i] = "--";
+                }
+            }
+        }
+
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to Spritz!");
+            AllowAbsolutePosixPaths();
             FluentCommandLineParser<SpritzOptions> p = new();
 
             // Get defaults
@@ -146,18 +180,26 @@ namespace SpritzCMD
             else if (p.Object.AvailableReferences)
             {
                 Console.WriteLine();
-                Console.WriteLine($"Saving the list of available references to {Path.Combine(analysisDirectory, "genomes.csv")}.");
-                string genomesPath = Path.Combine(Directory.GetCurrentDirectory(), "genomes.csv");
+
+                // beside the assembly, where SpritzBackend.csproj copies it, not in the working directory
+                string genomesPath = Path.Combine(AppContext.BaseDirectory, "genomes.csv");
+                if (!File.Exists(genomesPath))
+                {
+                    throw new SpritzException(
+                        $"Error: the list of available references is missing from the Spritz installation " +
+                        $"(expected '{genomesPath}'). Reinstalling should restore it.");
+                }
+
                 Directory.CreateDirectory(analysisDirectory);
                 string dest = Path.Combine(analysisDirectory, Path.GetFileName(genomesPath));
-                if (File.Exists(dest))
-                {
-                    Console.WriteLine($"File {dest} already exists. Please check it out there.");
-                }
-                else
-                {
-                    File.Copy(genomesPath, dest);
-                }
+
+                // overwrite: an older copy from a previous version is what the user asked to refresh
+                bool replaced = File.Exists(dest);
+                File.Copy(genomesPath, dest, overwrite: true);
+
+                Console.WriteLine($"{(replaced ? "Replaced" : "Saved")} the list of available references at {dest}.");
+                Console.WriteLine($"It lists {CountReferences(dest)} references. Pass one line back with the " +
+                    $"{SpritzOptionStrings.ReferenceShort} flag.");
                 return;
             }
             else if (p.Object.Reference == null)

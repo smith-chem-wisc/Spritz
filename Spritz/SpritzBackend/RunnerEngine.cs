@@ -29,6 +29,27 @@ namespace SpritzBackend
         /// </summary>
         public static readonly string CurrentVersion = ReadCompiledVersion();
 
+        /// <summary>
+        /// The Ensembl release number from a reference string's first element, which genomes.csv writes as
+        /// "release-116". Accepts a bare number too.
+        /// </summary>
+        private static string EnsemblReleaseNumber(string releaseField, string wholeReference)
+        {
+            const string prefix = "release-";
+            string number = releaseField.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                ? releaseField[prefix.Length..]
+                : releaseField;
+
+            if (number.Length == 0 || !number.All(char.IsDigit))
+            {
+                throw new SpritzException($"Error: \"{releaseField}\" in the reference string " +
+                    $"\"{wholeReference}\" is not an Ensembl release. Expected something like " +
+                    $"\"release-116\" or \"116\".");
+            }
+
+            return number;
+        }
+
         private static string ReadCompiledVersion()
         {
             // InformationalVersion carries the full Version string. Source-link style builds append "+<sha>",
@@ -250,20 +271,31 @@ namespace SpritzBackend
             var reference = options.Reference.Split(',');
             if (reference.Length != 4)
             {
-                throw new SpritzException($"Error: the reference string \"{reference}\" does not have four comma-separated elements corresponding to a line from genomes.csv.");
+                throw new SpritzException($"Error: the reference string \"{options.Reference}\" has " +
+                    $"{reference.Length} comma-separated element(s), not four. Copy a whole line from " +
+                    $"genomes.csv, e.g. \"release-116,homo_sapiens,human,GRCh38\".");
             }
             string releaseStr = reference[0];
             string speciesStr = reference[1];
             string organismStr = reference[2];
             string referenceStr = reference[3];
 
+            for (int i = 0; i < reference.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(reference[i]))
+                {
+                    throw new SpritzException($"Error: element {i + 1} of the reference string " +
+                        $"\"{options.Reference}\" is empty. Copy a whole line from genomes.csv.");
+                }
+            }
+
             // write ensembl release
-            YamlScalarNode release = new(releaseStr[8..]);
+            YamlScalarNode release = new(EnsemblReleaseNumber(releaseStr, options.Reference));
             release.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("release", release);
 
-            // write species
-            YamlScalarNode species = new(speciesStr.First().ToString().ToUpper() + speciesStr[1..]);
+            // write species; invariant casing, and the field is guarded non-empty above
+            YamlScalarNode species = new(char.ToUpperInvariant(speciesStr[0]) + speciesStr[1..]);
             species.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("species", species);
 
