@@ -28,6 +28,46 @@ namespace SpritzModifications
         /// <summary>
         /// Transfers likely modifications from a list of proteins to another based on sequence similarity. Returns a list of new objects.
         /// </summary>
+        /// <summary>
+        /// Drops entries whose C-terminal residue is unknown, from a list holding both targets and decoys, so
+        /// that the database keeps one decoy per target.
+        ///
+        /// Testing "ends with '?'" against a decoy never matches: reversal moves the unknown residue to the
+        /// front of the sequence, keeping an initiator methionine in place. So the plain test removed the
+        /// target and kept its decoy, which is what left more decoys than targets in withdecoys.fasta
+        /// (issue #220). Unpaired decoys enlarge the decoy search space that false discovery rates are
+        /// estimated against.
+        ///
+        /// The unknown residue has to be found in whichever orientation the entry is written, rather than by
+        /// generating decoys from filtered targets: mzLib's decoy generator reverses sequence variations
+        /// against the consensus sequence, so it must be handed non-variant proteins, and the proteins here
+        /// have already had their variants applied.
+        /// </summary>
+        public static List<Protein> DropEntriesWithUnknownCTerminus(IEnumerable<Protein> targetsAndDecoys)
+        {
+            return targetsAndDecoys.Where(p => !HasUnknownCTerminus(p)).ToList();
+        }
+
+        private static bool HasUnknownCTerminus(Protein protein)
+        {
+            string sequence = protein.BaseSequence;
+            if (sequence.Length == 0)
+            {
+                return false;
+            }
+
+            if (!protein.IsDecoy)
+            {
+                return sequence.EndsWith('?');
+            }
+
+            // reversal holds an initiator methionine in place, so the target's final residue lands at index 1
+            // when the sequence starts with M, and at index 0 otherwise
+            int indexOfTargetCTerminus = sequence.StartsWith('M') ? 1 : 0;
+
+            return sequence.Length > indexOfTargetCTerminus && sequence[indexOfTargetCTerminus] == '?';
+        }
+
         /// <param name="proteogenomicProteins"></param>
         /// <param name="uniprotProteins"></param>
         /// <returns></returns>
