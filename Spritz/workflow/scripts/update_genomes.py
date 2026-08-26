@@ -105,6 +105,24 @@ def assembly_from_listing(release, species):
     return None
 
 
+def progress(done, total, label, stream=sys.stderr):
+    """Redraw a one-line progress bar, or stay quiet when nothing is watching.
+
+    Only drawn for a terminal: piped into a log or a CI job the carriage returns would produce one
+    enormous line, so there the caller's per-release summary is the whole output.
+    """
+    if not stream.isatty():
+        return
+    width = 32
+    filled = width if total == 0 else int(width * done / total)
+    bar = "#" * filled + "-" * (width - filled)
+    percent = 100 if total == 0 else int(100 * done / total)
+    stream.write(f"\r  {label} [{bar}] {done}/{total} {percent:3d}%")
+    if done >= total:
+        stream.write("\n")
+    stream.flush()
+
+
 def rows_for_release(release, workers=12, skipped=None):
     """(release, species, common name, assembly) for every species Spritz can download.
 
@@ -116,10 +134,14 @@ def rows_for_release(release, workers=12, skipped=None):
     species_dirs = sorted({s for s in re.findall(r'href="([a-z0-9_]+)/"', listing) if s in names})
 
     rows = []
+    done = 0
+    progress(0, len(species_dirs), f"release-{release}")
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = {pool.submit(assembly_from_listing, release, s): s for s in species_dirs}
         for future in as_completed(futures):
             species = futures[future]
+            done += 1
+            progress(done, len(species_dirs), f"release-{release}")
             found = future.result()
             if not found:
                 if skipped is not None:
