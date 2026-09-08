@@ -1,0 +1,57 @@
+# Executables the rules invoke, per environment. Checked by .github/workflows/conda-envs.yml.
+# Two tab-separated fields: the environment file, then a shell command run inside it.
+#
+# `command -v` is the default form, and it is enough for the failure this exists to catch: it fails
+# both when a name is absent from bin/ and when it is present as a symlink to a file that does not
+# exist, which are the two shapes the bioconda transdecoder package produced in issue #237.
+#
+# Real invocations are used only where they assert something `command -v` cannot - that an
+# interpreter can import what a script needs, or that an env holds an SDK rather than just a
+# runtime. Most bioinformatics tools here have no flag that reliably exits 0, and a guess at one
+# reddens the job without anything being wrong, so they are left as `command -v`.
+#
+# Coreutils (cp, mv, mkdir, rm, ln, touch, ls, grep, sort, head) are deliberately absent: no
+# environment declares them, they come from the host, and checking them would only ever pass.
+#
+# test_smoke_commands.py checks this file against the rules, so an environment a rule depends on
+# cannot end up here with nothing listed.
+
+align.yaml	command -v fastp
+align.yaml	command -v hisat2
+align.yaml	command -v hisat2-build
+align.yaml	command -v hisat2_extract_splice_sites.py
+align.yaml	command -v samtools
+default.yaml	python -c "import yaml"
+dotnet_building.yaml	command -v dotnet
+dotnet_building.yaml	dotnet --list-sdks
+downloads.yaml	command -v git
+downloads.yaml	command -v gunzip
+downloads.yaml	command -v gzip
+downloads.yaml	command -v unzip
+downloads.yaml	command -v wget
+downloads.yaml	command -v zcat
+downloads.yaml	python -c "import Bio.SeqIO, requests, yaml"
+isoforms.yaml	command -v blastp
+isoforms.yaml	command -v cdna_alignment_orf_to_genome_orf.pl
+isoforms.yaml	command -v gffread
+isoforms.yaml	command -v gtf_to_alignment_gff3.pl
+isoforms.yaml	command -v gzip
+isoforms.yaml	command -v makeblastdb
+isoforms.yaml	command -v perl
+isoforms.yaml	command -v stringtie
+isoforms.yaml	command -v TransDecoder.LongOrfs
+isoforms.yaml	command -v TransDecoder.Predict
+proteogenomics.yaml	command -v dotnet
+proteogenomics.yaml	dotnet --list-runtimes
+proteogenomics.yaml	java -version
+quant.yaml	command -v gzip
+quant.yaml	command -v stringtie
+quant.yaml	python -c "import pandas"
+spritzbase.yaml	command -v conda
+spritzbase.yaml	command -v dotnet
+spritzbase.yaml	command -v snakemake
+spritzbase.yaml	dotnet --list-runtimes
+sra.yaml	command -v fastq-dump
+sra.yaml	command -v prefetch
+variants.yaml	command -v gatk
+variants.yaml	command -v samtools
