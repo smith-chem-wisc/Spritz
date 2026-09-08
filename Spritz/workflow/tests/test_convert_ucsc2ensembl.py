@@ -64,17 +64,15 @@ def test_unmapped_contigs_are_kept_after_the_named_chromosomes(workflow_dir):
     assert "chrUn_something" in chroms, "an unmapped contig should be retained, not dropped"
 
 
-def test_script_truncates_the_rules_output_file(workflow_dir):
-    """Pins a hazard rather than endorsing it.
+def test_script_leaves_the_rules_output_file_alone(workflow_dir):
+    """Regression test for #253.
 
-    The script opens ../resources/ensembl/<species>.ensembl.vcf for writing and never writes
-    through that handle - every record goes to stdout instead. Rule download_dbsnp_vcf redirects
-    stdout to that very same path, so the script truncates the file its caller is writing.
+    Rule download_dbsnp_vcf redirects this script's stdout into
+    ../resources/ensembl/<species>.ensembl.vcf. The script used to also open that same path with
+    mode "w" and never write through the handle, truncating the file its caller was writing. It
+    survived only because the open happened before any output, leaving the redirect's offset at 0.
 
-    It survives only because the open happens before any output is produced, so the redirect's
-    file offset is still 0. Move that open below the loop, or have a caller write earlier, and the
-    output would be destroyed. This test records the current behaviour so the coupling is visible;
-    the tidy fix is to drop the unused handle.
+    The script must not touch that path itself - everything goes to stdout.
     """
     ensembl_vcf = workflow_dir.parent / "resources" / "ensembl" / "Homo_sapiens.ensembl.vcf"
     ensembl_vcf.write_text("this content should survive a well-behaved script\n")
@@ -82,4 +80,6 @@ def test_script_truncates_the_rules_output_file(workflow_dir):
     out = convert(workflow_dir, HEADER + "chr1\t100\trs1\tA\tG\t.\t.\t.\n")
 
     assert body(out) == ["1\t100\trs1\tA\tG\t.\t.\t."], "records still go to stdout"
-    assert ensembl_vcf.read_text() == "", "the script truncated the file and wrote nothing to it"
+    assert ensembl_vcf.read_text() == "this content should survive a well-behaved script\n", (
+        "the script must not open or truncate the path its rule redirects into"
+    )
