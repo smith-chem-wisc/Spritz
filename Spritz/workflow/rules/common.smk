@@ -1,5 +1,11 @@
 import os
 import posixpath  # snakemake paths are always forward-slash; see the note on all_output
+import sys
+
+# scripts/ holds the workflow's own importable modules. Snakefiles have no __file__, so the path
+# comes from workflow.basedir rather than from the working directory.
+sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
+from snpeff_config import snpeff_config_block
 
 # Variables used by many of the rules
 SPECIES = config["species"]

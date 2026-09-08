@@ -247,7 +247,13 @@ rule generate_snpeff_database:
     params:
         snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref="combined.transcripts.genome.gff3",
-        genome_version=GENOME_VERSION
+        snpeff_config=snpeff_config_block(
+            "combined.transcripts.genome.gff3",
+            SPECIES,
+            GENOME_VERSION,
+            ENSEMBL_VERSION,
+            gene_model="StringTie-assembled transcripts",
+        )
     resources: mem_mb=16000
     benchmark: "../resources/SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.benchmark"
     log: "../resources/SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.log"
@@ -255,11 +261,7 @@ rule generate_snpeff_database:
     shell:
         "cp {input.pfa} {output.pfa} && "
         "cp {input.gfa} {output.gfa} && "
-        "echo \"\n# {params.ref}\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
+        "printf '%s' {params.snpeff_config:q} >> {params.snpeff_folder}/snpEff.config && "
         "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) &> {log} && touch {output.done}"
 
 rule finish_isoform:
