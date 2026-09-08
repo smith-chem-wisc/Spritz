@@ -9,5 +9,6 @@ dependencies:
   - gzip # use conda's gzip, not the system's
   - picard # for ProteomeGenerator
   - transdecoder # for ProteomeGenerator
+  - perl ==5.32.1=7_* # transdecoder ships *.pl; build 8 breaks @INC — conda-forge/perl-feedstock#79
   - gffread # for ProteomeGenerator
   - blast # for ProteomeGenerdator
