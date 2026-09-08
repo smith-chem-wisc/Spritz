@@ -243,5 +243,33 @@ jobs:
     - name: Build docker image
       run: docker build -t spritz ./Spritz/
 
+    # Named so the step below can read the logs out of the stopped container. No --rm, for the
+    # same reason.
     - name: Run test in docker image
-      run: docker run --user=root spritz conda run --no-capture-output --live-stream dotnet SpritzCMD.dll -bd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
+      run: docker run --name spritz-test --user=root spritz conda run --no-capture-output --live-stream dotnet SpritzCMD.dll -bd -a=/app/spritz/results/ -r="release-96,saccharomyces_cerevisiae,baker's yeast,R64-1-1" -s=SRR13737862
+
+    # Every rule redirects its stderr into a log file and snakemake prints only that file's path, so
+    # a failure here has been unreadable without reproducing the whole run locally: the job reported
+    # `hisat2 ... 2> ../results/align/SRR13737862.sra.hisat2.log' returned non-zero exit status 1`
+    # and nothing about what hisat2 said.
+    #
+    # docker commit snapshots the stopped container's filesystem so a throwaway container can read
+    # those files. Copying results/ to the runner instead would drag the fastqs and BAMs with it.
+    - name: Dump the rule logs from the failed run
+      if: failure()
+      run: |
+        set -uo pipefail
+        if ! docker inspect spritz-test >/dev/null 2>&1; then
+          echo "No spritz-test container, so the failure was before the run step."
+          exit 0
+        fi
+        docker commit spritz-test spritz-failed >/dev/null
+        # Size-capped: a rule log is normally a few KB, and one runaway log should not bury the rest.
+        docker run --rm spritz-failed sh -c '
+          find /app/spritz/results /app/spritz/resources /app/spritz/workflow/.snakemake/log \
+            -name "*.log" -size -2M 2>/dev/null | sort | while read -r f; do
+            echo "::group::$f"
+            tail -n 80 "$f"
+            echo "::endgroup::"
+          done'
+
