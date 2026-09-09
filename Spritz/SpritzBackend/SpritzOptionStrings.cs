@@ -72,6 +72,25 @@ namespace SpritzBackend
             "calling variants from reads. Requires -b, and cannot be combined with -c, -d, or any of the " +
             "fastq or SRA options. Its contig names must match the Ensembl reference.";
 
+        public const string DivisionVertebrates = "vertebrates";
+        public const string DivisionBacteria = "bacteria";
+
+        /// <summary>Case-insensitive, so "Bacteria" from a saved command still resolves.</summary>
+        public static bool IsBacteria(string division) =>
+            string.Equals(division, DivisionBacteria, StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsKnownDivision(string division) =>
+            IsBacteria(division) ||
+            string.Equals(division, DivisionVertebrates, StringComparison.OrdinalIgnoreCase);
+
+        public static readonly char DivisionShort = 'e';
+        public static readonly string DivisionLong = "division";
+        public static readonly string DivisionDesc =
+            "Which Ensembl site the reference comes from: \"vertebrates\" (default, ftp.ensembl.org) " +
+            "or \"bacteria\" (Ensembl Genomes, which numbers its releases separately - EG 63 is " +
+            "Ensembl 116). Bacteria have no Ensembl variant sites for GATK to recalibrate against, " +
+            "so a bacterial reference requires -v.";
+
         public static readonly char ThreadsShort = 'p';
         public static readonly string ThreadsLong = "threads";
         public static readonly string ContainerRuntimeLong = "container-runtime";
@@ -151,6 +170,10 @@ namespace SpritzBackend
             if (args.Vcf != null && args.Vcf != string.Empty)
             {
                 argsString += $"--{VcfLong}={args.Vcf} ";
+            }
+            if (args.Division != null && args.Division != string.Empty)
+            {
+                argsString += $"--{DivisionLong}={args.Division} ";
             }
             return argsString;
         }

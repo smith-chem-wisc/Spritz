@@ -257,6 +257,12 @@ namespace SpritzBackend
             vcf.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("vcf", vcf);
 
+            // which Ensembl site the reference comes from; see DIVISION in common.smk
+            YamlScalarNode division = new(string.IsNullOrWhiteSpace(options.Division)
+                ? "vertebrates" : options.Division);
+            division.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("division", division);
+
             // write user defined analysis directory (input and output folder)
             YamlSequenceNode analysisDirectory = new();
             analysisDirectory.Style = SequenceStyle.Flow;

@@ -2,6 +2,10 @@ import os
 import posixpath  # snakemake paths are always forward-slash; see the note on all_output
 import sys
 
+# Imported rather than relied on as a snakefile global, so the config check at the bottom of this
+# file raises the error snakemake formats for the user rather than a NameError.
+from snakemake.exceptions import WorkflowError
+
 # scripts/ holds the workflow's own importable modules. Snakefiles have no __file__, so the path
 # comes from workflow.basedir rather than from the working directory.
 sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
@@ -11,6 +15,9 @@ from snpeff_config import snpeff_config_block
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
+# "vertebrates" (ftp.ensembl.org) or "bacteria" (Ensembl Genomes, on its own release numbering:
+# EG 63 is Ensembl 116). Absent from a hand-written config.yaml predating the option, hence the get.
+DIVISION = config.get("division") or "vertebrates"
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
 REF = f"{SPECIES}.{GENOME_VERSION}"
 GENOME_FA = f"../resources/ensembl/{REF}.dna.primary_assembly.fa"
@@ -127,3 +134,19 @@ def setup_output(wildcards):
 def check(field):
     '''Checks whether or not a field is contained in the configuration'''
     return field in config and config[field] is not None and len(config[field]) > 0
+
+
+# SpritzCMD rejects this combination before snakemake is invoked, but a hand-written config.yaml
+# reaches here. Without this the run fails later with a MissingInputException for
+# {species}.ensembl.vcf in base_recalibration, which names the missing file but not the reason it can
+# never exist.
+#
+# Conditioned on the variant analysis, not on the division alone: known sites are read only by GATK
+# base recalibration, so a bacterial quant or isoform run needs no VCF, and neither does `setup` or
+# --lint. An unconditional check refused all of those.
+if DIVISION == "bacteria" and "variant" in config["analyses"] and not check("vcf"):
+    raise WorkflowError(
+        "A bacterial reference needs a VCF called elsewhere: set 'vcf' in config.yaml, or pass -v to "
+        "SpritzCMD. Ensembl Bacteria publishes no known variant sites - its variation/ directory "
+        "holds only a VEP cache - and GATK base recalibration, the only thing that reads them, has "
+        "no input without them, so Spritz cannot call bacterial variants from reads.")

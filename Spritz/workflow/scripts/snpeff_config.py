@@ -21,11 +21,26 @@ Contig names verified against the Ensembl REST assembly info for each species.
 KNOWN_CODON_TABLES = frozenset(
     {
         "Ascidian_Mitochondrial",
+        "Bacterial_and_Plant_Plastid",
         "Invertebrate_Mitochondrial",
         "Vertebrate_Mitochondrial",
         "Yeast_Mitochondrial",
     }
 )
+
+# NCBI translation table 11, declared for the whole genome rather than one contig: a bacterium has a
+# single chromosome and no mitochondrion, and CodonTables.getTable falls back genome+chromosome ->
+# genome -> Standard, so a genome-level entry covers every contig including plasmids.
+#
+# Against codon.Standard in the shipped snpEff.config it differs in exactly four codons, and in each
+# only by the "+" that marks a valid start: ATT/I, ATC/I, ATA/I and GTG/V. The codon-to-amino-acid
+# map is identical. So this changes start_lost and initiation calls and nothing else - missense,
+# synonymous and stop_gained are unaffected either way.
+BACTERIAL_CODON_TABLE = "Bacterial_and_Plant_Plastid"
+
+# Ensembl serves bacteria from Ensembl Genomes, on its own release numbering, not from ftp.ensembl.org.
+ENSEMBL_REFERENCE = "https://ftp.ensembl.org/pub/release-{release}/"
+ENSEMBL_BACTERIA_REFERENCE = "https://ftp.ebi.ac.uk/ensemblgenomes/pub/bacteria/release-{release}/"
 
 # M is inert for Ensembl, which spells the contig MT. Kept because dropping it changes nothing.
 VERTEBRATE_MITOCHONDRIA = (
@@ -54,23 +69,35 @@ def mitochondria(species):
     return MITOCHONDRIA_BY_SPECIES.get(species.lower(), VERTEBRATE_MITOCHONDRIA)
 
 
-def snpeff_config_block(genome, species, assembly, release, gene_model=None):
+def snpeff_config_block(genome, species, assembly, release, gene_model=None, division="vertebrates"):
     """The text to append to snpEff.config for one genome, ending in a newline.
 
     `genome` is the name SnpEff will be asked to build, which is not always species.assembly - the
     isoform path builds a custom gene model under its own name. `gene_model` describes that when it
     applies, so the entry does not claim to be the plain Ensembl reference.
+
+    `division` selects between Ensembl's main vertebrate site and Ensembl Bacteria, which differ in
+    both the reference URL and the codon table.
+
+    Note that SnpEff ships genome entries for bacteria already - 1086 Pseudomonas ones - but none of
+    them carries a codonTable line, so every one of them translates with the standard table. The
+    block written here is for a database Spritz builds itself, and does declare it.
     """
     description = f"{species} {assembly}"
     if gene_model:
         description = f"{description} with {gene_model}"
 
+    reference = (ENSEMBL_BACTERIA_REFERENCE if division == "bacteria" else ENSEMBL_REFERENCE)
+
     lines = [
         "",
         f"# {genome}",
         f"{genome}.genome : {description}",
-        f"{genome}.reference : https://ftp.ensembl.org/pub/release-{release}/",
+        f"{genome}.reference : {reference.format(release=release)}",
     ]
-    for contig, table in mitochondria(species):
-        lines.append(f"\t{genome}.{contig}.codonTable : {table}")
+    if division == "bacteria":
+        lines.append(f"\t{genome}.codonTable : {BACTERIAL_CODON_TABLE}")
+    else:
+        for contig, table in mitochondria(species):
+            lines.append(f"\t{genome}.{contig}.codonTable : {table}")
     return "\n".join(lines) + "\n"

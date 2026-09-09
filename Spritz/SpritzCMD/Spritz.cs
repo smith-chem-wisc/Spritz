@@ -186,6 +186,12 @@ namespace SpritzCMD
                     SpritzOptionStrings.VcfLong)
                 .WithDescription(SpritzOptionStrings.VcfDesc);
 
+            p.Setup(arg => arg.Division)
+                .As(SpritzOptionStrings.DivisionShort,
+                    SpritzOptionStrings.DivisionLong)
+                .SetDefault(SpritzOptionStrings.DivisionVertebrates)
+                .WithDescription(SpritzOptionStrings.DivisionDesc);
+
             p.Setup(arg => arg.Threads)
                 .As(SpritzOptionStrings.ThreadsShort,
                     SpritzOptionStrings.ThreadsLong)
@@ -248,6 +254,7 @@ namespace SpritzCMD
             // reconstruction assembles transcripts with StringTie and quantification counts reads, so
             // neither has an input without them.
             bool vcfSpecified = !string.IsNullOrWhiteSpace(p.Object.Vcf);
+            string division = (p.Object.Division ?? SpritzOptionStrings.DivisionVertebrates).Trim();
 
             if (result.HelpCalled)
             {
@@ -289,6 +296,27 @@ namespace SpritzCMD
             else if (p.Object.Reference == null)
             {
                 throw new SpritzException("Error: No reference specified. Please specify one with the -r flag that has four elements corresponding to a line from genomes.csv.");
+            }
+            else if (!SpritzOptionStrings.IsKnownDivision(division))
+            {
+                throw new SpritzException(
+                    $"Error: \"{division}\" is not an Ensembl division Spritz knows. Use " +
+                    $"\"{SpritzOptionStrings.DivisionVertebrates}\" or " +
+                    $"\"{SpritzOptionStrings.DivisionBacteria}\".");
+            }
+            else if (SpritzOptionStrings.IsBacteria(division) && p.Object.AnalyzeVariants && !vcfSpecified)
+            {
+                // Ensembl Bacteria publishes no variant sites, and GATK base recalibration - which the
+                // calling chain runs unconditionally - has no input without them. Rejected here rather
+                // than left to fail deep in the workflow as a missing download.
+                //
+                // Conditioned on -b rather than on the division alone: known sites are read only by
+                // base recalibration, so a bacterial quant or isoform run, or -y on its own, is fine
+                // without a VCF.
+                throw new SpritzException(
+                    $"Error: a bacterial reference requires -{SpritzOptionStrings.VcfShort}. Ensembl " +
+                    $"Bacteria publishes no known variant sites, so Spritz cannot call variants from " +
+                    $"reads for bacteria; supply a VCF called elsewhere instead.");
             }
             else if (vcfSpecified && !noSequencesSpecified)
             {
@@ -353,6 +381,8 @@ namespace SpritzCMD
             aa.SraAccession ??= "";
             aa.SraAccessionSingleEnd ??= "";
             aa.Vcf ??= "";
+            aa.Division = string.IsNullOrWhiteSpace(aa.Division)
+                ? SpritzOptionStrings.DivisionVertebrates : aa.Division.Trim();
             return aa;
         }
     }

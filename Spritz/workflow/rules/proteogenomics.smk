@@ -1,5 +1,9 @@
 rule download_protein_xml:
     '''Download the uniprot xml database and uniprot isoform fasta'''
+    input:
+        # get_proteome.py reads the taxonomy id out of this to look a bacterial proteome up; the
+        # popular-organisms list it scans for vertebrates does not reach bacteria at all.
+        *([] if DIVISION != "bacteria" else ["../resources/ensembl/species_EnsemblBacteria.txt"]),
     output:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA,
@@ -122,7 +126,8 @@ rule generate_reference_snpeff_database:
     params:
         snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref=REF,
-        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION)
+        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION,
+                                          division=DIVISION)
     benchmark: f"../resources/SnpEff/data/{REF}/snpeffdatabase.benchmark"
     log: f"../resources/SnpEff/data/{REF}/snpeffdatabase.log"
     conda: "../envs/proteogenomics.yaml"

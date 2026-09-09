@@ -28,6 +28,8 @@ import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import ensembl_bacteria  # a sibling in scripts/, which sys.path[0] covers when run as a script
+
 FTP_ROOT = "https://ftp.ensembl.org/pub"
 SUMMARY = "species_EnsemblVertebrates.txt"
 DEFAULT_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "SpritzBackend", "genomes.csv")
@@ -183,12 +185,61 @@ def write(path, rows):
             handle.write(",".join(row) + "\n")
 
 
+def bacteria_rows(release, match):
+    """Rows for bacterial species whose directory name contains `match`.
+
+    Filtered rather than exhaustive because Ensembl Bacteria carries 31,332 genomes, and merging all
+    of them into genomes.csv would bury the few hundred vertebrate rows it exists for. The names are
+    long and strain-specific - pseudomonas_aeruginosa_pao1_gca_000006765 - so a substring of the
+    species is how anyone would look one up.
+    """
+    text = ensembl_bacteria.fetch(ensembl_bacteria.species_file_url(release)).decode(
+        "utf-8", errors="replace")
+    assemblies = ensembl_bacteria.parse_metadata(text)
+    names = ensembl_bacteria.parse_display_names(text)
+    needle = match.lower()
+
+    rows = []
+    for species, (assembly, _collection) in assemblies.items():
+        if needle not in species:
+            continue
+        rows.append((
+            f"release-{release}",
+            species,
+            sanitise(names.get(species, species)).lower(),
+            # The filename-safe form, because it becomes REF and so a path and the SnpEff genome name.
+            ensembl_bacteria.sanitise_assembly(assembly),
+        ))
+    return sorted(rows, key=lambda r: r[1])
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", default=DEFAULT_CSV)
     parser.add_argument("--min-release", type=int, default=None,
                         help="oldest release to fetch (default: newest only); rows already in the file are kept")
+    parser.add_argument("--division", default="vertebrates", choices=["vertebrates", "bacteria"],
+                        help="which Ensembl site to read; bacteria requires --match")
+    parser.add_argument("--match",
+                        help="with --division bacteria, a substring of the species directory name")
     args = parser.parse_args(argv)
+
+    if args.division == "bacteria":
+        if not args.match:
+            print("--division bacteria needs --match, e.g. --match pseudomonas_aeruginosa: Ensembl "
+                  "Bacteria carries 31332 genomes.", file=sys.stderr)
+            return 1
+        release = ensembl_bacteria.latest_release()
+        rows = bacteria_rows(release, args.match)
+        if not rows:
+            print(f"No Ensembl Bacteria species directory in release {release} contains "
+                  f"'{args.match}'.", file=sys.stderr)
+            return 1
+        existing = read_existing(args.output)
+        write(args.output, build(existing, rows))
+        print(f"Wrote {len(rows)} bacterial row(s) matching '{args.match}' from Ensembl Genomes "
+              f"release {release} to {args.output}", file=sys.stderr)
+        return 0
 
     newest = available_releases(0)[-1]
     releases = available_releases(args.min_release) if args.min_release else [newest]

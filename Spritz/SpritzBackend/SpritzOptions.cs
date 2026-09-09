@@ -20,6 +20,12 @@ namespace SpritzBackend
         /// </summary>
         public string Vcf { get; set; }
 
+        /// <summary>
+        /// "vertebrates" (ftp.ensembl.org) or "bacteria" (Ensembl Genomes). Bacteria are a separate
+        /// site with separate release numbering, so this is not derivable from the species name.
+        /// </summary>
+        public string Division { get; set; }
+
         public int Threads { get; set; }
 
         /// <summary>podman (default), docker, or apptainer. See ContainerRuntime.</summary>

@@ -66,6 +66,9 @@
     <None Include="..\workflow\scripts\convert_ucsc2ensembl.py" Link="workflow\scripts\convert_ucsc2ensembl.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="..\workflow\scripts\ensembl_bacteria.py" Link="workflow\scripts\ensembl_bacteria.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="..\workflow\scripts\download_uniprot.py" Link="workflow\scripts\download_uniprot.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -154,3 +154,44 @@ def test_no_entry_describes_the_genome_as_human_refseq():
     assert "Human" not in block
     assert "RefSeq" not in block
     assert "ncbi.nlm.nih.gov" not in block
+
+
+def test_a_bacterium_gets_a_genome_level_bacterial_table():
+    """One chromosome and no mitochondrion, so the table is declared for the genome, not a contig.
+
+    SnpEff's CodonTables.getTable falls back genome+chromosome -> genome -> Standard, so the
+    genome-level entry reaches every contig, plasmids included.
+    """
+    block = snpeff_config_block(
+        "Pseudomonas_aeruginosa.ASM676v1", "pseudomonas_aeruginosa", "ASM676v1", "63",
+        division="bacteria")
+    assert codon_table_lines(block) == [
+        "Pseudomonas_aeruginosa.ASM676v1.codonTable : Bacterial_and_Plant_Plastid"
+    ]
+    # No mitochondrial line leaks in from the vertebrate default.
+    assert "Mitochondrial" not in block
+
+
+def test_the_bacterial_table_is_one_snpeff_defines():
+    assert "Bacterial_and_Plant_Plastid" in KNOWN_CODON_TABLES
+
+
+def test_a_bacterium_is_referenced_to_ensembl_genomes_not_ftp_ensembl_org():
+    """Bacteria are not on the main Ensembl site, and are on their own release numbering."""
+    block = snpeff_config_block(
+        "Pseudomonas_aeruginosa.ASM676v1", "pseudomonas_aeruginosa", "ASM676v1", "63",
+        division="bacteria")
+    reference = [line for line in block.splitlines() if ".reference" in line]
+    assert reference == [
+        "Pseudomonas_aeruginosa.ASM676v1.reference : "
+        "https://ftp.ebi.ac.uk/ensemblgenomes/pub/bacteria/release-63/"
+    ]
+    assert "ftp.ensembl.org" not in block
+
+
+def test_the_division_defaults_to_vertebrates():
+    """Every existing caller omits it, so the default has to be the old behaviour exactly."""
+    explicit = snpeff_config_block("homo_sapiens.GRCh38", "homo_sapiens", "GRCh38", "111",
+                                   division="vertebrates")
+    assert snpeff_config_block("homo_sapiens.GRCh38", "homo_sapiens", "GRCh38", "111") == explicit
+    assert "ftp.ensembl.org" in explicit

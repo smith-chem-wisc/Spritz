@@ -2,6 +2,7 @@ sra: [SRR629563] #  paired-end SRAs, comma separated, can leave empty, e.g. SRR6
 fq: [] # paired-end fastq prefixes, comma separated, can leave empty, e.g. TestPairedEnd
 sra_se: [SRR8070095] # single-end SRAs, comma separated, can leave empty, e.g. SRR8070095
 fq_se: [] # single-end fastq prefixes, comma separated, can leave empty, e.g. TestSingleEnd
+division: "vertebrates" # "vertebrates" (ftp.ensembl.org) or "bacteria" (Ensembl Genomes; bacteria need a vcf)
 vcf: "" # optional: filename of a VCF in the analysis directory to annotate instead of calling variants from reads
 analysis_directory: [../results] # for paths to drive e.g. /mnt/c/AnalysisFolder
 species: "Homo_sapiens" # ensembl species name

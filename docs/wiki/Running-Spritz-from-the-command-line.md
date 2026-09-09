@@ -51,11 +51,104 @@ mount is what connects them.
 | `-s=` | paired-end SRA accession(s), comma-separated |
 | `-t=` | single-end SRA accession(s) |
 | `-f=` / `-i=` / `-j=` | local FASTQs instead of SRAs: single-end, first mate, second mate |
+| `-v=` | a VCF you called elsewhere, annotated instead of calling variants from reads — see below |
+| `-e=` | Ensembl division: `vertebrates` (default) or `bacteria` — see below |
 | `-b` | analyze variants |
 | `-c` | analyze isoforms |
 | `-d` | quantify |
 | `-p=` | threads, defaults to the processor count |
 | `--container-runtime` | `podman` (default), `docker`, or `apptainer` — only relevant when Spritz launches the container for you, not when you launch it yourself as above |
+
+### Annotating a VCF you already have
+
+If variants were called outside Spritz — from WGS or exome reads, or by any caller — `-v=` skips
+alignment and GATK entirely and annotates that VCF directly:
+
+```bash
+podman run --rm -it \
+  -v "/path/to/analysis:/app/spritz/results/" \
+  -v "/path/to/resources:/app/spritz/resources" \
+  smithlab/spritz:0.3.14 \
+  conda run --no-capture-output --live-stream \
+  dotnet SpritzCMD.dll \
+    -a=/app/spritz/results/ \
+    -r="release-116,homo_sapiens,human,GRCh38" \
+    -v=my_variants.vcf \
+    -b
+```
+
+Three things to know.
+
+**`-v=` takes a filename, not a path**, resolved inside your analysis directory — the same convention
+as `-i=`/`-j=`/`-f=`. Only the analysis and resources directories are mounted into the container, so
+a host path from anywhere else would not resolve. Copy or move the VCF into the analysis directory
+first. Gzipped VCFs are accepted.
+
+**It requires `-b` and excludes `-c` and `-d`.** Isoform reconstruction assembles transcripts and
+quantification counts reads, so neither has an input without them. It also cannot be combined with
+`-s=`/`-t=`/`-i=`/`-j=`/`-f=`: a supplied VCF replaces variant calling, so passing both is ambiguous
+and is rejected rather than silently resolved.
+
+**Contig names must match the Ensembl reference.** Ensembl calls the first human chromosome `1`; a
+VCF from a UCSC-based pipeline calls it `chr1`. SnpEff reports a variant on a contig it does not know
+as `ERROR_CHROMOSOME_NOT_FOUND` and exits 0, so a mismatch would otherwise hand you a database with
+every variant silently dropped. Spritz checks this before annotating and stops the run when nothing
+matches. A VCF that merely names some scaffolds the primary assembly omits is fine — those are
+reported and skipped.
+
+The reference database itself is still built from Ensembl, so the genome, GFF3 and protein FASTA are
+downloaded as usual; what `-v=` saves is the read download, trimming, alignment and variant calling.
+
+### Bacterial references
+
+Bacteria are not on `ftp.ensembl.org`. They come from Ensembl Genomes, which numbers its releases
+separately — **EG 63 is Ensembl 116** — so a bacterial run needs `-e=bacteria` and an EG release
+number:
+
+```bash
+dotnet SpritzCMD.dll \
+  -a=/app/spritz/results/ \
+  -e=bacteria \
+  -r="release-63,pseudomonas_aeruginosa_pao1_gca_000006765,pseudomonas aeruginosa pao1,ASM676v1" \
+  -v=my_variants.vcf \
+  -b
+```
+
+**A bacterial reference requires `-v=`.** Ensembl Bacteria publishes no known variant sites — its
+`variation/` directory holds only a VEP cache, with no `vcf/` — and GATK base recalibration, the only
+thing that reads them, has no input without them. So Spritz cannot call bacterial variants from reads,
+and rejects the combination up front rather than failing partway through a long run. Call the variants
+with your own pipeline and hand Spritz the VCF.
+
+#### Finding the reference string
+
+Species directory names are strain-specific and carry a GCA accession —
+`pseudomonas_aeruginosa_pao1_gca_000006765`, not `pseudomonas_aeruginosa` — and there are 31,332 of
+them, so `-x` does not list them. Search for yours:
+
+```bash
+podman run --rm -v "/path/to/analysis:/app/spritz/results/" smithlab/spritz:0.3.14 \
+  conda run --no-capture-output python workflow/scripts/update_genomes.py \
+    --division bacteria --match pseudomonas_aeruginosa \
+    --output /app/spritz/results/genomes.csv
+```
+
+That appends the matching rows to `genomes.csv` in your analysis directory, alongside any vertebrate
+rows already there. Copy one out verbatim. Passing a bare species name to `-r=` instead will fail with
+an error listing the strains that do exist.
+
+#### Two things that differ from a vertebrate run
+
+**Codon table.** Bacterial genomes are translated with NCBI table 11
+(`Bacterial_and_Plant_Plastid`) rather than the standard table. Against the standard table it differs
+in exactly four codons — `ATT`, `ATC`, `ATA` and `GTG` — and in each only by whether the codon counts
+as a valid start. Every codon-to-amino-acid mapping is the same, so this affects `start_lost` and
+initiation calls and nothing else; missense, synonymous and stop_gained are identical either way.
+Note that SnpEff ships its own bacterial genome entries and *none* of them declares a codon table, so
+they all translate with the standard one; the database Spritz builds here does declare it.
+
+**Contig names.** A bacterial assembly typically has one sequence, and Ensembl names it `Chromosome`,
+not `1`. Your VCF's `CHROM` column has to match — see the contig-name note above.
 
 ### Getting a reference string
 
