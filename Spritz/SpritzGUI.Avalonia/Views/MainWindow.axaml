@@ -1,0 +1,134 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Spritz.Avalonia.ViewModels"
+        x:Class="Spritz.Avalonia.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Spritz" Width="1000" Height="560">
+
+  <!-- Ported from the WPF MainWindow.xaml. Substitutions Avalonia requires:
+       GroupBox        -> HeaderedContentControl, styled below
+       RichTextBox     -> read-only TextBox; only plain text is ever appended
+       Style.Triggers  -> Avalonia uses selectors, so the cell colouring is dropped for now
+       ToolTip="..."   -> ToolTip.Tip="..." -->
+  <Window.Styles>
+    <Style Selector="HeaderedContentControl">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                  BorderThickness="1" CornerRadius="4" Margin="4" Padding="6">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{TemplateBinding Header}"
+                         FontWeight="SemiBold" Margin="0,0,0,6" />
+              <ContentPresenter Content="{TemplateBinding Content}" />
+            </DockPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Margin" Value="3,0" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="Help">
+        <MenuItem Header="Open Wiki Page" Click="OnWikiClick" />
+        <MenuItem Header="Contact" Click="OnContactClick" />
+      </MenuItem>
+      <MenuItem Header="Settings">
+        <MenuItem>
+          <MenuItem.Header>
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="Target Docker image:" VerticalAlignment="Center" Margin="0,0,6,0" />
+              <TextBox Text="{Binding DockerImage}" Width="220"
+                       ToolTip.Tip="A name containing ':' is used as-is; a name without 'smithlab/' is not pulled, so a locally built image is used." />
+            </StackPanel>
+          </MenuItem.Header>
+        </MenuItem>
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,4" Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+      <TextBlock Text="{Binding DockerStatus}" TextWrapping="Wrap" />
+    </Border>
+
+    <Grid ColumnDefinitions="*,Auto,*">
+      <Grid Grid.Column="0" RowDefinitions="*,Auto,*">
+
+        <HeaderedContentControl Grid.Row="0" Header="SRA — RNA-seq data from NCBI SRA">
+          <DockPanel>
+            <TextBox DockPanel.Dock="Top" Text="{Binding SraAccession}" Watermark="e.g. SRR13737862" />
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6">
+              <Button Content="Add paired-end" Command="{Binding AddPairedEndSraCommand}" />
+              <Button Content="Add single-end" Command="{Binding AddSingleEndSraCommand}" />
+              <Button Content="Clear" Command="{Binding ClearSrasCommand}" />
+            </StackPanel>
+            <DataGrid ItemsSource="{Binding Sras}" IsReadOnly="True" AutoGenerateColumns="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Accession" Binding="{Binding Name}" Width="*" />
+                <DataGridCheckBoxColumn Header="Paired-end" Binding="{Binding IsPairedEnd}" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </DockPanel>
+        </HeaderedContentControl>
+
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+
+        <HeaderedContentControl Grid.Row="2" Header="FASTQ">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6">
+              <Button Content="Add FASTQ files..." Click="OnAddFastqClick" />
+              <Button Content="Clear" Command="{Binding ClearFastqsCommand}" />
+            </StackPanel>
+            <DataGrid ItemsSource="{Binding Fastqs}" IsReadOnly="True" AutoGenerateColumns="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" />
+                <DataGridTextColumn Header="Mate" Binding="{Binding MatePair}" />
+                <DataGridCheckBoxColumn Header="Paired-end" Binding="{Binding IsPairedEnd}" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </DockPanel>
+        </HeaderedContentControl>
+      </Grid>
+
+      <GridSplitter Grid.Column="1" Width="5" VerticalAlignment="Stretch" />
+
+      <Grid Grid.Column="2" RowDefinitions="*,Auto,*">
+        <HeaderedContentControl Grid.Row="0" Header="Workflow">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+              <Button Content="Create workflow..." Click="OnCreateWorkflowClick" />
+            </StackPanel>
+            <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+              <TextBlock Text="Analysis directory:" VerticalAlignment="Center" Margin="0,0,6,0" />
+              <Button DockPanel.Dock="Right" Content="Browse..." Click="OnBrowseOutputClick" />
+              <TextBox Text="{Binding OutputFolder}" />
+            </DockPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
+              <Button Content="Run workflow" Command="{Binding RunWorkflowCommand}"
+                      IsEnabled="{Binding !IsRunning}" />
+              <Button Content="Cancel" Command="{Binding CancelCommand}"
+                      IsEnabled="{Binding IsRunning}" />
+            </StackPanel>
+            <ListBox ItemsSource="{Binding Workflows}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding DisplayName}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </HeaderedContentControl>
+
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+
+        <HeaderedContentControl Grid.Row="2" Header="Information">
+          <TextBox Text="{Binding Information}" IsReadOnly="True" AcceptsReturn="True"
+                   TextWrapping="NoWrap" FontFamily="monospace"
+                   VerticalContentAlignment="Top" />
+        </HeaderedContentControl>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>
