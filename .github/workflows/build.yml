@@ -130,6 +130,17 @@ jobs:
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 setup
 
+    # The VCF entry point takes a different branch of both all_output and the combined.spritz.vcf
+    # producer (stage_user_vcf replaces final_vcf_naming), so neither is covered by the runs above.
+    # The VCF itself has no producing rule, so it has to exist for the DAG to resolve.
+    - name: Dry-run - variant from a supplied VCF
+      shell: bash -el {0}
+      run: |
+        mkdir -p results && touch results/user.vcf
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "sra=[]" "sra_se=[]" "vcf=user.vcf" \
+            "analysis_directory=[../../results]"
+
     - name: Dry-run - variant, isoform and quant together
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"

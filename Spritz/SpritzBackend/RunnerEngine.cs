@@ -250,6 +250,13 @@ namespace SpritzBackend
             YamlSequenceNode fq_se = new();
             rootMappingNode.Add("fq_se", AddParam(fqs_se, fq_se));
 
+            // write a user-supplied VCF, annotated instead of calling variants from reads. Scalar rather
+            // than a sequence because exactly one file is supported; check() in common.smk treats an
+            // empty string as absent, as it does an empty list.
+            YamlScalarNode vcf = new(options.Vcf ?? "");
+            vcf.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("vcf", vcf);
+
             // write user defined analysis directory (input and output folder)
             YamlSequenceNode analysisDirectory = new();
             analysisDirectory.Style = SequenceStyle.Flow;

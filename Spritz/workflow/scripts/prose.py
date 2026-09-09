@@ -13,8 +13,17 @@ lines = [
     "",
 ]
 
+def supplied(field):
+    """Mirrors check() in common.smk, so the citations match the rules that actually ran."""
+    return field in config and config[field] is not None and len(config[field]) > 0
+
+# A supplied VCF replaces the whole read-processing and variant-calling chain, so fastp, hisat2,
+# samtools and GATK are not run and must not be cited. Claiming reads were trimmed and aligned when
+# none were is a false methods section.
+used_vcf = supplied("vcf")
+
 # SRA DOWNLOADS
-used_sras = 'sra' in config and config["sra"] is not None and len(config["sra"]) > 0
+used_sras = supplied("sra")
 if used_sras:
     lines.extend([
         "SRAs are downloaded using the SRA toolkit from NCBI: ",
@@ -23,26 +32,33 @@ if used_sras:
     ])
 
 # TRIMMING AND ALIGNMENT
-lines.extend([
-    "Reads are trimmed and analyzed for quality scores using fastp: ",
-    "- Chen, S.; et al. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 2018, 34 (17), i884-i890. https://academic.oup.com/bioinformatics/article/34/17/i884/5093234.",
-    "",
-    "Reads are aligned using hisat2: ",
-    "- Kim, D.; et al. Graph-Based Genome Alignment and Genotyping with HISAT2 and HISAT-Genotype. Nat. Biotechnol. 2019, 37 (8), 907-915. https://doi.org/10.1038/s41587-019-0201-4.",
-    "",
-    "Alignments are analyzed and combined using samtools: ",
-    "- Li, H.; et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics 2009, 25 (16), 2078-2079. https://academic.oup.com/bioinformatics/article/25/16/2078/204688.",
-    ""
-])
+if not used_vcf:
+    lines.extend([
+        "Reads are trimmed and analyzed for quality scores using fastp: ",
+        "- Chen, S.; et al. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 2018, 34 (17), i884-i890. https://academic.oup.com/bioinformatics/article/34/17/i884/5093234.",
+        "",
+        "Reads are aligned using hisat2: ",
+        "- Kim, D.; et al. Graph-Based Genome Alignment and Genotyping with HISAT2 and HISAT-Genotype. Nat. Biotechnol. 2019, 37 (8), 907-915. https://doi.org/10.1038/s41587-019-0201-4.",
+        "",
+        "Alignments are analyzed and combined using samtools: ",
+        "- Li, H.; et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics 2009, 25 (16), 2078-2079. https://academic.oup.com/bioinformatics/article/25/16/2078/204688.",
+        ""
+    ])
 
 # VARIANT CALLING
 if "variant" in workflows:
+    if used_vcf:
+        lines.extend([
+            f"Variants were supplied as {config['vcf']}, called outside this workflow, rather than called from reads. ",
+            ""])
+    else:
+        lines.extend([
+            "Alignments are prepared for variant calling and analyzed for variants using the Genome Analysis Toolkit (GATK): ",
+            "- McKenna, A.; et al. The Genome Analysis Toolkit: A MapReduce Framework for Analyzing next-Generation DNA Sequencing Data. Genome Res. 2010, 20 (9), 1297-1303. https://doi.org/10.1101/gr.107524.110.",
+            "- DePristo, M. A.; et al. A Framework for Variation Discovery and Genotyping Using Next-Generation DNA Sequencing Data. Nat. Genet. 2011, 43 (5), 491-498. https://doi.org/10.1038/ng.806.",
+            "- Poplin, R.; et al. Scaling Accurate Genetic Variant Discovery to Tens of Thousands of Samples; preprint; Genomics, 2017. https://doi.org/10.1101/201178.",
+            ""])
     lines.extend([
-        "Alignments are prepared for variant calling and analyzed for variants using the Genome Analysis Toolkit (GATK): ",
-        "- McKenna, A.; et al. The Genome Analysis Toolkit: A MapReduce Framework for Analyzing next-Generation DNA Sequencing Data. Genome Res. 2010, 20 (9), 1297-1303. https://doi.org/10.1101/gr.107524.110.",
-        "- DePristo, M. A.; et al. A Framework for Variation Discovery and Genotyping Using Next-Generation DNA Sequencing Data. Nat. Genet. 2011, 43 (5), 491-498. https://doi.org/10.1038/ng.806.",
-        "- Poplin, R.; et al. Scaling Accurate Genetic Variant Discovery to Tens of Thousands of Samples; preprint; Genomics, 2017. https://doi.org/10.1101/201178.",
-        "",
         "SnpEff is used for variant annotation and customized in Spritz to output a proteogenomic database: ",
         "- Cingolani, P.; et al. A Program for Annotating and Predicting the Effects of Single Nucleotide Polymorphisms, SnpEff: SNPs in the Genome of Drosophila Melanogaster Strain W1118; Iso-2; Iso-3. Fly (Austin) 2012, 6 (2), 80-92. https://doi.org/10.4161/fly.19695.",
         ""])

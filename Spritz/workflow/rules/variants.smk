@@ -173,13 +173,32 @@ rule call_vcf_variants:
         " -R {input.fa} -V {input.gvcf} -O {output} --tmp-dir {input.tmp} && "
         "gatk IndexFeatureFile -I {output}) &> {log}"
 
-rule final_vcf_naming:
-    '''Rename VCF to shorter filename'''
-    input: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
-    output: "{dir}/variants/combined.spritz.vcf"
-    log: "{dir}/variants/final_vcf_naming.log"
-    conda: "../envs/variants.yaml"
-    shell: "mv {input} {output} 2> {log}"
+# Both rules below produce combined.spritz.vcf, the point every downstream rule reads the variant set
+# from, so they are mutually exclusive rather than alternatives snakemake picks between: declaring one
+# output twice is an AmbiguousRuleException, and resolving it with ruleorder would leave the losing
+# branch's whole input chain still in the DAG.
+if check('vcf'):
+    rule stage_user_vcf:
+        '''Use a VCF the user called elsewhere, skipping alignment and GATK'''
+        input:
+            # Relative to the analysis directory, like fq and fq_se: only that directory and
+            # resources/ are bind-mounted into the container, so a host path would not resolve.
+            vcf=lambda w: posixpath.join(w.dir, config['vcf']),
+            fai=f"{KARYOTYPIC_GENOME_PREFIX}.fa.fai",
+        output: "{dir}/variants/combined.spritz.vcf"
+        log: "{dir}/variants/stage_user_vcf.log"
+        benchmark: "{dir}/variants/stage_user_vcf.benchmark"
+        conda: "../envs/default.yaml"
+        shell: "python scripts/stage_user_vcf.py {input.vcf} {input.fai} > {output} 2> {log}"
+
+else:
+    rule final_vcf_naming:
+        '''Rename VCF to shorter filename'''
+        input: "{dir}/variants/combined.sorted.grouped.marked.split.recal.g.gt.vcf"
+        output: "{dir}/variants/combined.spritz.vcf"
+        log: "{dir}/variants/final_vcf_naming.log"
+        conda: "../envs/variants.yaml"
+        shell: "mv {input} {output} 2> {log}"
 
 rule variant_annotation_ref:
     '''Generate proteome FASTA and XML for reference database'''

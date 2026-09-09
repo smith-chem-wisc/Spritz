@@ -12,6 +12,14 @@ namespace SpritzBackend
         public string Fastq1SingleEnd { get; set; }
         public string SraAccession { get; set; }
         public string SraAccessionSingleEnd { get; set; }
+
+        /// <summary>
+        /// Filename of a user-supplied VCF in the analysis directory, used instead of calling variants
+        /// from reads. A filename, not a path, for the same reason as Fastq1: only the analysis and
+        /// resources directories are bind-mounted into the container.
+        /// </summary>
+        public string Vcf { get; set; }
+
         public int Threads { get; set; }
 
         /// <summary>podman (default), docker, or apptainer. See ContainerRuntime.</summary>

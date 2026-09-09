@@ -96,8 +96,12 @@ def all_output(wildcards):
 def setup_output(wildcards):
     '''Gets the output needed for setting up spritz'''
     setup_outputs = [
-        f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
-        f"../resources/ensembl/{SPECIES}.ensembl.vcf",
+        # Known variant sites, and the UCSC-to-Ensembl mapping the human one is converted with, are
+        # only read by GATK base recalibration. A run that supplies its own VCF does no calling, so
+        # pre-fetching them would download a multi-gigabyte dbSNP release nothing goes on to use.
+        *([] if check('vcf') else [
+            f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
+            f"../resources/ensembl/{SPECIES}.ensembl.vcf"]),
         TRANSFER_MOD_DLL,
         UNIPROTFASTA,
         FA,
