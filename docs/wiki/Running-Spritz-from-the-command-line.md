@@ -68,7 +68,7 @@ alignment and GATK entirely and annotates that VCF directly:
 podman run --rm -it \
   -v "/path/to/analysis:/app/spritz/results/" \
   -v "/path/to/resources:/app/spritz/resources" \
-  smithlab/spritz:0.3.14 \
+  smithlab/spritz:0.3.15 \
   conda run --no-capture-output --live-stream \
   dotnet SpritzCMD.dll \
     -a=/app/spritz/results/ \
@@ -92,10 +92,20 @@ sequences for each, so a merged multi-sample VCF gives you per-individual varian
 is *more* faithful than the read-based path, which assigns every input the same read group and pools
 everything into one sample.
 
-Two details follow from that. Sample names that collide are renamed rather than rejected, since
-callers often emit a placeholder name. And the per-sample **`AD` (allele depth)** field is what the
-depth filter reads, so a caller that does not emit `AD` will have its variants filtered differently
-from one that does — check your VCFs carry it if the variant count looks low.
+**Your VCFs must carry genotypes and allele depths.** Two requirements, both checked before
+anything runs, because both otherwise fail late and unhelpfully:
+
+- **At least one sample column.** The database is built from genotypes, so a sites-only VCF yields a
+  database with nothing in it — and would previously have done so while exiting 0.
+- **A per-sample `AD` (allele depth) for every variant a sample actually carries.** The builder
+  indexes allele depths by allele number, so a called variant with no `AD` is an error partway
+  through the run. GATK emits `AD` by default; several other callers do not. If yours does not, add
+  it with `bcftools +fill-tags -- -t AD`. A sample that simply does not carry a variant needs
+  nothing — `./.:.` is what a merge writes there and is fine.
+
+Sample names that collide between files are renamed rather than rejected, since callers often emit a
+placeholder name. The renaming is positional (`SAMPLE`, `2:SAMPLE`, `3:SAMPLE`), so if you want the
+merged columns to identify their source, give each VCF a distinct sample name before passing it in.
 
 With a single VCF none of this applies: the file goes straight to annotation untouched.
 
@@ -171,7 +181,7 @@ The `-r=` value must be a line from `genomes.csv`, quoted, with four comma-separ
 `release,species,common name,assembly`. To see what is available:
 
 ```bash
-podman run --rm -v "/path/to/analysis:/app/spritz/results/" smithlab/spritz:0.3.14 \
+podman run --rm -v "/path/to/analysis:/app/spritz/results/" smithlab/spritz:0.3.15 \
   conda run --no-capture-output dotnet SpritzCMD.dll -x -a=/app/spritz/results/
 ```
 

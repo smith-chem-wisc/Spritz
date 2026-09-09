@@ -38,25 +38,79 @@ def open_maybe_gzip(path):
     return open(path, encoding="utf-8", errors="replace")
 
 
+def called_alt_indices(genotype):
+    """ALT allele indices a GT names, e.g. "0/1" -> {1}, "1|2" -> {1, 2}, "./." -> set()."""
+    indices = set()
+    for allele in genotype.replace("|", "/").split("/"):
+        allele = allele.strip()
+        if allele.isdigit() and allele != "0":
+            indices.add(int(allele))
+    return indices
+
+
+def allele_depth_length(field):
+    """How many AD entries the database builder will see.
+
+    It splits on ',' discarding empty entries, so this has to discard them too - "10,,8" is two
+    entries there, not three - and it indexes that array by allele index without a bounds check.
+    """
+    return len([part for part in field.split(",") if part.strip()])
+
+
+def check_sample(format_keys, sample_field):
+    """Why this sample would crash the database builder on this line, or None.
+
+    VariantApplication reads AlleleDepths[sample][alleleIndex] directly, and the array is empty
+    when AD is absent and length one when AD is ".". A sample whose genotype names an ALT allele
+    is past the guard that skips uncalled samples, so a short array is an IndexOutOfRangeException
+    partway through a long run rather than a dropped variant.
+    """
+    values = sample_field.split(":")
+    fields = dict(zip(format_keys, values))
+    called = called_alt_indices(fields.get("GT", "."))
+    if not called:
+        return None  # not called here, so its depths are never read
+    if "AD" not in fields:
+        return "no AD field"
+    needed = max(called)
+    if allele_depth_length(fields["AD"]) <= needed:
+        return f"AD {fields['AD']!r} is too short for allele {needed}"
+    return None
+
+
 def stage(vcf_path, fai_path, out):
-    """Copies the VCF to `out`, returning (matched, unmatched) variant counts per contig name."""
+    """Copies the VCF to `out`, returning per-contig counts, sample names and AD problems."""
     reference_contigs = read_fai_contigs(fai_path)
     matched = {}
     unmatched = {}
+    samples = []
+    depth_problems = []
 
     with open_maybe_gzip(vcf_path) as handle:
         for line in handle:
             out.write(line)
-            if line.startswith("#"):
+            if line.startswith("##"):
                 continue
-            fields = line.split("\t", 1)
+            fields = line.rstrip("\n").split("\t")
+            if line.startswith("#"):
+                # The one header line that is not a meta line names the samples, from column 10.
+                samples = fields[9:]
+                continue
             contig = fields[0].strip()
             if not contig:
                 continue
             tally = matched if contig in reference_contigs else unmatched
             tally[contig] = tally.get(contig, 0) + 1
 
-    return matched, unmatched
+            if len(fields) > 9 and len(depth_problems) < 5:
+                format_keys = fields[8].split(":")
+                for name, sample_field in zip(samples, fields[9:]):
+                    problem = check_sample(format_keys, sample_field)
+                    if problem:
+                        depth_problems.append(f"{contig}:{fields[1]} sample {name}: {problem}")
+                        break
+
+    return matched, unmatched, samples, depth_problems
 
 
 def main(argv=None):
@@ -65,7 +119,7 @@ def main(argv=None):
     parser.add_argument("fai", help="samtools .fai for the reference genome")
     args = parser.parse_args(argv)
 
-    matched, unmatched = stage(args.vcf, args.fai, sys.stdout)
+    matched, unmatched, samples, depth_problems = stage(args.vcf, args.fai, sys.stdout)
     matched_variants = sum(matched.values())
     unmatched_variants = sum(unmatched.values())
 
@@ -88,8 +142,28 @@ def main(argv=None):
             f"Ensembl-style names are expected; scripts/convert_ucsc2ensembl.py converts UCSC ones."
         )
 
+    # A sites-only VCF is the other way to get a database with nothing in it: the database builder
+    # keeps only variants that carry genotypes, so with no sample columns every one is discarded.
+    if not samples:
+        raise SystemExit(
+            f"Error: {args.vcf} has no sample columns, so every variant in it would be discarded - "
+            f"the database is built from genotypes, and a sites-only VCF has none. Supply a VCF with "
+            f"at least one sample."
+        )
+
+    if depth_problems:
+        raise SystemExit(
+            "Error: variants are called in samples that have no usable AD (allele depth), which the "
+            "database builder reads per allele:\n  "
+            + "\n  ".join(depth_problems)
+            + "\nRe-call with allele depths, or add them with `bcftools +fill-tags -- -t AD`. "
+            "GATK emits AD by default; several other callers do not."
+        )
+
     print(
-        f"Staged {matched_variants} variant(s) on {len(matched)} reference contig(s).",
+        f"Staged {matched_variants} variant(s) on {len(matched)} reference contig(s) "
+        f"for {len(samples)} sample(s): {', '.join(samples[:5])}"
+        f"{'...' if len(samples) > 5 else ''}.",
         file=sys.stderr,
     )
 

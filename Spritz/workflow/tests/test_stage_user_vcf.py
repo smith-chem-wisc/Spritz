@@ -19,13 +19,18 @@ VCF_HEADER = textwrap.dedent(
     """\
     ##fileformat=VCFv4.2
     ##source=someothercaller
-    #CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO
+    #CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE_A
     """
 )
 
+# Sample columns are not decoration here: the database builder keeps only variants carrying
+# genotypes, and reads AD per allele index, so both are preconditions rather than nice-to-haves.
+CALLED = "GT:AD\t0/1:10,8"
+
 
 def vcf(*data_lines):
-    return VCF_HEADER + "".join(line + "\n" for line in data_lines)
+    """Data lines given as the first eight columns; a called genotype with depths is appended."""
+    return VCF_HEADER + "".join(f"{line}\t{CALLED}\n" for line in data_lines)
 
 
 @pytest.fixture
@@ -49,7 +54,7 @@ def test_a_matching_vcf_passes_through_byte_for_byte(tmp_path, fai):
     result = stage(tmp_path, fai, text)
     assert result.returncode == 0, result.stderr
     assert result.stdout == text
-    assert "Staged 2 variant(s) on 2 reference contig(s)." in result.stderr
+    assert "Staged 2 variant(s) on 2 reference contig(s) for 1 sample(s): SAMPLE_A." in result.stderr
 
 
 def test_a_gzipped_vcf_is_decompressed(tmp_path, fai):
@@ -111,3 +116,81 @@ def test_the_unmatched_contig_list_is_capped(tmp_path, fai):
     assert result.returncode == 0, result.stderr
     assert "50 variant(s) on 50 contig(s) absent" in result.stderr
     assert result.stderr.count("scaffold_") == 10
+
+
+def test_a_sites_only_vcf_stops_the_run(tmp_path, fai):
+    """No sample columns means no genotypes, and the builder discards variants without them - so
+    this would otherwise produce a database with nothing in it and exit 0."""
+    text = (
+        "##fileformat=VCFv4.2\n"
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+        "1\t1000\t.\tA\tG\t50\tPASS\t.\n"
+    )
+    result = stage(tmp_path, fai, text)
+    assert result.returncode != 0
+    assert "no sample columns" in result.stderr
+
+
+def test_a_called_variant_without_an_ad_field_stops_the_run(tmp_path, fai):
+    """VariantApplication indexes AlleleDepths[sample][alleleIndex] with no bounds check, and the
+    array is empty when AD is absent - an IndexOutOfRangeException partway through a long run."""
+    text = (
+        "##fileformat=VCFv4.2\n"
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE_A\n"
+        "1\t1000\t.\tA\tG\t50\tPASS\t.\tGT\t0/1\n"
+    )
+    result = stage(tmp_path, fai, text)
+    assert result.returncode != 0
+    assert "no AD field" in result.stderr
+    assert "bcftools +fill-tags" in result.stderr
+
+
+def test_a_called_variant_with_a_dot_ad_stops_the_run(tmp_path, fai):
+    """AD "." parses to a one-element array, so indexing it by allele 1 is out of range."""
+    text = (
+        "##fileformat=VCFv4.2\n"
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE_A\n"
+        "1\t1000\t.\tA\tG\t50\tPASS\t.\tGT:AD\t0/1:.\n"
+    )
+    result = stage(tmp_path, fai, text)
+    assert result.returncode != 0
+    assert "too short for allele 1" in result.stderr
+
+
+def test_an_uncalled_sample_with_a_dot_ad_is_fine(tmp_path, fai):
+    """What bcftools merge writes for a sample missing the variant. The builder skips it before
+    reading any depth, so rejecting it would refuse every merged multi-sample VCF."""
+    text = (
+        "##fileformat=VCFv4.2\n"
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE_A\tSAMPLE_B\n"
+        "1\t1000\t.\tA\tG\t50\tPASS\t.\tGT:AD\t0/1:10,8\t./.:.\n"
+    )
+    result = stage(tmp_path, fai, text)
+    assert result.returncode == 0, result.stderr
+    assert "for 2 sample(s): SAMPLE_A, SAMPLE_B" in result.stderr
+
+
+def test_multiallelic_padding_from_a_merge_is_fine(tmp_path, fai):
+    """bcftools merge pads AD to Number=R with "." for alleles a sample does not carry. "." is a
+    valid AD token to the builder and the array is still long enough to index."""
+    text = (
+        "##fileformat=VCFv4.2\n"
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE_A\tSAMPLE_B\n"
+        "1\t1000\t.\tA\tG,T\t50\tPASS\t.\tGT:AD\t0/1:10,8,.\t0/2:12,.,6\n"
+    )
+    result = stage(tmp_path, fai, text)
+    assert result.returncode == 0, result.stderr
+
+
+def test_the_reported_ad_problems_are_capped(tmp_path, fai):
+    """A whole VCF from a caller that omits AD would otherwise print one line per variant."""
+    lines = "".join(
+        f"1\t{1000 + i}\t.\tA\tG\t50\tPASS\t.\tGT\t0/1\n" for i in range(40)
+    )
+    text = (
+        "##fileformat=VCFv4.2\n"
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE_A\n" + lines
+    )
+    result = stage(tmp_path, fai, text)
+    assert result.returncode != 0
+    assert result.stderr.count("no AD field") <= 5
