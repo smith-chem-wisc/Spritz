@@ -49,7 +49,9 @@ if not used_vcf:
 if "variant" in workflows:
     if used_vcf:
         lines.extend([
-            f"Variants were supplied as {config['vcf']}, called outside this workflow, rather than called from reads. ",
+            f"Variants were supplied as {', '.join(config['vcf'])}, called outside this workflow, "
+            f"rather than called from reads"
+            + (f", and merged across {len(config['vcf'])} per-sample VCFs. " if len(config['vcf']) > 1 else ". "),
             ""])
     else:
         lines.extend([

@@ -51,7 +51,7 @@ mount is what connects them.
 | `-s=` | paired-end SRA accession(s), comma-separated |
 | `-t=` | single-end SRA accession(s) |
 | `-f=` / `-i=` / `-j=` | local FASTQs instead of SRAs: single-end, first mate, second mate |
-| `-v=` | a VCF you called elsewhere, annotated instead of calling variants from reads — see below |
+| `-v=` | comma-separated VCFs you called elsewhere, annotated instead of calling variants from reads — see below |
 | `-e=` | Ensembl division: `vertebrates` (default) or `bacteria` — see below |
 | `-b` | analyze variants |
 | `-c` | analyze isoforms |
@@ -79,10 +79,25 @@ podman run --rm -it \
 
 Three things to know.
 
-**`-v=` takes a filename, not a path**, resolved inside your analysis directory — the same convention
+**`-v=` takes filenames, not paths**, resolved inside your analysis directory — the same convention
 as `-i=`/`-j=`/`-f=`. Only the analysis and resources directories are mounted into the container, so
-a host path from anywhere else would not resolve. Copy or move the VCF into the analysis directory
+a host path from anywhere else would not resolve. Copy or move the VCFs into the analysis directory
 first. Gzipped VCFs are accepted.
+
+**One VCF per sample is the expected case.** Pass them comma-separated —
+`-v=sample_a.vcf,sample_b.vcf,sample_c.vcf` — and Spritz merges them into a single multi-sample VCF
+with `bcftools merge` before annotating. That is worth doing rather than concatenating, because the
+database builder is sample-aware: it walks the genotypes per individual and emits variant protein
+sequences for each, so a merged multi-sample VCF gives you per-individual variant proteins. Note this
+is *more* faithful than the read-based path, which assigns every input the same read group and pools
+everything into one sample.
+
+Two details follow from that. Sample names that collide are renamed rather than rejected, since
+callers often emit a placeholder name. And the per-sample **`AD` (allele depth)** field is what the
+depth filter reads, so a caller that does not emit `AD` will have its variants filtered differently
+from one that does — check your VCFs carry it if the variant count looks low.
+
+With a single VCF none of this applies: the file goes straight to annotation untouched.
 
 **It requires `-b` and excludes `-c` and `-d`.** Isoform reconstruction assembles transcripts and
 quantification counts reads, so neither has an input without them. It also cannot be combined with

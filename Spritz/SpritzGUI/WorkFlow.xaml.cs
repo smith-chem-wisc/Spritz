@@ -89,7 +89,6 @@ namespace Spritz
             // The same rules SpritzCMD enforces, checked here so the dialog says why rather than the
             // run failing later: a supplied VCF replaces calling, so it cannot be combined with reads,
             // and neither isoform reconstruction nor quantification has an input without them.
-            Options.Vcf = RunnerEngine.TrimQuotesOrNull(txtVcf.Text)?.Trim() ?? "";
             if (Options.Vcf.Length > 0)
             {
                 if (Options.AnalyzeIsoforms || Options.Quantify)
@@ -126,9 +125,13 @@ namespace Spritz
         {
             // Get information about the fastq and sra selections
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
-            Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
-            Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsPairedEnd && p.MatePair == 2.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
-            Options.Fastq1SingleEnd = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
+            Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsVcf && p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
+            Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsVcf && p.IsPairedEnd && p.MatePair == 2.ToString()).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
+            Options.Fastq1SingleEnd = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsVcf && !p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
+
+            // One VCF per sample is the normal case; the workflow merges them into one multi-sample
+            // VCF. Full filenames, not the prefixes the fastq rules take.
+            Options.Vcf = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsVcf).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
 
             var fq1s = Options.Fastq1.Split(',') ?? Array.Empty<string>();
             var fq2s = Options.Fastq2.Split(',') ?? Array.Empty<string>();
@@ -166,7 +169,6 @@ namespace Spritz
                 Cb_Quantify.IsEnabled = false;
             }
 
-            txtVcf.Text = options.Vcf ?? "";
             ApplyVcfState();
 
             txtAnalysisDirectory.Text = AnalysisDirectory;
@@ -196,12 +198,6 @@ namespace Spritz
             Reference = selectedEnsembl.Genomes[selectedSpecies];
         }
 
-        private void TxtVcf_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            saveButton.IsEnabled = true;
-            ApplyVcfState();
-        }
-
         /// <summary>
         /// A supplied VCF is an input in its own right, so it re-enables Analyze Variants when there
         /// are no reads - that combination is the whole point of the option - and rules out isoform
@@ -211,9 +207,15 @@ namespace Spritz
         {
             // Guarded because this runs from UpdateFieldsFromTask, which the constructor calls before
             // every control is necessarily realised.
-            if (txtVcf is null || Cb_AnalyzeVariants is null) return;
+            if (Cb_AnalyzeVariants is null) return;
 
-            bool hasVcf = !string.IsNullOrWhiteSpace(txtVcf.Text);
+            bool hasVcf = Options.Vcf?.Length > 0;
+            if (Lb_Vcf is not null)
+            {
+                Lb_Vcf.Content = hasVcf
+                    ? string.Join(", ", Options.Vcf.Split(','))
+                    : "none";
+            }
             if (hasVcf)
             {
                 Cb_AnalyzeVariants.IsEnabled = true;

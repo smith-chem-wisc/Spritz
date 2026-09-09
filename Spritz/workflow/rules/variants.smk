@@ -178,12 +178,46 @@ rule call_vcf_variants:
 # output twice is an AmbiguousRuleException, and resolving it with ruleorder would leave the losing
 # branch's whole input chain still in the DAG.
 if check('vcf'):
+    # Only defined when there is something to merge. With a single VCF the file the user supplied is
+    # the input to stage_user_vcf directly, so nothing rewrites it and the bcftools env is never even
+    # built - the one-file case behaves exactly as it did before merging existed.
+    if len(config['vcf']) > 1:
+        rule merge_user_vcfs:
+            '''Combine per-sample VCFs into the one multi-sample VCF the workflow reads'''
+            input:
+                # Relative to the analysis directory, like fq and fq_se: only that directory and
+                # resources/ are bind-mounted into the container, so a host path would not resolve.
+                vcfs=lambda w: [posixpath.join(w.dir, v) for v in config['vcf']],
+            output: temp("{dir}/variants/user.supplied.vcf")
+            log: "{dir}/variants/merge_user_vcfs.log"
+            benchmark: "{dir}/variants/merge_user_vcfs.benchmark"
+            conda: "../envs/variants.yaml"
+            # bcftools rather than GATK: MergeVcfs requires every input to carry the same sample set,
+            # so it cannot combine one-sample-per-file VCFs, which is the case this exists for.
+            #
+            # Sorted on the way in because `index -t` fails on an unsorted VCF, and a caller that
+            # emitted one is a bad error message rather than a bad input. Merged in the order given
+            # rather than by globbing the temporary directory, which would order 10 before 2.
+            #
+            # --force-samples renames a collision instead of aborting. Callers routinely emit a
+            # placeholder sample name, so two files both naming their sample SAMPLE is ordinary.
+            shell:
+                "(tmp=$(mktemp -d) && i=0 && sorted= && "
+                "for v in {input.vcfs}; do i=$((i+1)); "
+                "bcftools sort -Oz -o \"$tmp/$i.vcf.gz\" \"$v\" && "
+                "bcftools index -t \"$tmp/$i.vcf.gz\" && "
+                "sorted=\"$sorted $tmp/$i.vcf.gz\"; done && "
+                "bcftools merge --force-samples -Ov -o {output} $sorted && "
+                "rm -rf \"$tmp\") &> {log}"
+
+        USER_SUPPLIED_VCF = "{dir}/variants/user.supplied.vcf"
+    else:
+        USER_SUPPLIED_VCF = lambda w: posixpath.join(w.dir, config['vcf'][0])
+
     rule stage_user_vcf:
         '''Use a VCF the user called elsewhere, skipping alignment and GATK'''
         input:
-            # Relative to the analysis directory, like fq and fq_se: only that directory and
-            # resources/ are bind-mounted into the container, so a host path would not resolve.
-            vcf=lambda w: posixpath.join(w.dir, config['vcf']),
+            vcf=USER_SUPPLIED_VCF,
             fai=f"{KARYOTYPIC_GENOME_PREFIX}.fa.fai",
         output: "{dir}/variants/combined.spritz.vcf"
         log: "{dir}/variants/stage_user_vcf.log"

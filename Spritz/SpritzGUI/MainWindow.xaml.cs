@@ -285,7 +285,7 @@ namespace Spritz
         {
             Microsoft.Win32.OpenFileDialog openPicker = new()
             {
-                Filter = "FASTQ Files|*.fastq",
+                Filter = "Sequencing or variant files|*.fastq;*.vcf;*.vcf.gz|FASTQ files|*.fastq|VCF files|*.vcf;*.vcf.gz",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -450,6 +450,17 @@ namespace Spritz
             switch (theExtension)
             {
                 case ".fastq":
+                    // The mirror of the check in the .vcf case below, so the conflict is refused from
+                    // whichever side the user reaches it.
+                    if (RnaSeqFastqCollection.Any(f => f.IsVcf))
+                    {
+                        MessageBox.Show(
+                            "FASTQ files cannot be added alongside a VCF. A supplied VCF replaces " +
+                            "variant calling from reads, so use one entry point or the other. Clear the " +
+                            "VCF first if you meant to start from reads.",
+                            "Add FASTQ", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
                     if (Path.GetFileName(basepath).EndsWith("_1") || Path.GetFileName(basepath).EndsWith("_2"))
                     {
                         bool isPairedEnd = Path.GetFileName(basepath).EndsWith("_2");
@@ -486,6 +497,27 @@ namespace Spritz
                             "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Information);
                         return;
                     }
+
+                case ".vcf":
+                    // Listed alongside the FASTQs rather than in a box of their own: reads and variant
+                    // calls are alternative entry points to the same pipeline, so one list is what
+                    // makes it evident they are not used together.
+                    if (RnaSeqFastqCollection.Any(f => !f.IsVcf))
+                    {
+                        MessageBox.Show(
+                            "A VCF cannot be added alongside FASTQ files. A supplied VCF replaces " +
+                            "variant calling from reads, so use one entry point or the other. Clear the " +
+                            "FASTQs first if you meant to annotate a VCF.",
+                            "Add VCF", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    if (RnaSeqFastqCollection.Any(f => Path.GetFileName(f.FilePath) == Path.GetFileName(filepath)))
+                    {
+                        return; // already listed
+                    }
+                    RnaSeqFastqCollection.Add(RNASeqFastqDataGrid.Vcf(filepath));
+                    UpdateOutputFolderTextbox();
+                    break;
             }
         }
 

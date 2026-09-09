@@ -229,6 +229,7 @@ namespace SpritzBackend
             var sras_se = options.SraAccessionSingleEnd.Split(',');
             var fqs = options.Fastq1.Split(',') ?? Array.Empty<string>();
             var fqs_se = options.Fastq1SingleEnd.Split(',') ?? Array.Empty<string>();
+            var vcfs = (options.Vcf ?? "").Split(',');
             var analysisStrings = new List<string>();
             if (options.AnalyzeVariants) analysisStrings.Add("variant");
             if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
@@ -250,12 +251,11 @@ namespace SpritzBackend
             YamlSequenceNode fq_se = new();
             rootMappingNode.Add("fq_se", AddParam(fqs_se, fq_se));
 
-            // write a user-supplied VCF, annotated instead of calling variants from reads. Scalar rather
-            // than a sequence because exactly one file is supported; check() in common.smk treats an
-            // empty string as absent, as it does an empty list.
-            YamlScalarNode vcf = new(options.Vcf ?? "");
-            vcf.Style = ScalarStyle.DoubleQuoted;
-            rootMappingNode.Add("vcf", vcf);
+            // write user-supplied VCFs, annotated instead of calling variants from reads. A sequence
+            // like the read inputs: one VCF per sample is the normal case, and merge_user_vcfs
+            // combines them into the single multi-sample VCF the rest of the workflow reads.
+            YamlSequenceNode vcf = new();
+            rootMappingNode.Add("vcf", AddParam(vcfs, vcf));
 
             // which Ensembl site the reference comes from; see DIVISION in common.smk
             YamlScalarNode division = new(string.IsNullOrWhiteSpace(options.Division)

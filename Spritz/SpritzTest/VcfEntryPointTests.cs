@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using SpritzBackend;
 using System;
 using System.IO;
@@ -57,15 +57,24 @@ namespace SpritzTest
         public void TheVcfIsWrittenUnderTheKeyTheWorkflowReads()
         {
             string config = WriteConfig(o => o.Vcf = "my_variants.vcf");
-            Assert.That(config, Does.Contain("vcf: \"my_variants.vcf\""));
+            Assert.That(config, Does.Contain("vcf: [my_variants.vcf]"));
+        }
+
+        [Test]
+        public void EveryPerSampleVcfReachesTheConfig()
+        {
+            // One VCF per sample is the normal case; merge_user_vcfs combines them downstream. A
+            // scalar key would have silently carried only the first.
+            string config = WriteConfig(o => o.Vcf = "a.vcf,b.vcf,c.vcf");
+            Assert.That(config, Does.Contain("vcf: [a.vcf, b.vcf, c.vcf]"));
         }
 
         [Test]
         public void AnAbsentVcfIsWrittenEmptySoCheckTreatsItAsUnset()
         {
-            // check() in common.smk is len(config[field]) > 0, so "" is what "no VCF" has to look like.
+            // check() in common.smk is len(config[field]) > 0, so an empty list is "no VCF".
             string config = WriteConfig(o => o.Vcf = null);
-            Assert.That(config, Does.Contain("vcf: \"\""));
+            Assert.That(config, Does.Contain("vcf: []"));
         }
 
         [Test]

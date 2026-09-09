@@ -68,9 +68,10 @@ namespace SpritzBackend
         public static readonly char VcfShort = 'v';
         public static readonly string VcfLong = "vcf";
         public static readonly string VcfDesc =
-            "Filename of a VCF in the analysis directory, called by other means, to annotate instead of " +
-            "calling variants from reads. Requires -b, and cannot be combined with -c, -d, or any of the " +
-            "fastq or SRA options. Its contig names must match the Ensembl reference.";
+            "Comma-separated list of VCF filenames in the analysis directory, called by other means, to " +
+            "annotate instead of calling variants from reads. Several per-sample VCFs are merged into " +
+            "one multi-sample VCF. Requires -b, and cannot be combined with -c, -d, or any of the " +
+            "fastq or SRA options. Contig names must match the Ensembl reference.";
 
         public const string DivisionVertebrates = "vertebrates";
         public const string DivisionBacteria = "bacteria";

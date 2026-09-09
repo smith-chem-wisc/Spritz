@@ -5,4 +5,5 @@ channels:
 dependencies:
   - java-jdk =8.0.92
   - gatk4 =4.2.0.0
+  - bcftools =1.21 # merges per-sample user VCFs; GATK 4's MergeVcfs needs identical sample sets
   - samtools =1.24

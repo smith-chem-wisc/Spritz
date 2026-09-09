@@ -53,5 +53,6 @@ spritzbase.yaml	command -v snakemake
 spritzbase.yaml	dotnet --list-runtimes
 sra.yaml	command -v fastq-dump
 sra.yaml	command -v prefetch
+variants.yaml	command -v bcftools
 variants.yaml	command -v gatk
 variants.yaml	command -v samtools

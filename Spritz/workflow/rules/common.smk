@@ -131,6 +131,13 @@ def setup_output(wildcards):
     ]
     return setup_outputs
 
+# `--config vcf=x.vcf` on the command line, and a hand-written `vcf: "x.vcf"` in config.yaml, both
+# give a plain string. len() on a string is its length, so check() would pass and then iterating it
+# would yield one path per character. Normalised once, here, rather than guarded at each use.
+if isinstance(config.get("vcf"), str):
+    config["vcf"] = [config["vcf"]] if config["vcf"] else []
+
+
 def check(field):
     '''Checks whether or not a field is contained in the configuration'''
     return field in config and config[field] is not None and len(config[field]) > 0

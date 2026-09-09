@@ -141,6 +141,17 @@ jobs:
           --config "analyses=[variant]" "sra=[]" "sra_se=[]" "vcf=user.vcf" \
             "analysis_directory=[../../results]"
 
+    # Several per-sample VCFs take the merge_user_vcfs branch, which a single VCF does not, so the
+    # run above does not cover it. Also the case that caught a real bug: --config passes a bare
+    # `vcf=a.vcf` as a string, and iterating a string yields one path per character.
+    - name: Dry-run - variant from several supplied VCFs
+      shell: bash -el {0}
+      run: |
+        mkdir -p results && touch results/a.vcf results/b.vcf results/c.vcf
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "sra=[]" "sra_se=[]" "vcf=[a.vcf,b.vcf,c.vcf]" \
+            "analysis_directory=[../../results]"
+
     # The bacteria division takes a third branch again: a different reference download, no known-sites
     # VCF rule at all, and a genome-level codon table. Uses the real PAO1 reference string from
     # Ensembl Genomes release 63, so a change in that layout surfaces here rather than in a user's run.
