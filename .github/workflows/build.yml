@@ -196,8 +196,8 @@ jobs:
 
     - name: Pull and run the published image
       run: |
-        podman pull docker.io/smithlab/spritz:0.3.14
-        podman run --rm --user=root docker.io/smithlab/spritz:0.3.14 \
+        podman pull docker.io/smithlab/spritz:0.3.15
+        podman run --rm --user=root docker.io/smithlab/spritz:0.3.15 \
           conda run --no-capture-output --live-stream dotnet SpritzCMD.dll --help
 
   # Apptainer is the cluster path. It reads the same OCI image through docker://, so this proves the
@@ -219,7 +219,7 @@ jobs:
 
     - name: Build a SIF from the published image and run it
       run: |
-        apptainer build spritz.sif docker://smithlab/spritz:0.3.14
+        apptainer build spritz.sif docker://smithlab/spritz:0.3.15
         ls -lh spritz.sif
         apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ spritz.sif \
           conda run --no-capture-output --live-stream dotnet SpritzCMD.dll --help

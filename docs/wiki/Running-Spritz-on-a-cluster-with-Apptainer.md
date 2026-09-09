@@ -20,7 +20,7 @@ Prefer GHCR. Docker Hub rate-limits anonymous pulls **per IP address**, and ever
 node shares the same one, so Docker Hub pulls fail unpredictably on a busy cluster.
 
 ```bash
-apptainer pull spritz.sif docker://ghcr.io/smith-chem-wisc/spritz:0.3.14
+apptainer pull spritz.sif docker://ghcr.io/smith-chem-wisc/spritz:0.3.15
 ```
 
 If your compute nodes have no outbound network, download the `.sif` attached to the
