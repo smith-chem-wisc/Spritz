@@ -44,17 +44,35 @@ def test_gene_transcript_and_cds_are_kept(workflow_dir):
     assert feature_types(simplify(workflow_dir)) == ["gene", "transcript", "CDS"]
 
 
-def test_comment_lines_are_dropped(workflow_dir):
-    """Pins current behaviour, which is worth a second look.
+def test_comment_lines_are_preserved(workflow_dir):
+    """Regression test for #254.
 
-    The guard is `emptyOrComment = len(linesplit) < 3 or line.startswith("#")`, and only lines
-    where that is false are written - so the "##gff-version 3" pragma is discarded along with the
-    rest. A GFF3 file is supposed to open with that pragma, and some parsers require it. This
-    records what the script does today rather than asserting that it is right.
+    The guard used to be `emptyOrComment = len(linesplit) < 3 or line.startswith("#")`, with only
+    lines where that was false written out - so every comment went, including the "##gff-version 3"
+    pragma a GFF3 is supposed to open with. Removing exon and UTR features is the job; discarding
+    the header was incidental.
     """
     out = simplify(workflow_dir)
-    assert "##gff-version" not in out
-    assert not any(line.startswith("#") for line in out.splitlines())
+    assert out.startswith("##gff-version 3\n"), "the pragma must stay on the first line"
+    assert "##sequence-region 1 1 248956422" in out
+
+
+def test_an_embedded_fasta_section_is_copied_through_intact(workflow_dir):
+    """Sequence lines are not features and must not be filtered.
+
+    SnpEff treats a "##FASTA" line as a switch to sequence-reading (FASTA_DELIMITER, gating
+    readExonSequences). Emitting the marker while dropping the sequence under it - which the
+    generic <3-column rule would do - is worse than dropping both: SnpEff would then read no exon
+    sequences at all instead of falling back to the separate genome FASTA.
+    """
+    contents = GFF3 + "##FASTA\n>1\nACGTACGTAC\nGGGGCCCCAA\n"
+    out = simplify(workflow_dir, contents)
+    assert out.endswith("##FASTA\n>1\nACGTACGTAC\nGGGGCCCCAA\n"), out
+
+
+def test_features_are_still_filtered_before_a_fasta_section(workflow_dir):
+    contents = GFF3 + "##FASTA\n>1\nACGT\n"
+    assert feature_types(simplify(workflow_dir, contents)) == ["gene", "transcript", "CDS"]
 
 
 def test_a_feature_whose_name_merely_contains_utr_is_kept(workflow_dir):
