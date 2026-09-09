@@ -17,6 +17,59 @@ namespace SpritzModifications
     {
         private static readonly FastaHeaderFieldRegex PgmNameRegex = new("fullName", @"\|(.+)\|", 0, 1);
 
+        // Column names follow the SnpEff ANN field spec, which mzLib's SnpEffAnnotation already parses.
+        // raw_vcf_line is kept last so nothing from the annotation is lost.
+        private const string AccessionNameHeader = "accession\tfull_name\tbase_sequence";
+
+        private const string VariantDescriptionHeader =
+            "accession\tvariant\tallele\teffects\tputative_impact\tgene_name\tgene_id" +
+            "\tfeature_type\tfeature_id\ttranscript_biotype\trank\ttotal\thgvs_c\thgvs_p" +
+            "\tcdna_position\tcdna_length\tcds_position\tcds_length\tprotein_position" +
+            "\tprotein_length\tdistance_to_feature\twarnings\traw_vcf_line";
+
+        private static string VariantDescriptionRow(string accession, SequenceVariation variant)
+        {
+            var ann = variant.VariantCallFormatDataString?.Info;
+            IEnumerable<string> annotation = ann == null
+                ? Enumerable.Repeat("", 20)
+                : new[]
+                {
+                    ann.Allele,
+                    string.Join("&", ann.Effects ?? Array.Empty<string>()),
+                    ann.PutativeImpact,
+                    ann.GeneName,
+                    ann.GeneID,
+                    ann.FeatureType,
+                    ann.FeatureID,
+                    ann.TranscriptBiotype,
+                    ann.ExonIntronRank.ToString(),
+                    ann.ExonIntronTotal.ToString(),
+                    ann.HGVSNotationDnaLevel,
+                    ann.HGVSNotationProteinLevel,
+                    ann.OneBasedTranscriptCDNAPosition.ToString(),
+                    ann.TranscriptCDNALength.ToString(),
+                    ann.OneBasedCodingDomainSequencePosition.ToString(),
+                    ann.CodingDomainSequenceLengthIncludingStopCodon.ToString(),
+                    ann.OneBasedProteinPosition.ToString(),
+                    ann.ProteinLength.ToString(),
+                    ann.DistanceToFeature.ToString(),
+                    string.Join("&", ann.Warnings ?? Array.Empty<string>()),
+                };
+
+            return string.Join("\t", new[] { accession, variant.SimpleString() }
+                .Concat(annotation.Select(f => f ?? ""))
+                .Append(EscapeForTsv(variant.Description)));
+        }
+
+        /// <summary>
+        /// VariantCallFormat keeps the VCF line verbatim, and a line with real tabs in it would otherwise
+        /// split into extra columns.
+        /// </summary>
+        private static string EscapeForTsv(string field)
+        {
+            return field == null ? "" : field.Replace("\t", "\\t").Replace("\r", "\\r").Replace("\n", "\\n");
+        }
+
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to SpritzModifications!");
@@ -118,6 +171,10 @@ namespace SpritzModifications
             ProteinDbWriter.WriteFastaDatabase(protsForFasta, outfasta, "|");
             ProteinDbWriter.WriteFastaDatabase(decoyProtsForFasta, outfastaWithDecoys, "|");
             File.WriteAllLines(outfastaWithDecoys, File.ReadAllLines(outfastaWithDecoys).Select(line => line.Replace("mz|DECOY_", "rev_mz|")));
+
+            // A Philosopher/FragPipe-parseable copy, written alongside rather than in place of the above.
+            FastaHeaders.WritePhilosopherFasta(outfasta, FastaHeaders.PhilosopherFastaPath(outfasta));
+            FastaHeaders.WritePhilosopherFasta(outfastaWithDecoys, FastaHeaders.PhilosopherFastaPath(outfastaWithDecoys));
             return outxml;
         }
 
@@ -151,7 +208,7 @@ namespace SpritzModifications
                     accessionNameList.Add($"{spritzEntry.Accession}\t{spritzEntry.FullName}\t{spritzEntry.BaseSequence}");
                     foreach (SequenceVariation variant in spritzEntry.AppliedSequenceVariations)
                     {
-                        variantDescList.Add($"{spritzEntry.Accession}\t{variant.SimpleString()}\t{variant.Description}");
+                        variantDescList.Add(VariantDescriptionRow(spritzEntry.Accession, variant));
                     }
 
                     if (allVariants.ContainsKey(spritzEntry.NonVariantProtein.Accession))
@@ -170,14 +227,14 @@ namespace SpritzModifications
                     }
                 }
             }
-            File.WriteAllLines(destinationAccessionToNameTable, accessionNameList);
-            File.WriteAllLines(variantDescriptionTable, variantDescList);
+            File.WriteAllLines(destinationAccessionToNameTable, accessionNameList.Prepend(AccessionNameHeader));
+            File.WriteAllLines(variantDescriptionTable, variantDescList.Prepend(VariantDescriptionHeader));
 
             foreach (var entry in allVariants)
             {
                 foreach (var variant in entry.Value)
                 {
-                    variantDescList.Add($"{entry.Key}\t{variant.SimpleString()}\t{variant.Description}");
+                    variantDescList.Add(VariantDescriptionRow(entry.Key, variant));
 
                     if (culture.CompareInfo.IndexOf(variant.Description, "synonymous_variant", CompareOptions.IgnoreCase) >= 0)
                     {

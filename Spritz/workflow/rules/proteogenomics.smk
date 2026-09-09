@@ -70,6 +70,12 @@ rule transfer_modifications_variant:
         protxmlgz="{dir}/variants/combined.spritz.snpeff.protein.xml.gz",
         protxmlwithmods=temp("{dir}/variants/combined.spritz.snpeff.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/variants/combined.spritz.snpeff.protein.withmods.xml.gz",
+        protfragpipefa="{dir}/variants/combined.spritz.snpeff.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/variants/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/variants/combined.spritz.snpeff.protein.accname.tsv",
+        vardesc="{dir}/variants/combined.spritz.snpeff.protein.vardesc.tsv",
+        accnamedecoy="{dir}/variants/combined.spritz.snpeff.protein.accname.decoy.tsv",
+        vardescdecoy="{dir}/variants/combined.spritz.snpeff.protein.vardesc.decoy.tsv",
     log: "{dir}/variants/combined.spritz.snpeff.protein.withmods.log"
     benchmark: "{dir}/variants/combined.spritz.snpeff.protein.withmods.benchmark"
     conda: "../envs/proteogenomics.yaml"
@@ -89,6 +95,12 @@ rule transfer_modifications_isoformvariant:
         protxmlgz="{dir}/variants/combined.spritz.isoformvariants.protein.xml.gz",
         protxmlwithmods=temp("{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+        protfragpipefa="{dir}/variants/combined.spritz.isoformvariants.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/variants/combined.spritz.isoformvariants.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/variants/combined.spritz.isoformvariants.protein.accname.tsv",
+        vardesc="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.tsv",
+        accnamedecoy="{dir}/variants/combined.spritz.isoformvariants.protein.accname.decoy.tsv",
+        vardescdecoy="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.decoy.tsv",
     log: "{dir}/variants/combined.spritz.isoformvariants.protein.withmods.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
@@ -141,6 +153,12 @@ rule reference_protein_xml:
         protwithdecoysfa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
         protxmlwithmods=temp(posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml")),
         protxmlwithmodsgz=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
+        protfragpipefa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fragpipe.fasta"),
+        protwithdecoysfragpipefa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fragpipe.fasta"),
+        accname=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.accname.tsv"),
+        vardesc=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.vardesc.tsv"),
+        accnamedecoy=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.accname.decoy.tsv"),
+        vardescdecoy=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.vardesc.decoy.tsv"),
     params: ref=REF
     resources: mem_mb=16000
     benchmark: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
@@ -175,6 +193,12 @@ rule custom_protein_xml:
         protxmlwithmods=temp("{dir}/isoforms/combined.spritz.isoform.protein.withmods.xml"),
         protxmlwithmodsgz="{dir}/isoforms/combined.spritz.isoform.protein.withmods.xml.gz",
         protfa="{dir}/isoforms/combined.spritz.isoform.protein.fasta",
+        protfragpipefa="{dir}/isoforms/combined.spritz.isoform.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/isoforms/combined.spritz.isoform.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/isoforms/combined.spritz.isoform.protein.accname.tsv",
+        vardesc="{dir}/isoforms/combined.spritz.isoform.protein.vardesc.tsv",
+        accnamedecoy="{dir}/isoforms/combined.spritz.isoform.protein.accname.decoy.tsv",
+        vardescdecoy="{dir}/isoforms/combined.spritz.isoform.protein.vardesc.decoy.tsv",
     params:
         ref="combined.transcripts.genome.gff3", # with isoforms
     resources: mem_mb=16000

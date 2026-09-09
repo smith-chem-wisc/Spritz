@@ -242,6 +242,14 @@ rule finish_variants:
         refprotfa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fasta"),
         refprotwithdecoysfa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
         refprotwithmodsxml=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
+        protfragpipefa="{dir}/variants/combined.spritz.snpeff.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/variants/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/variants/combined.spritz.snpeff.protein.accname.tsv",
+        vardesc="{dir}/variants/combined.spritz.snpeff.protein.vardesc.tsv",
+        refprotfragpipefa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.fragpipe.fasta"),
+        refprotwithdecoysfragpipefa=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fragpipe.fasta"),
+        refaccname=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.accname.tsv"),
+        refvardesc=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.vardesc.tsv"),
     output:
         ann="{dir}/final/combined.spritz.snpeff.vcf",
         protfa="{dir}/final/combined.spritz.snpeff.protein.fasta",
@@ -250,11 +258,22 @@ rule finish_variants:
         refprotfa=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.fasta"),
         refprotwithdecoysfa=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fasta"),
         refprotwithmodsxml=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.withmods.xml.gz"),
+        protfragpipefa="{dir}/final/combined.spritz.snpeff.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/final/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/final/combined.spritz.snpeff.protein.accname.tsv",
+        vardesc="{dir}/final/combined.spritz.snpeff.protein.vardesc.tsv",
+        refprotfragpipefa=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.fragpipe.fasta"),
+        refprotwithdecoysfragpipefa=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.withdecoys.fragpipe.fasta"),
+        refaccname=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.accname.tsv"),
+        refvardesc=posixpath.join("{dir}/final/", f"{REF}.{ENSEMBL_VERSION}.protein.vardesc.tsv"),
     log: "{dir}/variants/finish_isoform_variants.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
         "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz}"
-        " {input.refprotfa} {input.refprotwithdecoysfa} {input.refprotwithmodsxml} {wildcards.dir}/final 2> {log}"
+        " {input.refprotfa} {input.refprotwithdecoysfa} {input.refprotwithmodsxml}"
+        " {input.protfragpipefa} {input.protwithdecoysfragpipefa} {input.accname} {input.vardesc}"
+        " {input.refprotfragpipefa} {input.refprotwithdecoysfragpipefa} {input.refaccname} {input.refvardesc}"
+        " {wildcards.dir}/final 2> {log}"
 
 rule finish_isoform_variants:
     '''Copy final output files from isoform-variant workflow to main directory'''
@@ -263,12 +282,21 @@ rule finish_isoform_variants:
         protfa="{dir}/variants/combined.spritz.isoformvariants.protein.fasta",
         protwithdecoysfa="{dir}/variants/combined.spritz.isoformvariants.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/variants/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+        protfragpipefa="{dir}/variants/combined.spritz.isoformvariants.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/variants/combined.spritz.isoformvariants.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/variants/combined.spritz.isoformvariants.protein.accname.tsv",
+        vardesc="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.tsv",
     output:
         ann="{dir}/final/combined.spritz.isoformvariants.vcf",
         protfa="{dir}/final/combined.spritz.isoformvariants.protein.fasta",
         protwithdecoysfa="{dir}/final/combined.spritz.isoformvariants.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/final/combined.spritz.isoformvariants.protein.withmods.xml.gz",
+        protfragpipefa="{dir}/final/combined.spritz.isoformvariants.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/final/combined.spritz.isoformvariants.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/final/combined.spritz.isoformvariants.protein.accname.tsv",
+        vardesc="{dir}/final/combined.spritz.isoformvariants.protein.vardesc.tsv",
     log: "{dir}/variants/finish_isoform_variants.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
-        "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {wildcards.dir}/final 2> {log}"
+        "cp {input.ann} {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz}"
+        " {input.protfragpipefa} {input.protwithdecoysfragpipefa} {input.accname} {input.vardesc} {wildcards.dir}/final 2> {log}"
