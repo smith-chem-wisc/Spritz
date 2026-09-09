@@ -1,0 +1,119 @@
+name: Rule environments build and their tools run
+
+# The rule environments are not baked into the image: the Dockerfile bakes only spritzbase.yaml, and
+# snakemake creates the rest at runtime under --use-conda. Every dependency in them is resolved from
+# conda-forge and bioconda at that moment, so they can break with no change to this repository. That
+# is what issue #237 was - a published image failing because bioconda had republished transdecoder
+# with symlinks in bin/ pointing at files the package no longer contains.
+#
+# Nothing in build.yml would have caught it. The isoform dry-run plans the rule graph without
+# creating any environment, and dockerbuild's end-to-end run does not pass --analyzeIsoforms, so the
+# isoforms environment is never built there.
+#
+# Creating the environments is also not sufficient on its own, which is the part worth being explicit
+# about: in #237 every environment solved and installed cleanly. What failed was TransDecoder.LongOrfs
+# - a dangling symlink inside a perfectly good environment. So each environment is additionally asked
+# to produce the executables its rules actually invoke, listed in envs/smoke-commands.tsv.
+on:
+  schedule:
+    # Weekly, and off the hour for the reason given in build.yml: GitHub delays and can drop runs
+    # queued during the load spike at the top of an hour.
+    - cron: '17 5 * * 2'
+  # Lets a maintainer re-check from the Actions tab after an upstream fix lands, without a commit.
+  workflow_dispatch:
+  # On pull requests only when the environments, or the rules that invoke tools in them, change.
+  # The schedule is what catches upstream churn; this catches a bad edit before it is merged.
+  pull_request:
+    paths:
+      - 'Spritz/workflow/envs/**'
+      - 'Spritz/workflow/rules/**'
+      - 'Spritz/workflow/Snakefile'
+      - '.github/workflows/conda-envs.yml'
+
+# Solving these environments reaches conda-forge and bioconda, so a channel outage reddens this
+# workflow without anything being wrong here. Do NOT add these jobs to branch-protection required
+# checks - the same reasoning as external-service-tests in build.yml. Kept as its own workflow rather
+# than a job in build.yml so a scheduled failure is visibly red and notifies, instead of being
+# swallowed by continue-on-error.
+jobs:
+  prepare:
+    name: List the environments
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      envs: ${{ steps.list.outputs.envs }}
+    steps:
+    - uses: actions/checkout@v7
+
+    # Derived from the directory rather than hardcoded, so a newly added environment is built without
+    # anyone remembering to edit this file. envs/smoke-commands.tsv supplies the executables to check
+    # per environment; an environment absent from it is still built, and solving is then the whole
+    # check for it. test_smoke_commands.py is what keeps that from happening silently to an
+    # environment a rule actually depends on.
+    - id: list
+      name: Every environment file in envs/
+      run: |
+        set -uo pipefail
+        envs=$(ls Spritz/workflow/envs/*.yaml | xargs -n1 basename | sort | jq -R . | jq -sc .)
+        echo "envs=$envs" >> "$GITHUB_OUTPUT"
+        echo "$envs"
+
+  create:
+    name: ${{ matrix.env }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One broken environment must not hide the state of the others; #237 had two rules failing from
+      # two different defects in the same package.
+      fail-fast: false
+      matrix:
+        env: ${{ fromJSON(needs.prepare.outputs.envs) }}
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Create ${{ matrix.env }}
+      uses: mamba-org/setup-micromamba@v3
+      with:
+        environment-file: Spritz/workflow/envs/${{ matrix.env }}
+        environment-name: probe
+        # Deliberately NOT cached, unlike the other micromamba jobs in build.yml. The cache key is the
+        # environment file's contents, and the failure this job exists to catch arrives when the file
+        # is unchanged and the upstream package is not. A warm cache would hide it indefinitely.
+        cache-environment: false
+        cache-downloads: false
+
+    - name: Record what was installed
+      run: micromamba list -n probe
+
+    # Each command is run as a whole shell line so the manifest can hold `command -v foo` for the
+    # common case and a real invocation where a tool has a safe flag. `command -v` is the workhorse:
+    # it fails both for a name that is absent from bin/ and for one that is present as a symlink to a
+    # file that does not exist, which are exactly the two shapes the transdecoder package produced.
+    - name: Run the tools the rules invoke
+      env:
+        ENV_FILE: ${{ matrix.env }}
+      run: |
+        set -uo pipefail
+        manifest=Spritz/workflow/envs/smoke-commands.tsv
+        awk -F'\t' -v e="$ENV_FILE" \
+          '$0 !~ /^[[:space:]]*(#|$)/ && $1 == e { print $2 }' "$manifest" > cmds.txt
+        if [ ! -s cmds.txt ]; then
+          echo "No commands listed for $ENV_FILE; solving it is the whole check."
+          exit 0
+        fi
+        failed=0
+        while IFS= read -r cmd; do
+          [ -z "$cmd" ] && continue
+          # Not `micromamba run ... && echo ok || echo fail` - a pipeline or an && chain reports the
+          # wrong command's status, which has bitten this repository before.
+          if out=$(micromamba run -n probe sh -c "$cmd" 2>&1); then
+            printf 'ok       %s\n' "$cmd"
+            [ -n "$out" ] && printf '         %s\n' "$(printf '%s\n' "$out" | head -1)"
+          else
+            printf '::error::%s: `%s` failed\n' "$ENV_FILE" "$cmd"
+            printf '%s\n' "$out" | head -20
+            failed=1
+          fi
+        done < cmds.txt
+        exit $failed
