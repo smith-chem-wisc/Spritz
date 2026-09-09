@@ -110,7 +110,7 @@ rule generate_reference_snpeff_database:
     params:
         snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref=REF,
-        genome_version=GENOME_VERSION
+        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION)
     benchmark: f"../resources/SnpEff/data/{REF}/snpeffdatabase.benchmark"
     log: f"../resources/SnpEff/data/{REF}/snpeffdatabase.log"
     conda: "../envs/proteogenomics.yaml"
@@ -118,11 +118,7 @@ rule generate_reference_snpeff_database:
         "cp {input.gff3} {output.gff3} && "
         "cp {input.pfa} {output.pfa} && "
         "cp {input.gfa} {output.gfa} && "
-        "echo \"\n# {params.ref}\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"{params.ref}.genome : Human genome {params.genome_version} using RefSeq transcripts\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"{params.ref}.reference : ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"\t{params.ref}.M.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
-        "echo \"\t{params.ref}.MT.codonTable : Vertebrate_Mitochondrial\" >> {params.snpeff_folder}/snpEff.config && "
+        "printf '%s' {params.snpeff_config:q} >> {params.snpeff_folder}/snpEff.config && "
         "(java -Xmx{resources.mem_mb}M -jar {input.jar} build -gff3 -v {params.ref}) &> {log} && touch {output.done}"
 
 rule reference_protein_xml:
