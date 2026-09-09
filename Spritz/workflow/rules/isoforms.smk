@@ -270,12 +270,21 @@ rule finish_isoform:
         protfa="{dir}/isoforms/combined.spritz.isoform.protein.fasta",
         protwithdecoysfa="{dir}/isoforms/combined.spritz.isoform.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/isoforms/combined.spritz.isoform.protein.withmods.xml.gz",
+        protfragpipefa="{dir}/isoforms/combined.spritz.isoform.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/isoforms/combined.spritz.isoform.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/isoforms/combined.spritz.isoform.protein.accname.tsv",
+        vardesc="{dir}/isoforms/combined.spritz.isoform.protein.vardesc.tsv",
     output:
         protfa="{dir}/final/combined.spritz.isoform.protein.fasta",
         protwithdecoysfa="{dir}/final/combined.spritz.isoform.protein.withdecoys.fasta",
         protxmlwithmodsgz="{dir}/final/combined.spritz.isoform.protein.withmods.xml.gz",
+        protfragpipefa="{dir}/final/combined.spritz.isoform.protein.fragpipe.fasta",
+        protwithdecoysfragpipefa="{dir}/final/combined.spritz.isoform.protein.withdecoys.fragpipe.fasta",
+        accname="{dir}/final/combined.spritz.isoform.protein.accname.tsv",
+        vardesc="{dir}/final/combined.spritz.isoform.protein.vardesc.tsv",
     log: "{dir}/isoforms/finish_isoform.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
-        "cp {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz} {wildcards.dir}/final &&"
+        "cp {input.protfa} {input.protwithdecoysfa} {input.protxmlwithmodsgz}"
+        " {input.protfragpipefa} {input.protwithdecoysfragpipefa} {input.accname} {input.vardesc} {wildcards.dir}/final &&"
         "rm pipeliner.*.cmds {wildcards.dir}/isoforms/pipeliner.*.cmds 2> {log}"

@@ -87,12 +87,46 @@ Monitor progress in the Information textbox. The final database named `final/com
 
 The final database named `final/combined.spritz.snpeff.protein.fasta` is generated to contain variant protein sequences, and it may be used in other search software, such as Proteome Discoverer, ProSight, and MASH Explorer.
 
-The final database named `final/combined.spritz.snpeff.protein.withdecoys.fasta` is ready for use in MSFragger. It is generated to contain variant protein sequences with decoy protein sequences appended.
+The final database named `final/combined.spritz.snpeff.protein.withdecoys.fasta` contains the same variant
+protein sequences with decoy sequences appended.
+
+### What lands in `final/`
+
+Each database is written in several forms for different search engines, plus two tables describing it.
+
+| File | Use |
+|---|---|
+| `*.protein.withmods.xml.gz` | MetaMorpheus. Carries sequence variants **and** the UniProt modifications transferred onto them. |
+| `*.protein.fasta` | Proteome Discoverer, ProSight, MASH Explorer. Targets only. |
+| `*.protein.withdecoys.fasta` | The same, with decoys appended. |
+| `*.protein.fragpipe.fasta` | FragPipe/Philosopher. Same sequences, headers rewritten to the UniProt form Philosopher parses. |
+| `*.protein.withdecoys.fragpipe.fasta` | The same, with decoys, using Philosopher's `rev_` prefix. |
+| `*.protein.accname.tsv` | One row per variant-bearing entry: accession, full name, sequence. |
+| `*.protein.vardesc.tsv` | One row per applied variant, with the SnpEff annotation split into named columns. |
+
+The FASTA header mzLib writes embeds the original VCF line as the protein description, which Philosopher
+cannot parse — it requires a description free of commas and other special characters. The `.fragpipe.fasta`
+copies drop that description and the per-variant detail is carried by `*.protein.vardesc.tsv` instead, keyed
+on the same accession, so nothing is lost. Sequences are byte-identical between a database and its
+`.fragpipe.fasta` copy.
+
+`*.protein.vardesc.tsv` columns follow the [SnpEff `ANN` field
+spec](https://pcingola.github.io/SnpEff/snpeff/inputoutput/): `accession`, `variant`, `allele`, `effects`,
+`putative_impact`, `gene_name`, `gene_id`, `feature_type`, `feature_id`, `transcript_biotype`, `rank`,
+`total`, `hgvs_c`, `hgvs_p`, `cdna_position`, `cdna_length`, `cds_position`, `cds_length`,
+`protein_position`, `protein_length`, `distance_to_feature`, `warnings`, `raw_vcf_line`. The last column is
+the annotation verbatim, so every parsed field can be checked against its source.
 
 ## Citations
 
 If you use this Spritz, please cite:
 * `Spritz`: Cesnik, A. J.; Miller, R. M.; Ibrahim, K.; Lu, L.; Millikin, R. J.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. “Spritz: A Proteogenomic Database Engine.” J. Proteome Res. 2021, 20, 4, 1826–1834. https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.0c00407
+
+The FragPipe-ready header format follows
+[Philosopher's database documentation](https://github.com/Nesvilab/philosopher/wiki/How-to-prepare-a-protein-database).
+Thanks to [@MiguelCos](https://github.com/MiguelCos), who worked out what FragPipe needed and shared a
+[header adaptation script](https://github.com/MiguelCos/spritz_fasta_2_fragpipe_adaptation) in
+[issue #221](https://github.com/smith-chem-wisc/Spritz/issues/221) long before this was built in.
 
 This pipeline uses the following tools:
   * `sra-toolkit`: Leinonen, R.; et al. International Nucleotide Sequence Database Collaboration. The Sequence Read Archive. Nucleic Acids Res. 2011, 39 (Database issue), D19-21. https://doi.org/10.1093/nar/gkq1019.
