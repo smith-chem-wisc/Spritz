@@ -62,6 +62,14 @@
                             <Label Content="Analyze Variants" Width="200"/>
                             <CheckBox x:Name="Cb_AnalyzeVariants" IsEnabled="True" IsChecked="True"/>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="0">
+                            <Label Content="VCF instead of calling (optional)" Width="200"/>
+                            <TextBox x:Name="txtVcf" Width="180" TextChanged="TxtVcf_TextChanged"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1">
+                            <Label Name="Lb_VcfInfo" Width="266" FontStyle="Italic" Margin="0,0,0,-0.5"
+                                   Content="Filename in the analysis directory. Skips alignment and&#x0a;variant calling; excludes isoforms and quantification."/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="0">
                             <Label Content="Analyze Isoforms (beta)" Width="200"/>
                             <CheckBox x:Name="Cb_AnalyzeIsoforms" IsEnabled="True" IsChecked="False"/>
