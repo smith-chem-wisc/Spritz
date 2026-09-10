@@ -89,13 +89,13 @@ namespace SpritzBackend
         public static readonly string DivisionDesc =
             "Which Ensembl site the reference comes from: \"vertebrates\" (default, ftp.ensembl.org) " +
             "or \"bacteria\" (Ensembl Genomes, which numbers its releases separately - EG 63 is " +
-            "Ensembl 116). Bacteria have no Ensembl variant sites for GATK to recalibrate against, " +
-            "so a bacterial reference requires -v.";
+            "Ensembl 116). Bacteria have no Ensembl variant sites, so they recalibrate against a " +
+            "bootstrapped first pass; supply -v instead if you already have variant calls.";
 
         public static readonly char KnownSitesShort = 'k';
         public static readonly string KnownSitesLong = "known-sites";
         public static readonly string KnownSitesDesc =
-            "Where GATK base recalibration gets its known variant sites: \"auto\" (default) asks " +
+            "Where GATK gets the known variant sites base recalibration reads: \"auto\" (default) asks " +
             "Ensembl whether it publishes any for this species, \"ensembl\" insists on downloading " +
             "them, \"bootstrap\" calls an unrecalibrated first pass and recalibrates against its " +
             "high-confidence SNPs. Only 19 of Ensembl's 359 species publish variant sites, so most " +

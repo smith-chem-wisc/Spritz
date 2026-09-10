@@ -93,22 +93,27 @@ sequences for each, so a merged multi-sample VCF gives you per-individual varian
 is *more* faithful than the read-based path, which assigns every input the same read group and pools
 everything into one sample.
 
-**Your VCFs must carry genotypes and allele depths.** Two requirements, both checked before
-anything runs, because both otherwise fail late and unhelpfully:
+**Your VCFs must carry genotypes and allele depths.** Two requirements, both checked before the VCF
+is annotated, because both otherwise fail late and unhelpfully. Note the reference genome is
+downloaded and indexed first, since the check compares your contig names against it — so this is
+early enough to save the analysis, not early enough to save the download:
 
 - **At least one sample column.** The database is built from genotypes, so a sites-only VCF yields a
   database with nothing in it — and would previously have done so while exiting 0.
 - **A per-sample `AD` (allele depth) for every variant a sample actually carries.** The builder
   indexes allele depths by allele number, so a called variant with no `AD` is an error partway
   through the run. GATK emits `AD` by default; several other callers do not. If yours does not, add
-  it with `bcftools +fill-tags -- -t AD`. A sample that simply does not carry a variant needs
-  nothing — `./.:.` is what a merge writes there and is fine.
+  it. Allele depths come from the reads, so this needs re-genotyping rather than a tag fix —
+  `bcftools mpileup -a AD` piped into `bcftools call`, or a re-run of the original caller. A sample
+  that simply does not carry a variant needs nothing — `./.:.` is what a merge writes there and is
+  fine.
 
 Sample names that collide between files are renamed rather than rejected, since callers often emit a
 placeholder name. The renaming is positional (`SAMPLE`, `2:SAMPLE`, `3:SAMPLE`), so if you want the
 merged columns to identify their source, give each VCF a distinct sample name before passing it in.
 
-With a single VCF none of this applies: the file goes straight to annotation untouched.
+With a single VCF the merge is skipped, but the checks above still apply and the file is still
+rewritten (decompressed if gzipped) on its way to annotation.
 
 **It requires `-b` and excludes `-c` and `-d`.** Isoform reconstruction assembles transcripts and
 quantification counts reads, so neither has an input without them. It also cannot be combined with
@@ -142,7 +147,7 @@ dotnet SpritzCMD.dll \
 
 **Bacterial references bootstrap their known sites.** Ensembl Bacteria publishes no known variant
 sites — its `variation/` directory holds only a VEP cache, with no `vcf/` — and GATK base
-recalibration is the only thing that reads them. Rather than refusing the run, Spritz calls an
+recalibration needs them. Rather than refusing the run, Spritz calls an
 unrecalibrated first pass and recalibrates against its high-confidence SNPs; see
 [Species with no known variant sites](#species-with-no-known-variant-sites) below. You can still
 supply your own VCF with `-v=` if you have one, which skips calling altogether.
@@ -154,7 +159,7 @@ Species directory names are strain-specific and carry a GCA accession —
 them, so `-x` does not list them. Search for yours:
 
 ```bash
-podman run --rm -v "/path/to/analysis:/app/spritz/results/" smithlab/spritz:0.3.14 \
+podman run --rm -v "/path/to/analysis:/app/spritz/results/" smithlab/spritz:0.3.15 \
   conda run --no-capture-output python workflow/scripts/update_genomes.py \
     --division bacteria --match pseudomonas_aeruginosa \
     --output /app/spritz/results/genomes.csv
@@ -192,10 +197,10 @@ keep the calls you trust most, recalibrate against those, then call for real.
 | Value | |
 |---|---|
 | `auto` | ask Ensembl whether it publishes variant sites for this species, and pick accordingly |
-| `ensembl` | insist on downloading them; fails if there are none |
+| `ensembl` | insist on downloading them; fails if there are none, except for bacteria, which always bootstrap |
 | `bootstrap` | always call and filter a first pass |
 
-`auto` costs one HTTP request when Spritz writes the run's config, and the result is recorded as
+`auto` costs one or two HTTP requests when Spritz writes the run's config, and the result is recorded as
 `known_sites:` in `config/config.yaml`, so you can see which route a run took. Human always uses
 dbSNP, which lives on NCBI rather than Ensembl, and bacteria always bootstrap.
 

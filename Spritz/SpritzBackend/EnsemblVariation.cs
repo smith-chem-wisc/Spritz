@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 
 namespace SpritzBackend
@@ -23,10 +23,10 @@ namespace SpritzBackend
             string.Equals(mode, Bootstrap, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        /// The two filenames download_ensembl_vcf tries, in its order. The lowercase one is what
-        /// actually resolves for every species that has variation; the capitalised one is a legacy
-        /// fallback that currently 404s everywhere, and is checked second for the same reason the
-        /// rule keeps trying it.
+        /// Both filenames download_ensembl_vcf can fetch. The rule tries the capitalised one first
+        /// and falls back to the lowercase one; only the lowercase form resolves for any species
+        /// today, so it is checked first here. Order does not matter to the answer - this is a
+        /// disjunction - but it is not the rule's order.
         /// </summary>
         public static string[] CandidateUrls(string release, string speciesLower)
         {
@@ -51,6 +51,15 @@ namespace SpritzBackend
                     using var request = new HttpRequestMessage(HttpMethod.Head, url);
                     using HttpResponseMessage response = client.Send(request);
                     if (response.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+                    // Only "not there" counts as absent. A 403 from a proxy, a 429, a 502 or a 405
+                    // says nothing about whether Ensembl publishes variation, and treating it as
+                    // absence would switch the run's recalibration strategy on the strength of an
+                    // unrelated failure - the thing the exception handler below exists to avoid.
+                    if (response.StatusCode != System.Net.HttpStatusCode.NotFound
+                        && response.StatusCode != System.Net.HttpStatusCode.Gone)
                     {
                         return true;
                     }

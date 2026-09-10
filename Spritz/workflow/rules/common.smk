@@ -10,6 +10,15 @@ from snakemake.exceptions import WorkflowError
 # comes from workflow.basedir rather than from the working directory.
 sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
 from snpeff_config import snpeff_config_block
+from spritz_config import normalise as normalise_config
+
+# The path snakemake actually loaded, for the scripts that re-read it. Empty when the run relies on
+# the `configfile:` directive rather than --configfile, in which case the relative default is right.
+CONFIGFILE = str(workflow.configfiles[-1]) if workflow.configfiles else "config/config.yaml"
+
+# Applied to snakemake's own config dict, so the snakefiles and the scripts share one definition of
+# what the config means. See scripts/spritz_config.py.
+normalise_config(config)
 
 # Variables used by many of the rules
 SPECIES = config["species"]
@@ -30,6 +39,8 @@ DIVISION = config.get("division") or "vertebrates"
 # variation/vcf/ directory, so the other 340 can only take the bootstrap route - including
 # saccharomyces_cerevisiae, which had one at release 96 and does not now. Every one of Ensembl
 # Bacteria's 31,332 genomes is in the same position; see the coercion at the bottom of this file.
+# Already coerced by normalise_config above: a bacterial reference reads as "bootstrap" here,
+# because Ensembl Bacteria publishes no variation for the downloaded route to fetch.
 KNOWN_SITES = config.get("known_sites") or "ensembl"
 KNOWN_SITES_MODES = ("ensembl", "bootstrap")
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
@@ -145,13 +156,6 @@ def setup_output(wildcards):
     ]
     return setup_outputs
 
-# `--config vcf=x.vcf` on the command line, and a hand-written `vcf: "x.vcf"` in config.yaml, both
-# give a plain string. len() on a string is its length, so check() would pass and then iterating it
-# would yield one path per character. Normalised once, here, rather than guarded at each use.
-if isinstance(config.get("vcf"), str):
-    config["vcf"] = [config["vcf"]] if config["vcf"] else []
-
-
 def check(field):
     '''Checks whether or not a field is contained in the configuration'''
     return field in config and config[field] is not None and len(config[field]) > 0
@@ -160,13 +164,6 @@ def check(field):
 if KNOWN_SITES not in KNOWN_SITES_MODES:
     raise WorkflowError(
         f"known_sites must be one of {', '.join(KNOWN_SITES_MODES)}, not '{KNOWN_SITES}'.")
-
-# Ensembl Bacteria publishes no variation at all - its variation/ directory holds only a VEP cache,
-# with no vcf/ - so the downloaded route can never apply to a bacterial reference. Before #186 this
-# was a hard error telling the user to supply their own VCF; now there is a route that works from
-# reads alone, so it is simply the route bacteria take.
-if DIVISION == "bacteria" and KNOWN_SITES == "ensembl":
-    KNOWN_SITES = "bootstrap"
 
 # Downloaded and shared per species, or derived from these reads and so per analysis. A bootstrap
 # set depends on the alignments it came from, which is why it cannot live in resources/.

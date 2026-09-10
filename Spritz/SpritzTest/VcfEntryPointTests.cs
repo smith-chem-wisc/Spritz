@@ -7,8 +7,8 @@ namespace SpritzTest
 {
     /// <summary>
     /// The VCF entry point annotates a VCF called elsewhere instead of calling variants from reads,
-    /// and a bacterial reference requires it because Ensembl Bacteria publishes no known variant
-    /// sites for GATK to recalibrate against.
+    /// and a bacterial reference bootstraps its known variant sites, because Ensembl Bacteria
+    /// publishes none.
     ///
     /// Two things are worth pinning here. The config key has to be the snake_case name the .smk files
     /// read - the neighbouring "analysisDirectory" key is dead for exactly that reason, and only works

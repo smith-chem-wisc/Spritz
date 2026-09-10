@@ -90,6 +90,9 @@
     <None Include="..\workflow\scripts\snpeff_config.py" Link="workflow\scripts\snpeff_config.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="..\workflow\scripts\spritz_config.py" Link="workflow\scripts\spritz_config.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="..\workflow\scripts\stage_user_vcf.py" Link="workflow\scripts\stage_user_vcf.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

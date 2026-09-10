@@ -5,7 +5,8 @@
 
 import requests
 import sys
-import yaml
+
+import spritz_config
 
 # find proteome
 BASE_URL = 'https://rest.uniprot.org'
@@ -16,8 +17,9 @@ params = {
     'format': 'tsv',
 }
 
-with open("config/config.yaml", 'r') as stream:
-   data = yaml.safe_load(stream)
+# From the rule via SPRITZ_CONFIG, not the relative path: see scripts/spritz_config.py. Reading
+# config/config.yaml here read the packaged defaults, so every run looked like Homo_sapiens.
+data = spritz_config.load()
 organism = data["organism"].lower()
 division = (data.get("division") or "vertebrates").lower()
 

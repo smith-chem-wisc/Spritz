@@ -142,7 +142,11 @@ def test_a_called_variant_without_an_ad_field_stops_the_run(tmp_path, fai):
     result = stage(tmp_path, fai, text)
     assert result.returncode != 0
     assert "no AD field" in result.stderr
-    assert "bcftools +fill-tags" in result.stderr
+    # The remedy has to be re-genotyping: allele depths come from the reads, so no tag-filling
+    # plugin can add them. An earlier version of this message suggested `bcftools +fill-tags -- -t
+    # AD`, which cannot work - AD is an input to fill-tags' VAF, not something it computes.
+    assert "mpileup -a AD" in result.stderr
+    assert "fill-tags" not in result.stderr
 
 
 def test_a_called_variant_with_a_dot_ad_stops_the_run(tmp_path, fai):

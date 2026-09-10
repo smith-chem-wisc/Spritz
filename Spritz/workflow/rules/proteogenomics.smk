@@ -9,11 +9,14 @@ rule download_protein_xml:
         fasta=UNIPROTFASTA,
     log: f"{UNIPROTXML}.log"
     benchmark: f"{UNIPROTXML}.benchmark"
+    params: configfile=CONFIGFILE
     conda: "../envs/downloads.yaml"
+    # SPRITZ_CONFIG so get_proteome.py sees this run's organism and division rather than the
+    # packaged defaults; download_uniprot.py imports it, so both need it set.
     shell:
-        "(python scripts/get_proteome.py && "
-        "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
-        "python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
+        "(SPRITZ_CONFIG={params.configfile} python scripts/get_proteome.py && "
+        "SPRITZ_CONFIG={params.configfile} python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
+        "SPRITZ_CONFIG={params.configfile} python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
 
 if not PREBUILT_SPRITZ_MODS:
     rule build_transfer_mods:

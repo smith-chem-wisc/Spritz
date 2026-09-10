@@ -264,8 +264,12 @@ namespace SpritzBackend
             rootMappingNode.Add("vcf", AddParam(vcfs, vcf));
 
             // which Ensembl site the reference comes from; see DIVISION in common.smk
+            // Lowercased like known_sites below. The C# side accepts any casing on purpose, but
+            // every workflow-side test is case-sensitive (`DIVISION == "bacteria"`), so writing it
+            // verbatim let -e=Bacteria validate and then take the vertebrate path.
             YamlScalarNode division = new(string.IsNullOrWhiteSpace(options.Division)
-                ? "vertebrates" : options.Division);
+                ? SpritzOptionStrings.DivisionVertebrates
+                : options.Division.Trim().ToLowerInvariant());
             division.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("division", division);
 
@@ -305,7 +309,8 @@ namespace SpritzBackend
             // Bacteria skip the lookup: Ensembl Bacteria publishes no variation for any of its
             // 31,332 genomes, so there is nothing to ask about. common.smk coerces them anyway;
             // writing it here as well keeps the generated config honest about what will happen.
-            string knownSites = options.KnownSites ?? EnsemblVariation.Auto;
+            string knownSites = string.IsNullOrWhiteSpace(options.KnownSites)
+                ? EnsemblVariation.Auto : options.KnownSites.Trim();
             if (string.Equals(knownSites, EnsemblVariation.Auto, StringComparison.OrdinalIgnoreCase))
             {
                 knownSites =

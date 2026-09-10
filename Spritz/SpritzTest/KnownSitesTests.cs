@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using SpritzBackend;
 using System;
 using System.IO;
@@ -111,6 +111,9 @@ namespace SpritzTest
             // never reach it.
             string config = WriteConfig("release-116,danio_rerio,zebrafish,GRCz11", Answers(true),
                 o => o.KnownSites = EnsemblVariation.Auto);
+            // Asserted positively: a bare Does.Not.Contain passed even with the whole known_sites
+            // block deleted, which is the opposite of pinning an invariant.
+            Assert.That(config, Does.Contain("known_sites: \"ensembl\""));
             Assert.That(config, Does.Not.Contain("known_sites: \"auto\""));
         }
 
@@ -137,9 +140,9 @@ namespace SpritzTest
         [Test]
         public void TheProbeAsksForTheFilenameTheDownloadRuleActuallyFetches()
         {
-            // download_ensembl_vcf tries the lowercase name then the capitalised one. Only the
-            // lowercase form resolves for any species today, so checking the directory alone - or
-            // only the capitalised name - would answer the wrong question.
+            // Only the lowercase form resolves for any species today, so it is checked first;
+            // the rule itself tries the capitalised name first and falls back. Checking the
+            // directory alone, or only the capitalised name, would answer the wrong question.
             string[] urls = EnsemblVariation.CandidateUrls("116", "danio_rerio");
             Assert.That(urls[0], Is.EqualTo(
                 "https://ftp.ensembl.org/pub/release-116/variation/vcf/danio_rerio/danio_rerio.vcf.gz"));

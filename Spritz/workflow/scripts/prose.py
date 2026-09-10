@@ -1,7 +1,10 @@
-import yaml, sys
+import sys
 
-with open("config/config.yaml", 'r') as stream:
-   config = yaml.safe_load(stream)
+import spritz_config
+
+# From the rule via SPRITZ_CONFIG. Reading the relative path read the packaged defaults, so the
+# methods text described a Homo_sapiens quant run whatever was actually run.
+config = spritz_config.load()
 
 workflows = config["analyses"]
 outf = sys.argv[1]
@@ -14,13 +17,15 @@ lines = [
 ]
 
 def supplied(field):
-    """Mirrors check() in common.smk, so the citations match the rules that actually ran."""
-    return field in config and config[field] is not None and len(config[field]) > 0
+    """The same test check() makes in common.smk, so citations match the rules that ran."""
+    return spritz_config.check(config, field)
 
-# A supplied VCF replaces the whole read-processing and variant-calling chain, so fastp, hisat2,
-# samtools and GATK are not run and must not be cited. Claiming reads were trimmed and aligned when
-# none were is a false methods section.
+# A supplied VCF replaces variant *calling*, but not alignment: quant and isoform reconstruction
+# still align reads, and all_output asks for them independently of the VCF. So the trimming and
+# alignment citations depend on whether reads were supplied, and only the GATK calling citation
+# depends on the VCF. Citing tools that did not run, and omitting tools that did, are both wrong.
 used_vcf = supplied("vcf")
+used_reads = any(supplied(f) for f in ("sra", "sra_se", "fq", "fq_se"))
 
 # SRA DOWNLOADS
 used_sras = supplied("sra")
@@ -32,7 +37,7 @@ if used_sras:
     ])
 
 # TRIMMING AND ALIGNMENT
-if not used_vcf:
+if used_reads:
     lines.extend([
         "Reads are trimmed and analyzed for quality scores using fastp: ",
         "- Chen, S.; et al. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 2018, 34 (17), i884-i890. https://academic.oup.com/bioinformatics/article/34/17/i884/5093234.",

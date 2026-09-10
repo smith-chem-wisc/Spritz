@@ -156,7 +156,8 @@ def main(argv=None):
             "Error: variants are called in samples that have no usable AD (allele depth), which the "
             "database builder reads per allele:\n  "
             + "\n  ".join(depth_problems)
-            + "\nRe-call with allele depths, or add them with `bcftools +fill-tags -- -t AD`. "
+            + "\nAD has to come from the reads, so this needs re-genotyping rather than a tag fix: "
+            "`bcftools mpileup -a AD` piped into `bcftools call`, or re-run the original caller. "
             "GATK emits AD by default; several other callers do not."
         )
 

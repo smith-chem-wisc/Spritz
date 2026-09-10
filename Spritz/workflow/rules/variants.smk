@@ -113,6 +113,10 @@ if KNOWN_SITES == "bootstrap":
             fai=f"{KARYOTYPIC_GENOME_PREFIX}.fa.fai",
             fadict=f"{KARYOTYPIC_GENOME_PREFIX}.dict",
             bam="{dir}/variants/combined.sorted.grouped.marked.split.bam",
+            # split_n_cigar_reads declares this index temp() and nothing else consumed it, so
+            # snakemake deleted it before this rule ran. HaplotypeCaller does sharded random
+            # access and needs it.
+            bai="{dir}/variants/combined.sorted.grouped.marked.split.bam.bai",
             tmp="../resources/tmp"
         output: temp("{dir}/variants/bootstrap.g.vcf.gz")
         threads: 8
@@ -189,6 +193,7 @@ rule base_recalibration:
         knownsitesidx=KNOWN_SITES_VCF_IDX,
         fa=KARYOTYPIC_GENOME_FA,
         bam="{dir}/variants/combined.sorted.grouped.marked.split.bam",
+        bai="{dir}/variants/combined.sorted.grouped.marked.split.bam.bai",
         tmp="../resources/tmp"
     output:
         recaltable=temp("{dir}/variants/combined.sorted.grouped.marked.split.recaltable"),
@@ -289,14 +294,18 @@ if check('vcf'):
             #
             # --force-samples renames a collision instead of aborting. Callers routinely emit a
             # placeholder sample name, so two files both naming their sample SAMPLE is ordinary.
+            #
+            # `|| exit 1` on each step rather than `&&`: a failing command that is not the final
+            # element of an && list is exempt from the strict mode snakemake applies, so the loop
+            # used to carry on and `done` reported only the last iteration - merging the survivors
+            # and exiting 0 with one sample silently missing from the database.
             shell:
-                "(tmp=$(mktemp -d) && i=0 && sorted= && "
+                "(tmp=$(mktemp -d) && trap 'rm -rf \"$tmp\"' EXIT && i=0 && sorted= && "
                 "for v in {input.vcfs}; do i=$((i+1)); "
-                "bcftools sort -Oz -o \"$tmp/$i.vcf.gz\" \"$v\" && "
-                "bcftools index -t \"$tmp/$i.vcf.gz\" && "
+                "bcftools sort -Oz -o \"$tmp/$i.vcf.gz\" \"$v\" || exit 1; "
+                "bcftools index -t \"$tmp/$i.vcf.gz\" || exit 1; "
                 "sorted=\"$sorted $tmp/$i.vcf.gz\"; done && "
-                "bcftools merge --force-samples -Ov -o {output} $sorted && "
-                "rm -rf \"$tmp\") &> {log}"
+                "bcftools merge --force-samples -Ov -o {output} $sorted) &> {log}"
 
         USER_SUPPLIED_VCF = "{dir}/variants/user.supplied.vcf"
     else:
