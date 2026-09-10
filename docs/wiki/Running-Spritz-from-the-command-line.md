@@ -53,6 +53,7 @@ mount is what connects them.
 | `-f=` / `-i=` / `-j=` | local FASTQs instead of SRAs: single-end, first mate, second mate |
 | `-v=` | comma-separated VCFs you called elsewhere, annotated instead of calling variants from reads — see below |
 | `-e=` | Ensembl division: `vertebrates` (default) or `bacteria` — see below |
+| `-k=` | known variant sites for recalibration: `auto` (default), `ensembl` or `bootstrap` — see below |
 | `-b` | analyze variants |
 | `-c` | analyze isoforms |
 | `-d` | quantify |
@@ -139,11 +140,12 @@ dotnet SpritzCMD.dll \
   -b
 ```
 
-**A bacterial reference requires `-v=`.** Ensembl Bacteria publishes no known variant sites — its
-`variation/` directory holds only a VEP cache, with no `vcf/` — and GATK base recalibration, the only
-thing that reads them, has no input without them. So Spritz cannot call bacterial variants from reads,
-and rejects the combination up front rather than failing partway through a long run. Call the variants
-with your own pipeline and hand Spritz the VCF.
+**Bacterial references bootstrap their known sites.** Ensembl Bacteria publishes no known variant
+sites — its `variation/` directory holds only a VEP cache, with no `vcf/` — and GATK base
+recalibration is the only thing that reads them. Rather than refusing the run, Spritz calls an
+unrecalibrated first pass and recalibrates against its high-confidence SNPs; see
+[Species with no known variant sites](#species-with-no-known-variant-sites) below. You can still
+supply your own VCF with `-v=` if you have one, which skips calling altogether.
 
 #### Finding the reference string
 
@@ -174,6 +176,44 @@ they all translate with the standard one; the database Spritz builds here does d
 
 **Contig names.** A bacterial assembly typically has one sequence, and Ensembl names it `Chromosome`,
 not `1`. Your VCF's `CHROM` column has to match — see the contig-name note above.
+
+### Species with no known variant sites
+
+GATK base quality score recalibration needs a set of known variant sites. Ensembl publishes those for
+very few species: **at release 116, 19 of the 359** with a gene model have a `variation/vcf/`
+directory. Everything else — including *S. cerevisiae*, which had one at release 96 and does not now,
+and every one of Ensembl Bacteria's 31,332 genomes — has none.
+
+Spritz handles this the way GATK itself recommends: call variants once on unrecalibrated alignments,
+keep the calls you trust most, recalibrate against those, then call for real.
+
+`-k=` controls it, and defaults to `auto`:
+
+| Value | |
+|---|---|
+| `auto` | ask Ensembl whether it publishes variant sites for this species, and pick accordingly |
+| `ensembl` | insist on downloading them; fails if there are none |
+| `bootstrap` | always call and filter a first pass |
+
+`auto` costs one HTTP request when Spritz writes the run's config, and the result is recorded as
+`known_sites:` in `config/config.yaml`, so you can see which route a run took. Human always uses
+dbSNP, which lives on NCBI rather than Ensembl, and bacteria always bootstrap.
+
+**What "the calls you trust most" means here.** The first pass is filtered with GATK's *RNA-seq* hard
+filters, not the DNA ones — a 35-base window allowing 3 clustered SNPs, `FS > 30.0`, `QD < 2.0` —
+since Spritz aligns RNA-seq and has already run `SplitNCigarReads`. Indels and anything filtered are
+dropped, and only `QUAL >= 30` survives. Recalibration treats every mismatch *not* in the known set
+as an error, so a permissive set is worse than a small one.
+
+**One round, not iterated.** GATK's advice mentions repeating until convergence. Spritz does a single
+round: snakemake builds a static DAG, so iterating would mean either unrolling a fixed number of
+passes or introducing checkpoints, and one round is what GATK's own RNA-seq workflow does.
+
+**It is slower.** A bootstrapped run does two `HaplotypeCaller` passes over the same alignments
+instead of one, so budget roughly double the calling time.
+
+**`prose.txt` records which route was used**, because "recalibrated against known sites" and
+"recalibrated against its own first-pass calls" are not the same methods claim.
 
 ### Getting a reference string
 

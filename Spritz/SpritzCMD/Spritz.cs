@@ -192,6 +192,12 @@ namespace SpritzCMD
                 .SetDefault(SpritzOptionStrings.DivisionVertebrates)
                 .WithDescription(SpritzOptionStrings.DivisionDesc);
 
+            p.Setup(arg => arg.KnownSites)
+                .As(SpritzOptionStrings.KnownSitesShort,
+                    SpritzOptionStrings.KnownSitesLong)
+                .SetDefault(EnsemblVariation.Auto)
+                .WithDescription(SpritzOptionStrings.KnownSitesDesc);
+
             p.Setup(arg => arg.Threads)
                 .As(SpritzOptionStrings.ThreadsShort,
                     SpritzOptionStrings.ThreadsLong)
@@ -255,6 +261,7 @@ namespace SpritzCMD
             // neither has an input without them.
             bool vcfSpecified = !string.IsNullOrWhiteSpace(p.Object.Vcf);
             string division = (p.Object.Division ?? SpritzOptionStrings.DivisionVertebrates).Trim();
+            string knownSites = (p.Object.KnownSites ?? EnsemblVariation.Auto).Trim();
 
             if (result.HelpCalled)
             {
@@ -304,19 +311,12 @@ namespace SpritzCMD
                     $"\"{SpritzOptionStrings.DivisionVertebrates}\" or " +
                     $"\"{SpritzOptionStrings.DivisionBacteria}\".");
             }
-            else if (SpritzOptionStrings.IsBacteria(division) && p.Object.AnalyzeVariants && !vcfSpecified)
+            else if (!EnsemblVariation.IsKnownMode(knownSites))
             {
-                // Ensembl Bacteria publishes no variant sites, and GATK base recalibration - which the
-                // calling chain runs unconditionally - has no input without them. Rejected here rather
-                // than left to fail deep in the workflow as a missing download.
-                //
-                // Conditioned on -b rather than on the division alone: known sites are read only by
-                // base recalibration, so a bacterial quant or isoform run, or -y on its own, is fine
-                // without a VCF.
                 throw new SpritzException(
-                    $"Error: a bacterial reference requires -{SpritzOptionStrings.VcfShort}. Ensembl " +
-                    $"Bacteria publishes no known variant sites, so Spritz cannot call variants from " +
-                    $"reads for bacteria; supply a VCF called elsewhere instead.");
+                    $"Error: \"{knownSites}\" is not a known-sites mode. Use " +
+                    $"\"{EnsemblVariation.Auto}\", \"{EnsemblVariation.Ensembl}\" or " +
+                    $"\"{EnsemblVariation.Bootstrap}\".");
             }
             else if (vcfSpecified && !noSequencesSpecified)
             {
@@ -383,6 +383,8 @@ namespace SpritzCMD
             aa.Vcf ??= "";
             aa.Division = string.IsNullOrWhiteSpace(aa.Division)
                 ? SpritzOptionStrings.DivisionVertebrates : aa.Division.Trim();
+            aa.KnownSites = string.IsNullOrWhiteSpace(aa.KnownSites)
+                ? EnsemblVariation.Auto : aa.KnownSites.Trim();
             return aa;
         }
     }

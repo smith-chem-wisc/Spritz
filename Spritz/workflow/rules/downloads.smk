@@ -58,19 +58,12 @@ else:
             "wget -O - \"$gff3url\" | gunzip -c - > {output.gff3} && "
             "wget -O - {params.pep} | gunzip -c - > {output.pfa}) 2> {log}"
 
-if SPECIES_LOWER == "homo_sapiens":
-    rule download_dbsnp_vcf:
-        '''Download dbsnp known variant sites if we are analyzing human data'''
-        input: f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt"
-        output: f"../resources/ensembl/{SPECIES}.ensembl.vcf",
-        params:
-            vcf="https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz"
-        benchmark: "../resources/ensembl/downloads_dbsnp_vcf.benchmark"
-        log: "../resources/ensembl/downloads_dbsnp_vcf.log"
-        conda: "../envs/downloads.yaml"
-        shell:
-            "(wget -O - {params.vcf} | zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
+# Two independent concerns, previously tangled in one if/elif/else and now separated: which rule
+# produces the karyotypic genome FASTA (a per-species question), and where the known variant sites
+# come from (a per-mode question). Bacteria needed a third branch only because they always lack
+# known sites, which the coercion in common.smk now expresses directly.
 
+if SPECIES_LOWER == "homo_sapiens":
     rule reorder_genome_fasta:
         '''Reorder the ensembl genome to match the dbsnp VCF
 
@@ -83,37 +76,8 @@ if SPECIES_LOWER == "homo_sapiens":
         log: "../resources/ensembl/karyotypic_order.log"
         conda: "../envs/downloads.yaml"
         shell: "python scripts/karyotypic_order.py 2> {log}"
-        
-elif DIVISION == "bacteria":
-    # Ensembl Bacteria publishes no variant sites - its variation/ directory holds only
-    # indexed_vep_cache, with no vcf/ - and GATK base recalibration is the only thing that reads
-    # them, so there is no rule to define. This is why a bacterial reference requires a supplied
-    # VCF: variants cannot be called from reads without known sites. SpritzCMD rejects the
-    # combination up front rather than letting it fail here as a missing input.
-    rule rename_genome_fasta_bacteria:
-        '''Rename the genome fasta so the other rules work with bacterial genomes'''
-        input: GENOME_FA
-        output: KARYOTYPIC_GENOME_FA
-        benchmark: "../resources/ensembl/karyotypic_order_rename.benchmark"
-        log: "../resources/ensembl/karyotypic_order_rename.log"
-        conda: "../envs/downloads.yaml"
-        shell: "cp {input} {output} 2> {log}"
 
 else:
-    rule download_ensembl_vcf:
-        '''
-        Use Ensembl known variant sites if we are analyzing nonhuman data.
-        Note that Ensembl has started listing variants for each chromosome for human, but not other species, but that may change
-        '''
-        output: f"../resources/ensembl/{SPECIES}.ensembl.vcf",
-        params:
-            vcf1 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES}.vcf.gz",
-            vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz",
-        benchmark: "../resources/ensembl/downloads_ensembl_vcf.benchmark"
-        log: "../resources/ensembl/downloads_ensembl_vcf.log"
-        conda: "../envs/downloads.yaml"
-        shell: "((wget -O - {params.vcf1} || wget -O - {params.vcf2}) | zcat - | python scripts/clean_vcf.py > {output}) 2> {log}"
-
     rule rename_genome_fasta:
         '''Rename the genome fasta so the other rules work with non-human genomes'''
         input: GENOME_FA
@@ -123,7 +87,47 @@ else:
         conda: "../envs/downloads.yaml"
         shell: "cp {input} {output} 2> {log}"
 
-if DIVISION != "bacteria":
+
+# Nothing to download in bootstrap mode: the known sites are called from these reads. See
+# bootstrap_known_sites in variants.smk.
+if KNOWN_SITES == "ensembl":
+    if SPECIES_LOWER == "homo_sapiens":
+        rule download_dbsnp_vcf:
+            '''Download dbsnp known variant sites if we are analyzing human data'''
+            input: f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt"
+            output: f"../resources/ensembl/{SPECIES}.ensembl.vcf",
+            params:
+                vcf="https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz"
+            benchmark: "../resources/ensembl/downloads_dbsnp_vcf.benchmark"
+            log: "../resources/ensembl/downloads_dbsnp_vcf.log"
+            conda: "../envs/downloads.yaml"
+            shell:
+                "(wget -O - {params.vcf} | zcat - | python scripts/convert_ucsc2ensembl.py > {output}) 2> {log}"
+
+    else:
+        rule download_ensembl_vcf:
+            '''
+            Use Ensembl known variant sites if we are analyzing nonhuman data.
+            Note that Ensembl has started listing variants for each chromosome for human, but not other species, but that may change
+            '''
+            output: f"../resources/ensembl/{SPECIES}.ensembl.vcf",
+            params:
+                vcf1 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES}.vcf.gz",
+                vcf2 = f"http://ftp.ensembl.org/pub/release-{ENSEMBL_VERSION}/variation/vcf/{SPECIES_LOWER}/{SPECIES_LOWER}.vcf.gz",
+                species = SPECIES,
+                release = ENSEMBL_VERSION,
+            benchmark: "../resources/ensembl/downloads_ensembl_vcf.benchmark"
+            log: "../resources/ensembl/downloads_ensembl_vcf.log"
+            conda: "../envs/downloads.yaml"
+            # Most species reach this and fail: at release 116 only 19 of 359 publish variation.
+            # The bare wget error said nothing about what to do, so it says it here.
+            shell:
+                "((wget -O - {params.vcf1} || wget -O - {params.vcf2}) | zcat - | python scripts/clean_vcf.py > {output} || "
+                "(echo \"Ensembl publishes no variant sites for {params.species} at release {params.release}.\" >&2 && "
+                "echo \"Only 19 of its 359 species do. Re-run with known_sites=bootstrap, which SpritzCMD\" >&2 && "
+                "echo \"selects for you, to call an unrecalibrated first pass and recalibrate against it.\" >&2 && "
+                "exit 1)) 2> {log}"
+
     rule index_ensembl_vcf:
         input: f"../resources/ensembl/{SPECIES}.ensembl.vcf"
         output: f"../resources/ensembl/{SPECIES}.ensembl.vcf.idx"

@@ -92,6 +92,15 @@ namespace SpritzBackend
             "Ensembl 116). Bacteria have no Ensembl variant sites for GATK to recalibrate against, " +
             "so a bacterial reference requires -v.";
 
+        public static readonly char KnownSitesShort = 'k';
+        public static readonly string KnownSitesLong = "known-sites";
+        public static readonly string KnownSitesDesc =
+            "Where GATK base recalibration gets its known variant sites: \"auto\" (default) asks " +
+            "Ensembl whether it publishes any for this species, \"ensembl\" insists on downloading " +
+            "them, \"bootstrap\" calls an unrecalibrated first pass and recalibrates against its " +
+            "high-confidence SNPs. Only 19 of Ensembl's 359 species publish variant sites, so most " +
+            "resolve to bootstrap.";
+
         public static readonly char ThreadsShort = 'p';
         public static readonly string ThreadsLong = "threads";
         public static readonly string ContainerRuntimeLong = "container-runtime";
@@ -175,6 +184,10 @@ namespace SpritzBackend
             if (args.Division != null && args.Division != string.Empty)
             {
                 argsString += $"--{DivisionLong}={args.Division} ";
+            }
+            if (args.KnownSites != null && args.KnownSites != string.Empty)
+            {
+                argsString += $"--{KnownSitesLong}={args.KnownSites} ";
             }
             return argsString;
         }

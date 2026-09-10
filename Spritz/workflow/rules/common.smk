@@ -2,8 +2,8 @@ import os
 import posixpath  # snakemake paths are always forward-slash; see the note on all_output
 import sys
 
-# Imported rather than relied on as a snakefile global, so the config check at the bottom of this
-# file raises the error snakemake formats for the user rather than a NameError.
+# Imported rather than relied on as a snakefile global, so the config checks at the bottom of this
+# file raise the error snakemake formats for the user rather than a NameError.
 from snakemake.exceptions import WorkflowError
 
 # scripts/ holds the workflow's own importable modules. Snakefiles have no __file__, so the path
@@ -18,6 +18,20 @@ ENSEMBL_VERSION = config["release"]
 # "vertebrates" (ftp.ensembl.org) or "bacteria" (Ensembl Genomes, on its own release numbering:
 # EG 63 is Ensembl 116). Absent from a hand-written config.yaml predating the option, hence the get.
 DIVISION = config.get("division") or "vertebrates"
+
+# Where GATK base recalibration gets its known variant sites.
+#
+#   "ensembl"   - download them, which needs Ensembl to publish variation for this species.
+#   "bootstrap" - call an unrecalibrated first pass and hard-filter it down to high-confidence
+#                 SNPs, then recalibrate against those. GATK's own advice when no known set
+#                 exists, and issue #186.
+#
+# Not a niche path. At Ensembl 116 only 19 of the 359 species with a gene model publish a
+# variation/vcf/ directory, so the other 340 can only take the bootstrap route - including
+# saccharomyces_cerevisiae, which had one at release 96 and does not now. Every one of Ensembl
+# Bacteria's 31,332 genomes is in the same position; see the coercion at the bottom of this file.
+KNOWN_SITES = config.get("known_sites") or "ensembl"
+KNOWN_SITES_MODES = ("ensembl", "bootstrap")
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
 REF = f"{SPECIES}.{GENOME_VERSION}"
 GENOME_FA = f"../resources/ensembl/{REF}.dna.primary_assembly.fa"
@@ -103,10 +117,10 @@ def all_output(wildcards):
 def setup_output(wildcards):
     '''Gets the output needed for setting up spritz'''
     setup_outputs = [
-        # Known variant sites, and the UCSC-to-Ensembl mapping the human one is converted with, are
-        # only read by GATK base recalibration. A run that supplies its own VCF does no calling, so
-        # pre-fetching them would download a multi-gigabyte dbSNP release nothing goes on to use.
-        *([] if check('vcf') else [
+        # Two reasons there may be nothing to pre-fetch. A supplied VCF means no calling at all, so
+        # a multi-gigabyte dbSNP release would go unused; and bootstrap known sites are produced
+        # from the reads during the run. The UCSC mapping exists only to convert dbSNP.
+        *([] if check('vcf') or KNOWN_SITES != "ensembl" else [
             f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
             f"../resources/ensembl/{SPECIES}.ensembl.vcf"]),
         TRANSFER_MOD_DLL,
@@ -143,17 +157,20 @@ def check(field):
     return field in config and config[field] is not None and len(config[field]) > 0
 
 
-# SpritzCMD rejects this combination before snakemake is invoked, but a hand-written config.yaml
-# reaches here. Without this the run fails later with a MissingInputException for
-# {species}.ensembl.vcf in base_recalibration, which names the missing file but not the reason it can
-# never exist.
-#
-# Conditioned on the variant analysis, not on the division alone: known sites are read only by GATK
-# base recalibration, so a bacterial quant or isoform run needs no VCF, and neither does `setup` or
-# --lint. An unconditional check refused all of those.
-if DIVISION == "bacteria" and "variant" in config["analyses"] and not check("vcf"):
+if KNOWN_SITES not in KNOWN_SITES_MODES:
     raise WorkflowError(
-        "A bacterial reference needs a VCF called elsewhere: set 'vcf' in config.yaml, or pass -v to "
-        "SpritzCMD. Ensembl Bacteria publishes no known variant sites - its variation/ directory "
-        "holds only a VEP cache - and GATK base recalibration, the only thing that reads them, has "
-        "no input without them, so Spritz cannot call bacterial variants from reads.")
+        f"known_sites must be one of {', '.join(KNOWN_SITES_MODES)}, not '{KNOWN_SITES}'.")
+
+# Ensembl Bacteria publishes no variation at all - its variation/ directory holds only a VEP cache,
+# with no vcf/ - so the downloaded route can never apply to a bacterial reference. Before #186 this
+# was a hard error telling the user to supply their own VCF; now there is a route that works from
+# reads alone, so it is simply the route bacteria take.
+if DIVISION == "bacteria" and KNOWN_SITES == "ensembl":
+    KNOWN_SITES = "bootstrap"
+
+# Downloaded and shared per species, or derived from these reads and so per analysis. A bootstrap
+# set depends on the alignments it came from, which is why it cannot live in resources/.
+KNOWN_SITES_VCF = (
+    f"../resources/ensembl/{SPECIES}.ensembl.vcf" if KNOWN_SITES == "ensembl"
+    else "{dir}/variants/bootstrap.knownsites.vcf")
+KNOWN_SITES_VCF_IDX = f"{KNOWN_SITES_VCF}.idx"

@@ -26,6 +26,12 @@ namespace SpritzBackend
         /// </summary>
         public string Division { get; set; }
 
+        /// <summary>
+        /// "auto" (default), "ensembl" or "bootstrap" - where GATK base recalibration gets its
+        /// known variant sites. "auto" asks Ensembl whether it publishes any for this species.
+        /// </summary>
+        public string KnownSites { get; set; }
+
         public int Threads { get; set; }
 
         /// <summary>podman (default), docker, or apptainer. See ContainerRuntime.</summary>

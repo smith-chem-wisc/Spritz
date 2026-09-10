@@ -93,6 +93,12 @@ namespace SpritzBackend
             AlwaysPull || PublishedImagePrefixes.Any(prefix =>
                 imageName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
+        /// <summary>
+        /// Asks whether Ensembl publishes variant sites for (release, species). Replaceable so tests
+        /// resolve known_sites without reaching the network.
+        /// </summary>
+        public Func<string, string, bool> EnsemblVariationProbe { get; set; } = EnsemblVariation.Published;
+
         /// <summary>The container runtime to drive. Podman by default; see ContainerRuntime.</summary>
         public ContainerRuntime Runtime { get; set; } = ContainerRuntime.Podman;
 
@@ -291,6 +297,28 @@ namespace SpritzBackend
             YamlScalarNode genome = new(resolved.Genome);
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
+
+            // Where base recalibration gets its known sites. Resolved here rather than in the
+            // workflow because it takes a network lookup, and the workflow re-reads its config on
+            // every invocation including dry-runs - which would then need the network too.
+            //
+            // Bacteria skip the lookup: Ensembl Bacteria publishes no variation for any of its
+            // 31,332 genomes, so there is nothing to ask about. common.smk coerces them anyway;
+            // writing it here as well keeps the generated config honest about what will happen.
+            string knownSites = options.KnownSites ?? EnsemblVariation.Auto;
+            if (string.Equals(knownSites, EnsemblVariation.Auto, StringComparison.OrdinalIgnoreCase))
+            {
+                knownSites =
+                    SpritzOptionStrings.IsBacteria(options.Division) ? EnsemblVariation.Bootstrap
+                    : string.Equals(resolved.Species, "Homo_sapiens", StringComparison.OrdinalIgnoreCase)
+                        ? EnsemblVariation.Ensembl // dbSNP, on a different host entirely
+                        : EnsemblVariationProbe(resolved.Release, resolved.Species.ToLowerInvariant())
+                            ? EnsemblVariation.Ensembl
+                            : EnsemblVariation.Bootstrap;
+            }
+            YamlScalarNode knownSitesNode = new(knownSites.ToLowerInvariant());
+            knownSitesNode.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("known_sites", knownSitesNode);
 
             // list the analyses to perform
             var analyses = new YamlSequenceNode();

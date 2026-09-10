@@ -60,6 +60,17 @@ if "variant" in workflows:
             "- DePristo, M. A.; et al. A Framework for Variation Discovery and Genotyping Using Next-Generation DNA Sequencing Data. Nat. Genet. 2011, 43 (5), 491-498. https://doi.org/10.1038/ng.806.",
             "- Poplin, R.; et al. Scaling Accurate Genetic Variant Discovery to Tens of Thousands of Samples; preprint; Genomics, 2017. https://doi.org/10.1101/201178.",
             ""])
+        # Which known-set the recalibration used is a methods detail, and for most species it is
+        # not a published one. Saying so is the difference between a reproducible methods section
+        # and one that implies a reference set that does not exist.
+        if (config.get("known_sites") or "ensembl") == "bootstrap":
+            lines.extend([
+                "No published set of known variant sites exists for this species, so base quality "
+                "score recalibration used a bootstrapped set: variants were called once on "
+                "unrecalibrated alignments, hard-filtered to high-confidence SNPs (GATK RNA-seq "
+                "filters, QUAL >= 30), and used as the known sites for recalibration before the "
+                "reported calling pass. ",
+                ""])
     lines.extend([
         "SnpEff is used for variant annotation and customized in Spritz to output a proteogenomic database: ",
         "- Cingolani, P.; et al. A Program for Annotating and Predicting the Effects of Single Nucleotide Polymorphisms, SnpEff: SNPs in the Genome of Drosophila Melanogaster Strain W1118; Iso-2; Iso-3. Fly (Austin) 2012, 6 (2), 80-92. https://doi.org/10.4161/fly.19695.",
