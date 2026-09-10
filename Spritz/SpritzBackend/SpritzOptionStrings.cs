@@ -92,6 +92,13 @@ namespace SpritzBackend
             "Ensembl 116). Bacteria have no Ensembl variant sites, so they recalibrate against a " +
             "bootstrapped first pass; supply -v instead if you already have variant calls.";
 
+        public static readonly char ReferenceFreeShort = 'n';
+        public static readonly string ReferenceFreeLong = "referenceFree";
+        public static readonly string ReferenceFreeDesc =
+            "Assemble transcripts without the reference gene model, so the gene model comes from " +
+            "the assembled ORFs instead. For organisms whose genome is sequenced but poorly " +
+            "annotated. Still needs reads, and requires -c.";
+
         public static readonly char KnownSitesShort = 'k';
         public static readonly string KnownSitesLong = "known-sites";
         public static readonly string KnownSitesDesc =
@@ -148,6 +155,10 @@ namespace SpritzBackend
             if (args.Quantify)
             {
                 argsString += $"--{QuantifyLong} ";
+            }
+            if (args.ReferenceFree)
+            {
+                argsString += $"--{ReferenceFreeLong} ";
             }
             if (args.AvailableReferences)
             {

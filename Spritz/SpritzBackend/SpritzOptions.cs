@@ -32,6 +32,12 @@ namespace SpritzBackend
         /// </summary>
         public string KnownSites { get; set; }
 
+        /// <summary>
+        /// Assemble transcripts without the reference gene model, taking the gene model from
+        /// TransDecoder's ORF calls instead. Needs reads and the isoform analysis. Issue #193.
+        /// </summary>
+        public bool ReferenceFree { get; set; }
+
         public int Threads { get; set; }
 
         /// <summary>podman (default), docker, or apptainer. See ContainerRuntime.</summary>

@@ -45,6 +45,18 @@ DIVISION = config.get("division") or "vertebrates"
 # because Ensembl Bacteria publishes no variation for the downloaded route to fetch.
 KNOWN_SITES = config.get("known_sites") or "ensembl"
 KNOWN_SITES_MODES = ("ensembl", "bootstrap")
+
+# Whether transcript assembly is guided by the reference gene model.
+#
+#   False (default) - StringTie is given the Ensembl GFF3 with -G, so assembled transcripts are
+#                     anchored to known genes.
+#   True            - no -G, so transcripts are assembled from the alignments alone and the gene
+#                     model comes from TransDecoder's ORF calls. Issue #193.
+#
+# This removes the *annotation* requirement, not the read requirement: StringTie assembles from
+# alignments, so a genome and reads are still needed. It is the route for an organism whose genome
+# is sequenced but whose annotation is poor or absent.
+REFERENCE_FREE = bool(config.get("reference_free"))
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
 REF = f"{SPECIES}.{GENOME_VERSION}"
 GENOME_FA = f"../resources/ensembl/{REF}.dna.primary_assembly.fa"
@@ -105,7 +117,11 @@ CONDA_CA_BUNDLE_EXPORT = (
 def all_output(wildcards):
     '''Gets the final output files depending on the configuration'''
     outputs = ["prose.txt"]
-    outputs.append(posixpath.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
+    # The reference database is built from the Ensembl gene model via generate_reference_snpeff_database,
+    # so a reference-free run cannot produce it - and asking for it is what would drag the annotation
+    # back in. Its gene model comes from TransDecoder instead, and lands in the isoform outputs.
+    if not REFERENCE_FREE:
+        outputs.append(posixpath.join("variants/", f"done{REF}.{ENSEMBL_VERSION}.txt")) # reference
     if "variant" in config["analyses"]:
         outputs.append("final/combined.spritz.snpeff.protein.withmods.xml.gz") # variants
     if "isoform" in config["analyses"]:
@@ -162,6 +178,29 @@ def check(field):
     '''Checks whether or not a field is contained in the configuration'''
     return field in config and config[field] is not None and len(config[field]) > 0
 
+
+# Nothing to assemble from without reads, and no gene model to fall back on either.
+if REFERENCE_FREE and not any(check(f) for f in ("sra", "sra_se", "fq", "fq_se")):
+    raise WorkflowError(
+        "reference_free needs sequencing reads: transcripts are assembled from alignments, so this "
+        "removes the requirement for a reference gene model, not the requirement for reads.")
+
+# The gene model a reference-free run produces is the assembled one, and only the isoform analysis
+# builds a database from it.
+if REFERENCE_FREE and "isoform" not in config["analyses"]:
+    raise WorkflowError(
+        "reference_free builds its gene model by assembling transcripts, so it needs the isoform "
+        "analysis: add 'isoform' to analyses, or pass -c to SpritzCMD.")
+
+# Deliberately scoped out for now rather than half-working. The variant database is annotated against
+# the reference gene model (variant_annotation_ref, params.ref=REF), which a reference-free run does
+# not have. Annotating against the assembled model instead is what variant_annotation_custom already
+# does for isoform-variants, so wiring that up is the follow-on, not a rewrite.
+if REFERENCE_FREE and "variant" in config["analyses"]:
+    raise WorkflowError(
+        "reference_free cannot yet be combined with the variant analysis: variants are annotated "
+        "against the reference gene model, which is the thing a reference-free run lacks. Run the "
+        "isoform analysis reference-free, or run variants against a reference gene model.")
 
 if KNOWN_SITES not in KNOWN_SITES_MODES:
     raise WorkflowError(

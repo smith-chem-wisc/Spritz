@@ -56,9 +56,29 @@ mount is what connects them.
 | `-k=` | known variant sites for recalibration: `auto` (default), `ensembl` or `bootstrap` — see below |
 | `-b` | analyze variants |
 | `-c` | analyze isoforms |
+| `-n` | assemble transcripts without the reference gene model — see below |
 | `-d` | quantify |
 | `-p=` | threads, defaults to the processor count |
 | `--container-runtime` | `podman` (default), `docker`, or `apptainer` — only relevant when Spritz launches the container for you, not when you launch it yourself as above |
+
+### Assembling without a reference gene model
+
+`-n` (`--referenceFree`) drops the `-G` guide from StringTie, so the gene model comes from
+TransDecoder's ORF calls on the assembled transcripts rather than from Ensembl's annotation. It is
+the route for an organism whose genome is sequenced but whose annotation is poor or absent
+([issue #193](https://github.com/smith-chem-wisc/Spritz/issues/193)).
+
+It removes the requirement for an *annotation*, not for reads: StringTie assembles from alignments,
+so a genome and reads are both still needed. So `-n` requires `-c`, requires reads, and cannot yet
+be combined with `-b` — variants are annotated against the reference gene model, which is the thing
+a reference-free run lacks. Each of those three is refused before the run starts.
+
+```bash
+SpritzCMD -a <analysis dir> -r "release-116,homo_sapiens,human,GRCh38" -s SRR629563 -c -n
+```
+
+In a hand-written `config/config.yaml` the key is `reference_free: True`. Note it is a boolean, not
+a string — `reference_free: "False"` is a non-empty string and would read as *on*.
 
 ### Annotating a VCF you already have
 
