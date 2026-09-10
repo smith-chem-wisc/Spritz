@@ -1,0 +1,52 @@
+# Apptainer definition for verifying the bacterial support on a cluster, built from a branch rather
+# than a published image so the fixes can be checked before they are merged.
+#
+# Self-contained on purpose: stage one brings its own .NET SDK and clones the branch, so the cluster
+# needs neither dotnet nor Docker. Build with:
+#
+#     apptainer build --fakeroot spritz.sif spritz.def
+#
+# It must be built on x86_64. bioconda publishes gatk4 for linux-64 only, with no linux-aarch64, so
+# the variants environment will not solve on an ARM machine at all.
+
+Bootstrap: docker
+From: mcr.microsoft.com/dotnet/sdk:10.0
+Stage: build
+
+%post
+    set -eu
+    apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+    cd /src
+    # Pinned by commit, not by branch name, so a rebuild months later is the same build.
+    git clone https://github.com/smith-chem-wisc/Spritz.git repo
+    cd repo && git checkout "${SPRITZ_COMMIT:-vcf-entry-point}"
+    dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
+    dotnet build --no-restore --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
+    git -C /src/repo rev-parse HEAD > /src/repo/COMMIT
+
+%setup
+    mkdir -p ${APPTAINER_ROOTFS}/src
+
+
+Bootstrap: docker
+From: mambaorg/micromamba:2.9.0-ubuntu24.04
+Stage: final
+
+%files from build
+    /src/repo/Spritz/SpritzCMD/bin/Release/net10.0/ /app/spritz/
+    /src/repo/COMMIT /app/spritz/COMMIT
+
+%post
+    set -eu
+    micromamba install -y -n base -f /app/spritz/workflow/envs/spritzbase.yaml
+    micromamba clean --all --yes
+
+%environment
+    export LC_ALL=C
+
+%runscript
+    cd /app/spritz
+    exec conda run --no-capture-output --live-stream "$@"
+
+%labels
+    Description Spritz, built from a branch for bacterial verification

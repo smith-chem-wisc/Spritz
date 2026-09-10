@@ -22,6 +22,8 @@ KNOWN_CODON_TABLES = frozenset(
     {
         "Ascidian_Mitochondrial",
         "Bacterial_and_Plant_Plastid",
+        "Mycoplasma",
+        "Spiroplasma",
         "Invertebrate_Mitochondrial",
         "Vertebrate_Mitochondrial",
         "Yeast_Mitochondrial",
@@ -37,6 +39,36 @@ KNOWN_CODON_TABLES = frozenset(
 # map is identical. So this changes start_lost and initiation calls and nothing else - missense,
 # synonymous and stop_gained are unaffected either way.
 BACTERIAL_CODON_TABLE = "Bacterial_and_Plant_Plastid"
+
+# Not every bacterium uses table 11. The Mollicutes - Mycoplasma and its relatives, and Spiroplasma -
+# use NCBI table 4, and the difference is not a nuance: against table 11 they differ at TGA, which is
+# a stop under 11 and tryptophan under 4. Translating one of these genomes with table 11 truncates
+# every protein at its first TGA.
+#
+# Matched on the genus prefix of the Ensembl species directory name, which is a heuristic rather
+# than a taxonomy lookup: NCBI assigns table 4 across Mycoplasmatales and Entomoplasmatales, and the
+# genera below are the ones Ensembl Bacteria actually carries. Getting it wrong is detectable rather
+# than silent - the protein lengths SnpEff emits stop matching the pep.all.fa Ensembl ships for the
+# same genome - which is what the bacterial verification case checks.
+MYCOPLASMA_CODON_TABLE = "Mycoplasma"
+SPIROPLASMA_CODON_TABLE = "Spiroplasma"
+TABLE_4_GENERA = {
+    "mycoplasma": MYCOPLASMA_CODON_TABLE,
+    "mycoplasmoides": MYCOPLASMA_CODON_TABLE,
+    "mycoplasmopsis": MYCOPLASMA_CODON_TABLE,
+    "mesoplasma": MYCOPLASMA_CODON_TABLE,
+    "entomoplasma": MYCOPLASMA_CODON_TABLE,
+    "ureaplasma": MYCOPLASMA_CODON_TABLE,
+    "malacoplasma": MYCOPLASMA_CODON_TABLE,
+    "metamycoplasma": MYCOPLASMA_CODON_TABLE,
+    "spiroplasma": SPIROPLASMA_CODON_TABLE,
+}
+
+
+def bacterial_codon_table(species):
+    """The codon table for a bacterial genome, which is not always table 11."""
+    genus = species.lower().split("_")[0]
+    return TABLE_4_GENERA.get(genus, BACTERIAL_CODON_TABLE)
 
 # Ensembl serves bacteria from Ensembl Genomes, on its own release numbering, not from ftp.ensembl.org.
 ENSEMBL_REFERENCE = "https://ftp.ensembl.org/pub/release-{release}/"
@@ -96,7 +128,7 @@ def snpeff_config_block(genome, species, assembly, release, gene_model=None, div
         f"{genome}.reference : {reference.format(release=release)}",
     ]
     if division == "bacteria":
-        lines.append(f"\t{genome}.codonTable : {BACTERIAL_CODON_TABLE}")
+        lines.append(f"\t{genome}.codonTable : {bacterial_codon_table(species)}")
     else:
         for contig, table in mitochondria(species):
             lines.append(f"\t{genome}.{contig}.codonTable : {table}")

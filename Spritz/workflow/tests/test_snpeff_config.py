@@ -195,3 +195,33 @@ def test_the_division_defaults_to_vertebrates():
                                    division="vertebrates")
     assert snpeff_config_block("homo_sapiens.GRCh38", "homo_sapiens", "GRCh38", "111") == explicit
     assert "ftp.ensembl.org" in explicit
+
+
+def test_mollicutes_get_table_4_not_table_11():
+    """Mycoplasma and its relatives read TGA as tryptophan, not stop. Translating one of these with
+    Bacterial_and_Plant_Plastid truncates every protein at its first TGA, so this is not a nuance."""
+    from snpeff_config import bacterial_codon_table
+    for species in ("mycoplasma_hyopneumoniae_232_gca_000008405",
+                    "mycoplasmoides_pneumoniae_gca_000027345",
+                    "ureaplasma_parvum_gca_000006625"):
+        assert bacterial_codon_table(species) == "Mycoplasma", species
+    assert bacterial_codon_table("spiroplasma_citri_gca_000803325") == "Spiroplasma"
+
+
+def test_other_bacteria_still_get_table_11():
+    from snpeff_config import bacterial_codon_table
+    assert bacterial_codon_table("pseudomonas_aeruginosa_pao1_gca_000006765") == \
+        "Bacterial_and_Plant_Plastid"
+    assert bacterial_codon_table("escherichia_coli_gca_000005845") == "Bacterial_and_Plant_Plastid"
+
+
+def test_the_block_emits_the_mollicute_table():
+    block = snpeff_config_block("Mycoplasma_hyopneumoniae_232.ASM840v1",
+                                "mycoplasma_hyopneumoniae_232_gca_000008405", "ASM840v1", "63",
+                                division="bacteria")
+    assert codon_table_lines(block) == [
+        "Mycoplasma_hyopneumoniae_232.ASM840v1.codonTable : Mycoplasma"]
+
+
+def test_both_mollicute_tables_are_ones_snpeff_defines():
+    assert {"Mycoplasma", "Spiroplasma"} <= KNOWN_CODON_TABLES
