@@ -14,7 +14,7 @@ the bottom of this page is not covered by any test.
 podman run --rm -it \
   -v "/path/to/analysis:/app/spritz/results/" \
   -v "/path/to/resources:/app/spritz/resources" \
-  smithlab/spritz:0.3.14 \
+  smithlab/spritz:0.3.15 \
   conda run --no-capture-output --live-stream \
   dotnet SpritzCMD.dll \
     -a=/app/spritz/results/ \
