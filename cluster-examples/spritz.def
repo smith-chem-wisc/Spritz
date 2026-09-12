@@ -54,7 +54,19 @@ From: micromamba-base.sif
     # "exec: conda: not found". The published image escapes this only because it has no custom
     # runscript, so Apptainer's conversion execs the entrypoint for it.
     export MAMBA_ROOT_PREFIX=/opt/conda
+    export CONDA_PREFIX=/opt/conda
     export PATH=/opt/conda/bin:$PATH
+
+    # Prepending bin/ is not activation, and some packages need the difference. dotnet-runtime ships
+    # no bin/dotnet at all - the binary is lib/dotnet/dotnet, put on PATH by
+    # etc/conda/activate.d/dotnet-root.sh - so `dotnet` was missing here while working in Docker,
+    # whose entrypoint activates. Running the hooks covers that and anything else that does the same.
+    if [ -d /opt/conda/etc/conda/activate.d ]; then
+        for _spritz_hook in /opt/conda/etc/conda/activate.d/*.sh; do
+            [ -r "$_spritz_hook" ] && . "$_spritz_hook"
+        done
+        unset _spritz_hook
+    fi
     export LC_ALL=C
 
 %runscript
@@ -66,12 +78,19 @@ From: micromamba-base.sif
     # Fails the build rather than the run. Every one of these was a way an earlier version of this
     # definition broke silently and only surfaced on the cluster.
     set -eu
-    export MAMBA_ROOT_PREFIX=/opt/conda
-    export PATH=/opt/conda/bin:$PATH
+    # %environment is applied to %test, so this checks what a real invocation will see rather than
+    # re-deriving it. Failures print where things actually are, because "dotnet missing" on its own
+    # sent me looking in the wrong place.
     echo "commit:    $(cat /app/spritz/COMMIT)"
     command -v conda      >/dev/null || { echo "FAIL: conda not on PATH"; exit 1; }
     command -v snakemake  >/dev/null || { echo "FAIL: snakemake missing"; exit 1; }
-    command -v dotnet     >/dev/null || { echo "FAIL: dotnet missing"; exit 1; }
+    if ! command -v dotnet >/dev/null; then
+        echo "FAIL: dotnet not on PATH. DOTNET_ROOT=${DOTNET_ROOT:-unset}"
+        echo "      activation hooks present:"; ls /opt/conda/etc/conda/activate.d/ 2>&1 | sed 's/^/        /'
+        echo "      dotnet binaries found:"; ls /opt/conda/lib/dotnet/dotnet 2>&1 | sed 's/^/        /'
+        exit 1
+    fi
+    echo "dotnet:    $(dotnet --version 2>&1 | head -1) at $(command -v dotnet)"
     test -f /app/spritz/SpritzCMD.dll || { echo "FAIL: SpritzCMD.dll missing"; exit 1; }
     test -f /app/spritz/workflow/Snakefile || { echo "FAIL: workflow not packaged"; exit 1; }
     test -f /app/spritz/workflow/scripts/spritz_config.py || { echo "FAIL: scripts not packaged"; exit 1; }

@@ -98,9 +98,10 @@ that failure mode rather than only relocating it. It also makes a rebuild skip t
 pre-existing on `master`:
 
 - **`NU1902`** — `OpenMcdf 2.3.1` has moderate-severity advisories. No project references it
-  directly; it arrives transitively through `mzLib 1.0.586`. Fixing it means bumping mzLib or pinning
-  the transitive version, which needs its own testing and does not belong in a cluster script.
-  `NuGetAudit=false` hides the report, not the risk — worth a separate issue.
+  directly; it arrives transitively through `mzLib 1.0.586`. **Bumping mzLib does not fix it:**
+  1.0.587, 1.0.588 and 1.0.589 all pin `OpenMcdf 2.3.1`. The advisory is only addressed in OpenMcdf
+  3.x, a breaking major bump that mzLib would have to make, so this is upstream. `NuGetAudit=false`
+  hides the report, not the risk — worth an mzLib issue rather than anything here.
 - **`MSB3246`** — "PE image does not have metadata" while resolving references, from native
   libraries in the dependency set being handed to the reference resolver. Benign and long-standing.
 
