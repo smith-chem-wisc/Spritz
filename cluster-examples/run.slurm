@@ -55,14 +55,16 @@ if [ -n "${VCF:-}" ]; then ./make_test_vcf.sh "$RESULTS/$VCF"; ARGS+=(-v="$VCF" 
 # dies partway through. Binding it also means the environments persist between the four cases instead
 # of being rebuilt four times.
 #
-# `conda run` is passed in rather than baked into the runscript, so this is the identical invocation
-# the Docker and Apptainer CI jobs use.
+# `dotnet` directly, not via `conda run`. The definition's %environment runs the environment's
+# activation hooks, so dotnet is on PATH already; and `conda run` is the machinery that exited 0
+# while running nothing once a host conda leaked into the build. One less thing between here and the
+# program. snakemake is still found on PATH by SpritzCMD, which is all it needs.
 apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --bind "$RESULTS":/app/spritz/results/ \
   --bind "$RESOURCES":/app/spritz/resources \
   --bind "$SNAKE":/app/spritz/workflow/.snakemake \
   spritz.sif \
-  conda run --no-capture-output --live-stream dotnet SpritzCMD.dll "${ARGS[@]}"
+  dotnet SpritzCMD.dll "${ARGS[@]}"
 
 echo "=== ${CASE_NAME}: run finished, checking ==="
 ./check.sh "$CASE_NAME" "$ROOT"

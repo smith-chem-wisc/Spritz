@@ -53,6 +53,12 @@ From: micromamba-base.sif
     # entrypoint, so without this `conda` is not on PATH and every invocation dies with
     # "exec: conda: not found". The published image escapes this only because it has no custom
     # runscript, so Apptainer's conversion execs the entrypoint for it.
+    # Drop any conda the caller's shell exported. A login node with an active (base) environment
+    # leaks CONDA_EXE and friends pointing at a host path - /hpc/apps/anaconda/.../bin/conda - which
+    # does not exist in here, and `conda run` then silently does nothing. Apptainer's --cleanenv
+    # covers this at run time but not during a build's %test.
+    unset CONDA_EXE CONDA_PYTHON_EXE CONDA_SHLVL CONDA_DEFAULT_ENV CONDA_PROMPT_MODIFIER
+    unset _CE_CONDA _CE_M CONDA_ENVS_PATH CONDA_PKGS_DIRS
     export MAMBA_ROOT_PREFIX=/opt/conda
     export CONDA_PREFIX=/opt/conda
     export PATH=/opt/conda/bin:$PATH
@@ -90,12 +96,44 @@ From: micromamba-base.sif
         echo "      dotnet binaries found:"; ls /opt/conda/lib/dotnet/dotnet 2>&1 | sed 's/^/        /'
         exit 1
     fi
-    echo "dotnet:    $(dotnet --version 2>&1 | head -1) at $(command -v dotnet)"
+    # --list-runtimes, not --version: the latter is an SDK command, and only the runtime is
+    # installed here, so it reports "The command could not be loaded" on a perfectly good dotnet.
+    dotnet --list-runtimes >/dev/null 2>&1 \
+        || { echo "FAIL: dotnet present at $(command -v dotnet) but cannot load a runtime"; exit 1; }
+    echo "dotnet:    $(command -v dotnet), runtimes: $(dotnet --list-runtimes 2>/dev/null | wc -l)"
     test -f /app/spritz/SpritzCMD.dll || { echo "FAIL: SpritzCMD.dll missing"; exit 1; }
     test -f /app/spritz/workflow/Snakefile || { echo "FAIL: workflow not packaged"; exit 1; }
     test -f /app/spritz/workflow/scripts/spritz_config.py || { echo "FAIL: scripts not packaged"; exit 1; }
-    cd /app/spritz && conda run --no-capture-output dotnet SpritzCMD.dll --help >/dev/null \
-        || { echo "FAIL: SpritzCMD --help did not run"; exit 1; }
+
+    # Asserted on OUTPUT, not on an exit code, and without `conda run`. The previous version of this
+    # check wrapped it in `conda run`, which exited 0 while running nothing once the host's conda
+    # leaked in - so the one check meant to prove the thing works passed vacuously and the build
+    # reported success. dotnet is on PATH via the activation hooks, so the wrapper buys nothing.
+    #
+    # Asserted on the three options this branch adds, not on generic usage text: that proves the
+    # image was built from the right source, which a bare exit code cannot. The help format is
+    # "e:division", not "--division".
+    cd /app/spritz
+    _help=$(dotnet SpritzCMD.dll --help 2>&1) || { echo "FAIL: SpritzCMD --help exited non-zero"; exit 1; }
+    for _opt in "a:analysisDirectory" "v:vcf" "e:division" "k:known-sites"; do
+        case "$_help" in
+            *"$_opt"*) ;;
+            *) echo "FAIL: --help does not mention $_opt, so this is not a build of this branch. Got:"
+               printf '%s\n' "$_help" | head -20 | sed 's/^/        /'
+               exit 1 ;;
+        esac
+    done
+    echo "cli:       -v, -e and -k all present"
+
+    # snakemake has to be able to parse the packaged workflow, which is the next thing that breaks
+    # after the container itself is sound.
+    cd /app/spritz/workflow
+    if ! snakemake --lint >/dev/null 2>&1; then
+        echo "FAIL: snakemake could not lint the packaged workflow:"
+        snakemake --lint 2>&1 | tail -20 | sed 's/^/        /'
+        exit 1
+    fi
+    echo "workflow:  lints clean"
     echo "all container checks passed"
 
 %labels
