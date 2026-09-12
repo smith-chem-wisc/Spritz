@@ -25,6 +25,9 @@ command -v apptainer >/dev/null || { echo "ERROR: apptainer not found (module lo
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-$PWD/.apptainer-cache}"
 mkdir -p "$APPTAINER_CACHEDIR"
 
+# run.slurm cannot create this itself - slurm opens logs/%x-%a.out before the script runs.
+mkdir -p logs
+
 # TMPDIR is different, and putting it here was wrong. `apptainer build --fakeroot` unpacks layers
 # rootlessly, which encodes file ownership in `user.rootlesscontainers` extended attributes - and a
 # shared HPC filesystem usually does not support xattrs, which fails the build with

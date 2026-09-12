@@ -7,4 +7,5 @@ spritz.sif
 .nuget/
 work/
 logs/
+!logs/.gitkeep
 micromamba-base.sif

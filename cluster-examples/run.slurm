@@ -15,7 +15,15 @@
 # GATK asks for -Xmx24000M in the calling rules, so 32G is the floor for the case that calls
 # variants. The three reference-only cases are far lighter but share the allocation.
 set -euo pipefail
-cd "$(dirname "$0")"
+
+# NOT `cd "$(dirname "$0")"`. sbatch spools a *copy* of this script, so under SLURM $0 is something
+# like /var/spool/slurmd/job1234/slurm_script and that cd lands in the spool directory, where
+# spritz.sif, cases/ and check.sh do not exist. SLURM_SUBMIT_DIR is the directory sbatch was run
+# from; fall back to $0 so the script is still runnable directly for a quick test.
+HERE="${SLURM_SUBMIT_DIR:-$(dirname "$0")}"
+[ -f "$HERE/run.slurm" ] || HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE"
+[ -f run.slurm ] || { echo "ERROR: cannot locate cluster-examples/ (tried $HERE); submit from that directory" >&2; exit 1; }
 mkdir -p logs
 
 CASES=(easy medium hard vcf)
@@ -35,10 +43,14 @@ mkdir -p "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR"
 echo "=== ${CASE_NAME}: ${SPECIES} ${GENOME} (EG release ${RELEASE}) ==="
 echo "    results=$RESULTS"
 
+# `tr`, not ${SPECIES,,}: that lowercasing expansion is bash 4+, and it makes the script
+# unrunnable on any bash 3.2 (macOS) where the rest of it could otherwise be tested.
+SPECIES_LC="$(printf %s "$SPECIES" | tr '[:upper:]' '[:lower:]')"
+
 ARGS=(-a=/app/spritz/results/
       -e=bacteria
       -p="${SLURM_CPUS_PER_TASK:-8}"
-      -r="release-${RELEASE},${SPECIES,,},${ORGANISM},${GENOME}")
+      -r="release-${RELEASE},${SPECIES_LC},${ORGANISM},${GENOME}")
 
 # A case with reads calls variants, bootstrapping its known sites since Ensembl Bacteria has none.
 # A case with a VCF annotates that instead. A case with neither builds the reference database only,
