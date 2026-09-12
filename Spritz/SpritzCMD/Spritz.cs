@@ -192,6 +192,12 @@ namespace SpritzCMD
                 .SetDefault(SpritzOptionStrings.DivisionVertebrates)
                 .WithDescription(SpritzOptionStrings.DivisionDesc);
 
+            p.Setup(arg => arg.ReferenceFree)
+                .As(SpritzOptionStrings.ReferenceFreeShort,
+                    SpritzOptionStrings.ReferenceFreeLong)
+                .SetDefault(false)
+                .WithDescription(SpritzOptionStrings.ReferenceFreeDesc);
+
             p.Setup(arg => arg.KnownSites)
                 .As(SpritzOptionStrings.KnownSitesShort,
                     SpritzOptionStrings.KnownSitesLong)
@@ -310,6 +316,33 @@ namespace SpritzCMD
                     $"Error: \"{division}\" is not an Ensembl division Spritz knows. Use " +
                     $"\"{SpritzOptionStrings.DivisionVertebrates}\" or " +
                     $"\"{SpritzOptionStrings.DivisionBacteria}\".");
+            }
+            else if (p.Object.ReferenceFree
+                     && string.IsNullOrWhiteSpace(p.Object.SraAccession)
+                     && string.IsNullOrWhiteSpace(p.Object.SraAccessionSingleEnd)
+                     && string.IsNullOrWhiteSpace(p.Object.Fastq1)
+                     && string.IsNullOrWhiteSpace(p.Object.Fastq1SingleEnd))
+            {
+                // The snakefile refuses this too, but only once the container is up and the
+                // workflow parses. A reference-only run with no reads is otherwise legitimate, so
+                // this combination needs saying explicitly rather than falling out of another check.
+                throw new SpritzException(
+                    $"Error: -{SpritzOptionStrings.ReferenceFreeShort} needs sequencing reads. " +
+                    "Transcripts are assembled from alignments, so it removes the requirement for " +
+                    "a reference gene model, not the requirement for reads.");
+            }
+            else if (p.Object.ReferenceFree && !p.Object.AnalyzeIsoforms)
+            {
+                throw new SpritzException(
+                    $"Error: -{SpritzOptionStrings.ReferenceFreeShort} builds its gene model by " +
+                    $"assembling transcripts, so it needs -{SpritzOptionStrings.AnalyzeIsoformsShort}.");
+            }
+            else if (p.Object.ReferenceFree && p.Object.AnalyzeVariants)
+            {
+                throw new SpritzException(
+                    $"Error: -{SpritzOptionStrings.ReferenceFreeShort} cannot yet be combined with " +
+                    $"-{SpritzOptionStrings.AnalyzeVariantsShort}: variants are annotated against the " +
+                    $"reference gene model, which is what a reference-free run lacks.");
             }
             else if (!EnsemblVariation.IsKnownMode(knownSites))
             {

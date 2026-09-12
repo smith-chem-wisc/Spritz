@@ -153,3 +153,33 @@ class TestChooseConfigfile:
         second.write_text("species: B\n")
         chosen = choose_configfile([str(first), str(second), str(default)], str(default))
         assert chosen == str(second)
+
+
+class TestReferenceFreeCoercion:
+    """`reference_free` is a bool the workflow reads with bool(), which any string satisfies.
+
+    common.smk does `REFERENCE_FREE = bool(config.get("reference_free"))`. A hand-written
+    `reference_free: "False"`, or a shell that quotes `--config reference_free=False`, yields the
+    string "False" - truthy - so the option would switch itself on and the run would refuse itself
+    for lacking the isoform analysis. Same class of bug as the vcf string above.
+    """
+
+    @pytest.mark.parametrize("given", ["False", "false", "FALSE", "no", "0", "off", "none", ""])
+    def test_strings_meaning_off_become_false(self, given):
+        assert normalise({"reference_free": given})["reference_free"] is False
+
+    @pytest.mark.parametrize("given", ["True", "true", "yes", "1", "on"])
+    def test_strings_meaning_on_become_true(self, given):
+        assert normalise({"reference_free": given})["reference_free"] is True
+
+    @pytest.mark.parametrize("given", [True, False, None])
+    def test_real_booleans_and_absence_pass_through(self, given):
+        assert normalise({"reference_free": given})["reference_free"] == given
+
+    def test_absent_key_is_left_absent(self):
+        """bool(None) is False either way, so the key is not invented."""
+        assert "reference_free" not in normalise({})
+
+    def test_bool_of_the_result_is_what_common_smk_will_see(self):
+        """The workflow's own expression, against the value that used to break it."""
+        assert bool(normalise({"reference_free": "False"})["reference_free"]) is False

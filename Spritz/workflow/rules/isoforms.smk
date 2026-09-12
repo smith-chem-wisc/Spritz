@@ -1,18 +1,25 @@
+# -G anchors StringTie to known genes; reference-free assembly omits it and lets TransDecoder's ORF
+# calls become the gene model instead (issue #193). A params string rather than an f-string inside
+# each shell, so the four rules cannot drift apart.
+STRINGTIE_GUIDE = "" if REFERENCE_FREE else f"-G {GFF3}"
+
 if check('sra'):
     rule assemble_transcripts_sra:
         '''Rule adapted from ProteomeGenerator'''
         input:
             bam="{dir}/align/{sra}.sra.sorted.bam",
-            gff=GFF3,
+            # Omitted entirely when assembling reference-free; see STRINGTIE_GUIDE above.
+            **({} if REFERENCE_FREE else {"gff": GFF3}),
         output:
             gtf=temp("{dir}/isoforms/{sra}.sra.sorted.gtf"),
             gtfgz="{dir}/isoforms/{sra}.sra.sorted.gtf.gz",
+        params: guide=STRINGTIE_GUIDE,
         threads: 4
         benchmark: "{dir}/isoforms/{sra}.sra.sorted.gtf.benchmark"
         log: "{dir}/isoforms/{sra}.sra.sorted.gtf.log"
         conda: "../envs/isoforms.yaml"
         shell:
-            "(stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
+            "(stringtie {input.bam} -p {threads} {params.guide} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
             "gzip -k {output.gtf}) 2> {log}"
 
 if check('sra_se'):
@@ -20,16 +27,17 @@ if check('sra_se'):
         '''Rule adapted from ProteomeGenerator'''
         input:
             bam="{dir}/align/{sra_se}.sra_se.sorted.bam",
-            gff=GFF3,
+            **({} if REFERENCE_FREE else {"gff": GFF3}),
         output:
             gtf=temp("{dir}/isoforms/{sra_se}.sra_se.sorted.gtf"),
             gtfgz="{dir}/isoforms/{sra_se}.sra_se.sorted.gtf.gz"
+        params: guide=STRINGTIE_GUIDE,
         threads: 4
         log: "{dir}/isoforms/{sra_se}.sra_se.sorted.gtf.log"
         benchmark: "{dir}/isoforms/{sra_se}.sra_se.sorted.gtf.benchmark"
         conda: "../envs/isoforms.yaml"
         shell:
-            "(stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
+            "(stringtie {input.bam} -p {threads} {params.guide} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
             "gzip -k {output.gtf}) 2> {log}"
 
 if check('fq'):
@@ -37,16 +45,17 @@ if check('fq'):
         '''Rule adapted from ProteomeGenerator'''
         input:
             bam="{dir}/align/{fq}.fq.sorted.bam",
-            gff=GFF3,
+            **({} if REFERENCE_FREE else {"gff": GFF3}),
         output:
             gtf=temp("{dir}/isoforms/{fq}.fq.sorted.gtf"),
             gtfgz="{dir}/isoforms/{fq}.fq.sorted.gtf.gz"
+        params: guide=STRINGTIE_GUIDE,
         threads: 4
         log: "{dir}/isoforms/{fq}.fq.sorted.gtf.log"
         benchmark: "{dir}/isoforms/{fq}.fq.sorted.gtf.benchmark"
         conda: "../envs/isoforms.yaml"
         shell:
-            "(stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
+            "(stringtie {input.bam} -p {threads} {params.guide} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
             "gzip -k {output.gtf}) 2> {log}"
 
 if check('fq_se'):
@@ -54,16 +63,17 @@ if check('fq_se'):
         '''Rule adapted from ProteomeGenerator'''
         input:
             bam="{dir}/align/{fq_se}.fq_se.sorted.bam",
-            gff=GFF3,
+            **({} if REFERENCE_FREE else {"gff": GFF3}),
         output:
             gtf=temp("{dir}/isoforms/{fq_se}.fq_se.sorted.gtf"),
             gtfgz="{dir}/isoforms/{fq_se}.fq_se.sorted.gtf.gz"
+        params: guide=STRINGTIE_GUIDE,
         threads: 4
         log: "{dir}/isoforms/{fq_se}.fq_se.sorted.gtf.log"
         benchmark: "{dir}/isoforms/{fq_se}.fq_se.sorted.gtf.benchmark"
         conda: "../envs/isoforms.yaml"
         shell:
-            "(stringtie {input.bam} -p {threads} -G {input.gff} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
+            "(stringtie {input.bam} -p {threads} {params.guide} -o {output.gtf} -c 2.5 -m 300 -f .01 && " # strandedness: --fr for forwared or --rf for reverse
             "gzip -k {output.gtf}) 2> {log}"
 
 rule merge_transcripts:
@@ -74,7 +84,8 @@ rule merge_transcripts:
             ([] if not check('sra_se') else expand("{{dir}}/isoforms/{sra_se}.sra_se.sorted.gtf", sra_se=config["sra_se"])) + \
             ([] if not check('fq') else expand("{{dir}}/isoforms/{fq}.fq.sorted.gtf", fq=config["fq"])) + \
             ([] if not check('fq_se') else expand("{{dir}}/isoforms/{fq_se}.fq_se.sorted.gtf", fq_se=config["fq_se"])),
-        gff=GFF3,
+        # No gff here: `stringtie --merge` below never referenced the declared GFF3, so requiring it
+        # only forced the Ensembl download into a run that does not read it.
     output:
         gtf=temp("{dir}/isoforms/combined.gtf"),
         gtfgz="{dir}/isoforms/combined.gtf.gz"

@@ -266,6 +266,10 @@ namespace SpritzBackend
             YamlSequenceNode vcf = new();
             rootMappingNode.Add("vcf", AddParam(vcfs, vcf));
 
+            // assemble without the reference gene model; see REFERENCE_FREE in common.smk
+            rootMappingNode.Add("reference_free",
+                new YamlScalarNode(options.ReferenceFree ? "True" : "False"));
+
             // which Ensembl site the reference comes from; see DIVISION in common.smk
             // Lowercased like known_sites below. The C# side accepts any casing on purpose, but
             // every workflow-side test is case-sensitive (`DIVISION == "bacteria"`), so writing it

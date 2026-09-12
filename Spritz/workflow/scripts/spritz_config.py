@@ -47,6 +47,14 @@ def normalise(config):
     if isinstance(config.get("vcf"), str):
         config["vcf"] = [config["vcf"]] if config["vcf"] else []
 
+    # `reference_free: "False"` in a hand-written config, or --config reference_free=False on a
+    # shell that quotes it, gives the STRING "False" - and every non-empty string is truthy, so the
+    # option would read as on. Same trap as `vcf` above. Only the words that mean "off" are mapped;
+    # anything else keeps normal truthiness, so a typo does not silently disable the feature.
+    if isinstance(config.get("reference_free"), str):
+        config["reference_free"] = \
+            config["reference_free"].strip().lower() not in ("", "false", "no", "0", "off", "none")
+
     # Ensembl Bacteria publishes no variation at all, so the downloaded route can never apply to a
     # bacterial reference; bootstrap is simply the route bacteria take.
     if (config.get("division") or "vertebrates").lower() == "bacteria" \
