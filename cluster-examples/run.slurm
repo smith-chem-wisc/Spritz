@@ -25,7 +25,7 @@ source "cases/${CASE_NAME}.env"
 
 ROOT="${SPRITZ_WORK:-$PWD/work}/${CASE_NAME}"
 RESULTS="$ROOT/results"; RESOURCES="$ROOT/resources"; SNAKE="$ROOT/snakemake"
-mkdir -p "$RESULTS" "$RESOURCES" "$SNAKE"
+mkdir -p "$RESULTS" "$RESOURCES" "$SNAKE" "$ROOT/cache"
 
 # Point the apptainer cache at somewhere with quota, per the cluster wiki page.
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-$ROOT/../apptainer-cache}"
@@ -59,7 +59,11 @@ if [ -n "${VCF:-}" ]; then ./make_test_vcf.sh "$RESULTS/$VCF"; ARGS+=(-v="$VCF" 
 # activation hooks, so dotnet is on PATH already; and `conda run` is the machinery that exited 0
 # while running nothing once a host conda leaked into the build. One less thing between here and the
 # program. snakemake is still found on PATH by SpritzCMD, which is all it needs.
+# snakemake keeps a source cache under $HOME/.cache/snakemake. --cleanenv leaves HOME pointing at
+# the real home directory, which is writable, but it is set explicitly here so the cache cannot end
+# up somewhere read-only - which is exactly how the container's own %test failed.
 apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
+  --env XDG_CACHE_HOME="$ROOT/cache" \
   --bind "$RESULTS":/app/spritz/results/ \
   --bind "$RESOURCES":/app/spritz/resources \
   --bind "$SNAKE":/app/spritz/workflow/.snakemake \

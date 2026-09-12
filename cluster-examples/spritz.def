@@ -125,15 +125,29 @@ From: micromamba-base.sif
     done
     echo "cli:       -v, -e and -k all present"
 
-    # snakemake has to be able to parse the packaged workflow, which is the next thing that breaks
-    # after the container itself is sound.
-    cd /app/spritz/workflow
-    if ! snakemake --lint >/dev/null 2>&1; then
-        echo "FAIL: snakemake could not lint the packaged workflow:"
-        snakemake --lint 2>&1 | tail -20 | sed 's/^/        /'
-        exit 1
+    # Best-effort, and deliberately not fatal on an environment problem. %test runs against the
+    # read-only image with HOME=/root, and snakemake wants to create $HOME/.cache/snakemake for its
+    # source cache, so it dies with "Read-only file system" before it parses anything. That says
+    # nothing about the workflow. Real runs are unaffected: Apptainer mounts the real $HOME, and
+    # run.slurm adds --writable-tmpfs.
+    #
+    # CI lints on every push, so this is a convenience here. A convenience that can fail the build
+    # for the wrong reason is worse than not having it.
+    _cache=/tmp/spritz-test-cache
+    if mkdir -p "$_cache" 2>/dev/null && [ -w "$_cache" ]; then
+        cd /app/spritz/workflow
+        if HOME=/tmp XDG_CACHE_HOME="$_cache" snakemake --lint >/tmp/lint.out 2>&1; then
+            echo "workflow:  lints clean"
+        elif grep -qi "read-only file system\|permission denied" /tmp/lint.out; then
+            echo "workflow:  lint skipped (no writable cache in the build sandbox)"
+        else
+            echo "FAIL: snakemake could not lint the packaged workflow:"
+            tail -20 /tmp/lint.out | sed 's/^/        /'
+            exit 1
+        fi
+    else
+        echo "workflow:  lint skipped (no writable /tmp in the build sandbox)"
     fi
-    echo "workflow:  lints clean"
     echo "all container checks passed"
 
 %labels
