@@ -23,10 +23,22 @@ Bootstrap: localimage
 From: micromamba-base.sif
 
 %files
-    build/app/ /app/
+    # Explicit source and destination, with no trailing slashes. `%files` copies with `cp -rfL`, and
+    # GNU cp treats `build/app/ /app/` as "put the directory app inside /app", giving
+    # /app/app/spritz/... - which is why the base environment install could not find its YAML. BSD
+    # cp copies the contents instead, so this does not reproduce on macOS.
+    build/app/spritz /app/spritz
 
 %post
     set -eu
+    # Say where things actually are if the copy above ever lands them somewhere else, rather than
+    # leaving micromamba to report a missing file and nothing about why.
+    if [ ! -f /app/spritz/workflow/envs/spritzbase.yaml ]; then
+        echo "ERROR: expected /app/spritz/workflow/envs/spritzbase.yaml. Found instead:"
+        find /app -maxdepth 4 -name 'spritzbase.yaml' -o -maxdepth 2 -type d | sed 's/^/  /'
+        exit 1
+    fi
+
     # Set explicitly: %post runs as root and cannot be assumed to have the base image's ENV, and
     # micromamba defaults to ~/micromamba, which would put the whole environment somewhere nothing
     # later looks for it.

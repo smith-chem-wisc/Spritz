@@ -74,6 +74,15 @@ git -C src checkout --quiet "$SPRITZ_COMMIT"
 git -C src rev-parse HEAD | tee src/COMMIT
 
 echo "==> 2/3  compiling SpritzCMD in the .NET SDK container"
+# Two families of warning are silenced here, and only here - this is a verification build, not the
+# product, and both are pre-existing on master rather than anything this branch introduces.
+#
+#   NU1902  OpenMcdf 2.3.1 has moderate-severity advisories. It is not referenced directly by any
+#           project; it arrives transitively through mzLib 1.0.586. Fixing it properly means bumping
+#           mzLib or pinning the transitive version, which is a change with its own testing and does
+#           not belong in a cluster script. NuGetAudit=false suppresses the report, not the risk.
+#   MSB3246 "PE image does not have metadata" while resolving references, from native libraries in
+#           the dependency set being offered to the reference resolver. Benign and long-standing.
 # HOME and the NuGet/CLI directories are redirected into this tree so nothing is written to a home
 # directory that may be read-only or quota'd on a login node.
 mkdir -p .dotnet-home .nuget
@@ -87,7 +96,10 @@ apptainer exec --cleanenv \
   --env DOTNET_NOLOGO=1 \
   --bind "$PWD":"$PWD" --pwd "$PWD/src" \
   "$SDK_IMAGE" \
-  dotnet build -c Release -p:UseSharedCompilation=false Spritz/SpritzCMD/SpritzCMD.csproj
+  dotnet build -c Release -p:UseSharedCompilation=false \
+    --nologo -v:minimal \
+    -p:NuGetAudit=false -p:MSBuildWarningsAsMessages=MSB3246 \
+    Spritz/SpritzCMD/SpritzCMD.csproj
 
 OUT=src/Spritz/SpritzCMD/bin/Release/net10.0
 test -f "$OUT/SpritzCMD.dll"        || { echo "ERROR: SpritzCMD.dll not produced" >&2; exit 1; }

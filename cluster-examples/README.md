@@ -92,6 +92,21 @@ than from `docker://`. Converting an OCI image to SIF tolerates a filesystem wit
 warns and carries on — while the rootless unpack inside `build` does not, so pulling first removes
 that failure mode rather than only relocating it. It also makes a rebuild skip the fetch.
 
+## The warnings you will not see
+
+`build.sh` silences two families, here only, because this is a verification build and both are
+pre-existing on `master`:
+
+- **`NU1902`** — `OpenMcdf 2.3.1` has moderate-severity advisories. No project references it
+  directly; it arrives transitively through `mzLib 1.0.586`. Fixing it means bumping mzLib or pinning
+  the transitive version, which needs its own testing and does not belong in a cluster script.
+  `NuGetAudit=false` hides the report, not the risk — worth a separate issue.
+- **`MSB3246`** — "PE image does not have metadata" while resolving references, from native
+  libraries in the dependency set being handed to the reference resolver. Benign and long-standing.
+
+The repository's own builds and CI are untouched, so the warning baseline the branch was measured
+against still holds.
+
 ## Known ways this can fail that are not bugs
 
 - **No UniProt proteome for the organism.** `get_proteome.py` looks bacteria up by NCBI taxonomy id
