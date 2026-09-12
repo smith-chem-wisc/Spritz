@@ -83,6 +83,9 @@ rule transfer_modifications_variant:
         vardesc="{dir}/variants/combined.spritz.snpeff.protein.vardesc.tsv",
         accnamedecoy="{dir}/variants/combined.spritz.snpeff.protein.accname.decoy.tsv",
         vardescdecoy="{dir}/variants/combined.spritz.snpeff.protein.vardesc.decoy.tsv",
+    # mzLib decompresses a .gz to a fixed temp.xml beside the input, so the four rules that run
+    # this assembly on UNIPROTXML must not overlap. Limit set in RunnerEngine.GenerateSnakemakeCommand.
+    resources: uniprot_temp=1
     log: "{dir}/variants/combined.spritz.snpeff.protein.withmods.log"
     benchmark: "{dir}/variants/combined.spritz.snpeff.protein.withmods.benchmark"
     conda: "../envs/proteogenomics.yaml"
@@ -108,6 +111,7 @@ rule transfer_modifications_isoformvariant:
         vardesc="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.tsv",
         accnamedecoy="{dir}/variants/combined.spritz.isoformvariants.protein.accname.decoy.tsv",
         vardescdecoy="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.decoy.tsv",
+    resources: uniprot_temp=1
     log: "{dir}/variants/combined.spritz.isoformvariants.protein.withmods.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
@@ -168,7 +172,7 @@ rule reference_protein_xml:
         accnamedecoy=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.accname.decoy.tsv"),
         vardescdecoy=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.vardesc.decoy.tsv"),
     params: ref=REF
-    resources: mem_mb=16000
+    resources: mem_mb=16000, uniprot_temp=1
     benchmark: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
     log: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.log")
     conda: "../envs/proteogenomics.yaml"
@@ -209,7 +213,7 @@ rule custom_protein_xml:
         vardescdecoy="{dir}/isoforms/combined.spritz.isoform.protein.vardesc.decoy.tsv",
     params:
         ref="combined.transcripts.genome.gff3", # with isoforms
-    resources: mem_mb=16000
+    resources: mem_mb=16000, uniprot_temp=1
     benchmark: "{dir}/isoforms/combined.spritz.isoform.benchmark"
     log: "{dir}/isoforms/combined.spritz.isoform.log"
     conda: "../envs/proteogenomics.yaml"

@@ -192,7 +192,10 @@ namespace SpritzBackend
             // No --conda-frontend: snakemake 9 accepts the flag but prints "Ignoring the alternative
             // conda frontend setting (mamba)" and uses conda, which now solves via libmamba anyway.
             // Passing it only produced a warning on every run.
-            cmd += $"snakemake -j {options.Threads} --use-conda --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
+            // --resources: a rule's `resources: uniprot_temp=1` constrains scheduling only when a limit
+            // is given here. Without the flag the four rules that run SpritzModifications on the UniProt
+            // xml overlap again, and mzLib's fixed temp.xml makes that a crash.
+            cmd += $"snakemake -j {options.Threads} --use-conda --resources uniprot_temp=1 --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
             if (setup)
             {
                 // The rule is named "setup" and writes ../resources/setup.txt. "setup.txt" matches
