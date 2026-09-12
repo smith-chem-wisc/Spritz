@@ -1,40 +1,25 @@
 # Apptainer definition for verifying the bacterial support on a cluster, built from a branch rather
 # than a published image so the fixes can be checked before they are merged.
 #
-# Self-contained on purpose: stage one brings its own .NET SDK and clones the branch, so the cluster
-# needs neither dotnet nor Docker. Build with:
+# This does NOT compile anything. build.sh compiles SpritzCMD first, in a plain `apptainer exec` of
+# the .NET SDK image, and this definition only copies the result in and installs the conda base
+# environment. The compile used to happen in %post, which runs under `--fakeroot`, and it failed
+# there with
+#   CSC : error CS2001: Source file '.../SpritzBackend.GeneratedMSBuildEditorConfig.editorconfig' could not be found
+# on a file the SDK generates during build. That did not reproduce outside fakeroot, so rather than
+# guess at the interaction, the compile was moved out of the privileged build entirely. It also makes
+# iterating on this file fast, since a rebuild no longer recompiles.
 #
-#     apptainer build --fakeroot spritz.sif spritz.def
+# Must be built on x86_64: bioconda publishes gatk4 for linux-64 only, with no linux-aarch64, so the
+# variants environment will not solve on an ARM machine at all.
 #
-# It must be built on x86_64. bioconda publishes gatk4 for linux-64 only, with no linux-aarch64, so
-# the variants environment will not solve on an ARM machine at all.
-
-Bootstrap: docker
-From: mcr.microsoft.com/dotnet/sdk:10.0
-Stage: build
-
-%post
-    set -eu
-    apt-get update && apt-get install -y --no-install-recommends git ca-certificates
-    cd /src
-    # Pinned by commit, not by branch name, so a rebuild months later is the same build.
-    git clone https://github.com/smith-chem-wisc/Spritz.git repo
-    cd repo && git checkout "${SPRITZ_COMMIT:-vcf-entry-point}"
-    dotnet restore Spritz/SpritzCMD/SpritzCMD.csproj
-    dotnet build --no-restore --configuration Release Spritz/SpritzCMD/SpritzCMD.csproj
-    git -C /src/repo rev-parse HEAD > /src/repo/COMMIT
-
-%setup
-    mkdir -p ${APPTAINER_ROOTFS}/src
-
+#     ./build.sh
 
 Bootstrap: docker
 From: mambaorg/micromamba:2.9.0-ubuntu24.04
-Stage: final
 
-%files from build
-    /src/repo/Spritz/SpritzCMD/bin/Release/net10.0/ /app/spritz/
-    /src/repo/COMMIT /app/spritz/COMMIT
+%files
+    build/app/ /app/
 
 %post
     set -eu
@@ -51,7 +36,7 @@ Stage: final
     # (_entrypoint.sh) to activate the base environment. Apptainer runs %runscript instead of that
     # entrypoint, so without this `conda` is not on PATH and every invocation dies with
     # "exec: conda: not found". The published image escapes this only because it has no custom
-    # runscript, so Apptainer's conversion execs the Docker entrypoint for it.
+    # runscript, so Apptainer's conversion execs the entrypoint for it.
     export MAMBA_ROOT_PREFIX=/opt/conda
     export PATH=/opt/conda/bin:$PATH
     export LC_ALL=C
@@ -62,7 +47,7 @@ Stage: final
     exec "$@"
 
 %test
-    # Fails the build rather than the run. Every one of these was a way the first version of this
+    # Fails the build rather than the run. Every one of these was a way an earlier version of this
     # definition broke silently and only surfaced on the cluster.
     set -eu
     export MAMBA_ROOT_PREFIX=/opt/conda

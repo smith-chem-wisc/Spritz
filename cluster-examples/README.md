@@ -15,6 +15,13 @@ sbatch run.slurm           # four cases as an array
 ./collect.sh               # tarball of logs, configs, prose and protein FASTAs
 ```
 
+`build.sh` is two steps: it compiles `SpritzCMD` in a plain `apptainer exec` of the .NET SDK image,
+then builds a SIF that only copies that output in and installs the conda environment. The compile
+used to live in the definition's `%post`, which runs under `--fakeroot`, and failed there with a
+`CS2001` on a file the SDK generates during build — a failure that did not reproduce outside
+fakeroot. Moving the compile out removes the interaction instead of guessing at it, and means
+iterating on the definition no longer recompiles.
+
 The definition's `%test` section runs at the end of the build, so a container that cannot find
 `conda`, `snakemake` or `dotnet` fails there rather than an hour into an array task. The first
 version of this definition did not have it, and shipped with a `%runscript` that bypassed the base
