@@ -15,6 +15,13 @@ sbatch run.slurm           # four cases as an array
 ./collect.sh               # tarball of logs, configs, prose and protein FASTAs
 ```
 
+The definition's `%test` section runs at the end of the build, so a container that cannot find
+`conda`, `snakemake` or `dotnet` fails there rather than an hour into an array task. The first
+version of this definition did not have it, and shipped with a `%runscript` that bypassed the base
+image's entrypoint — so every invocation died with `exec: conda: not found`. The base image does not
+put `/opt/conda/bin` on `PATH`; it relies on that entrypoint to activate the environment, which
+Apptainer does not run when a definition supplies its own runscript.
+
 `build.sh` needs `apptainer build --fakeroot`. The definition brings its own .NET SDK and clones the
 branch, so the cluster needs neither `dotnet` nor Docker. Pin a commit with
 `SPRITZ_COMMIT=<sha> ./build.sh` — the default is the branch tip, which moves.

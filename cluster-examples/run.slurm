@@ -24,8 +24,13 @@ CASE_NAME="${CASES[${SLURM_ARRAY_TASK_ID:-0}]}"
 source "cases/${CASE_NAME}.env"
 
 ROOT="${SPRITZ_WORK:-$PWD/work}/${CASE_NAME}"
-RESULTS="$ROOT/results"; RESOURCES="$ROOT/resources"
-mkdir -p "$RESULTS" "$RESOURCES" 
+RESULTS="$ROOT/results"; RESOURCES="$ROOT/resources"; SNAKE="$ROOT/snakemake"
+mkdir -p "$RESULTS" "$RESOURCES" "$SNAKE"
+
+# Point the apptainer cache at somewhere with quota, per the cluster wiki page.
+export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-$ROOT/../apptainer-cache}"
+export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-$ROOT/../apptainer-tmp}"
+mkdir -p "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR"
 
 echo "=== ${CASE_NAME}: ${SPECIES} ${GENOME} (EG release ${RELEASE}) ==="
 echo "    results=$RESULTS"
@@ -41,10 +46,23 @@ ARGS=(-a=/app/spritz/results/
 if [ -n "${SRA:-}" ]; then ARGS+=(-s="$SRA" -b); fi
 if [ -n "${VCF:-}" ]; then ./make_test_vcf.sh "$RESULTS/$VCF"; ARGS+=(-v="$VCF" -b); fi
 
-apptainer run --cleanenv --writable-tmpfs \
+# --pwd because Apptainer ignores the image's WORKDIR, so SpritzCMD.dll is not found without it.
+# --cleanenv because a stray PYTHONPATH or CONDA_PREFIX from a loaded module otherwise shadows the
+# image's own environment, which is the classic works-on-one-cluster-not-another failure.
+#
+# .snakemake is bound to real disk rather than left in the memory-backed --writable-tmpfs: snakemake
+# builds a conda environment per rule there and they are not small, so a long run fills the tmpfs and
+# dies partway through. Binding it also means the environments persist between the four cases instead
+# of being rebuilt four times.
+#
+# `conda run` is passed in rather than baked into the runscript, so this is the identical invocation
+# the Docker and Apptainer CI jobs use.
+apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --bind "$RESULTS":/app/spritz/results/ \
   --bind "$RESOURCES":/app/spritz/resources \
-  spritz.sif dotnet SpritzCMD.dll "${ARGS[@]}"
+  --bind "$SNAKE":/app/spritz/workflow/.snakemake \
+  spritz.sif \
+  conda run --no-capture-output --live-stream dotnet SpritzCMD.dll "${ARGS[@]}"
 
 echo "=== ${CASE_NAME}: run finished, checking ==="
 ./check.sh "$CASE_NAME" "$ROOT"

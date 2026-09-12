@@ -38,15 +38,45 @@ Stage: final
 
 %post
     set -eu
+    # Set explicitly: %post runs as root and cannot be assumed to have the base image's ENV, and
+    # micromamba defaults to ~/micromamba, which would put the whole environment somewhere nothing
+    # later looks for it.
+    export MAMBA_ROOT_PREFIX=/opt/conda
     micromamba install -y -n base -f /app/spritz/workflow/envs/spritzbase.yaml
     micromamba clean --all --yes
+    test -x /opt/conda/bin/conda || { echo "conda did not land in /opt/conda"; exit 1; }
 
 %environment
+    # The base image's PATH does NOT include /opt/conda/bin - it relies on its Docker ENTRYPOINT
+    # (_entrypoint.sh) to activate the base environment. Apptainer runs %runscript instead of that
+    # entrypoint, so without this `conda` is not on PATH and every invocation dies with
+    # "exec: conda: not found". The published image escapes this only because it has no custom
+    # runscript, so Apptainer's conversion execs the Docker entrypoint for it.
+    export MAMBA_ROOT_PREFIX=/opt/conda
+    export PATH=/opt/conda/bin:$PATH
     export LC_ALL=C
 
 %runscript
-    cd /app/spritz
-    exec conda run --no-capture-output --live-stream "$@"
+    # A plain exec, so the caller passes the same `conda run ... dotnet SpritzCMD.dll` that the
+    # Docker and Apptainer CI jobs use. One invocation form across all runtimes.
+    exec "$@"
+
+%test
+    # Fails the build rather than the run. Every one of these was a way the first version of this
+    # definition broke silently and only surfaced on the cluster.
+    set -eu
+    export MAMBA_ROOT_PREFIX=/opt/conda
+    export PATH=/opt/conda/bin:$PATH
+    echo "commit:    $(cat /app/spritz/COMMIT)"
+    command -v conda      >/dev/null || { echo "FAIL: conda not on PATH"; exit 1; }
+    command -v snakemake  >/dev/null || { echo "FAIL: snakemake missing"; exit 1; }
+    command -v dotnet     >/dev/null || { echo "FAIL: dotnet missing"; exit 1; }
+    test -f /app/spritz/SpritzCMD.dll || { echo "FAIL: SpritzCMD.dll missing"; exit 1; }
+    test -f /app/spritz/workflow/Snakefile || { echo "FAIL: workflow not packaged"; exit 1; }
+    test -f /app/spritz/workflow/scripts/spritz_config.py || { echo "FAIL: scripts not packaged"; exit 1; }
+    cd /app/spritz && conda run --no-capture-output dotnet SpritzCMD.dll --help >/dev/null \
+        || { echo "FAIL: SpritzCMD --help did not run"; exit 1; }
+    echo "all container checks passed"
 
 %labels
     Description Spritz, built from a branch for bacterial verification

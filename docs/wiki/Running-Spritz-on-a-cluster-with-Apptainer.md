@@ -62,10 +62,15 @@ are not small. If you see "no space left on device" from inside the container, b
 over the snakemake state instead:
 
 ```bash
-  --bind /scratch/$USER/spritz-snakemake:/app/spritz/.snakemake
+  --bind /scratch/$USER/spritz-snakemake:/app/spritz/workflow/.snakemake
 ```
 
 That also makes the environments persist between runs rather than being rebuilt each time.
+
+Note the path is `workflow/.snakemake`, not `.snakemake`. `SpritzCMD` runs snakemake with its working
+directory set to `workflow/`, and snakemake puts its state — including `conda/`, which is the part
+that gets large — under the directory it runs in. Binding `/app/spritz/.snakemake` creates an empty
+directory the run never touches, so the environments still land in the tmpfs.
 
 ### Why `--pwd`
 
@@ -96,7 +101,7 @@ export APPTAINER_CACHEDIR=/scratch/$USER/apptainer-cache
 apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --bind /scratch/$USER/spritz-analysis:/app/spritz/results/ \
   --bind /scratch/$USER/spritz-resources:/app/spritz/resources \
-  --bind /scratch/$USER/spritz-snakemake:/app/spritz/.snakemake \
+  --bind /scratch/$USER/spritz-snakemake:/app/spritz/workflow/.snakemake \
   /scratch/$USER/spritz.sif \
   conda run --no-capture-output --live-stream dotnet SpritzCMD.dll \
     -a=/app/spritz/results/ -p=16 -r="release-116,homo_sapiens,human,GRCh38" -s=SRR629563
@@ -125,10 +130,10 @@ write anywhere you cannot.
 `APPTAINER_TMPDIR`. Point it at scratch.
 
 **`no space left on device` partway through** — the `--writable-tmpfs` overlay filled. Bind a real
-directory over `/app/spritz/.snakemake` as above.
+directory over `/app/spritz/workflow/.snakemake` as above.
 
 **Permission denied writing results** — check the bound directory exists and is writable by you
 before the run; Apptainer will not create it for you the way Docker does.
 
-**Conda environments rebuilt on every run** — expected unless you bind `/app/spritz/.snakemake` to a
+**Conda environments rebuilt on every run** — expected unless you bind `/app/spritz/workflow/.snakemake` to a
 persistent directory. See [issue #36 in the tracker] for making this the default.
