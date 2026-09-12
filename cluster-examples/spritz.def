@@ -15,8 +15,12 @@
 #
 #     ./build.sh
 
-Bootstrap: docker
-From: mambaorg/micromamba:2.9.0-ubuntu24.04
+# localimage, not docker://. build.sh pulls the base to micromamba-base.sif first, because
+# converting an OCI image to SIF tolerates a filesystem that cannot store extended attributes while
+# the rootless layer unpack `apptainer build` performs does not - which is how this failed with
+# `unpriv.lsetxattr: invalid argument` on a shared HPC filesystem.
+Bootstrap: localimage
+From: micromamba-base.sif
 
 %files
     build/app/ /app/

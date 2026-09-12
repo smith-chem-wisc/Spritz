@@ -7,3 +7,4 @@ spritz.sif
 .nuget/
 work/
 logs/
+micromamba-base.sif

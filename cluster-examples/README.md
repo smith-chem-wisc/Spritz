@@ -70,6 +70,28 @@ It runs automatically at the end of each array task, and can be re-run alone:
 ./check.sh hard work/hard
 ```
 
+## Filesystems
+
+`APPTAINER_TMPDIR` must be on a filesystem that supports **user extended attributes**. Rootless
+`apptainer build --fakeroot` encodes file ownership in `user.rootlesscontainers` xattrs while
+unpacking layers, and most shared HPC and network filesystems cannot store them — the build dies
+with `unpriv.lsetxattr: invalid argument`, which does not mention the directory that caused it.
+
+`build.sh` therefore defaults it to node-local scratch (`$SLURM_TMPDIR`, else `$TMPDIR`, else
+`/tmp`) and probes it before starting, so a bad location fails in a second with an explanation rather
+than several minutes in. Override it if your site puts scratch elsewhere:
+
+```bash
+APPTAINER_TMPDIR=/tmp/$USER/apptainer ./build.sh
+```
+
+The cache is only OCI blobs and needs no xattrs, so it stays in this directory where there is quota.
+
+The base image is pulled to `micromamba-base.sif` once and the definition bootstraps from that rather
+than from `docker://`. Converting an OCI image to SIF tolerates a filesystem without xattrs — it
+warns and carries on — while the rootless unpack inside `build` does not, so pulling first removes
+that failure mode rather than only relocating it. It also makes a rebuild skip the fetch.
+
 ## Known ways this can fail that are not bugs
 
 - **No UniProt proteome for the organism.** `get_proteome.py` looks bacteria up by NCBI taxonomy id
