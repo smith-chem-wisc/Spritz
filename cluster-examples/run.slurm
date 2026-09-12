@@ -4,8 +4,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
-#SBATCH --output=logs/%x-%a.out
-#SBATCH --error=logs/%x-%a.err
+#SBATCH --output=logs/%x-%A-%a.out
+#SBATCH --error=logs/%x-%A-%a.err
 #
 # Four bacterial cases as an array. Adjust the SBATCH lines for your partition/account.
 #

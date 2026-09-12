@@ -126,6 +126,10 @@ a half-extracted package cache stays broken:
 rm -rf work/hard && sbatch --array=2 run.slurm
 ```
 
+Logs are named `logs/<jobname>-<jobid>-<arrayindex>.{out,err}`. The job id is in there on
+purpose: without it a resubmission silently overwrites the previous attempt's log for the same
+case, so a `tail logs/*` after a partial resubmit mixes runs together with no way to tell.
+
 The base image is pulled to `micromamba-base.sif` once and the definition bootstraps from that rather
 than from `docker://`. Converting an OCI image to SIF tolerates a filesystem without xattrs — it
 warns and carries on — while the rootless unpack inside `build` does not, so pulling first removes
