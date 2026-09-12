@@ -105,9 +105,26 @@ these cases died with `[Errno 28] No space left on device` and
 `InvalidArchiveError` on a package under `/opt/conda/pkgs`, with `.snakemake` correctly bound the
 whole time.
 
-The package cache is shared across the four cases (`work/conda-pkgs`), so the environments are
-downloaded once rather than four times. `collect.sh` prunes it, along with `tmp` and `cache`, so the
-tarball stays small.
+Each case gets its **own** package cache, and that is deliberate rather than wasteful. Sharing one
+across the array is a race — the tasks run concurrently, conda's package cache has no cross-process
+locking, and each environment build ends by cleaning up tarballs, so one task deletes an archive
+another is still extracting:
+
+```
+InvalidArchiveError(... [Errno 2] No such file or directory: '.../libblas-3.11.0-....conda')
+CondaError: Cannot link a source that does not exist. .../openjdk-8.0.112-.../bin/appletviewer
+```
+
+`.snakemake` is per-case for a related reason: snakemake locks its working directory, so two
+concurrent tasks sharing one would simply refuse to run. So the first `sbatch` downloads the
+environments four times. `collect.sh` prunes the caches, `tmp` and `cache` from the tarball.
+
+If a case fails during environment setup, delete that case's directory before resubmitting —
+a half-extracted package cache stays broken:
+
+```bash
+rm -rf work/hard && sbatch --array=2 run.slurm
+```
 
 The base image is pulled to `micromamba-base.sif` once and the definition bootstraps from that rather
 than from `docker://`. Converting an OCI image to SIF tolerates a filesystem without xattrs — it

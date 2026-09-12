@@ -33,9 +33,14 @@ source "cases/${CASE_NAME}.env"
 
 ROOT="${SPRITZ_WORK:-$PWD/work}/${CASE_NAME}"
 RESULTS="$ROOT/results"; RESOURCES="$ROOT/resources"; SNAKE="$ROOT/snakemake"
-# PKGS and TMP are shared across the four cases on purpose: the package cache is the
-# expensive thing to rebuild, and there is no reason for each case to download it again.
-PKGS="${SPRITZ_WORK:-$PWD/work}/conda-pkgs"; TMP="$ROOT/tmp"
+# Per-case, NOT shared. Sharing one package cache across the array looked like an easy saving and
+# is a race: the tasks run concurrently, conda's package cache has no cross-process locking, and
+# each env build finishes by cleaning up tarballs. One task deletes an archive another is
+# extracting, or a package directory another is mid-link on:
+#   InvalidArchiveError(... [Errno 2] No such file or directory: '.../libblas-....conda')
+#   CondaError: Cannot link a source that does not exist. .../openjdk-.../bin/appletviewer
+# Four downloads is the cost of four independent cases; correctness is not negotiable for it.
+PKGS="$ROOT/conda-pkgs"; TMP="$ROOT/tmp"
 mkdir -p "$RESULTS" "$RESOURCES" "$SNAKE" "$ROOT/cache" "$PKGS" "$TMP"
 
 # Point the apptainer cache at somewhere with quota, per the cluster wiki page.
@@ -67,8 +72,8 @@ if [ -n "${VCF:-}" ]; then ./make_test_vcf.sh "$RESULTS/$VCF"; ARGS+=(-v="$VCF" 
 #
 # .snakemake is bound to real disk rather than left in the memory-backed --writable-tmpfs: snakemake
 # builds a conda environment per rule there and they are not small, so a long run fills the tmpfs and
-# dies partway through. Binding it also means the environments persist between the four cases instead
-# of being rebuilt four times.
+# dies partway through. It is per-case and has to be: snakemake locks its working directory, so two
+# concurrent array tasks sharing one .snakemake would refuse to run.
 #
 # `dotnet` directly, not via `conda run`. The definition's %environment runs the environment's
 # activation hooks, so dotnet is on PATH already; and `conda run` is the machinery that exited 0
