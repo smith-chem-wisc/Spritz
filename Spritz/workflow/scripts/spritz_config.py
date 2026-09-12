@@ -21,6 +21,24 @@ DEFAULT_PATH = "config/config.yaml"
 ENV_VAR = "SPRITZ_CONFIG"
 
 
+def choose_configfile(configfiles, packaged_default):
+    """Pick this run's config out of snakemake's `workflow.configfiles`.
+
+    Not `configfiles[-1]`. Snakemake seeds that list with the paths given to `--configfile` and
+    *then* appends whatever the `configfile:` directive names, and Spritz's Snakefile opens with
+    `configfile: "config/config.yaml"`. So the last entry is the packaged default, and picking it
+    reintroduced the very bug this module exists to prevent: every script saw Homo_sapiens, a
+    bacterial run downloaded the human proteome under the bacterium's filename, and prose.txt
+    described a quant run that never happened.
+
+    Select by identity rather than position - anything that is not the packaged default was
+    supplied for this run - so the answer does not depend on how snakemake orders the list.
+    """
+    default = os.path.realpath(str(packaged_default))
+    supplied = [str(p) for p in configfiles if os.path.realpath(str(p)) != default]
+    return supplied[-1] if supplied else str(packaged_default)
+
+
 def normalise(config):
     """Apply the adjustments the workflow relies on, in place, and return the config."""
     # `--config vcf=x.vcf` on the command line and a hand-written `vcf: "x.vcf"` both give a plain

@@ -59,10 +59,35 @@ else
   echo "  ..... no protein FASTA to compare (expected only if the run did not reach annotation)"
 fi
 
-# 4. The proteome lookup. Bacteria resolve by NCBI taxonomy id; before the config-path fix this
-#    could never fire in a container and every bacterial run died here.
+# 4. The proteome lookup. Bacteria resolve by NCBI taxonomy id; the name-scanning path cannot
+#    reach them, because its query returns only UniProt's default first page of 25 organisms.
+#
+#    Checking that the file EXISTS is not enough, and this check used to do only that. The rule
+#    names the output after the run's species, so the path is right whatever the script downloaded:
+#    the first cluster run passed this check holding 25 Homo sapiens proteins, because the scripts
+#    were reading the packaged default config. Assert on the contents.
 [ -s "$RES/uniprot/${SPECIES}.protein.xml.gz" ] \
-  && ok "UniProt proteome resolved and downloaded" || no "UniProt proteome missing - check get_proteome"
+  && ok "UniProt proteome downloaded" || no "UniProt proteome missing - check get_proteome"
+
+UFA="$RES/uniprot/${SPECIES}.protein.fasta"
+if [ -s "$UFA" ]; then
+  uorg=$(grep -o 'OS=[^=]*' "$UFA" | sed 's/OS=//; s/ [A-Z][A-Z]*$//' \
+           | sort | uniq -c | sort -rn | head -1 | sed 's/^ *[0-9]* *//')
+  ucount=$(grep -c '^>' "$UFA")
+  echo "  ..... UniProt proteome: ${ucount} seqs, dominant organism '${uorg}'"
+  case "$uorg" in
+    *"Homo sapiens"*|*"Mus musculus"*|*"Saccharomyces"*)
+      no "UniProt proteome is ${uorg}, not this run's organism - scripts read the wrong config" ;;
+    "") no "could not read an OS= field from ${UFA}" ;;
+    *)  ok "UniProt proteome is for ${uorg}" ;;
+  esac
+  # 25 is UniProt's default page size, and the exact signature of the name-scanning path returning
+  # its first page rather than a resolved proteome. No bacterial proteome is that small.
+  [ "$ucount" -gt 25 ] && ok "UniProt proteome is not a default first page" \
+    || no "UniProt proteome has ${ucount} seqs - looks like an unresolved first page"
+else
+  no "UniProt proteome FASTA missing at ${UFA}"
+fi
 
 # 5. The generated config records what the run actually decided.
 CONF="$R/config/config.yaml"

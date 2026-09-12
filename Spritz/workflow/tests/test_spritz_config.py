@@ -22,7 +22,8 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
 
-from spritz_config import check, load, normalise  # noqa: E402  - needs the path set above
+# noqa: E402 below - the sys.path insert above has to run first
+from spritz_config import check, choose_configfile, load, normalise  # noqa: E402
 
 
 @pytest.mark.parametrize(
@@ -103,3 +104,52 @@ def test_an_empty_config_file_does_not_crash(tmp_path):
     path = tmp_path / "empty.yaml"
     path.write_text("")
     assert load(str(path)) == {}
+
+
+class TestChooseConfigfile:
+    """Which entry of snakemake's workflow.configfiles is the run's own config.
+
+    The list is seeded with the --configfile paths and then appended to by the `configfile:`
+    directive at the top of the Snakefile, so its last entry is the packaged default. Taking
+    [-1] shipped a fix that did nothing: a bacterial cluster run downloaded the human UniProt
+    proteome under the bacterium's filename and wrote a prose.txt describing a quant run.
+    """
+
+    def test_picks_the_supplied_config_not_the_directive_default(self, tmp_path):
+        default = tmp_path / "workflow" / "config" / "config.yaml"
+        default.parent.mkdir(parents=True)
+        default.write_text("species: Homo_sapiens\n")
+        run = tmp_path / "results" / "config" / "config.yaml"
+        run.parent.mkdir(parents=True)
+        run.write_text("species: Pseudomonas\n")
+
+        # The order snakemake actually produces: CLI first, directive appended last.
+        assert choose_configfile([str(run), str(default)], str(default)) == str(run)
+
+    def test_falls_back_to_the_default_when_nothing_was_supplied(self, tmp_path):
+        default = tmp_path / "config" / "config.yaml"
+        default.parent.mkdir(parents=True)
+        default.write_text("species: Homo_sapiens\n")
+        assert choose_configfile([str(default)], str(default)) == str(default)
+
+    def test_empty_list_falls_back_to_the_default(self):
+        assert choose_configfile([], "config/config.yaml") == "config/config.yaml"
+
+    def test_recognises_the_default_through_a_different_spelling_of_the_same_path(self, tmp_path):
+        """The directive's path and the one built from workflow.basedir need not match textually."""
+        default = tmp_path / "config" / "config.yaml"
+        default.parent.mkdir(parents=True)
+        default.write_text("species: Homo_sapiens\n")
+        indirect = tmp_path / "config" / ".." / "config" / "config.yaml"
+        assert choose_configfile([str(indirect)], str(default)) == str(default)
+
+    def test_last_supplied_config_wins(self, tmp_path):
+        """--configfile a b means b overrides a, so b is the run's effective config."""
+        default = tmp_path / "config" / "config.yaml"
+        default.parent.mkdir(parents=True)
+        default.write_text("species: Homo_sapiens\n")
+        first, second = tmp_path / "a.yaml", tmp_path / "b.yaml"
+        first.write_text("species: A\n")
+        second.write_text("species: B\n")
+        chosen = choose_configfile([str(first), str(second), str(default)], str(default))
+        assert chosen == str(second)

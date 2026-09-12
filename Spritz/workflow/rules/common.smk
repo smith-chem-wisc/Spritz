@@ -10,11 +10,13 @@ from snakemake.exceptions import WorkflowError
 # comes from workflow.basedir rather than from the working directory.
 sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
 from snpeff_config import snpeff_config_block
+from spritz_config import choose_configfile
 from spritz_config import normalise as normalise_config
 
-# The path snakemake actually loaded, for the scripts that re-read it. Empty when the run relies on
-# the `configfile:` directive rather than --configfile, in which case the relative default is right.
-CONFIGFILE = str(workflow.configfiles[-1]) if workflow.configfiles else "config/config.yaml"
+# The config this run was given, for the scripts that re-read it. See choose_configfile: the last
+# entry in workflow.configfiles is the `configfile:` directive's packaged default, not the run's.
+CONFIGFILE = choose_configfile(workflow.configfiles,
+                               os.path.join(workflow.basedir, "config", "config.yaml"))
 
 # Applied to snakemake's own config dict, so the snakefiles and the scripts share one definition of
 # what the config means. See scripts/spritz_config.py.
