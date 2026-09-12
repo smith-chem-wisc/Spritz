@@ -1,0 +1,164 @@
+Config file config/config.yaml is extended by additional config specified via the command line.
+Wildcard constraints in inputs are ignored. (rule: split_sra)
+Assuming unrestricted shared filesystem usage.
+
+SNAKEMAKE
+=========
+  Date: 2026-09-12 09:58:21
+  Workflow ID: 6e54caa4-1168-43c6-82af-15446c31f09b
+  Platform: Linux-4.18.0-553.33.1.el8_10.x86_64-x86_64-with-glibc2.39
+  Host: cpu-b-2
+  User: anthony.cesnik
+  Snakemake version: 9.25.1
+  Python version: 3.13.15 | packaged by conda-forge | (main, Sep  2 2026, 22:01:58) [GCC 15.3.0]
+  Command: /opt/conda/bin/snakemake -j 8 --use-conda --configfile /app/spritz/results/config/config.yaml
+  Snakefile: /app/spritz/workflow/Snakefile
+  Base directory: /app/spritz/workflow
+  Run directory: /app/spritz/workflow
+  Working directory: /app/spritz/workflow
+  Config file(s): [PosixPath('/app/spritz/results/config/config.yaml'), 'config/config.yaml']
+  Config MD5: fdf2600586572f5d27bd5339c8bd7c35
+
+Building DAG of jobs...
+Your conda installation is not configured to use strict channel priorities. This is however important for having robust and correct environments (for details, see https://conda-forge.org/docs/user/tipsandtricks.html). Please consider to configure strict priorities by executing 'conda config --set channel_priority strict'.
+Using shell: /usr/bin/bash
+Provided cores: 8
+Rules claiming more threads will be scaled down.
+Job stats:
+job                               count
+------------------------------  -------
+download_protein_xml                  1
+prose                                 1
+setup_transfer_mods                   1
+setup_ptmlist_links                   1
+reference_protein_xml                 1
+transfer_modifications_variant        1
+finish_variants                       1
+all                                   1
+total                                 8
+
+Select jobs to execute...
+Execute 3 jobs...
+
+[Sat Sep 12 09:58:24 2026]
+localrule setup_transfer_mods:
+    input: ../SpritzModifications.dll
+    output: ../resources/ptmlist.txt, ../resources/PSI-MOD.obo.xml
+    log: ../resources/setup_transfer_mods.log
+    jobid: 4
+    benchmark: ../resources/setup_transfer_mods.benchmark
+    reason: Updated input files: ../SpritzModifications.dll
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/3405ff5477e82452ca3c152cdc9f18fd_
+
+[Sat Sep 12 09:58:24 2026]
+localrule download_protein_xml:
+    input: ../resources/ensembl/species_EnsemblBacteria.txt
+    output: ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz, ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.fasta
+    log: ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz.log
+    jobid: 10
+    benchmark: ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz.benchmark
+    reason: Missing output files: ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz; Params have changed since last execution: Union of exclusive params before and now across all output: before: 'config/config.yaml' now: '/app/spritz/results/config/config.yaml' 
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_
+
+[Sat Sep 12 09:58:24 2026]
+localrule prose:
+    output: ../results/prose.txt
+    log: ../results/prose.log
+    jobid: 1
+    reason: Missing output files: ../results/prose.txt; Params have changed since last execution: Union of exclusive params before and now across all output: before: 'config/config.yaml' now: '/app/spritz/results/config/config.yaml' 
+    wildcards: dir=../results
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/21202b3babddf0d0bcbd0c07d470513b_
+[Sat Sep 12 09:58:26 2026]
+Finished jobid: 1 (Rule: prose)
+1 of 8 steps (12%) done
+[Sat Sep 12 09:58:32 2026]
+Finished jobid: 4 (Rule: setup_transfer_mods)
+2 of 8 steps (25%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 09:58:32 2026]
+localrule setup_ptmlist_links:
+    input: ../resources/ptmlist.txt, ../resources/PSI-MOD.obo.xml
+    output: ptmlist.txt, PSI-MOD.obo.xml
+    log: ../resources/setup_transfer_mod_linking.log
+    jobid: 3
+    benchmark: ../resources/setup_transfer_mod_linking.benchmark
+    reason: Missing output files: ptmlist.txt, PSI-MOD.obo.xml; Input files updated by another job: ../resources/ptmlist.txt, ../resources/PSI-MOD.obo.xml
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+[Sat Sep 12 09:58:32 2026]
+Finished jobid: 3 (Rule: setup_ptmlist_links)
+3 of 8 steps (38%) done
+[Sat Sep 12 09:58:33 2026]
+Finished jobid: 10 (Rule: download_protein_xml)
+4 of 8 steps (50%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Sat Sep 12 09:58:33 2026]
+localrule reference_protein_xml:
+    input: ptmlist.txt, PSI-MOD.obo.xml, ../resources/SnpEff/data/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1/donePseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.txt, ../resources/SnpEff/snpEff.jar, ../resources/ensembl/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.dna.primary_assembly.karyotypic.fa, ../SpritzModifications.dll, ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz
+    output: ../results/variants/donePseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.txt, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.xml, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.xml.gz, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withmods.xml, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withmods.xml.gz, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.accname.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.vardesc.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.accname.decoy.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.vardesc.decoy.tsv
+    log: ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.spritz.log
+    jobid: 2
+    benchmark: ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.spritz.benchmark
+    reason: Input files updated by another job: ptmlist.txt, PSI-MOD.obo.xml, ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz
+    wildcards: dir=../results
+    resources: tmpdir=/tmp, mem_mb=16000, mem=16 GB, mem_mib=15259
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+
+[Sat Sep 12 09:58:33 2026]
+localrule transfer_modifications_variant:
+    input: ptmlist.txt, PSI-MOD.obo.xml, ../SpritzModifications.dll, ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz, ../results/variants/combined.spritz.snpeff.protein.xml
+    output: ../results/variants/combined.spritz.snpeff.protein.withdecoys.fasta, ../results/variants/combined.spritz.snpeff.protein.xml.gz, ../results/variants/combined.spritz.snpeff.protein.withmods.xml, ../results/variants/combined.spritz.snpeff.protein.withmods.xml.gz, ../results/variants/combined.spritz.snpeff.protein.fragpipe.fasta, ../results/variants/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta, ../results/variants/combined.spritz.snpeff.protein.accname.tsv, ../results/variants/combined.spritz.snpeff.protein.vardesc.tsv, ../results/variants/combined.spritz.snpeff.protein.accname.decoy.tsv, ../results/variants/combined.spritz.snpeff.protein.vardesc.decoy.tsv
+    log: ../results/variants/combined.spritz.snpeff.protein.withmods.log
+    jobid: 33
+    benchmark: ../results/variants/combined.spritz.snpeff.protein.withmods.benchmark
+    reason: Input files updated by another job: ptmlist.txt, PSI-MOD.obo.xml, ../resources/uniprot/Pseudomonas_aeruginosa_pao1_gca_000006765.protein.xml.gz
+    wildcards: dir=../results
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+[Sat Sep 12 09:58:39 2026]
+Finished jobid: 33 (Rule: transfer_modifications_variant)
+5 of 8 steps (62%) done
+Removing temporary output ../results/variants/combined.spritz.snpeff.protein.withmods.xml.
+[Sat Sep 12 09:58:43 2026]
+Finished jobid: 2 (Rule: reference_protein_xml)
+6 of 8 steps (75%) done
+Removing temporary output ptmlist.txt.
+Removing temporary output PSI-MOD.obo.xml.
+Removing temporary output ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.xml.
+Removing temporary output ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withmods.xml.
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 09:58:43 2026]
+localrule finish_variants:
+    input: ../results/variants/combined.spritz.snpeff.vcf, ../results/variants/combined.spritz.snpeff.protein.fasta, ../results/variants/combined.spritz.snpeff.protein.withdecoys.fasta, ../results/variants/combined.spritz.snpeff.protein.withmods.xml.gz, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withmods.xml.gz, ../results/variants/combined.spritz.snpeff.protein.fragpipe.fasta, ../results/variants/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta, ../results/variants/combined.spritz.snpeff.protein.accname.tsv, ../results/variants/combined.spritz.snpeff.protein.vardesc.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.accname.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.vardesc.tsv
+    output: ../results/final/combined.spritz.snpeff.vcf, ../results/final/combined.spritz.snpeff.protein.fasta, ../results/final/combined.spritz.snpeff.protein.withdecoys.fasta, ../results/final/combined.spritz.snpeff.protein.withmods.xml.gz, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fasta, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fasta, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withmods.xml.gz, ../results/final/combined.spritz.snpeff.protein.fragpipe.fasta, ../results/final/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta, ../results/final/combined.spritz.snpeff.protein.accname.tsv, ../results/final/combined.spritz.snpeff.protein.vardesc.tsv, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fragpipe.fasta, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fragpipe.fasta, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.accname.tsv, ../results/final/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.vardesc.tsv
+    log: ../results/variants/finish_isoform_variants.log
+    jobid: 11
+    reason: Input files updated by another job: ../results/variants/combined.spritz.snpeff.protein.withdecoys.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.vardesc.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.accname.tsv, ../results/variants/combined.spritz.snpeff.protein.accname.tsv, ../results/variants/combined.spritz.snpeff.protein.withdecoys.fasta, ../results/variants/combined.spritz.snpeff.protein.vardesc.tsv, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fragpipe.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withmods.xml.gz, ../results/variants/combined.spritz.snpeff.protein.withmods.xml.gz, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.fasta, ../results/variants/Pseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.protein.withdecoys.fasta, ../results/variants/combined.spritz.snpeff.protein.fragpipe.fasta
+    wildcards: dir=../results
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+[Sat Sep 12 09:58:43 2026]
+Finished jobid: 11 (Rule: finish_variants)
+7 of 8 steps (88%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 09:58:43 2026]
+localrule all:
+    input: ../results/prose.txt, ../results/variants/donePseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.txt, ../results/final/combined.spritz.snpeff.protein.withmods.xml.gz
+    jobid: 0
+    reason: Input files updated by another job: ../results/final/combined.spritz.snpeff.protein.withmods.xml.gz, ../results/prose.txt, ../results/variants/donePseudomonas_aeruginosa_pao1_gca_000006765.ASM676v1.63.txt
+    resources: tmpdir=/tmp
+[Sat Sep 12 09:58:43 2026]
+Finished jobid: 0 (Rule: all)
+8 of 8 steps (100%) done
+Complete log(s): /app/spritz/workflow/.snakemake/log/2026-09-12T095821.362424.snakemake.log

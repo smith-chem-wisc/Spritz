@@ -2,7 +2,9 @@
 # Pull back what is worth looking at, not the genomes. Small enough to scp.
 set -euo pipefail
 cd "$(dirname "$0")"
-OUT="spritz-bacterial-results-$(date +%Y%m%d).tar.gz"
+# Includes the time: date alone meant a second collection the same day silently overwrote the
+# first, which is exactly when you want both - before a fix and after it.
+OUT="spritz-bacterial-results-$(date +%Y%m%d-%H%M%S).tar.gz"
 tar czf "$OUT" \
   --exclude='*.fa' --exclude='*.fastq' --exclude='*.bam' --exclude='*.bai' --exclude='*.gz.tbi' \
   logs/ \
