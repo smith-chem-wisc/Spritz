@@ -231,3 +231,6 @@ ModelManifest.xml
 # Macintosh
 **/.DS_Store
 
+
+# Scratch space: subagent workdirs and pulled-down cluster output.
+tmp/

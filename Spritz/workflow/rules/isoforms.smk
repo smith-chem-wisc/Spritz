@@ -253,6 +253,10 @@ rule generate_snpeff_database:
             GENOME_VERSION,
             ENSEMBL_VERSION,
             gene_model="StringTie-assembled transcripts",
+            # Without this a bacterial isoform database translates on the standard table while the
+            # reference database uses table 11, so one run yields two databases disagreeing on
+            # start_lost for the same genome.
+            division=DIVISION,
         )
     resources: mem_mb=16000
     benchmark: "../resources/SnpEff/data/combined.transcripts.genome.gff3/snpeffdatabase.benchmark"

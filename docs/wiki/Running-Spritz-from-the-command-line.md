@@ -51,11 +51,174 @@ mount is what connects them.
 | `-s=` | paired-end SRA accession(s), comma-separated |
 | `-t=` | single-end SRA accession(s) |
 | `-f=` / `-i=` / `-j=` | local FASTQs instead of SRAs: single-end, first mate, second mate |
+| `-v=` | comma-separated VCFs you called elsewhere, annotated instead of calling variants from reads — see below |
+| `-e=` | Ensembl division: `vertebrates` (default) or `bacteria` — see below |
+| `-k=` | known variant sites for recalibration: `auto` (default), `ensembl` or `bootstrap` — see below |
 | `-b` | analyze variants |
 | `-c` | analyze isoforms |
 | `-d` | quantify |
 | `-p=` | threads, defaults to the processor count |
 | `--container-runtime` | `podman` (default), `docker`, or `apptainer` — only relevant when Spritz launches the container for you, not when you launch it yourself as above |
+
+### Annotating a VCF you already have
+
+If variants were called outside Spritz — from WGS or exome reads, or by any caller — `-v=` skips
+alignment and GATK entirely and annotates that VCF directly:
+
+```bash
+podman run --rm -it \
+  -v "/path/to/analysis:/app/spritz/results/" \
+  -v "/path/to/resources:/app/spritz/resources" \
+  smithlab/spritz:0.3.15 \
+  conda run --no-capture-output --live-stream \
+  dotnet SpritzCMD.dll \
+    -a=/app/spritz/results/ \
+    -r="release-116,homo_sapiens,human,GRCh38" \
+    -v=my_variants.vcf \
+    -b
+```
+
+Three things to know.
+
+**`-v=` takes filenames, not paths**, resolved inside your analysis directory — the same convention
+as `-i=`/`-j=`/`-f=`. Only the analysis and resources directories are mounted into the container, so
+a host path from anywhere else would not resolve. Copy or move the VCFs into the analysis directory
+first. Gzipped VCFs are accepted.
+
+**One VCF per sample is the expected case.** Pass them comma-separated —
+`-v=sample_a.vcf,sample_b.vcf,sample_c.vcf` — and Spritz merges them into a single multi-sample VCF
+with `bcftools merge` before annotating. That is worth doing rather than concatenating, because the
+database builder is sample-aware: it walks the genotypes per individual and emits variant protein
+sequences for each, so a merged multi-sample VCF gives you per-individual variant proteins. Note this
+is *more* faithful than the read-based path, which assigns every input the same read group and pools
+everything into one sample.
+
+**Your VCFs must carry genotypes and allele depths.** Two requirements, both checked before the VCF
+is annotated, because both otherwise fail late and unhelpfully. Note the reference genome is
+downloaded and indexed first, since the check compares your contig names against it — so this is
+early enough to save the analysis, not early enough to save the download:
+
+- **At least one sample column.** The database is built from genotypes, so a sites-only VCF yields a
+  database with nothing in it — and would previously have done so while exiting 0.
+- **A per-sample `AD` (allele depth) for every variant a sample actually carries.** The builder
+  indexes allele depths by allele number, so a called variant with no `AD` is an error partway
+  through the run. GATK emits `AD` by default; several other callers do not. If yours does not, add
+  it. Allele depths come from the reads, so this needs re-genotyping rather than a tag fix —
+  `bcftools mpileup -a AD` piped into `bcftools call`, or a re-run of the original caller. A sample
+  that simply does not carry a variant needs nothing — `./.:.` is what a merge writes there and is
+  fine.
+
+Sample names that collide between files are renamed rather than rejected, since callers often emit a
+placeholder name. The renaming is positional (`SAMPLE`, `2:SAMPLE`, `3:SAMPLE`), so if you want the
+merged columns to identify their source, give each VCF a distinct sample name before passing it in.
+
+With a single VCF the merge is skipped, but the checks above still apply and the file is still
+rewritten (decompressed if gzipped) on its way to annotation.
+
+**It requires `-b` and excludes `-c` and `-d`.** Isoform reconstruction assembles transcripts and
+quantification counts reads, so neither has an input without them. It also cannot be combined with
+`-s=`/`-t=`/`-i=`/`-j=`/`-f=`: a supplied VCF replaces variant calling, so passing both is ambiguous
+and is rejected rather than silently resolved.
+
+**Contig names must match the Ensembl reference.** Ensembl calls the first human chromosome `1`; a
+VCF from a UCSC-based pipeline calls it `chr1`. SnpEff reports a variant on a contig it does not know
+as `ERROR_CHROMOSOME_NOT_FOUND` and exits 0, so a mismatch would otherwise hand you a database with
+every variant silently dropped. Spritz checks this before annotating and stops the run when nothing
+matches. A VCF that merely names some scaffolds the primary assembly omits is fine — those are
+reported and skipped.
+
+The reference database itself is still built from Ensembl, so the genome, GFF3 and protein FASTA are
+downloaded as usual; what `-v=` saves is the read download, trimming, alignment and variant calling.
+
+### Bacterial references
+
+Bacteria are not on `ftp.ensembl.org`. They come from Ensembl Genomes, which numbers its releases
+separately — **EG 63 is Ensembl 116** — so a bacterial run needs `-e=bacteria` and an EG release
+number:
+
+```bash
+dotnet SpritzCMD.dll \
+  -a=/app/spritz/results/ \
+  -e=bacteria \
+  -r="release-63,pseudomonas_aeruginosa_pao1_gca_000006765,pseudomonas aeruginosa pao1,ASM676v1" \
+  -v=my_variants.vcf \
+  -b
+```
+
+**Bacterial references bootstrap their known sites.** Ensembl Bacteria publishes no known variant
+sites — its `variation/` directory holds only a VEP cache, with no `vcf/` — and GATK base
+recalibration needs them. Rather than refusing the run, Spritz calls an
+unrecalibrated first pass and recalibrates against its high-confidence SNPs; see
+[Species with no known variant sites](#species-with-no-known-variant-sites) below. You can still
+supply your own VCF with `-v=` if you have one, which skips calling altogether.
+
+#### Finding the reference string
+
+Species directory names are strain-specific and carry a GCA accession —
+`pseudomonas_aeruginosa_pao1_gca_000006765`, not `pseudomonas_aeruginosa` — and there are 31,332 of
+them, so `-x` does not list them. Search for yours:
+
+```bash
+podman run --rm -v "/path/to/analysis:/app/spritz/results/" smithlab/spritz:0.3.15 \
+  conda run --no-capture-output python workflow/scripts/update_genomes.py \
+    --division bacteria --match pseudomonas_aeruginosa \
+    --output /app/spritz/results/genomes.csv
+```
+
+That appends the matching rows to `genomes.csv` in your analysis directory, alongside any vertebrate
+rows already there. Copy one out verbatim. Passing a bare species name to `-r=` instead will fail with
+an error listing the strains that do exist.
+
+#### Two things that differ from a vertebrate run
+
+**Codon table.** Bacterial genomes are translated with NCBI table 11
+(`Bacterial_and_Plant_Plastid`) rather than the standard table. Against the standard table it differs
+in exactly four codons — `ATT`, `ATC`, `ATA` and `GTG` — and in each only by whether the codon counts
+as a valid start. Every codon-to-amino-acid mapping is the same, so this affects `start_lost` and
+initiation calls and nothing else; missense, synonymous and stop_gained are identical either way.
+Note that SnpEff ships its own bacterial genome entries and *none* of them declares a codon table, so
+they all translate with the standard one; the database Spritz builds here does declare it.
+
+**Contig names.** A bacterial assembly typically has one sequence, and Ensembl names it `Chromosome`,
+not `1`. Your VCF's `CHROM` column has to match — see the contig-name note above.
+
+### Species with no known variant sites
+
+GATK base quality score recalibration needs a set of known variant sites. Ensembl publishes those for
+very few species: **at release 116, 19 of the 359** with a gene model have a `variation/vcf/`
+directory. Everything else — including *S. cerevisiae*, which had one at release 96 and does not now,
+and every one of Ensembl Bacteria's 31,332 genomes — has none.
+
+Spritz handles this the way GATK itself recommends: call variants once on unrecalibrated alignments,
+keep the calls you trust most, recalibrate against those, then call for real.
+
+`-k=` controls it, and defaults to `auto`:
+
+| Value | |
+|---|---|
+| `auto` | ask Ensembl whether it publishes variant sites for this species, and pick accordingly |
+| `ensembl` | insist on downloading them; fails if there are none, except for bacteria, which always bootstrap |
+| `bootstrap` | always call and filter a first pass |
+
+`auto` costs one or two HTTP requests when Spritz writes the run's config, and the result is recorded as
+`known_sites:` in `config/config.yaml`, so you can see which route a run took. Human always uses
+dbSNP, which lives on NCBI rather than Ensembl, and bacteria always bootstrap.
+
+**What "the calls you trust most" means here.** The first pass is filtered with GATK's *RNA-seq* hard
+filters, not the DNA ones — a 35-base window allowing 3 clustered SNPs, `FS > 30.0`, `QD < 2.0` —
+since Spritz aligns RNA-seq and has already run `SplitNCigarReads`. Indels and anything filtered are
+dropped, and only `QUAL >= 30` survives. Recalibration treats every mismatch *not* in the known set
+as an error, so a permissive set is worse than a small one.
+
+**One round, not iterated.** GATK's advice mentions repeating until convergence. Spritz does a single
+round: snakemake builds a static DAG, so iterating would mean either unrolling a fixed number of
+passes or introducing checkpoints, and one round is what GATK's own RNA-seq workflow does.
+
+**It is slower.** A bootstrapped run does two `HaplotypeCaller` passes over the same alignments
+instead of one, so budget roughly double the calling time.
+
+**`prose.txt` records which route was used**, because "recalibrated against known sites" and
+"recalibrated against its own first-pass calls" are not the same methods claim.
 
 ### Getting a reference string
 

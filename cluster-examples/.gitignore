@@ -1,0 +1,11 @@
+src/
+build/
+spritz.sif
+.apptainer-cache/
+.apptainer-tmp/
+.dotnet-home/
+.nuget/
+work/
+logs/
+!logs/.gitkeep
+micromamba-base.sif

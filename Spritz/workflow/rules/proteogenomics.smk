@@ -1,15 +1,22 @@
 rule download_protein_xml:
     '''Download the uniprot xml database and uniprot isoform fasta'''
+    input:
+        # get_proteome.py reads the taxonomy id out of this to look a bacterial proteome up; the
+        # popular-organisms list it scans for vertebrates does not reach bacteria at all.
+        *([] if DIVISION != "bacteria" else ["../resources/ensembl/species_EnsemblBacteria.txt"]),
     output:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA,
     log: f"{UNIPROTXML}.log"
     benchmark: f"{UNIPROTXML}.benchmark"
+    params: configfile=CONFIGFILE
     conda: "../envs/downloads.yaml"
+    # SPRITZ_CONFIG so get_proteome.py sees this run's organism and division rather than the
+    # packaged defaults; download_uniprot.py imports it, so both need it set.
     shell:
-        "(python scripts/get_proteome.py && "
-        "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
-        "python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
+        "(SPRITZ_CONFIG={params.configfile} python scripts/get_proteome.py && "
+        "SPRITZ_CONFIG={params.configfile} python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
+        "SPRITZ_CONFIG={params.configfile} python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
 
 if not PREBUILT_SPRITZ_MODS:
     rule build_transfer_mods:
@@ -76,6 +83,9 @@ rule transfer_modifications_variant:
         vardesc="{dir}/variants/combined.spritz.snpeff.protein.vardesc.tsv",
         accnamedecoy="{dir}/variants/combined.spritz.snpeff.protein.accname.decoy.tsv",
         vardescdecoy="{dir}/variants/combined.spritz.snpeff.protein.vardesc.decoy.tsv",
+    # mzLib decompresses a .gz to a fixed temp.xml beside the input, so the four rules that run
+    # this assembly on UNIPROTXML must not overlap. Limit set in RunnerEngine.GenerateSnakemakeCommand.
+    resources: uniprot_temp=1
     log: "{dir}/variants/combined.spritz.snpeff.protein.withmods.log"
     benchmark: "{dir}/variants/combined.spritz.snpeff.protein.withmods.benchmark"
     conda: "../envs/proteogenomics.yaml"
@@ -101,6 +111,7 @@ rule transfer_modifications_isoformvariant:
         vardesc="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.tsv",
         accnamedecoy="{dir}/variants/combined.spritz.isoformvariants.protein.accname.decoy.tsv",
         vardescdecoy="{dir}/variants/combined.spritz.isoformvariants.protein.vardesc.decoy.tsv",
+    resources: uniprot_temp=1
     log: "{dir}/variants/combined.spritz.isoformvariants.protein.withmods.log"
     conda: "../envs/proteogenomics.yaml"
     shell:
@@ -122,7 +133,8 @@ rule generate_reference_snpeff_database:
     params:
         snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref=REF,
-        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION)
+        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION,
+                                          division=DIVISION)
     benchmark: f"../resources/SnpEff/data/{REF}/snpeffdatabase.benchmark"
     log: f"../resources/SnpEff/data/{REF}/snpeffdatabase.log"
     conda: "../envs/proteogenomics.yaml"
@@ -160,7 +172,7 @@ rule reference_protein_xml:
         accnamedecoy=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.accname.decoy.tsv"),
         vardescdecoy=posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.protein.vardesc.decoy.tsv"),
     params: ref=REF
-    resources: mem_mb=16000
+    resources: mem_mb=16000, uniprot_temp=1
     benchmark: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.benchmark")
     log: posixpath.join("{dir}/variants/", f"{REF}.{ENSEMBL_VERSION}.spritz.log")
     conda: "../envs/proteogenomics.yaml"
@@ -201,7 +213,7 @@ rule custom_protein_xml:
         vardescdecoy="{dir}/isoforms/combined.spritz.isoform.protein.vardesc.decoy.tsv",
     params:
         ref="combined.transcripts.genome.gff3", # with isoforms
-    resources: mem_mb=16000
+    resources: mem_mb=16000, uniprot_temp=1
     benchmark: "{dir}/isoforms/combined.spritz.isoform.benchmark"
     log: "{dir}/isoforms/combined.spritz.isoform.log"
     conda: "../envs/proteogenomics.yaml"

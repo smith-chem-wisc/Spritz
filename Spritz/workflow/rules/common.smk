@@ -2,15 +2,49 @@ import os
 import posixpath  # snakemake paths are always forward-slash; see the note on all_output
 import sys
 
+# Imported rather than relied on as a snakefile global, so the config checks at the bottom of this
+# file raise the error snakemake formats for the user rather than a NameError.
+from snakemake.exceptions import WorkflowError
+
 # scripts/ holds the workflow's own importable modules. Snakefiles have no __file__, so the path
 # comes from workflow.basedir rather than from the working directory.
 sys.path.insert(0, os.path.join(workflow.basedir, "scripts"))
 from snpeff_config import snpeff_config_block
+from spritz_config import choose_configfile
+from spritz_config import normalise as normalise_config
+
+# The config this run was given, for the scripts that re-read it. See choose_configfile: the last
+# entry in workflow.configfiles is the `configfile:` directive's packaged default, not the run's.
+CONFIGFILE = choose_configfile(workflow.configfiles,
+                               os.path.join(workflow.basedir, "config", "config.yaml"))
+
+# Applied to snakemake's own config dict, so the snakefiles and the scripts share one definition of
+# what the config means. See scripts/spritz_config.py.
+normalise_config(config)
 
 # Variables used by many of the rules
 SPECIES = config["species"]
 GENOME_VERSION = config["genome"]
 ENSEMBL_VERSION = config["release"]
+# "vertebrates" (ftp.ensembl.org) or "bacteria" (Ensembl Genomes, on its own release numbering:
+# EG 63 is Ensembl 116). Absent from a hand-written config.yaml predating the option, hence the get.
+DIVISION = config.get("division") or "vertebrates"
+
+# Where GATK base recalibration gets its known variant sites.
+#
+#   "ensembl"   - download them, which needs Ensembl to publish variation for this species.
+#   "bootstrap" - call an unrecalibrated first pass and hard-filter it down to high-confidence
+#                 SNPs, then recalibrate against those. GATK's own advice when no known set
+#                 exists, and issue #186.
+#
+# Not a niche path. At Ensembl 116 only 19 of the 359 species with a gene model publish a
+# variation/vcf/ directory, so the other 340 can only take the bootstrap route - including
+# saccharomyces_cerevisiae, which had one at release 96 and does not now. Every one of Ensembl
+# Bacteria's 31,332 genomes is in the same position; see the coercion at the bottom of this file.
+# Already coerced by normalise_config above: a bacterial reference reads as "bootstrap" here,
+# because Ensembl Bacteria publishes no variation for the downloaded route to fetch.
+KNOWN_SITES = config.get("known_sites") or "ensembl"
+KNOWN_SITES_MODES = ("ensembl", "bootstrap")
 GENEMODEL_VERSION = f"{GENOME_VERSION}.{ENSEMBL_VERSION}"
 REF = f"{SPECIES}.{GENOME_VERSION}"
 GENOME_FA = f"../resources/ensembl/{REF}.dna.primary_assembly.fa"
@@ -96,8 +130,12 @@ def all_output(wildcards):
 def setup_output(wildcards):
     '''Gets the output needed for setting up spritz'''
     setup_outputs = [
-        f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
-        f"../resources/ensembl/{SPECIES}.ensembl.vcf",
+        # Two reasons there may be nothing to pre-fetch. A supplied VCF means no calling at all, so
+        # a multi-gigabyte dbSNP release would go unused; and bootstrap known sites are produced
+        # from the reads during the run. The UCSC mapping exists only to convert dbSNP.
+        *([] if check('vcf') or KNOWN_SITES != "ensembl" else [
+            f"../resources/ChromosomeMappings/{GENOME_VERSION}_UCSC2ensembl.txt",
+            f"../resources/ensembl/{SPECIES}.ensembl.vcf"]),
         TRANSFER_MOD_DLL,
         UNIPROTFASTA,
         FA,
@@ -123,3 +161,15 @@ def setup_output(wildcards):
 def check(field):
     '''Checks whether or not a field is contained in the configuration'''
     return field in config and config[field] is not None and len(config[field]) > 0
+
+
+if KNOWN_SITES not in KNOWN_SITES_MODES:
+    raise WorkflowError(
+        f"known_sites must be one of {', '.join(KNOWN_SITES_MODES)}, not '{KNOWN_SITES}'.")
+
+# Downloaded and shared per species, or derived from these reads and so per analysis. A bootstrap
+# set depends on the alignments it came from, which is why it cannot live in resources/.
+KNOWN_SITES_VCF = (
+    f"../resources/ensembl/{SPECIES}.ensembl.vcf" if KNOWN_SITES == "ensembl"
+    else "{dir}/variants/bootstrap.knownsites.vcf")
+KNOWN_SITES_VCF_IDX = f"{KNOWN_SITES_VCF}.idx"

@@ -93,6 +93,12 @@ namespace SpritzBackend
             AlwaysPull || PublishedImagePrefixes.Any(prefix =>
                 imageName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
+        /// <summary>
+        /// Asks whether Ensembl publishes variant sites for (release, species). Replaceable so tests
+        /// resolve known_sites without reaching the network.
+        /// </summary>
+        public Func<string, string, bool> EnsemblVariationProbe { get; set; } = EnsemblVariation.Published;
+
         /// <summary>The container runtime to drive. Podman by default; see ContainerRuntime.</summary>
         public ContainerRuntime Runtime { get; set; } = ContainerRuntime.Podman;
 
@@ -186,7 +192,10 @@ namespace SpritzBackend
             // No --conda-frontend: snakemake 9 accepts the flag but prints "Ignoring the alternative
             // conda frontend setting (mamba)" and uses conda, which now solves via libmamba anyway.
             // Passing it only produced a warning on every run.
-            cmd += $"snakemake -j {options.Threads} --use-conda --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
+            // --resources: a rule's `resources: uniprot_temp=1` constrains scheduling only when a limit
+            // is given here. Without the flag the four rules that run SpritzModifications on the UniProt
+            // xml overlap again, and mzLib's fixed temp.xml makes that a crash.
+            cmd += $"snakemake -j {options.Threads} --use-conda --resources uniprot_temp=1 --configfile {Path.Combine(ConfigDirectory, "config.yaml")}";
             if (setup)
             {
                 // The rule is named "setup" and writes ../resources/setup.txt. "setup.txt" matches
@@ -229,6 +238,7 @@ namespace SpritzBackend
             var sras_se = options.SraAccessionSingleEnd.Split(',');
             var fqs = options.Fastq1.Split(',') ?? Array.Empty<string>();
             var fqs_se = options.Fastq1SingleEnd.Split(',') ?? Array.Empty<string>();
+            var vcfs = (options.Vcf ?? "").Split(',');
             var analysisStrings = new List<string>();
             if (options.AnalyzeVariants) analysisStrings.Add("variant");
             if (options.AnalyzeIsoforms) analysisStrings.Add("isoform");
@@ -249,6 +259,22 @@ namespace SpritzBackend
             // write user input paired-end fastqs
             YamlSequenceNode fq_se = new();
             rootMappingNode.Add("fq_se", AddParam(fqs_se, fq_se));
+
+            // write user-supplied VCFs, annotated instead of calling variants from reads. A sequence
+            // like the read inputs: one VCF per sample is the normal case, and merge_user_vcfs
+            // combines them into the single multi-sample VCF the rest of the workflow reads.
+            YamlSequenceNode vcf = new();
+            rootMappingNode.Add("vcf", AddParam(vcfs, vcf));
+
+            // which Ensembl site the reference comes from; see DIVISION in common.smk
+            // Lowercased like known_sites below. The C# side accepts any casing on purpose, but
+            // every workflow-side test is case-sensitive (`DIVISION == "bacteria"`), so writing it
+            // verbatim let -e=Bacteria validate and then take the vertebrate path.
+            YamlScalarNode division = new(string.IsNullOrWhiteSpace(options.Division)
+                ? SpritzOptionStrings.DivisionVertebrates
+                : options.Division.Trim().ToLowerInvariant());
+            division.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("division", division);
 
             // write user defined analysis directory (input and output folder)
             YamlSequenceNode analysisDirectory = new();
@@ -278,6 +304,29 @@ namespace SpritzBackend
             YamlScalarNode genome = new(resolved.Genome);
             genome.Style = ScalarStyle.DoubleQuoted;
             rootMappingNode.Add("genome", genome);
+
+            // Where base recalibration gets its known sites. Resolved here rather than in the
+            // workflow because it takes a network lookup, and the workflow re-reads its config on
+            // every invocation including dry-runs - which would then need the network too.
+            //
+            // Bacteria skip the lookup: Ensembl Bacteria publishes no variation for any of its
+            // 31,332 genomes, so there is nothing to ask about. common.smk coerces them anyway;
+            // writing it here as well keeps the generated config honest about what will happen.
+            string knownSites = string.IsNullOrWhiteSpace(options.KnownSites)
+                ? EnsemblVariation.Auto : options.KnownSites.Trim();
+            if (string.Equals(knownSites, EnsemblVariation.Auto, StringComparison.OrdinalIgnoreCase))
+            {
+                knownSites =
+                    SpritzOptionStrings.IsBacteria(options.Division) ? EnsemblVariation.Bootstrap
+                    : string.Equals(resolved.Species, "Homo_sapiens", StringComparison.OrdinalIgnoreCase)
+                        ? EnsemblVariation.Ensembl // dbSNP, on a different host entirely
+                        : EnsemblVariationProbe(resolved.Release, resolved.Species.ToLowerInvariant())
+                            ? EnsemblVariation.Ensembl
+                            : EnsemblVariation.Bootstrap;
+            }
+            YamlScalarNode knownSitesNode = new(knownSites.ToLowerInvariant());
+            knownSitesNode.Style = ScalarStyle.DoubleQuoted;
+            rootMappingNode.Add("known_sites", knownSitesNode);
 
             // list the analyses to perform
             var analyses = new YamlSequenceNode();
