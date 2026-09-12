@@ -1,15 +1,22 @@
 rule download_protein_xml:
     '''Download the uniprot xml database and uniprot isoform fasta'''
+    input:
+        # get_proteome.py reads the taxonomy id out of this to look a bacterial proteome up; the
+        # popular-organisms list it scans for vertebrates does not reach bacteria at all.
+        *([] if DIVISION != "bacteria" else ["../resources/ensembl/species_EnsemblBacteria.txt"]),
     output:
         xml=UNIPROTXML,
         fasta=UNIPROTFASTA,
     log: f"{UNIPROTXML}.log"
     benchmark: f"{UNIPROTXML}.benchmark"
+    params: configfile=CONFIGFILE
     conda: "../envs/downloads.yaml"
+    # SPRITZ_CONFIG so get_proteome.py sees this run's organism and division rather than the
+    # packaged defaults; download_uniprot.py imports it, so both need it set.
     shell:
-        "(python scripts/get_proteome.py && "
-        "python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
-        "python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
+        "(SPRITZ_CONFIG={params.configfile} python scripts/get_proteome.py && "
+        "SPRITZ_CONFIG={params.configfile} python scripts/download_uniprot.py xml | gzip -c > {output.xml} && " #fixme
+        "SPRITZ_CONFIG={params.configfile} python scripts/download_uniprot.py fasta > {output.fasta}) &> {log}"
 
 if not PREBUILT_SPRITZ_MODS:
     rule build_transfer_mods:
@@ -122,7 +129,8 @@ rule generate_reference_snpeff_database:
     params:
         snpeff_folder=lambda w, input: os.path.dirname(input.jar),
         ref=REF,
-        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION)
+        snpeff_config=snpeff_config_block(REF, SPECIES, GENOME_VERSION, ENSEMBL_VERSION,
+                                          division=DIVISION)
     benchmark: f"../resources/SnpEff/data/{REF}/snpeffdatabase.benchmark"
     log: f"../resources/SnpEff/data/{REF}/snpeffdatabase.log"
     conda: "../envs/proteogenomics.yaml"

@@ -12,6 +12,26 @@ namespace SpritzBackend
         public string Fastq1SingleEnd { get; set; }
         public string SraAccession { get; set; }
         public string SraAccessionSingleEnd { get; set; }
+
+        /// <summary>
+        /// Filename of a user-supplied VCF in the analysis directory, used instead of calling variants
+        /// from reads. A filename, not a path, for the same reason as Fastq1: only the analysis and
+        /// resources directories are bind-mounted into the container.
+        /// </summary>
+        public string Vcf { get; set; }
+
+        /// <summary>
+        /// "vertebrates" (ftp.ensembl.org) or "bacteria" (Ensembl Genomes). Bacteria are a separate
+        /// site with separate release numbering, so this is not derivable from the species name.
+        /// </summary>
+        public string Division { get; set; }
+
+        /// <summary>
+        /// "auto" (default), "ensembl" or "bootstrap" - where GATK base recalibration gets its
+        /// known variant sites. "auto" asks Ensembl whether it publishes any for this species.
+        /// </summary>
+        public string KnownSites { get; set; }
+
         public int Threads { get; set; }
 
         /// <summary>podman (default), docker, or apptainer. See ContainerRuntime.</summary>

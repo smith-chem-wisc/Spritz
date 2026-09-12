@@ -1,0 +1,224 @@
+Config file config/config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+
+SNAKEMAKE
+=========
+  Date: 2026-09-12 09:58:21
+  Workflow ID: cd9682f4-5077-4b78-8fb2-75f4a08781a2
+  Platform: Linux-4.18.0-553.33.1.el8_10.x86_64-x86_64-with-glibc2.39
+  Host: cpu-b-4
+  User: anthony.cesnik
+  Snakemake version: 9.25.1
+  Python version: 3.13.15 | packaged by conda-forge | (main, Sep  2 2026, 22:01:58) [GCC 15.3.0]
+  Command: /opt/conda/bin/snakemake -j 8 --use-conda --configfile /app/spritz/results/config/config.yaml
+  Snakefile: /app/spritz/workflow/Snakefile
+  Base directory: /app/spritz/workflow
+  Run directory: /app/spritz/workflow
+  Working directory: /app/spritz/workflow
+  Config file(s): [PosixPath('/app/spritz/results/config/config.yaml'), 'config/config.yaml']
+  Config MD5: d4d9529339ccc1685c59276af1abdf42
+
+Building DAG of jobs...
+Your conda installation is not configured to use strict channel priorities. This is however important for having robust and correct environments (for details, see https://conda-forge.org/docs/user/tipsandtricks.html). Please consider to configure strict priorities by executing 'conda config --set channel_priority strict'.
+Creating conda environment envs/proteogenomics.yaml...
+Downloading and installing remote packages.
+Cleaning up conda package tarballs.
+Environment for /app/spritz/workflow/rules/../envs/proteogenomics.yaml created (location: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_)
+Creating conda environment envs/downloads.yaml...
+Downloading and installing remote packages.
+Cleaning up conda package tarballs.
+Environment for /app/spritz/workflow/rules/../envs/downloads.yaml created (location: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_)
+Creating conda environment envs/default.yaml...
+Downloading and installing remote packages.
+Cleaning up conda package tarballs.
+Environment for /app/spritz/workflow/envs/default.yaml created (location: .snakemake/conda/21202b3babddf0d0bcbd0c07d470513b_)
+Creating conda environment envs/spritzbase.yaml...
+Downloading and installing remote packages.
+Cleaning up conda package tarballs.
+Environment for /app/spritz/workflow/rules/../envs/spritzbase.yaml created (location: .snakemake/conda/3405ff5477e82452ca3c152cdc9f18fd_)
+Using shell: /usr/bin/bash
+Provided cores: 8
+Rules claiming more threads will be scaled down.
+Job stats:
+job                                     count
+------------------------------------  -------
+download_ensembl_bacteria_metadata          1
+download_snpeff                             1
+prose                                       1
+setup_transfer_mods                         1
+download_ensembl_bacteria_references        1
+download_protein_xml                        1
+setup_ptmlist_links                         1
+rename_genome_fasta                         1
+generate_reference_snpeff_database          1
+reference_protein_xml                       1
+all                                         1
+total                                      11
+
+Select jobs to execute...
+Execute 4 jobs...
+
+[Sat Sep 12 09:59:49 2026]
+localrule download_snpeff:
+    output: ../resources/SnpEff/snpEff.config, ../resources/SnpEff/snpEff.jar, ../resources/SnpEff_4.3_SmithChemWisc_v2.zip
+    log: ../resources/SnpEffInstall.log
+    jobid: 6
+    reason: Missing output files: ../resources/SnpEff/snpEff.jar
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_
+
+[Sat Sep 12 09:59:49 2026]
+localrule download_ensembl_bacteria_metadata:
+    output: ../resources/ensembl/species_EnsemblBacteria.txt
+    log: ../resources/ensembl/downloads_bacteria_metadata.log
+    jobid: 8
+    benchmark: ../resources/ensembl/downloads_bacteria_metadata.benchmark
+    reason: Missing output files: ../resources/ensembl/species_EnsemblBacteria.txt
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_
+
+[Sat Sep 12 09:59:49 2026]
+localrule prose:
+    output: ../results/prose.txt
+    log: ../results/prose.log
+    jobid: 1
+    reason: Missing output files: ../results/prose.txt
+    wildcards: dir=../results
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/21202b3babddf0d0bcbd0c07d470513b_
+
+[Sat Sep 12 09:59:49 2026]
+localrule setup_transfer_mods:
+    input: ../SpritzModifications.dll
+    output: ../resources/ptmlist.txt, ../resources/PSI-MOD.obo.xml
+    log: ../resources/setup_transfer_mods.log
+    jobid: 4
+    benchmark: ../resources/setup_transfer_mods.benchmark
+    reason: Missing output files: ../resources/PSI-MOD.obo.xml, ../resources/ptmlist.txt
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/3405ff5477e82452ca3c152cdc9f18fd_
+[Sat Sep 12 09:59:49 2026]
+Finished jobid: 1 (Rule: prose)
+1 of 11 steps (9%) done
+[Sat Sep 12 09:59:52 2026]
+Finished jobid: 4 (Rule: setup_transfer_mods)
+2 of 11 steps (18%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 09:59:52 2026]
+localrule setup_ptmlist_links:
+    input: ../resources/ptmlist.txt, ../resources/PSI-MOD.obo.xml
+    output: ptmlist.txt, PSI-MOD.obo.xml
+    log: ../resources/setup_transfer_mod_linking.log
+    jobid: 3
+    benchmark: ../resources/setup_transfer_mod_linking.benchmark
+    reason: Missing output files: PSI-MOD.obo.xml, ptmlist.txt; Input files updated by another job: ../resources/PSI-MOD.obo.xml, ../resources/ptmlist.txt
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+[Sat Sep 12 09:59:52 2026]
+Finished jobid: 3 (Rule: setup_ptmlist_links)
+3 of 11 steps (27%) done
+[Sat Sep 12 09:59:55 2026]
+Finished jobid: 8 (Rule: download_ensembl_bacteria_metadata)
+4 of 11 steps (36%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Sat Sep 12 09:59:55 2026]
+localrule download_ensembl_bacteria_references:
+    input: ../resources/ensembl/species_EnsemblBacteria.txt
+    output: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.fa, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.gff3, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.pep.all.fa
+    log: ../resources/ensembl/downloads.log
+    jobid: 7
+    benchmark: ../resources/ensembl/downloads.benchmark
+    reason: Missing output files: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.pep.all.fa, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.fa, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.gff3; Input files updated by another job: ../resources/ensembl/species_EnsemblBacteria.txt
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_
+
+[Sat Sep 12 09:59:55 2026]
+localrule download_protein_xml:
+    input: ../resources/ensembl/species_EnsemblBacteria.txt
+    output: ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.xml.gz, ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.fasta
+    log: ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.xml.gz.log
+    jobid: 10
+    benchmark: ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.xml.gz.benchmark
+    reason: Missing output files: ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.xml.gz; Input files updated by another job: ../resources/ensembl/species_EnsemblBacteria.txt
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_
+[Sat Sep 12 09:59:55 2026]
+Finished jobid: 6 (Rule: download_snpeff)
+5 of 11 steps (45%) done
+Removing temporary output ../resources/SnpEff_4.3_SmithChemWisc_v2.zip.
+[Sat Sep 12 10:00:00 2026]
+Finished jobid: 7 (Rule: download_ensembl_bacteria_references)
+6 of 11 steps (55%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 10:00:00 2026]
+localrule rename_genome_fasta:
+    input: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.fa
+    output: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.karyotypic.fa
+    log: ../resources/ensembl/karyotypic_order_rename.log
+    jobid: 9
+    benchmark: ../resources/ensembl/karyotypic_order_rename.benchmark
+    reason: Missing output files: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.karyotypic.fa; Input files updated by another job: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.fa
+    resources: tmpdir=/tmp
+Activating conda environment: .snakemake/conda/6c472cab7578df16cbac0d0bb0a882e6_
+[Sat Sep 12 10:00:00 2026]
+Finished jobid: 9 (Rule: rename_genome_fasta)
+7 of 11 steps (64%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 10:00:00 2026]
+localrule generate_reference_snpeff_database:
+    input: ../resources/SnpEff/snpEff.jar, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.gff3, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.pep.all.fa, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.karyotypic.fa
+    output: ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/protein.fa, ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/genes.gff, ../resources/SnpEff/data/genomes/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.fa, ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.txt
+    log: ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/snpeffdatabase.log
+    jobid: 5
+    benchmark: ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/snpeffdatabase.benchmark
+    reason: Missing output files: ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.txt; Input files updated by another job: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.pep.all.fa, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.karyotypic.fa, ../resources/SnpEff/snpEff.jar, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.gff3
+    resources: tmpdir=/tmp, mem_mb=16000, mem=16 GB, mem_mib=15259
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+[Sat Sep 12 10:00:01 2026]
+Finished jobid: 10 (Rule: download_protein_xml)
+8 of 11 steps (73%) done
+[Sat Sep 12 10:00:03 2026]
+Finished jobid: 5 (Rule: generate_reference_snpeff_database)
+9 of 11 steps (82%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 10:00:03 2026]
+localrule reference_protein_xml:
+    input: ptmlist.txt, PSI-MOD.obo.xml, ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.txt, ../resources/SnpEff/snpEff.jar, ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.karyotypic.fa, ../SpritzModifications.dll, ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.xml.gz
+    output: ../results/variants/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.txt, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.xml, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.xml.gz, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.fasta, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.withdecoys.fasta, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.withmods.xml, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.withmods.xml.gz, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.fragpipe.fasta, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.withdecoys.fragpipe.fasta, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.accname.tsv, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.vardesc.tsv, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.accname.decoy.tsv, ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.vardesc.decoy.tsv
+    log: ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.spritz.log
+    jobid: 2
+    benchmark: ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.spritz.benchmark
+    reason: Missing output files: ../results/variants/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.txt; Input files updated by another job: ../resources/ensembl/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.dna.primary_assembly.karyotypic.fa, ../resources/SnpEff/snpEff.jar, PSI-MOD.obo.xml, ../resources/uniprot/Mycoplasma_hyopneumoniae_232_gca_000008405.protein.xml.gz, ../resources/SnpEff/data/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.txt, ptmlist.txt
+    wildcards: dir=../results
+    resources: tmpdir=/tmp, mem_mb=16000, mem=16 GB, mem_mib=15259
+Activating conda environment: .snakemake/conda/230b454caee1b4e712c83cc264d9ebe7_
+[Sat Sep 12 10:00:08 2026]
+Finished jobid: 2 (Rule: reference_protein_xml)
+10 of 11 steps (91%) done
+Removing temporary output PSI-MOD.obo.xml.
+Removing temporary output ptmlist.txt.
+Removing temporary output ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.xml.
+Removing temporary output ../results/variants/Mycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.protein.withmods.xml.
+Select jobs to execute...
+Execute 1 jobs...
+
+[Sat Sep 12 10:00:08 2026]
+localrule all:
+    input: ../results/prose.txt, ../results/variants/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.txt
+    jobid: 0
+    reason: Input files updated by another job: ../results/prose.txt, ../results/variants/doneMycoplasma_hyopneumoniae_232_gca_000008405.ASM840v1.63.txt
+    resources: tmpdir=/tmp
+[Sat Sep 12 10:00:08 2026]
+Finished jobid: 0 (Rule: all)
+11 of 11 steps (100%) done
+Complete log(s): /app/spritz/workflow/.snakemake/log/2026-09-12T095821.367290.snakemake.log

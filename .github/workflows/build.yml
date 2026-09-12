@@ -130,6 +130,69 @@ jobs:
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 setup
 
+    # The VCF entry point takes a different branch of both all_output and the combined.spritz.vcf
+    # producer (stage_user_vcf replaces final_vcf_naming), so neither is covered by the runs above.
+    # The VCF itself has no producing rule, so it has to exist for the DAG to resolve.
+    - name: Dry-run - variant from a supplied VCF
+      shell: bash -el {0}
+      run: |
+        mkdir -p results && touch results/user.vcf
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "sra=[]" "sra_se=[]" "vcf=user.vcf" \
+            "analysis_directory=[../../results]"
+
+    # Several per-sample VCFs take the merge_user_vcfs branch, which a single VCF does not, so the
+    # run above does not cover it. Also the case that caught a real bug: --config passes a bare
+    # `vcf=a.vcf` as a string, and iterating a string yields one path per character.
+    - name: Dry-run - variant from several supplied VCFs
+      shell: bash -el {0}
+      run: |
+        mkdir -p results && touch results/a.vcf results/b.vcf results/c.vcf
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "sra=[]" "sra_se=[]" "vcf=[a.vcf,b.vcf,c.vcf]" \
+            "analysis_directory=[../../results]"
+
+    # Bootstrapped known sites replace the download, so base_recalibration takes its input from a
+    # first calling pass instead. Neither branch above covers that.
+    - name: Dry-run - variant with bootstrapped known sites
+      shell: bash -el {0}
+      run: |
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "known_sites=bootstrap" \
+            "species=Saccharomyces_cerevisiae" "genome=R64-1-1" "release=116" "organism=saccharomyces cerevisiae"
+
+    # setup_output gained a check('vcf') branch that no dry-run reached: the setup step above uses
+    # the default config, where no VCF is set.
+    - name: Dry-run - setup with a supplied VCF
+      shell: bash -el {0}
+      run: |
+        mkdir -p results && touch results/user.vcf
+        cd Spritz/workflow && snakemake --dry-run --cores 1 setup \
+          --config "sra=[]" "sra_se=[]" "vcf=user.vcf" "analysis_directory=[../../results]"
+
+    # Bacteria with reads and no VCF is the shape the bacteria-to-bootstrap coercion exists for, and
+    # was the one new combination with no coverage.
+    - name: Dry-run - bacterial reference bootstrapping from reads
+      shell: bash -el {0}
+      run: |
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "division=bacteria" "release=63" \
+            "species=Pseudomonas_aeruginosa_pao1_gca_000006765" "genome=ASM676v1" \
+            "organism=pseudomonas" "sra=[SRR629563]"
+
+    # The bacteria division takes a third branch again: a different reference download, no known-sites
+    # VCF rule at all, and a genome-level codon table. Uses the real PAO1 reference string from
+    # Ensembl Genomes release 63, so a change in that layout surfaces here rather than in a user's run.
+    - name: Dry-run - bacterial reference from a supplied VCF
+      shell: bash -el {0}
+      run: |
+        mkdir -p results && touch results/user.vcf
+        cd Spritz/workflow && snakemake --dry-run --cores 1 \
+          --config "analyses=[variant]" "sra=[]" "sra_se=[]" "vcf=user.vcf" \
+            "division=bacteria" "release=63" \
+            "species=Pseudomonas_aeruginosa_pao1_gca_000006765" "genome=ASM676v1" \
+            "organism=pseudomonas" "analysis_directory=[../../results]"
+
     - name: Dry-run - variant, isoform and quant together
       shell: bash -el {0}
       run: cd Spritz/workflow && snakemake --dry-run --cores 1 --config "analyses=[variant,isoform,quant]"
@@ -243,6 +306,14 @@ jobs:
     - name: Build docker image
       run: docker build -t spritz ./Spritz/
 
+    # Deliberately pinned to release-96, not the newest. Yeast had an Ensembl variation VCF at 96
+    # and has none at 116, so this exercises the downloaded-known-sites path - which is the one most
+    # users on human data take, and the one worth protecting end to end. It also covers `-k=auto`
+    # resolving to `ensembl`, since that is what the probe returns for this species and release.
+    #
+    # The bootstrap path is covered by a dry-run above rather than here: it runs HaplotypeCaller
+    # twice, and doubling this job's calling time to cover a DAG shape is not a good trade.
+    #
     # Named so the step below can read the logs out of the stopped container. No --rm, for the
     # same reason.
     - name: Run test in docker image

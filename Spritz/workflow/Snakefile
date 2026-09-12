@@ -22,8 +22,11 @@ rule clean:
 rule prose:
     output: "{dir}/prose.txt"
     log: "{dir}/prose.log"
+    params: configfile=CONFIGFILE
     conda: "envs/default.yaml"
-    shell: "python scripts/prose.py {output} 2> {log}"
+    # SPRITZ_CONFIG, not the relative path: snakemake runs from workflow/, where config/config.yaml
+    # is the packaged default rather than this run's. See scripts/spritz_config.py.
+    shell: "SPRITZ_CONFIG={params.configfile} python scripts/prose.py {output} 2> {log}"
 
 include: "rules/downloads.smk"
 include: "rules/align.smk"

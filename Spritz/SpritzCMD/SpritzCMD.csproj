@@ -66,6 +66,9 @@
     <None Include="..\workflow\scripts\convert_ucsc2ensembl.py" Link="workflow\scripts\convert_ucsc2ensembl.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="..\workflow\scripts\ensembl_bacteria.py" Link="workflow\scripts\ensembl_bacteria.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="..\workflow\scripts\download_uniprot.py" Link="workflow\scripts\download_uniprot.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -85,6 +88,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\workflow\scripts\snpeff_config.py" Link="workflow\scripts\snpeff_config.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\spritz_config.py" Link="workflow\scripts\spritz_config.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\workflow\scripts\stage_user_vcf.py" Link="workflow\scripts\stage_user_vcf.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\workflow\scripts\update_genomes.py" Link="workflow\scripts\update_genomes.py">

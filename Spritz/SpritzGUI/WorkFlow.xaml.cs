@@ -85,6 +85,39 @@ namespace Spritz
             Options.AnalyzeVariants = (bool)Cb_AnalyzeVariants.IsChecked;
             Options.AnalyzeIsoforms = (bool)Cb_AnalyzeIsoforms.IsChecked;
             Options.Quantify = (bool)Cb_Quantify.IsChecked;
+
+            // The same rules SpritzCMD enforces, checked here so the dialog says why rather than the
+            // run failing later: a supplied VCF replaces calling, so it cannot be combined with reads,
+            // and neither isoform reconstruction nor quantification has an input without them.
+            if (Options.Vcf.Length > 0)
+            {
+                if (Options.AnalyzeIsoforms || Options.Quantify)
+                {
+                    MessageBox.Show(
+                        "A supplied VCF cannot be combined with isoform analysis or quantification: " +
+                        "both need sequencing reads, which a VCF does not provide.",
+                        "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (!Options.AnalyzeVariants)
+                {
+                    MessageBox.Show(
+                        "A VCF was specified but Analyze Variants is unchecked, so the VCF would not " +
+                        "be used. Check Analyze Variants to annotate its variants.",
+                        "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (Options.SraAccession?.Length > 0 || Options.SraAccessionSingleEnd?.Length > 0 ||
+                    Options.Fastq1?.Length > 0 || Options.Fastq1SingleEnd?.Length > 0)
+                {
+                    MessageBox.Show(
+                        "A supplied VCF replaces variant calling from reads, so remove either the VCF " +
+                        "or the SRA and FASTQ selections.",
+                        "Run Workflows", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
             DialogResult = true;
         }
 
@@ -92,9 +125,13 @@ namespace Spritz
         {
             // Get information about the fastq and sra selections
             var rnaSeqFastqCollection = (ObservableCollection<RNASeqFastqDataGrid>)MainWindow.DataGridRnaSeqFastq.DataContext;
-            Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
-            Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsPairedEnd && p.MatePair == 2.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
-            Options.Fastq1SingleEnd = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.FileName.Substring(0, p.FileName.Length - 2)).ToArray());
+            Options.Fastq1 = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsVcf && p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
+            Options.Fastq2 = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsVcf && p.IsPairedEnd && p.MatePair == 2.ToString()).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
+            Options.Fastq1SingleEnd = string.Join(",", rnaSeqFastqCollection.Where(p => !p.IsVcf && !p.IsPairedEnd && p.MatePair == 1.ToString()).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
+
+            // One VCF per sample is the normal case; the workflow merges them into one multi-sample
+            // VCF. Full filenames, not the prefixes the fastq rules take.
+            Options.Vcf = string.Join(",", rnaSeqFastqCollection.Where(p => p.IsVcf).OrderBy(p => p.FileName).Select(p => p.WorkflowName).ToArray());
 
             var fq1s = Options.Fastq1.Split(',') ?? Array.Empty<string>();
             var fq2s = Options.Fastq2.Split(',') ?? Array.Empty<string>();
@@ -132,6 +169,8 @@ namespace Spritz
                 Cb_Quantify.IsEnabled = false;
             }
 
+            ApplyVcfState();
+
             txtAnalysisDirectory.Text = AnalysisDirectory;
             txtThreads.Text = MainWindow.DockerCPUs.ToString();
             Threads = MainWindow.DockerCPUs;
@@ -157,6 +196,45 @@ namespace Spritz
             var selectedEnsembl = (EnsemblRelease)EnsemblReleaseVersions.SelectedItem;
             var selectedSpecies = (string)EnsemblSpecies.SelectedItem;
             Reference = selectedEnsembl.Genomes[selectedSpecies];
+        }
+
+        /// <summary>
+        /// A supplied VCF is an input in its own right, so it re-enables Analyze Variants when there
+        /// are no reads - that combination is the whole point of the option - and rules out isoform
+        /// analysis and quantification, which have no input without reads.
+        /// </summary>
+        private void ApplyVcfState()
+        {
+            // Guarded because this runs from UpdateFieldsFromTask, which the constructor calls before
+            // every control is necessarily realised.
+            if (Cb_AnalyzeVariants is null) return;
+
+            bool hasVcf = Options.Vcf?.Length > 0;
+            if (Lb_Vcf is not null)
+            {
+                Lb_Vcf.Content = hasVcf
+                    ? string.Join(", ", Options.Vcf.Split(','))
+                    : "none";
+            }
+            if (hasVcf)
+            {
+                Cb_AnalyzeVariants.IsEnabled = true;
+                Cb_AnalyzeVariants.IsChecked = true;
+                Cb_AnalyzeIsoforms.IsChecked = false;
+                Cb_AnalyzeIsoforms.IsEnabled = false;
+                Cb_Quantify.IsChecked = false;
+                Cb_Quantify.IsEnabled = false;
+            }
+            else
+            {
+                // Restore only what this method disabled; the no-reads case above owns the rest.
+                bool hasReads =
+                    Options.SraAccession?.Length > 0 || Options.SraAccessionSingleEnd?.Length > 0 ||
+                    Options.Fastq1?.Length > 0 || Options.Fastq1SingleEnd?.Length > 0;
+                Cb_AnalyzeIsoforms.IsEnabled = hasReads;
+                Cb_Quantify.IsEnabled = hasReads;
+                Cb_AnalyzeVariants.IsEnabled = hasReads;
+            }
         }
 
         private void TxtThreads_LostFocus(object sender, RoutedEventArgs e)

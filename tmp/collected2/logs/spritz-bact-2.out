@@ -1,0 +1,20 @@
+=== hard: Mycoplasma_hyopneumoniae_232_gca_000008405 ASM840v1 (EG release 63) ===
+    results=/hpc/projects/chi.spatial/spritz/Spritz/cluster-examples/work/hard/results
+Welcome to Spritz!
+Testing analysis directory /app/spritz/results/
+Using analysis directory /app/spritz/results/
+
+NB: No sequences or analyses were specified, and so a reference database will be generated from Ensembl references only.
+Running `snakemake -j 8 --use-conda --configfile /app/spritz/results/config/config.yaml`.
+=== hard: run finished, checking ===
+--- hard ---
+  PASS  genome FASTA downloaded
+  PASS  reference proteome downloaded
+  PASS  codon table is Mycoplasma
+  ..... spritz median protein length 304 over 679 seqs; Ensembl 304 over 679; ratio 1.00
+  PASS  protein lengths agree with Ensembl (ratio within 0.9-1.1)
+  PASS  UniProt proteome resolved and downloaded
+  PASS  division recorded as bacteria
+  PASS  prose.txt does not claim human
+  ..... no final reference database (only expected when the run requested one)
+--- hard: ALL CHECKS PASSED ---
