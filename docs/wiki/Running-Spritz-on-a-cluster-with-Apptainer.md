@@ -67,6 +67,26 @@ over the snakemake state instead:
 
 That also makes the environments persist between runs rather than being rebuilt each time.
 
+**Binding that alone is not enough.** snakemake builds each rule's environment under
+`.snakemake/conda`, but conda unpacks the downloaded `.conda` archives into its *package cache*
+first, and that defaults to `/opt/conda/pkgs` — inside the image, so on the overlay. The variants
+environment (gatk4, openjdk, samtools) does not fit, and the run dies mid-build with
+
+```
+[Errno 28] No space left on device
+InvalidArchiveError('Error with archive /opt/conda/pkgs/icu-78.3-....conda ...')
+```
+
+Redirect the cache as well, and give the temporary directory real disk while you are there —
+GATK and the sort steps write substantial temporary files:
+
+```bash
+  --env CONDA_PKGS_DIRS=/app/spritz/conda-pkgs \
+  --env TMPDIR=/tmp \
+  --bind /scratch/$USER/spritz-conda-pkgs:/app/spritz/conda-pkgs \
+  --bind /scratch/$USER/spritz-tmp:/tmp
+```
+
 Note the path is `workflow/.snakemake`, not `.snakemake`. `SpritzCMD` runs snakemake with its working
 directory set to `workflow/`, and snakemake puts its state — including `conda/`, which is the part
 that gets large — under the directory it runs in. Binding `/app/spritz/.snakemake` creates an empty
@@ -98,14 +118,23 @@ Apptainer runs in the foreground, so wrap it the way you would any other command
 
 export APPTAINER_CACHEDIR=/scratch/$USER/apptainer-cache
 
+mkdir -p /scratch/$USER/spritz-{analysis,resources,snakemake,conda-pkgs,tmp}
+
 apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
+  --env CONDA_PKGS_DIRS=/app/spritz/conda-pkgs \
+  --env TMPDIR=/tmp \
   --bind /scratch/$USER/spritz-analysis:/app/spritz/results/ \
   --bind /scratch/$USER/spritz-resources:/app/spritz/resources \
   --bind /scratch/$USER/spritz-snakemake:/app/spritz/workflow/.snakemake \
+  --bind /scratch/$USER/spritz-conda-pkgs:/app/spritz/conda-pkgs \
+  --bind /scratch/$USER/spritz-tmp:/tmp \
   /scratch/$USER/spritz.sif \
   conda run --no-capture-output --live-stream dotnet SpritzCMD.dll \
     -a=/app/spritz/results/ -p=16 -r="release-116,homo_sapiens,human,GRCh38" -s=SRR629563
 ```
+
+All five binds matter for a run that gets past environment setup; the last two are the ones most
+often missed, because their absence looks like a full disk rather than a missing mount.
 
 Ask for memory generously. Alignment and assembly dominate, and 24 GB is the desktop recommendation
 for a human run.
@@ -129,8 +158,10 @@ write anywhere you cannot.
 **`FATAL: while extracting spritz.sif: root filesystem extraction failed`** — usually no space in
 `APPTAINER_TMPDIR`. Point it at scratch.
 
-**`no space left on device` partway through** — the `--writable-tmpfs` overlay filled. Bind a real
-directory over `/app/spritz/workflow/.snakemake` as above.
+**`no space left on device` partway through** — the `--writable-tmpfs` overlay filled. Bind real
+directories over `/app/spritz/workflow/.snakemake`, the conda package cache and `/tmp`, as above.
+If the message names a file under `/opt/conda/pkgs`, it is the package cache specifically, and
+binding `.snakemake` does not cover it.
 
 **Permission denied writing results** — check the bound directory exists and is writable by you
 before the run; Apptainer will not create it for you the way Docker does.

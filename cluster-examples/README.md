@@ -87,6 +87,28 @@ APPTAINER_TMPDIR=/tmp/$USER/apptainer ./build.sh
 
 The cache is only OCI blobs and needs no xattrs, so it stays in this directory where there is quota.
 
+### Everything the run writes has to be bound out of the image
+
+Under Apptainer the image is read-only and `--writable-tmpfs` gives it a small, memory-backed
+overlay. Anything the workflow writes inside the image goes there and runs out of room. `run.slurm`
+binds five directories per case for that reason, and two of them are easy to miss:
+
+| Bound over | Why |
+|---|---|
+| `results/`, `resources/` | outputs and downloaded references |
+| `workflow/.snakemake` | snakemake state, including the per-rule conda environments |
+| `conda-pkgs` (`CONDA_PKGS_DIRS`) | conda unpacks `.conda` archives here *before* building an environment; the default is `/opt/conda/pkgs`, inside the image |
+| `/tmp` (`TMPDIR`) | GATK and the sort steps write substantial temporaries |
+
+Missing either of the last two looks like a full disk, not a missing mount — the first attempt at
+these cases died with `[Errno 28] No space left on device` and
+`InvalidArchiveError` on a package under `/opt/conda/pkgs`, with `.snakemake` correctly bound the
+whole time.
+
+The package cache is shared across the four cases (`work/conda-pkgs`), so the environments are
+downloaded once rather than four times. `collect.sh` prunes it, along with `tmp` and `cache`, so the
+tarball stays small.
+
 The base image is pulled to `micromamba-base.sif` once and the definition bootstraps from that rather
 than from `docker://`. Converting an OCI image to SIF tolerates a filesystem without xattrs — it
 warns and carries on — while the rootless unpack inside `build` does not, so pulling first removes

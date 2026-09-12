@@ -33,7 +33,10 @@ source "cases/${CASE_NAME}.env"
 
 ROOT="${SPRITZ_WORK:-$PWD/work}/${CASE_NAME}"
 RESULTS="$ROOT/results"; RESOURCES="$ROOT/resources"; SNAKE="$ROOT/snakemake"
-mkdir -p "$RESULTS" "$RESOURCES" "$SNAKE" "$ROOT/cache"
+# PKGS and TMP are shared across the four cases on purpose: the package cache is the
+# expensive thing to rebuild, and there is no reason for each case to download it again.
+PKGS="${SPRITZ_WORK:-$PWD/work}/conda-pkgs"; TMP="$ROOT/tmp"
+mkdir -p "$RESULTS" "$RESOURCES" "$SNAKE" "$ROOT/cache" "$PKGS" "$TMP"
 
 # Point the apptainer cache at somewhere with quota, per the cluster wiki page.
 export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-$ROOT/../apptainer-cache}"
@@ -74,11 +77,28 @@ if [ -n "${VCF:-}" ]; then ./make_test_vcf.sh "$RESULTS/$VCF"; ARGS+=(-v="$VCF" 
 # snakemake keeps a source cache under $HOME/.cache/snakemake. --cleanenv leaves HOME pointing at
 # the real home directory, which is writable, but it is set explicitly here so the cache cannot end
 # up somewhere read-only - which is exactly how the container's own %test failed.
+#
+# The conda PACKAGE CACHE needs real disk too, and binding .snakemake is not enough to get it
+# there. snakemake creates each rule's environment under .snakemake/conda (bound below), but conda
+# unpacks the .conda archives into $CONDA_PKGS_DIRS first, which defaults to /opt/conda/pkgs -
+# inside the image, so on the memory-backed --writable-tmpfs overlay. That overlay is small and
+# bounded; the variants environment alone (gatk4, openjdk, samtools) does not fit. The result was
+#   [Errno 28] No space left on device
+#   InvalidArchiveError('Error with archive /opt/conda/pkgs/icu-78.3-....conda ...')
+# partway through the first environment build. Pointing CONDA_PKGS_DIRS at a bound directory is the
+# fix; it also means the four cases share one download instead of repeating it.
+#
+# TMPDIR likewise: GATK and the sort steps write substantial temporary files, and Apptainer's /tmp
+# is a bounded tmpfs of the same kind.
 apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --env XDG_CACHE_HOME="$ROOT/cache" \
+  --env CONDA_PKGS_DIRS=/app/spritz/conda-pkgs \
+  --env TMPDIR=/tmp \
   --bind "$RESULTS":/app/spritz/results/ \
   --bind "$RESOURCES":/app/spritz/resources \
   --bind "$SNAKE":/app/spritz/workflow/.snakemake \
+  --bind "$PKGS":/app/spritz/conda-pkgs \
+  --bind "$TMP":/tmp \
   spritz.sif \
   dotnet SpritzCMD.dll "${ARGS[@]}"
 
