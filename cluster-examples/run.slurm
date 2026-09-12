@@ -105,7 +105,16 @@ apptainer run --cleanenv --writable-tmpfs --pwd /app/spritz/ \
   --bind "$PKGS":/app/spritz/conda-pkgs \
   --bind "$TMP":/tmp \
   spritz.sif \
-  dotnet SpritzCMD.dll "${ARGS[@]}"
+  dotnet SpritzCMD.dll "${ARGS[@]}" && rc=0 || rc=$?
 
-echo "=== ${CASE_NAME}: run finished, checking ==="
-./check.sh "$CASE_NAME" "$ROOT"
+# check.sh runs whether or not the workflow succeeded. Under `set -e` a failed run aborted the
+# script here, so a failure produced no check output at all - which is the least useful moment to
+# have none: the checks say how far the run got, and a partial pass distinguishes "the reference
+# never downloaded" from "everything worked except the last step".
+if [ "$rc" -eq 0 ]; then
+    echo "=== ${CASE_NAME}: run finished, checking ==="
+else
+    echo "=== ${CASE_NAME}: run FAILED (exit $rc); checking what it did produce ==="
+fi
+./check.sh "$CASE_NAME" "$ROOT" || true
+exit "$rc"
