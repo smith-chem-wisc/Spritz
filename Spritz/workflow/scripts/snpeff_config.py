@@ -47,9 +47,17 @@ BACTERIAL_CODON_TABLE = "Bacterial_and_Plant_Plastid"
 #
 # Matched on the genus prefix of the Ensembl species directory name, which is a heuristic rather
 # than a taxonomy lookup: NCBI assigns table 4 across Mycoplasmatales and Entomoplasmatales, and the
-# genera below are the ones Ensembl Bacteria actually carries. Getting it wrong is detectable rather
-# than silent - the protein lengths SnpEff emits stop matching the pep.all.fa Ensembl ships for the
-# same genome - which is what the bacterial verification case checks.
+# genera below are the ones Ensembl Bacteria actually carries.
+#
+# Nothing in SnpEff catches a wrong table. Its build reports a protein-mismatch percentage but
+# cannot fail on it: MAX_ERROR_RATE in SnpEffCmdProtein is declared and never read, and build calls
+# proteinCompare(null, addTotals=true, ...), which routes past the only fatal branch. So a wrong
+# table yields a clean build and a silently wrong database. Comparing the emitted protein lengths
+# against the pep.all.fa Ensembl ships for the same genome is the detector, which is what the
+# bacterial verification case does.
+#
+# A wrong table NAME is different: Config.createCodonTables throws on an unresolvable name rather
+# than falling back, so a typo here fails loudly at config load.
 MYCOPLASMA_CODON_TABLE = "Mycoplasma"
 SPIROPLASMA_CODON_TABLE = "Spiroplasma"
 TABLE_4_GENERA = {
