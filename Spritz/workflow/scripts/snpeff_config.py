@@ -62,6 +62,10 @@ MYCOPLASMA_CODON_TABLE = "Mycoplasma"
 SPIROPLASMA_CODON_TABLE = "Spiroplasma"
 TABLE_4_GENERA = {
     "mycoplasma": MYCOPLASMA_CODON_TABLE,
+    # NCBI split Mycoplasma in 2018 and UniProt already calls M. hyopneumoniae
+    # "Mesomycoplasma hyopneumoniae". Ensembl Bacteria still uses the old name, so this is here for
+    # when it catches up rather than for anything it carries today.
+    "mesomycoplasma": MYCOPLASMA_CODON_TABLE,
     "mycoplasmoides": MYCOPLASMA_CODON_TABLE,
     "mycoplasmopsis": MYCOPLASMA_CODON_TABLE,
     "mesoplasma": MYCOPLASMA_CODON_TABLE,

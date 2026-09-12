@@ -29,12 +29,22 @@ division = (data.get("division") or "vertebrates").lower()
 BACTERIA_METADATA = "../resources/ensembl/species_EnsemblBacteria.txt"
 
 
-def taxonomy_id(species):
-    """The NCBI taxonomy id for an Ensembl Bacteria species directory name."""
-    import ensembl_bacteria  # a sibling in scripts/, which sys.path[0] covers when run as a script
+_taxonomy_ids = None
 
-    with open(BACTERIA_METADATA, encoding="utf-8", errors="replace") as handle:
-        return ensembl_bacteria.parse_taxonomy_ids(handle.read()).get(species)
+
+def taxonomy_id(species):
+    """The NCBI taxonomy id for an Ensembl Bacteria species directory name.
+
+    Cached: the metadata file lists all 31k assemblies, and this is asked twice - once for the
+    proteome lookup and once for download_uniprot's fallback query.
+    """
+    global _taxonomy_ids
+    if _taxonomy_ids is None:
+        import ensembl_bacteria  # a sibling in scripts/, covered by sys.path[0] when run directly
+
+        with open(BACTERIA_METADATA, encoding="utf-8", errors="replace") as handle:
+            _taxonomy_ids = ensembl_bacteria.parse_taxonomy_ids(handle.read())
+    return _taxonomy_ids.get(species)
 
 
 def search(query):
@@ -77,7 +87,13 @@ def bacterial_proteome(species):
     return found
 
 
+# Exposed for download_uniprot, which falls back to an organism query when a proteome record
+# turns out to have no UniProtKB entries behind it. None for the vertebrate path, where the
+# proteome id is resolved by name and no taxonomy id is looked up.
+organism_id = None
+
 if division == "bacteria":
+    organism_id = taxonomy_id(data["species"].lower())
     proteome = bacterial_proteome(data["species"].lower())
 else:
     proteome_res = requests.get(BASE_URL + ENDPOINT, params=params, stream=True)
